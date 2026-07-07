@@ -5,7 +5,14 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { DaemonHandle } from "./daemon-manager.ts";
-import { APP_HEADER, APP_HEADER_VALUE, type AppHealth } from "../shared/app-contract.ts";
+import type { WsBridge, BridgeSocketData } from "./ws-bridge.ts";
+import {
+  APP_HEADER,
+  APP_HEADER_VALUE,
+  WS_BRIDGE_PATH,
+  WS_TICKET_PATH,
+  type AppHealth,
+} from "../shared/app-contract.ts";
 
 /** Route prefixes forwarded verbatim to the daemon (see daemon route catalog). */
 const PROXY_PREFIXES = ["/api/", "/login", "/status", "/task", "/config", "/webhook/"];
@@ -28,6 +35,8 @@ export interface UiServerOptions {
   assetsDir: string;
   daemon: DaemonHandle;
   appVersion: string;
+  /** WebSocket bridge to the daemon control-plane socket (src/bun/ws-bridge.ts). */
+  wsBridge: WsBridge;
   /** Extra same-origin route handlers (app-local services register here). */
   appRoutes?: Record<string, (req: Request, url: URL) => Response | Promise<Response>>;
 }
@@ -35,7 +44,7 @@ export interface UiServerOptions {
 export interface UiServerHandle {
   url: string;
   stop: () => void;
-  server: ReturnType<typeof Bun.serve>;
+  server: Bun.Server<BridgeSocketData>;
 }
 
 function isProxied(pathname: string): boolean {
@@ -111,9 +120,16 @@ export function startUiServer(opts: UiServerOptions): UiServerHandle {
     hostname: "127.0.0.1",
     port: 0,
     idleTimeout: 0, // SSE streams stay open indefinitely
-    async fetch(req) {
+    websocket: opts.wsBridge.websocket,
+    async fetch(req, srv) {
       const url = new URL(req.url);
       const { pathname } = url;
+
+      // WebSocket handshakes cannot carry the app header; /app/ws is guarded
+      // by the single-use ticket instead (issued below, header-checked).
+      if (pathname === WS_BRIDGE_PATH) {
+        return opts.wsBridge.handleUpgrade(req, url, srv);
+      }
 
       if (pathname.startsWith("/app/") || isProxied(pathname)) {
         // Defense in depth: only our webview bootstrap stamps this header.
@@ -123,6 +139,11 @@ export function startUiServer(opts: UiServerOptions): UiServerHandle {
       }
 
       if (pathname === "/app/health") return Response.json(health());
+
+      if (pathname === WS_TICKET_PATH) {
+        if (req.method !== "GET") return new Response("Method not allowed", { status: 405 });
+        return Response.json(opts.wsBridge.issueTicket());
+      }
 
       if (opts.appRoutes) {
         for (const [prefix, handler] of Object.entries(opts.appRoutes)) {

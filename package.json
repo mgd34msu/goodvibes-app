@@ -16,7 +16,11 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "check:boundaries": "bun scripts/check-boundaries.ts",
-    "verify": "bun run typecheck && bun run check:boundaries && bun test"
+    "generate:routes": "bun scripts/generate-operator-routes.ts",
+    "generate:presentation": "bun scripts/generate-presentation-tokens.ts",
+    "generate": "bun run generate:routes && bun run generate:presentation",
+    "generate:check": "bun scripts/generate-operator-routes.ts --check && bun scripts/generate-presentation-tokens.ts --check",
+    "verify": "bun run typecheck && bun run check:boundaries && bun run generate:check && bun test"
   },
   "dependencies": {
     "@pellux/goodvibes-sdk": "1.3.1",

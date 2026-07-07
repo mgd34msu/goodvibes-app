@@ -24,3 +24,24 @@ export interface AppHealth {
 /** Header the UI stamps on every /api and /app request (defense in depth). */
 export const APP_HEADER = "x-gv-app";
 export const APP_HEADER_VALUE = "goodvibes-app";
+
+// --- /app/ws bridge (src/bun/ws-bridge.ts) ---------------------------------
+// Browser WebSocket handshakes cannot carry custom headers, so the app-header
+// check is replaced by a one-time ticket: GET /app/ws-ticket (header-checked)
+// returns a WsTicket, then the UI connects to `${WS_BRIDGE_PATH}?ticket=…`.
+// Tickets are single-use and expire after ~30s. The Bun side authenticates to
+// the daemon itself (token never reaches the webview); the UI speaks the
+// daemon WS protocol minus the auth frame.
+
+export const WS_BRIDGE_PATH = "/app/ws";
+export const WS_TICKET_PATH = "/app/ws-ticket";
+
+export interface WsTicket {
+  ticket: string;
+  /** Milliseconds from issue until the ticket stops being redeemable. */
+  expiresInMs: number;
+}
+
+/** Close codes the bridge sends so the UI can distinguish causes. */
+export const WS_CLOSE_DAEMON_DISCONNECTED = 4001; // daemon-side socket closed; reconnect when healthy
+export const WS_CLOSE_BACKPRESSURE_OVERFLOW = 4002; // a side stopped draining; reconnect fresh

@@ -10,6 +10,7 @@ import { BrowserWindow } from "electrobun/bun";
 import { join } from "node:path";
 import { ensureDaemon, type DaemonHandle } from "./daemon-manager.ts";
 import { startUiServer } from "./ui-server.ts";
+import { createWsBridge } from "./ws-bridge.ts";
 import type { DaemonInfo } from "../shared/app-contract.ts";
 
 const APP_VERSION = "0.1.0";
@@ -32,7 +33,10 @@ async function main(): Promise<void> {
   };
   const handle: DaemonHandle = { info: pendingInfo, token: "" };
 
-  const ui = startUiServer({ assetsDir, daemon: handle, appVersion: APP_VERSION });
+  // The bridge holds the same mutable handle: connections opened after
+  // adoption resolves pick up the real baseUrl/token automatically.
+  const wsBridge = createWsBridge(handle);
+  const ui = startUiServer({ assetsDir, daemon: handle, appVersion: APP_VERSION, wsBridge });
   console.log(`[goodvibes-app] UI server at ${ui.url}`);
 
   const win = new BrowserWindow({

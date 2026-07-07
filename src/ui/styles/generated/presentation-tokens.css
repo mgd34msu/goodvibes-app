@@ -1,0 +1,62 @@
+/*
+ * GENERATED FILE — DO NOT EDIT BY HAND.
+ * Produced by scripts/generate-presentation-tokens.ts from the SDK
+ * presentation contract (the platform presentation subpath of
+ * @pellux/goodvibes-sdk — the same tables the TUI, agent and webui render
+ * through, so states look identical across surfaces).
+ *
+ * This is a layer SEPARATE from src/ui/styles/tokens.css: tokens.css owns
+ * this app's own brand palette / layout / motion tokens; this file owns
+ * only the values the SDK contract actually defines — status glyphs and
+ * the state tone-color table.
+ *
+ * Regenerate: `bun run generate:presentation`.
+ * Verify (no write): `bun run generate:check` — wired into `bun run verify`,
+ * so a contract change that was not regenerated fails verification.
+ */
+
+:root {
+  /* Status glyphs — GLYPHS.status, quoted for `content:` use. All keys are
+   * emitted for parity with the TS mirror (one snapshot, not a hand-picked
+   * subset) so a component reaching for a more specific glyph than the
+   * 4-bucket STATE_GLYPHS alias never has to regenerate first. */
+  --contract-glyph-success: "✓";
+  --contract-glyph-failure: "✕";
+  --contract-glyph-pending: "•";
+  --contract-glyph-active: "●";
+  --contract-glyph-idle: "◌";
+  --contract-glyph-info: "○";
+  --contract-glyph-warn: "⚠";
+  --contract-glyph-blocked: "⊘";
+  --contract-glyph-skipped: "◇";
+  --contract-glyph-review: "◈";
+  --contract-glyph-retry: "↻";
+  --contract-glyph-handoff: "⇢";
+  --contract-glyph-reference: "↗";
+  --contract-glyph-partial: "◐";
+  --contract-glyph-dual-pane: "◆";
+  --contract-glyph-star: "★";
+
+  /* State tone colors — TONE_TOKENS.state (dark / default). Tint the glyph
+   * itself, never a component's overall background/text color: the app's own
+   * palette (tokens.css) is not repainted onto the contract's colors —
+   * glyphs, not colors, are the cross-surface parity mechanism. */
+  --contract-state-info: #38bdf8;
+  --contract-state-good: #22c55e;
+  --contract-state-warn: #f59e0b;
+  --contract-state-bad: #ef4444;
+  --contract-state-blocked: #f97316;
+  --contract-state-active: #60a5fa;
+  --contract-state-reasoning: #a855f7;
+}
+
+/* State tone colors — light-mode override (resolveTones('light')). */
+:root[data-theme="light"] {
+  --contract-state-info: #0369a1;
+  --contract-state-good: #22c55e;
+  --contract-state-warn: #f59e0b;
+  --contract-state-bad: #ef4444;
+  --contract-state-blocked: #f97316;
+  --contract-state-active: #60a5fa;
+  --contract-state-reasoning: #7c3aed;
+}
