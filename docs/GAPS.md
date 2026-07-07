@@ -298,7 +298,7 @@ evidence found; stated plainly, no inference.
 | 2 | Provider detail + usage | SHIPPED | `ProvidersView.tsx:110,115` → `gv.providers.get`/`.usage` |
 | 3 | Accounts snapshot (route posture, fallback risk) | SHIPPED | `AccountsPanel.tsx:52` → `gv.accounts.snapshot()` |
 | 4 | Model workspace: multi-target routes | SHIPPED | `ModelWorkspaceModal.tsx:80,85,128` → `providers.list` + `config.get/.set` |
-| 5 | Model catalog (models.dev, 4000+ models, tiers) | MISSING | `model-catalog.ts` derives its model list entirely from the daemon's own `providers.list` response (`modelsFromProvidersResponse`, line 162) — there is no separate models.dev fetch, no 24h-TTL cache, and no `~/.goodvibes/tui/model-catalog.json` shared-store reuse anywhere in `src/bun` or `src/ui` |
+| 5 | Model catalog (models.dev, 4000+ models, tiers) | SHIPPED (Wave E) | `providers/model-dev-catalog.ts` (models.dev api.json fetch, 24h localStorage TTL, manual refresh) + `ModelCatalogPanel.tsx` (browse/search/filter by provider/modality/tier, offline fallback to providers.list with honest note), mounted in `ModelWorkspaceModal.tsx:308` |
 | 6 | Synthetic failover posture display | MISSING | zero references to "failover" anywhere in `src/ui/views/providers/` |
 | 7 | Credential status (secret-free) | SHIPPED | `CredentialStatusPanel.tsx:45` → `gv.config.credentials()` (cross-referenced in §20 correction above) |
 | 8 | Custom provider JSON management | MISSING | zero references to `~/.goodvibes/tui/providers/*.json` or a custom-provider editor anywhere in `src/ui/views/providers/` |
@@ -308,7 +308,7 @@ evidence found; stated plainly, no inference.
 | 12 | Reasoning effort defaults | SHIPPED | shared with §1 row 12 — `gv.config.set({key:"provider.reasoningEffort"})` |
 | 13 | Pin/unpin favorite models | SHIPPED | `favorites.ts:34,38` `isFavoriteModel`/`toggleFavoriteModel`, localStorage-backed |
 
-**Section 14 tally: 8 shipped, 1 partial, 4 missing.**
+**Section 14 tally: 9 shipped, 1 partial, 3 missing.**
 
 ## 15. Coding / Dev (12 rows)
 
@@ -526,7 +526,7 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
 | — | **Total** | **247** | **20** | **20** | **1** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **86.1% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **86.5% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
 
 ## Top 10 gaps by user impact (post-Wave-E)
 
@@ -535,7 +535,7 @@ Documents review-packets, chat conveniences, delivery receipts, onboarding flow,
 worktree/WRFC badges). The remaining and newly-surfaced gaps, ranked by how much a real user
 would notice and be blocked or misled:
 
-1. **Provider/model catalog is not a real catalog (§14 row 5), and the provider surface has three more holes around it (§14 rows 6/8/9).** No models.dev fetch, no 4000+-model tier browsing, no 24h cache; plus no synthetic-failover posture, no custom-provider JSON editor, and no opt-in local-LLM server scan. Power users managing models lose the whole browsing/comparison experience.
+1. **Provider surface has three holes around the (now shipped) catalog (§14 rows 6/8/9).** No synthetic-failover posture display, no custom-provider JSON editor, and no opt-in local-LLM server scan. (The models.dev catalog itself SHIPPED in Wave E — this entry previously overcounted.)
 2. **GitHub integration is UI-only / degraded (§15 row 11).** Wave E built a complete, capability-honest `GitHubPanel`, but **no `github.*` method exists in the route table**, so on every known daemon it renders Unavailable. The device-flow/PR/issue experience is wired but has nothing live to talk to.
 3. **Two read-only Coding/Dev snapshot tiles are absent (§15 rows 8, 12).** `intelligence.snapshot` (LSP/tree-sitter posture) and `review.snapshot` are declared on the wire but no tile invokes them.
 4. **OS service lifecycle is unwired (§20 row 8).** `services.install/.start/.stop/.restart/.uninstall/.status` have no UI — a user wanting the daemon to run as a managed OS service has no in-app control.
