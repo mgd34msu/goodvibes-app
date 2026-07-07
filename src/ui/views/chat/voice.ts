@@ -493,19 +493,57 @@ export const ttsEngine = new TtsEngine();
 
 const DEFAULT_TTS_FORMAT = "mp3";
 
+/** base64 → ArrayBuffer for the one-shot voice.tts JSON response (its audio
+ * comes back as {mimeType,format,dataBase64}, not raw bytes like the stream
+ * route — no shared decoder exists in lib/, so this stays local). */
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+/** One-shot voice.tts fallback (docs/GAPS.md §18 row 1): probed live against
+ * a daemon where the only configured TTS provider (Microsoft Edge) reports
+ * capabilities ["tts"] with no "tts-stream" — calling voice.tts.stream for
+ * it returns a 409 PROVIDER_NOT_CONFIGURED ("Voice streaming TTS provider is
+ * unavailable: microsoft"), never a clean 404/501, so the fallback triggers
+ * on ANY non-ok stream response, not just method-unavailable ones. The
+ * one-shot route DOES work for that same provider and returns the full
+ * audio as base64 JSON — decoded here into the same ArrayBuffer shape the
+ * WebAudioSink already expects, so it drops into the existing playback
+ * pipeline unchanged. */
+async function synthSegmentOneShot(text: string, signal: AbortSignal): Promise<ArrayBuffer> {
+  const result = await gv.voice.tts({ text, format: DEFAULT_TTS_FORMAT });
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  const audio = asRecord(asRecord(result)["audio"]);
+  const dataBase64 = audio["dataBase64"];
+  if (typeof dataBase64 !== "string" || !dataBase64) {
+    throw new Error("voice.tts did not return audio data.");
+  }
+  return base64ToArrayBuffer(dataBase64);
+}
+
 async function synthSegment(text: string, signal: AbortSignal): Promise<ArrayBuffer> {
   const path = gv.voice.ttsStreamPath();
-  const res = await appFetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text, format: DEFAULT_TTS_FORMAT }),
-    signal,
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new HttpError(res.status, path, body);
+  try {
+    const res = await appFetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, format: DEFAULT_TTS_FORMAT }),
+      signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new HttpError(res.status, path, body);
+    }
+    return await res.arrayBuffer();
+  } catch (error) {
+    if (signal.aborted) throw error;
+    // Stream route unavailable for the active provider — fall back to the
+    // one-shot route rather than skipping the segment outright.
+    return synthSegmentOneShot(text, signal);
   }
-  return res.arrayBuffer();
 }
 
 export interface UseTtsResult {

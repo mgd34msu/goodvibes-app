@@ -39,6 +39,9 @@ import { toggleFavoriteModel, useFavoriteModels } from "./favorites.ts";
 import { CredentialStatusPanel } from "./CredentialStatusPanel.tsx";
 import { AccountsPanel } from "./AccountsPanel.tsx";
 import { ModelWorkspaceModal } from "./ModelWorkspaceModal.tsx";
+import { FailoverPostureCard } from "./FailoverPostureCard.tsx";
+import { CustomProvidersPanel } from "./CustomProvidersPanel.tsx";
+import { LlmScanPanel } from "./LlmScanPanel.tsx";
 
 // ── Provider list (record rows with HONEST freshness pills) ──────────────────
 
@@ -81,6 +84,12 @@ export function ProvidersView() {
   const [modelWorkspaceOpen, setModelWorkspaceOpen] = useState(false);
   const [pendingMainModel, setPendingMainModel] = useState<CatalogModel | null>(null);
   const favorites = useFavoriteModels();
+  // Local LLM scan → "use as custom provider" hands off a prefill to the
+  // custom-provider editor below it (docs/GAPS.md §14 rows 8/9).
+  const [customProviderPrefill, setCustomProviderPrefill] = useState<{
+    suggestedFile: string;
+    json: Record<string, unknown>;
+  } | null>(null);
 
   const providers = useQuery({
     queryKey: queryKeys.providers,
@@ -490,6 +499,14 @@ export function ProvidersView() {
 
           <CredentialStatusPanel selectedProviderId={selectedId} />
           <AccountsPanel />
+          <FailoverPostureCard />
+          <LlmScanPanel
+            onUseAsCustomProvider={(suggestedFile, json) => setCustomProviderPrefill({ suggestedFile, json })}
+          />
+          <CustomProvidersPanel
+            prefill={customProviderPrefill}
+            onPrefillConsumed={() => setCustomProviderPrefill(null)}
+          />
         </section>
       </ErrorBoundary>
 

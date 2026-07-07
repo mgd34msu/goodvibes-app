@@ -4,17 +4,31 @@
 // admin-scoped; the destructive ones go through ConfirmSurface (the delete
 // methods' input schemas are additionalProperties:false, so the confirm
 // metadata stays a client-side gate rather than a wire field).
+//
+// docs/GAPS.md §20 row 2 (PARTIAL → login form): the route table's exact id
+// for interactive login is `control.auth.login` (POST /login, public access)
+// — NOT any `local_auth.*` id, despite the row's docs/FEATURES.md phrasing;
+// confirmed by reading operator-contract.json's method list directly. Its
+// outputSchema returns {authenticated, token, username, expiresAt}, but
+// ui-server.ts's proxy unconditionally overwrites every outbound
+// Authorization header with this app's own companion bearer token — so a
+// token this form receives can never actually be applied to this app's own
+// subsequent requests. The form below still calls the real method and shows
+// its real result (verification, not theater), with that architectural
+// limit stated plainly rather than implied.
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, RefreshCw, ShieldCheck, UserPlus } from "lucide-react";
+import { KeyRound, LogIn, RefreshCw, ShieldCheck, UserPlus } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
+import { queryKeys } from "../../lib/queries.ts";
 import { formatError, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
 import { asArray, asRecord, firstNumber, firstString } from "../../lib/wire.ts";
 import { useToast } from "../../lib/toast.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { Modal } from "../../components/Modal.tsx";
+import { principalFrom } from "../onboarding/checks.ts";
 import { settingsKeys, SETTINGS_POLL_MS } from "./settings-queries.ts";
 
 interface LocalUser {
@@ -131,6 +145,8 @@ export function LocalAuthSection() {
           </button>
         </span>
       </div>
+
+      <LoginCard />
 
       {status.isPending && <SkeletonBlock variant="text" lines={4} />}
 
@@ -293,6 +309,113 @@ export function LocalAuthSection() {
         onConfirm={() => deleteBootstrap.mutate()}
       />
     </section>
+  );
+}
+
+// ─── Login (verify-only) ──────────────────────────────────────────────────
+
+interface LoginResult {
+  username: string;
+  expiresAt: number | undefined;
+  token: string;
+}
+
+function LoginCard() {
+  const { toast } = useToast();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [result, setResult] = useState<LoginResult | null>(null);
+
+  const current = useQuery({
+    queryKey: queryKeys.authCurrent,
+    queryFn: () => gv.control.authCurrent(),
+    retry: false,
+  });
+  const currentPrincipal = current.isSuccess ? principalFrom(current.data) : "";
+
+  const login = useMutation({
+    mutationFn: () => gv.invoke<{ authenticated: boolean; token: string; username: string; expiresAt: number }>(
+      "control.auth.login",
+      { body: { username: username.trim(), password } },
+    ),
+    onSuccess: (data) => {
+      setResult({ username: data.username, expiresAt: data.expiresAt, token: data.token });
+      setPassword("");
+      toast({ title: "Credentials verified", description: `"${data.username}" authenticated.`, tone: "success" });
+    },
+    onError: (error: unknown) => {
+      setResult(null);
+      toast({ title: "Login failed", description: formatError(error), tone: "danger" });
+    },
+  });
+
+  const loginUnavailable = login.isError && isMethodUnavailableError(login.error);
+
+  function handleSubmit(event: FormEvent): void {
+    event.preventDefault();
+    if (!username.trim() || !password || login.isPending) return;
+    login.mutate();
+  }
+
+  return (
+    <div className="settings-auth__login-card" aria-label="Username/password login">
+      <h3 className="settings-auth__subhead">
+        <LogIn size={14} aria-hidden="true" /> Sign in
+      </h3>
+      <p className="settings-auth__login-honest-note">
+        This desktop app normally authenticates through a proxy-injected companion token — you are never signed
+        out of it from here. This form calls the daemon's real <code>control.auth.login</code> (username/password)
+        for daemons that also serve interactive login to other clients; a successful result verifies the
+        credentials but cannot change which principal <em>this app's own</em> requests use, since the proxy
+        always injects the companion token instead.
+      </p>
+      <p className="settings-auth__login-honest-note">
+        Current principal (companion token): <strong>{currentPrincipal || (current.isPending ? "checking…" : "unknown")}</strong>
+      </p>
+
+      {loginUnavailable && (
+        <UnavailableState capability="control.auth.login" description="interactive login is not served by this daemon." />
+      )}
+
+      {!loginUnavailable && (
+        <form className="settings-auth__form" onSubmit={handleSubmit}>
+          <label>
+            Username
+            <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" spellCheck={false} />
+          </label>
+          <label>
+            Password
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          </label>
+          <div className="settings-auth__form-actions">
+            {result && (
+              <button
+                type="button"
+                onClick={() => {
+                  setResult(null);
+                  setUsername("");
+                }}
+              >
+                Clear
+              </button>
+            )}
+            <button type="submit" className="settings-auth__primary" disabled={!username.trim() || !password || login.isPending}>
+              {login.isPending ? "Signing in…" : "Sign in"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {result && (
+        <div className="settings-auth__login-result" role="status">
+          <span>
+            Verified as <strong>{result.username}</strong>
+            {result.expiresAt !== undefined ? ` · session expires ${new Date(result.expiresAt).toLocaleString()}` : ""}
+          </span>
+          <span>Session token issued (not applied to this app's own requests — see note above).</span>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -92,6 +92,15 @@
   cursor: not-allowed;
 }
 
+/* ── Learning-review triage buckets (docs/GAPS.md §8 row 12) ─────────── */
+
+.memory-triage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
 /* ── Search bar ──────────────────────────────────────────────── */
 
 .memory-search {

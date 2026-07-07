@@ -436,3 +436,200 @@
 .research-run-detail__delete:hover {
   border-color: var(--status-danger);
 }
+
+/* ── Status selector, checkpoints, findings log (resumable runs) ───── */
+
+.research-run-detail__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.research-run-detail__status select {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.research-run-detail__checkpoint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.research-run-detail__checkpoint form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.research-run-detail__checkpoint input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-xs);
+}
+
+.research-run-detail__checkpoint form button {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.research-run-detail__checkpoint form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.research-run-detail__checkpoint-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.research-run-detail__checkpoint-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.research-run-detail__checkpoint-time {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.research-run-detail__log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.research-run-detail__log-title {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.research-run-detail__log-tail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 160px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.research-run-detail__log-tail li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.research-run-detail__log-time {
+  flex: none;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* ── URL inspection drawer (usePeek content) ─────────────────────────── */
+
+.research-inspect {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.research-inspect__title {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.research-inspect__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.research-inspect__facts dt {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.research-inspect__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.research-inspect__excerpt {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.research-inspect__error {
+  margin: 0;
+  color: var(--status-danger);
+  font-size: var(--text-sm);
+}
+
+.research-inspect__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.research-inspect__add {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--accent-muted);
+  color: var(--text-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}

@@ -1,8 +1,10 @@
 // Refine tab: gap-refinement runs (knowledge.refinement.run — admin, kicks
 // off daemon-side search + ingest, so it is confirm-gated), the refinement
-// task list with per-task cancel, and the consolidation candidates review
-// surface (knowledge.candidates.list / candidate.decide) — accept / reject /
-// supersede are explicit per-row decisions, never auto-applied.
+// task list with per-task cancel PLUS a single-task detail peek
+// (knowledge.refinement.task.get — docs/GAPS.md §6 row 17), and the
+// consolidation candidates review surface (knowledge.candidates.list /
+// candidate.decide) — accept / reject / supersede are explicit per-row
+// decisions, never auto-applied.
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +13,7 @@ import { invoke } from "../../lib/gv.ts";
 import { firstNumber, firstString } from "../../lib/wire.ts";
 import { formatError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { usePeek } from "../../components/PeekPanel.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
 import { EmptyState } from "../../components/feedback.tsx";
@@ -23,6 +26,7 @@ type Decision = "accept" | "reject" | "supersede";
 
 function RefinementSection({ active }: { active: boolean }) {
   const queryClient = useQueryClient();
+  const peek = usePeek();
   const { toast } = useToast();
   const [limit, setLimit] = useState("10");
   const [force, setForce] = useState(false);
@@ -126,6 +130,15 @@ function RefinementSection({ active }: { active: boolean }) {
                   <strong>{title}</strong>
                   <StatusBadge value={state} />
                 </span>
+                {id && (
+                  <button
+                    type="button"
+                    className="knowledge-button"
+                    onClick={() => peek.open({ title, content: <RefinementTaskDetailPeek taskId={id} /> })}
+                  >
+                    Details
+                  </button>
+                )}
                 {cancellable && id && (
                   <button
                     type="button"
@@ -152,6 +165,26 @@ function RefinementSection({ active }: { active: boolean }) {
         onCancel={() => setConfirmOpen(false)}
       />
     </section>
+  );
+}
+
+function RefinementTaskDetailPeek({ taskId }: { taskId: string }) {
+  const task = useQuery({
+    queryKey: kKeys.refinementTaskDetail(taskId),
+    queryFn: () => invoke("knowledge.refinement.task.get", { params: { id: taskId } }),
+  });
+  return (
+    <div className="knowledge-peek-body">
+      <QueryStates
+        query={task}
+        capability="knowledge.refinement.task.get"
+        unavailableDescription="refinement task details cannot be loaded."
+        isEmpty={false}
+        empty={null}
+      >
+        <DataBlock title="Refinement task" value={task.data} open />
+      </QueryStates>
+    </div>
   );
 }
 

@@ -21,6 +21,8 @@ export const settingsKeys = {
   credentials: ["credentials-status"] as const,
   /** Capability probes (settings surface). */
   capability: (methodId: string) => ["capability", methodId] as const,
+  /** channels.actions.list — probed for a registered ntfy/webhook test action. */
+  channelActions: ["settings-notification-targets", "channel-actions"] as const,
 } as const;
 
 /** No wire events exist for these domains — targeted poll cadence (ms). */

@@ -16,6 +16,15 @@ import {
   validateCron,
 } from "./cron.ts";
 import { formatAbsolute, formatRelative, humanizeMs } from "./automation-model.ts";
+import { DeliveryPicker } from "./DeliveryPicker.tsx";
+import {
+  deliveryPolicyIsConfigured,
+  deliveryPolicyProblem,
+  deliveryPolicyToWire,
+  emptyDeliveryPolicy,
+  type DeliveryPolicyDraft,
+} from "./delivery-targets.ts";
+import { compactJson } from "../../lib/wire.ts";
 
 export type ScheduleKind = "cron" | "every" | "at";
 
@@ -59,6 +68,8 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
   const [model, setModel] = useState("");
   const [timeoutMinutes, setTimeoutMinutes] = useState("");
   const [enabled, setEnabled] = useState(true);
+  const [deliveryDraft, setDeliveryDraft] = useState<DeliveryPolicyDraft>(emptyDeliveryPolicy);
+  const [deliveryRawMode, setDeliveryRawMode] = useState(false);
   const [deliveryJson, setDeliveryJson] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -88,12 +99,27 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
 
   let deliveryProblem: string | null = null;
   let delivery: unknown;
-  if (deliveryJson.trim()) {
-    try {
-      delivery = JSON.parse(deliveryJson);
-    } catch {
-      deliveryProblem = "Delivery must be valid JSON (or empty).";
+  if (deliveryRawMode) {
+    if (deliveryJson.trim()) {
+      try {
+        delivery = JSON.parse(deliveryJson);
+      } catch {
+        deliveryProblem = "Delivery must be valid JSON (or empty).";
+      }
     }
+  } else {
+    deliveryProblem = deliveryPolicyProblem(deliveryDraft);
+    if (!deliveryProblem && deliveryPolicyIsConfigured(deliveryDraft)) {
+      delivery = deliveryPolicyToWire(deliveryDraft);
+    }
+  }
+
+  /** Switching to raw JSON hands the structured draft over verbatim so nothing typed so far is lost. */
+  function toggleDeliveryRawMode(): void {
+    if (!deliveryRawMode && !deliveryJson.trim() && deliveryPolicyIsConfigured(deliveryDraft)) {
+      setDeliveryJson(compactJson(deliveryPolicyToWire(deliveryDraft)));
+    }
+    setDeliveryRawMode((v) => !v);
   }
 
   const timeoutProblem =
@@ -302,18 +328,31 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
               {timeoutProblem}
             </p>
           )}
-          <label className="schedule-form__field" htmlFor={`${uid}-delivery`}>
-            <span>Delivery policy JSON (optional — daemon-defined surface targets)</span>
-            <textarea
-              id={`${uid}-delivery`}
-              rows={3}
-              value={deliveryJson}
-              onChange={(e) => setDeliveryJson(e.target.value)}
-              spellCheck={false}
-              placeholder='{"targets":[{"kind":"slack","channel":"#ops"}]}'
-              className="schedule-form__mono"
-            />
-          </label>
+          <div className="schedule-form__delivery">
+            <div className="schedule-form__delivery-head">
+              <span>Delivery (optional — where results get sent when a run finishes)</span>
+              <button type="button" className="schedule-form__advanced-toggle" onClick={toggleDeliveryRawMode}>
+                {deliveryRawMode ? "Use structured picker" : "Advanced: edit raw JSON"}
+              </button>
+            </div>
+
+            {deliveryRawMode ? (
+              <label className="schedule-form__field" htmlFor={`${uid}-delivery`}>
+                <span>Delivery policy JSON</span>
+                <textarea
+                  id={`${uid}-delivery`}
+                  rows={4}
+                  value={deliveryJson}
+                  onChange={(e) => setDeliveryJson(e.target.value)}
+                  spellCheck={false}
+                  placeholder='{"mode":"surface","targets":[{"kind":"surface","surfaceKind":"slack","address":"#ops"}],"fallbackTargets":[],"includeSummary":true,"includeTranscript":false,"includeLinks":true}'
+                  className="schedule-form__mono"
+                />
+              </label>
+            ) : (
+              <DeliveryPicker draft={deliveryDraft} onChange={setDeliveryDraft} />
+            )}
+          </div>
           {deliveryProblem && (
             <p className="schedule-form__problem" role="alert">
               {deliveryProblem}

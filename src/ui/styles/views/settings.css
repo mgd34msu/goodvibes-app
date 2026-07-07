@@ -1258,3 +1258,84 @@
     outline: 2px solid var(--accent);
   }
 }
+
+/* ── Notification targets (ntfy/webhook) — GAPS.md §19 row 14 ───────────── */
+
+.settings-notify-targets__note {
+  margin: 0 0 var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-notify-targets__note code {
+  color: var(--text-accent);
+}
+
+.settings-notify-targets__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.settings-notify-targets__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-notify-targets__card-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-notify-targets__test-hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-notify-targets__local-note {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  background: var(--status-info-soft);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+/* ── Local-auth login form (GAPS.md §20 row 2) ──────────────────────────── */
+
+.settings-auth__login-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-auth__login-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--status-success-soft);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.settings-auth__login-honest-note {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}

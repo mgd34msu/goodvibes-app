@@ -15,7 +15,7 @@
 // the review queue polls every 30s and every mutation invalidates the
 // ["memory"] prefix, which refetches list + open peeks + queue + admin.
 
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Database, Download, RefreshCw, Search, Upload } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
@@ -37,7 +37,11 @@ import {
   downloadJson,
   extractBundle,
   filtersToBody,
+  findDuplicateRecordIds,
+  isLowConfidenceRecord,
+  isStaleRecord,
   memoryKeys,
+  REVIEW_TRIAGE_LABELS,
   parseImportCounts,
   parseMemoryRecords,
   parseRecordEntity,
@@ -46,6 +50,7 @@ import {
   splitTags,
   type MemoryFilters,
   type MemoryRecord,
+  type ReviewTriageBucket,
 } from "./memory-wire.ts";
 import { asRecord } from "../../lib/wire.ts";
 
@@ -89,6 +94,10 @@ function MemoryViewInner() {
   const [deleteTarget, setDeleteTarget] = useState<MemoryRecord | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Learning-review triage bucket (docs/GAPS.md §8 row 12, memory-side half):
+  // a client-side lens over the SAME review-queue data, no new wire verb.
+  const [triageBucket, setTriageBucket] = useState<ReviewTriageBucket>("all");
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -218,6 +227,32 @@ function MemoryViewInner() {
       toast({ title: "Import failed", description: formatError(error), tone: "danger" });
     },
   });
+
+  // Triage buckets over the review queue (client-side; the duplicate
+  // heuristic only sees whatever page memory.review-queue returned).
+  const reviewRecords = reviewQueue.data ?? [];
+  const duplicateIds = useMemo(() => findDuplicateRecordIds(reviewRecords), [reviewRecords]);
+  const triageCounts = useMemo(
+    () => ({
+      all: reviewRecords.length,
+      stale: reviewRecords.filter(isStaleRecord).length,
+      "low-confidence": reviewRecords.filter(isLowConfidenceRecord).length,
+      duplicates: duplicateIds.size,
+    }),
+    [reviewRecords, duplicateIds],
+  );
+  const filteredReviewRecords = useMemo(() => {
+    switch (triageBucket) {
+      case "stale":
+        return reviewRecords.filter(isStaleRecord);
+      case "low-confidence":
+        return reviewRecords.filter(isLowConfidenceRecord);
+      case "duplicates":
+        return reviewRecords.filter((r) => duplicateIds.has(r.id));
+      default:
+        return reviewRecords;
+    }
+  }, [reviewRecords, triageBucket, duplicateIds]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
@@ -485,8 +520,25 @@ function MemoryViewInner() {
               <h2>Review queue</h2>
               {reviewQueue.isSuccess && <span className="badge neutral">{reviewQueue.data.length}</span>}
             </div>
+            {reviewQueue.isSuccess && reviewQueue.data.length > 0 && (
+              <div className="memory-triage" role="group" aria-label="Review queue triage filter">
+                {REVIEW_TRIAGE_LABELS.map(([bucket, label]) => (
+                  <button
+                    key={bucket}
+                    type="button"
+                    className={
+                      triageBucket === bucket ? "memory-chip-button memory-chip-button--active" : "memory-chip-button"
+                    }
+                    aria-pressed={triageBucket === bucket}
+                    onClick={() => setTriageBucket(bucket)}
+                  >
+                    {label} ({triageCounts[bucket]})
+                  </button>
+                ))}
+              </div>
+            )}
             <ReviewQueuePanel
-              records={reviewQueue.data ?? []}
+              records={filteredReviewRecords}
               isPending={reviewQueue.isPending}
               error={reviewQueue.error}
               onRetry={() => void reviewQueue.refetch()}

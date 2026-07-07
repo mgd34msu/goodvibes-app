@@ -10,17 +10,18 @@
 // Realtime: the runs registry is app-local with no wire events — a 30s
 // refetchInterval keeps other-window edits visible. Web search is on-demand.
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FlaskConical, Globe, Search } from "lucide-react";
+import { FlaskConical, Globe, Search, SearchCheck } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
-import { formatError, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
+import { formatError, errorCode, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
 import { asRecord, firstString, formatRelative, type AnyRecord } from "../../lib/wire.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
+import { usePeek } from "../../components/PeekPanel.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import {
   base64FromText,
@@ -29,10 +30,15 @@ import {
   CREDIBILITY_LEVELS,
   credibilityFrom,
   deleteRun,
+  fetchUrlPreview,
   listRuns,
+  makeLogEntry,
+  rawWithCheckpoint,
   rawWithFindings,
+  rawWithLog,
   reportFilename,
   researchKeys,
+  RUN_STATUSES,
   runFrom,
   searchProvidersFrom,
   searchResultsFrom,
@@ -40,6 +46,7 @@ import {
   type Credibility,
   type ResearchRun,
   type SearchResult,
+  type UrlPreview,
 } from "./research-data.ts";
 
 /** The app-local registry service answering 404/501 means the collection is
@@ -51,6 +58,104 @@ function isRegistryUnavailable(error: unknown): boolean {
 
 const SEARCH_INPUT_ID = "research-web-search-input";
 const NEW_RUN_INPUT_ID = "research-new-run-input";
+
+// ─── URL inspection drawer (docs/GAPS.md §10 row 7) ──────────────────────────
+
+interface InspectTarget {
+  url: string;
+  title: string;
+  source: string;
+}
+
+function InspectContent({
+  target,
+  onAddAsFinding,
+}: {
+  target: InspectTarget;
+  onAddAsFinding: (preview: UrlPreview) => void;
+}) {
+  const previewQuery = useQuery({
+    queryKey: researchKeys.inspect(target.url),
+    queryFn: () => fetchUrlPreview(target.url),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  if (previewQuery.isPending) return <SkeletonBlock variant="text" lines={5} />;
+
+  if (previewQuery.isError) {
+    const code = errorCode(previewQuery.error);
+    return (
+      <div className="research-inspect">
+        <p className="research-inspect__error" role="alert">
+          {code === "LOCAL_FETCH_PRIVATE"
+            ? "Refused — this points at a localhost / private / link-local address, so the app will not fetch it."
+            : formatError(previewQuery.error)}
+        </p>
+        {code && <span className="badge bad">{code}</span>}
+        <button type="button" onClick={() => void previewQuery.refetch()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const preview = previewQuery.data;
+  return (
+    <div className="research-inspect">
+      {preview.title && <h3 className="research-inspect__title">{preview.title}</h3>}
+      <dl className="research-inspect__facts">
+        <dt>Final URL</dt>
+        <dd>
+          <a href={preview.finalUrl} target="_blank" rel="noreferrer">
+            {preview.finalUrl}
+          </a>
+        </dd>
+        <dt>Status</dt>
+        <dd>{preview.status || "—"}</dd>
+        <dt>Content type</dt>
+        <dd>{preview.contentType || "—"}</dd>
+      </dl>
+      <pre className="research-inspect__excerpt">{preview.textExcerpt || "(empty response body)"}</pre>
+      <div className="research-inspect__actions">
+        <button type="button" className="research-inspect__add" onClick={() => onAddAsFinding(preview)}>
+          Add as finding
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** usePeek()-backed drawer for POST /app/local/fetch-preview. Shared by both
+ * search results ("Inspect" on a result) and findings ("Inspect" on a
+ * finding already collected into a run). */
+function useUrlInspector(onAddAsFinding: (result: SearchResult) => void): {
+  inspect: (target: InspectTarget) => void;
+} {
+  const { open, close } = usePeek();
+  return {
+    inspect: (target: InspectTarget) => {
+      open({
+        title: "Inspect URL",
+        content: (
+          <InspectContent
+            target={target}
+            onAddAsFinding={(preview) => {
+              onAddAsFinding({
+                title: preview.title || target.title || target.url,
+                url: target.url,
+                snippet: preview.textExcerpt.slice(0, 240),
+                source: target.source || "inspected",
+                raw: {},
+              });
+              close();
+            }}
+          />
+        ),
+      });
+    },
+  };
+}
 
 export function ResearchView() {
   const [selectedRunId, setSelectedRunId] = useState("");
@@ -75,6 +180,12 @@ export function ResearchView() {
     retry: false,
   });
   const canPromote = ingestCapability.isSuccess ? ingestCapability.data : undefined;
+
+  // URL inspection (docs/GAPS.md §10 row 7) — a shared peek-panel drawer,
+  // wired from both the search results list and any run's findings list.
+  // Its "Add as finding" shortcut feeds the same CollectModal used by
+  // "Collect into run" below.
+  const { inspect } = useUrlInspector((result) => setCollectTarget(result));
 
   // Palette commands live only while the view is mounted.
   useEffect(() => {
@@ -103,6 +214,7 @@ export function ResearchView() {
       <WebSearchSection
         onCollect={(result) => setCollectTarget(result)}
         onPromote={(result) => setPromoteTarget({ url: result.url, title: result.title })}
+        onInspect={(result) => inspect({ url: result.url, title: result.title, source: result.source })}
         onQueryChange={setLastQuery}
         canPromote={canPromote}
       />
@@ -112,6 +224,7 @@ export function ResearchView() {
         selectedRun={selectedRun}
         onSelect={(id) => setSelectedRunId((current) => (current === id ? "" : id))}
         onPromote={(finding) => setPromoteTarget({ url: finding.url, title: finding.title })}
+        onInspect={(finding: { url: string; title: string }) => inspect({ url: finding.url, title: finding.title, source: "" })}
         canPromote={canPromote}
       />
       <CollectModal
@@ -134,11 +247,13 @@ export function ResearchView() {
 function WebSearchSection({
   onCollect,
   onPromote,
+  onInspect,
   onQueryChange,
   canPromote,
 }: {
   onCollect: (result: SearchResult) => void;
   onPromote: (result: SearchResult) => void;
+  onInspect: (result: SearchResult) => void;
   onQueryChange: (query: string) => void;
   canPromote: boolean | undefined;
 }) {
@@ -259,6 +374,14 @@ function WebSearchSection({
                     {result.snippet && <p className="research-result__snippet">{result.snippet}</p>}
                     <div className="research-result__meta">
                       {result.source && <span className="badge neutral">{result.source}</span>}
+                      <button
+                        type="button"
+                        className="research-result__action"
+                        onClick={() => onInspect(result)}
+                        title="Fetch a read-only preview of this URL"
+                      >
+                        <SearchCheck size={12} aria-hidden="true" /> Inspect
+                      </button>
                       <button type="button" className="research-result__action" onClick={() => onCollect(result)}>
                         Collect into run
                       </button>
@@ -344,12 +467,21 @@ function CollectModal({
           question: question.trim() || result.title,
           status: "open",
           findings: [finding],
+          log: [
+            makeLogEntry("status", "Run created (open)"),
+            makeLogEntry("finding", `Collected “${result.title}” from ${result.source || "web search"}`),
+          ],
         });
         return firstString(created, ["id"]);
       }
       const run = runs.find((r) => r.id === runChoice);
       if (!run) throw new Error("Selected run no longer exists");
-      await updateRun(run.id, { ...run.raw, findings: [...run.findings.map((f) => f.raw), finding] });
+      const existingLog = Array.isArray(run.raw["log"]) ? run.raw["log"] : [];
+      await updateRun(run.id, {
+        ...run.raw,
+        findings: [...run.findings.map((f) => f.raw), finding],
+        log: [...existingLog, makeLogEntry("finding", `Collected “${result.title}” from ${result.source || "web search"}`)],
+      });
       return run.id;
     },
     onSuccess: async (runId) => {
@@ -504,6 +636,7 @@ function RunsSection({
   selectedRun,
   onSelect,
   onPromote,
+  onInspect,
   canPromote,
 }: {
   runsQuery: RunsQueryLike;
@@ -511,6 +644,7 @@ function RunsSection({
   selectedRun: ResearchRun | null;
   onSelect: (id: string) => void;
   onPromote: (finding: { url: string; title: string }) => void;
+  onInspect: (finding: { url: string; title: string }) => void;
   canPromote: boolean | undefined;
 }) {
   const queryClient = useQueryClient();
@@ -521,7 +655,8 @@ function RunsSection({
   const invalidate = () => queryClient.invalidateQueries({ queryKey: researchKeys.runs });
 
   const create = useMutation({
-    mutationFn: (question: string) => createRun({ question, status: "open", findings: [] }),
+    mutationFn: (question: string) =>
+      createRun({ question, status: "open", findings: [], log: [makeLogEntry("status", "Run created (open)")] }),
     onSuccess: async () => {
       setNewQuestion("");
       await invalidate();
@@ -616,7 +751,13 @@ function RunsSection({
                 </span>
               </button>
               {selectedRun?.id === run.id && (
-                <RunDetail run={selectedRun} onPromote={onPromote} canPromote={canPromote} onDelete={() => setDeleteTarget(run)} />
+                <RunDetail
+                  run={selectedRun}
+                  onPromote={onPromote}
+                  onInspect={onInspect}
+                  canPromote={canPromote}
+                  onDelete={() => setDeleteTarget(run)}
+                />
               )}
             </li>
           ))}
@@ -644,24 +785,57 @@ function RunsSection({
 function RunDetail({
   run,
   onPromote,
+  onInspect,
   canPromote,
   onDelete,
 }: {
   run: ResearchRun;
   onPromote: (finding: { url: string; title: string }) => void;
+  onInspect: (finding: { url: string; title: string }) => void;
   canPromote: boolean | undefined;
   onDelete: () => void;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [checkpointLabel, setCheckpointLabel] = useState("");
+  const logTailRef = useRef<HTMLOListElement>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: researchKeys.runs });
 
   const saveFindings = useMutation({
-    mutationFn: (findings: typeof run.findings) => updateRun(run.id, rawWithFindings(run, findings)),
+    mutationFn: (vars: { findings: typeof run.findings; logMessage: string }) =>
+      updateRun(run.id, rawWithFindings(run, vars.findings, makeLogEntry("finding", vars.logMessage))),
     onSuccess: () => invalidate(),
     onError: (error: unknown) => toast({ title: "Update failed", description: formatError(error), tone: "danger" }),
   });
+
+  // Status transitions (docs/GAPS.md §10 row 3) — every change is logged so
+  // the run's history reads as a timeline, not just a current value.
+  const changeStatus = useMutation({
+    mutationFn: (status: string) =>
+      updateRun(run.id, rawWithLog(run, { status }, makeLogEntry("status", `Status changed: ${run.status} → ${status}`))),
+    onSuccess: () => invalidate(),
+    onError: (error: unknown) => toast({ title: "Status update failed", description: formatError(error), tone: "danger" }),
+  });
+
+  // Checkpoint — snapshots the current findings into run.checkpoints without
+  // touching the live findings, so the run stays resumable from a known-good
+  // point even if later triage goes sideways.
+  const checkpoint = useMutation({
+    mutationFn: (label: string) => updateRun(run.id, rawWithCheckpoint(run, label)),
+    onSuccess: async () => {
+      setCheckpointLabel("");
+      await invalidate();
+      toast({ title: "Checkpoint saved", tone: "success" });
+    },
+    onError: (error: unknown) => toast({ title: "Checkpoint failed", description: formatError(error), tone: "danger" }),
+  });
+
+  // Auto-scroll the log tail to the bottom (newest last) whenever the log grows.
+  useEffect(() => {
+    const el = logTailRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [run.log.length]);
 
   // Report: composed client-side from triaged findings → artifacts.create,
   // then the run records reportArtifactId + status so every surface sees it.
@@ -678,7 +852,14 @@ function RunDetail({
       const artifactId =
         firstString(asRecord(record["artifact"]), ["id", "artifactId"]) || firstString(record, ["artifactId", "id"]);
       if (!artifactId) throw new Error("artifacts.create did not return an artifact id");
-      await updateRun(run.id, { ...run.raw, reportArtifactId: artifactId, status: "reported" });
+      await updateRun(
+        run.id,
+        rawWithLog(
+          run,
+          { reportArtifactId: artifactId, status: "reported" },
+          makeLogEntry("report", `Generated sourced report (artifact ${artifactId})`),
+        ),
+      );
       return artifactId;
     },
     onSuccess: async (artifactId) => {
@@ -694,16 +875,41 @@ function RunDetail({
   });
 
   function patchFinding(index: number, patch: Partial<{ note: string; credibility: Credibility }>): void {
+    const finding = run.findings[index];
     const next = run.findings.map((f, i) => (i === index ? { ...f, ...patch } : f));
-    saveFindings.mutate(next);
+    const field = "note" in patch ? "note" : "credibility";
+    saveFindings.mutate({ findings: next, logMessage: `Updated ${field} for “${finding?.title ?? finding?.url}”` });
   }
 
   function removeFinding(index: number): void {
-    saveFindings.mutate(run.findings.filter((_, i) => i !== index));
+    const finding = run.findings[index];
+    saveFindings.mutate({
+      findings: run.findings.filter((_, i) => i !== index),
+      logMessage: `Removed finding “${finding?.title ?? finding?.url}”`,
+    });
   }
 
   return (
     <div className="research-run-detail">
+      <div className="research-run-detail__status">
+        <label htmlFor={`run-status-${run.id}`}>Status</label>
+        <select
+          id={`run-status-${run.id}`}
+          value={RUN_STATUSES.includes(run.status as (typeof RUN_STATUSES)[number]) ? run.status : ""}
+          onChange={(e) => changeStatus.mutate(e.target.value)}
+          disabled={changeStatus.isPending}
+        >
+          {!RUN_STATUSES.includes(run.status as (typeof RUN_STATUSES)[number]) && (
+            <option value="">{run.status || "open"} (custom)</option>
+          )}
+          {RUN_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {run.findings.length === 0 ? (
         <p className="research-run-detail__empty">
           No findings yet — run a web search and use “Collect into run” to add triaged sources.
@@ -742,6 +948,9 @@ function RunDetail({
                 disabled={saveFindings.isPending}
               />
               <div className="research-finding__actions">
+                <button type="button" onClick={() => onInspect(finding)} title="Fetch a read-only preview of this URL">
+                  <SearchCheck size={12} aria-hidden="true" /> Inspect
+                </button>
                 <button
                   type="button"
                   onClick={() => onPromote(finding)}
@@ -783,6 +992,61 @@ function RunDetail({
         <button type="button" className="research-run-detail__delete" onClick={onDelete}>
           Delete run
         </button>
+      </div>
+
+      <div className="research-run-detail__checkpoint">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const label = checkpointLabel.trim() || `checkpoint ${run.checkpoints.length + 1}`;
+            if (!checkpoint.isPending) checkpoint.mutate(label);
+          }}
+        >
+          <input
+            type="text"
+            value={checkpointLabel}
+            onChange={(e) => setCheckpointLabel(e.target.value)}
+            placeholder={`Checkpoint label (default: checkpoint ${run.checkpoints.length + 1})`}
+            aria-label="Checkpoint label"
+            disabled={checkpoint.isPending}
+          />
+          <button type="submit" disabled={checkpoint.isPending || run.findings.length === 0}>
+            {checkpoint.isPending ? "Saving…" : "Checkpoint findings"}
+          </button>
+        </form>
+        {run.checkpoints.length > 0 && (
+          <ul className="research-run-detail__checkpoint-list" aria-label="Checkpoints">
+            {run.checkpoints
+              .slice()
+              .reverse()
+              .map((cp, i) => (
+                <li key={`${cp.label}-${cp.at ?? i}`}>
+                  <span className="badge neutral">{cp.label}</span>
+                  <span>
+                    {cp.findings.length} finding{cp.findings.length === 1 ? "" : "s"}
+                  </span>
+                  <span className="research-run-detail__checkpoint-time">{formatRelative(cp.at)}</span>
+                </li>
+              ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="research-run-detail__log">
+        <h4 className="research-run-detail__log-title">Findings log</h4>
+        {run.log.length === 0 ? (
+          <p className="research-run-detail__empty">No status transitions or edits logged yet.</p>
+        ) : (
+          <ol className="research-run-detail__log-tail" ref={logTailRef} aria-label="Run activity log">
+            {run.log.map((entry, index) => (
+              <li key={`${entry.type}-${index}`}>
+                <span className="research-run-detail__log-time">{formatRelative(entry.at)}</span>
+                <span className="badge neutral">{entry.type}</span>
+                <span>{entry.message}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </div>
   );

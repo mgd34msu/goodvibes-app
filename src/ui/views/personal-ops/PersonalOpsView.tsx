@@ -14,18 +14,24 @@ import { BriefingChips, useBriefing, type BriefingJumpTarget } from "./BriefingC
 import { EmailPanel } from "./EmailPanel.tsx";
 import { CalendarPanel } from "./CalendarPanel.tsx";
 import { RemindersPanel } from "./RemindersPanel.tsx";
+import { UnifiedInboxPanel } from "./UnifiedInboxPanel.tsx";
+import { ProjectContextPanel } from "./ProjectContextPanel.tsx";
 import { poKeys } from "./personal-ops-data.ts";
 
-type PersonalOpsTab = "inbox" | "calendar" | "reminders";
+type PersonalOpsTab = "inbox" | "unified" | "calendar" | "reminders" | "context";
 
 const TAB_LABELS: Record<PersonalOpsTab, string> = {
   inbox: "Inbox",
+  unified: "Unified Inbox",
   calendar: "Calendar",
   reminders: "Reminders",
+  context: "Project Context",
 };
 
 function tabFromFilter(value: string | undefined): PersonalOpsTab {
-  return value === "calendar" || value === "reminders" ? value : "inbox";
+  return value === "calendar" || value === "reminders" || value === "unified" || value === "context"
+    ? value
+    : "inbox";
 }
 
 export function PersonalOpsView(): ReactElement {
@@ -46,6 +52,12 @@ export function PersonalOpsView(): ReactElement {
     if (target === "approvals" || target === "tasks") {
       // Approvals AND tasks both live in the Approvals & Tasks view.
       setView("approvals");
+      return;
+    }
+    if (target === "deliveries") {
+      // Deliveries has its own panel in the Channels view — this app does
+      // not duplicate a delivery log here.
+      setView("channels");
       return;
     }
     selectTab(target === "events" ? "calendar" : "inbox");
@@ -132,6 +144,7 @@ export function PersonalOpsView(): ReactElement {
         {tab === "inbox" && (
           <EmailPanel composeSignal={composeSignal} onComposeSignalConsumed={() => setComposeSignal(0)} />
         )}
+        {tab === "unified" && <UnifiedInboxPanel />}
         {tab === "calendar" && (
           <CalendarPanel createSignal={eventSignal} onCreateSignalConsumed={() => setEventSignal(0)} />
         )}
@@ -142,6 +155,7 @@ export function PersonalOpsView(): ReactElement {
             onOpenAutomation={() => setView("automation")}
           />
         )}
+        {tab === "context" && <ProjectContextPanel />}
       </div>
     </ErrorBoundary>
   );

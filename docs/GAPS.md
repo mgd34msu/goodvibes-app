@@ -1,9 +1,13 @@
 # goodvibes-app — Parity Gap Audit
 
 Row-by-row audit of `docs/FEATURES.md` against the code. Original audit at commit
-`b2ca124`; **refreshed after the Wave E gap-closure pass** (six agents + integration
-gate) — closed rows are marked `(Wave E)` in their evidence cell and the counts below
-reflect the post-Wave-E working tree. Method: for each row, the Backing method id was checked against
+`b2ca124`; refreshed after the Wave E gap-closure pass, then **refreshed again after the
+Wave F pass** (seven agents F0–F6 + integration gate) — Wave F closures are marked
+`(Wave F)` in their evidence cell and the counts below reflect the post-Wave-F working
+tree, verified against the tree by the integration gate (not trusted from agent reports).
+Wave F also fixed two arithmetic errors in the prior summary table (§14 was listed 8/1/4
+but its rows count 9/1/3; §15 was listed 6/3/3 but its rows count 7/3/2 — the section-text
+tallies were right, the summary table was not). Method: for each row, the Backing method id was checked against
 every literal string passed to `invoke(...)` / `streamPath(...)` in `src/ui`
 (220 unique method ids actually called, out of 327 known in
 `src/ui/lib/generated/operator-routes.ts`), then the calling component was
@@ -50,7 +54,7 @@ evidence found; stated plainly, no inference.
 | 26 | Multi-line composer, grows with content | SHIPPED | `Composer.tsx` textarea auto-grow + `shouldSubmitComposerKey` (`ChatView.tsx:77-79`) |
 | 27 | Paste normalization (big paste → chip) | SHIPPED | `Composer.tsx:407-426` (`onFilesAdded` for pasted text as a file/chip) |
 | 28 | Input history + reverse search (Ctrl+R) | SHIPPED | history storage `chat-local.ts:44-49` `readInputHistory`/`pushInputHistory`; ArrowUp/Down recall + Ctrl+R reverse-search handler now wired in `Composer.tsx:432,466` (Wave E) |
-| 29 | Prompt undo/redo | MISSING | no `undo`/`redo` logic in `Composer.tsx` or `chat-local.ts`; textarea relies on native browser undo only |
+| 29 | Prompt undo/redo | SHIPPED | `draft-history.ts` `useDraftHistory` (bounded 50-entry checkpoint ring over the composer draft); wired in `ChatView.tsx:115` and undo/redo restore at `:504,512` (Wave F) |
 | 30 | Conversation clear / reset | SHIPPED | `/clear` slash command (`ChatView.tsx:72`) starts a new session |
 | 31 | Notes: `/note`, `/keep` (session → durable memory) | SHIPPED | `useSlashCommands.ts:71` handles `/note`→app-local notes registry (`chat-local.ts:262` `NOTES_BASE`) and `/keep`→`gv.memory.records.add` (`:108`, ConfirmSurface-gated); registered from chat at `ChatView.tsx:250` (Wave E) |
 | 32 | Export transcript (md/json/html) | SHIPPED | `chat-local.ts:186` `buildTranscriptExport`, `ExportFormat` type |
@@ -61,10 +65,10 @@ evidence found; stated plainly, no inference.
 | 37 | Voice dictation (mic → composer) | SHIPPED | `voice.ts:214` `gv.voice.stt`; `MicButton.tsx` |
 | 38 | Speak-aloud replies (TTS) + always-speak toggle | SHIPPED | `SpeakButton.tsx`; always-speak `chat-local.ts:153-157`, `ChatView.tsx:117,194` |
 | 39 | Turn cancel (stop button) | PARTIAL (honest) | `ChatView.tsx:745` wires a Stop button, but `useChatStream.ts:87` explicitly states "Companion chat has no wire cancel" — stops local rendering only, no `sessions.inputs.cancel` call for companion turns. This matches the row's own caveat but is not a true cancel |
-| 40 | Conversation branches (fork a chat) | MISSING | no distinct "fork whole chat" action found; only per-message edit-and-branch (row 7) exists. FEATURES.md itself flags this as a known gap ("wire fork doesn't exist... honest 'forked from' marker") but no marker/action was found in `ChatView.tsx`/`MessageItem.tsx` |
+| 40 | Conversation branches (fork a chat) | SHIPPED (honest) | `ChatView.tsx:305-347` `forkChat` mutation creates a new session and drops a local-only "forked from" note explaining the honest scope (wire has no whole-chat fork, so history is not copied); matches the row's own "honest 'forked from' marker" ask (Wave F) |
 | 41 | Long-turn desktop notification | SHIPPED | `chat-local.ts:305` `shouldNotifyLongTurn`/`LONG_TURN_NOTIFY_MS` (60s + `document.hidden`); wired at `ChatView.tsx:200-209` `onTurnCompleted` → metadata-only POST `/app/notifications/notify` (Wave E) |
 
-**Section 1 tally: 37 shipped, 2 partial, 2 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41). Wave E closed rows 28/31/36/41; remaining gaps are row 29 (prompt undo/redo), row 35 (no literal `/image` command), and the honest partials on rows 35/39.
+**Section 1 tally: 39 shipped, 2 partial, 0 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41). Wave E closed rows 28/31/36/41; Wave F closed row 29 (prompt undo/redo) and row 40 (honest whole-chat fork). Remaining partials are row 35 (no literal `/image` command — Ctrl+V paste-to-attachment ships) and row 39 (companion turn has no wire cancel).
 
 ## 2. Sessions (12 rows)
 
@@ -93,8 +97,8 @@ evidence found; stated plainly, no inference.
 | 2 | Node detail: transcript / usage / cost | SHIPPED | usage/cost render `FleetView.tsx:245,352,419-424` (`costLabel`, `node.usage`) |
 | 3 | Steer agent | SHIPPED | `FleetView.tsx:274` → `gv.sessions.steer` |
 | 4 | Detach (never kills) | SHIPPED | `FleetView.tsx:332` → `invoke("sessions.detach", ...)` |
-| 5 | Watcher start/stop/run from fleet | PARTIAL | only `watchers.stop` is wired (`FleetView.tsx:321`); no `watchers.start` or `watchers.run` call anywhere in the Fleet view |
-| 6 | Task cancel/retry from fleet | MISSING | no `tasks.cancel`/`tasks.retry` call anywhere in `FleetView.tsx` — task-mapped nodes have no cancel/retry action |
+| 5 | Watcher start/stop/run from fleet | SHIPPED | `watchers.stop` (`FleetView.tsx:321`) plus `watchers.start` (`:393`) and `watchers.run` (`:403`) now wired from the Fleet view (Wave F) |
+| 6 | Task cancel/retry from fleet | SHIPPED | `FleetTaskInline.tsx` (rendered `FleetView.tsx:505`) → `gv.tasks.list`/`.cancel`/`.retry` for task-mapped nodes (Wave F) |
 | 7 | Interrupt / kill / pause / resume of agents | EXCLUDED (confirmed accurate) | matches §25 exclusion — no such wire method exists; not attempted, correctly a documented gap rather than a silent omission |
 | 8 | Inline approval cards on correlated nodes | SHIPPED | `FleetApprovalInline.tsx:33,43,117` → `gv.approvals.{approve,deny,list}` |
 | 9 | Workstream view (phases / work-items) | SHIPPED | `FleetView.tsx:57,115,137-141,171-176` — dedicated "Workstreams" scope filter + palette command |
@@ -102,7 +106,7 @@ evidence found; stated plainly, no inference.
 | 11 | Worktree detail per agent | SHIPPED | `fleet.ts:386-392` `agentWorkingDirectory`/`worktreeLabel` off the node's reported worktree path; rendered on rows and in detail at `FleetView.tsx:287-289,411-413` (Wave E) |
 | 12 | Deep links into fleet nodes | SHIPPED | `FleetView.tsx:92-103` `writeNodeToUrl`/`selectedId` round-trips through `router.ts` URL filters |
 
-**Section 3 tally: 9 shipped, 1 partial, 1 missing, 1 correctly-excluded.** Wave E closed rows 10-11; the remaining partial (row 5, only `watchers.stop` wired) and missing (row 6, no task cancel/retry from fleet) were out of the Wave E fleet agent's scope.
+**Section 3 tally: 11 shipped, 0 partial, 0 missing, 1 correctly-excluded.** Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Row 7 remains the one documented exclusion (no interrupt/kill/pause/resume wire method).
 
 ## 4. Approvals & Tasks (9 rows)
 
@@ -131,13 +135,13 @@ evidence found; stated plainly, no inference.
 | 5 | Runs: list/get/cancel/retry | SHIPPED | `RunsSection.tsx:40,51,76,223` |
 | 6 | Heartbeat: list/run | SHIPPED | `HeartbeatSection.tsx:24,30` |
 | 7 | Watchers: list/create/update/delete/start/stop/run | SHIPPED | `WatchersView.tsx:62,76,89,102,122` (`watchers.${verb}` covers start/stop/run) |
-| 8 | Delivery targets on schedules (16 surface kinds) | PARTIAL | the wire field is reachable — `ScheduleForm.tsx:313` accepts a freeform JSON textarea (`{"targets":[{"kind":"slack",...}]}`) — but there is no dedicated picker enumerating the 16 surface kinds; authoring is raw-JSON only |
+| 8 | Delivery targets on schedules (16 surface kinds) | SHIPPED | `DeliveryPicker.tsx` (rendered `ScheduleForm.tsx:353`) enumerates surface kinds from `delivery-targets.ts` + live `channels.directory.query`/`channels.status`, replacing the raw-JSON textarea with a real picker (Wave F) |
 | 9 | Reminders (one-shot `at` schedules) | SHIPPED | `RemindersPanel.tsx:74-77` → `automation.schedules.create` with `kind:"at"` |
-| 10 | Hooks file editor (`.goodvibes/hooks.json`) | MISSING | only a generic settings-schema row exists (`config-schema.generated.ts:1719` `tools.hooksFile` key, default `"hooks.json"`) — no dedicated file editor with schema validation or event-path/type reference docs as the row (and its own noted gap) call for |
+| 10 | Hooks file editor (`.goodvibes/hooks.json`) | SHIPPED | `HooksSection.tsx` (Automation `hooks` tab, `AutomationView.tsx:194`) reads/writes the file via new Bun route `GET/PUT /app/local/hooks` (`hooks-api.ts` → `src/bun/local-tools.ts`), with JSON-parse validation returning the error position on bad input (Wave F, F0 backing) |
 | 11 | Workflow runs visibility (wrfc/fix_loop/…) | SHIPPED | rendered through Fleet, not Automation, per the row's own Backing (`workflows domain + fleet`): `fleet.ts:16` recognizes `"workflow"` node kind, `realtime.ts:27` invalidates `queryKeys.fleet` on the `workflows` domain |
 | 12 | Scheduler capacity | SHIPPED | rendered in Observability, not Automation, per the row's own Backing: `SystemMiscPanels.tsx:124` → `gv.invoke("scheduler.capacity")` |
 
-**Section 5 tally: 10 shipped, 1 partial, 1 missing.**
+**Section 5 tally: 12 shipped, 0 partial, 0 missing.** Wave F closed row 8 (delivery-target picker) and row 10 (hooks file editor over new `/app/local/hooks` Bun route).
 
 ## 6. Knowledge (25 rows)
 
@@ -197,32 +201,32 @@ evidence found; stated plainly, no inference.
 | 4 | Personas: create/inspect/activate/review/delete | SHIPPED | `PersonasView.tsx:44,57-79,94,105` over `registryItems("personas")` |
 | 5 | Persona discovery/import from VIBE.md | SHIPPED | `VibeDiscoveryModal.tsx:14,55` → `createRegistryItem("personas", ...)` sourced from VIBE.md parsing (`vibe-discovery.ts`) |
 | 6 | Skills: create/import/enable/disable/review/bundles | SHIPPED | `SkillsView.tsx:40,63-64,78,86` over `registryItems("skills")` |
-| 7 | Profiles: named isolated app homes + starter templates | MISSING | the `"profiles"` registry collection type is declared (`shared/registries.ts:14`, `routines/registries.ts:49`) but no view ever calls `listRegistryItems("profiles")`/`createRegistryItem("profiles",...)` — zero consumers found. `settings/ProfilesSection.tsx` (which sounds related) actually implements a *different* row (§19 "Profiles + profile-sync bundles" — export/import of the app's own settings as a JSON bundle), not multiple named/isolated `GOODVIBES_APP_HOME` roots with starter templates |
+| 7 | Profiles: named isolated app homes + starter templates | SHIPPED (honest scope) | `ProfilesPanel.tsx` (Routines `profiles` tab, `RoutinesView.tsx:106`) over the `"profiles"` registry (`listRegistryItems`/`createRegistryItem("profiles",…)`), with three starter templates (dev/research/writing). Activation is honestly scoped in-UI: it sets the active persona + overwrites VIBE.md — separate `GOODVIBES_APP_HOME` roots are a daemon concept this app cannot create, and the panel says so (Wave F) |
 | 8 | VIBE.md personality editor (real disk writes) | SHIPPED | `VibePanel.tsx` (`fetchVibe`/`saveVibe` → `registries.ts:198-217` → `PUT /app/registries/vibe`, a real file write per `src/bun/registries/vibe.ts`) |
-| 9 | Project context file inspection (CLAUDE.md, AGENTS.md, .cursorrules, …) | MISSING | no reference to `CLAUDE.md`, `AGENTS.md`, or `.cursorrules` anywhere in `src/ui` or `src/bun` — no discovery/viewer surface exists |
+| 9 | Project context file inspection (CLAUDE.md, AGENTS.md, .cursorrules, …) | SHIPPED | `ProjectContextPanel.tsx` (Personal Ops `context` tab, `PersonalOpsView.tsx:158`) lists well-known context files with existence flags via new Bun route `GET /app/local/context` and reads an allowlisted file via `GET /app/local/context/file` (allowlist + traversal guard tested in `test/local-tools.test.ts`) (Wave F, F0 backing) |
 | 10 | Import registries/settings from `~/.goodvibes/agent` + `~/.goodvibes/tui` | SHIPPED | registries (agent-only, correctly — tui has no routines/personas/skills to import): `ImportBridgeModal.tsx` → `previewImport`/`applyImport` → `src/bun/registries/import-bridge.ts:223-253` reads `agentRoot`; settings (both surfaces): `ProfilesSection.tsx:206-213` lets the user pick `tui`/`agent` as the read-only settings-import source |
-| 11 | Scratchpad notes + promote flows | MISSING | the `"notes"` registry collection exists server-side (`shared/registries.ts`, and `src/bun/registries/import-bridge.ts:239` can import notes from the agent) but no view calls `listRegistryItems("notes")`/`createRegistryItem("notes",...)` — no Notes/Scratchpad panel component exists anywhere under `src/ui/views` |
+| 11 | Scratchpad notes + promote flows | SHIPPED | `ScratchpadPanel.tsx` (Routines `scratchpad` tab, `RoutinesView.tsx:107`) over the `"notes"` registry (`listRegistryItems`/`createRegistryItem("notes",…)`), with promote flows to `gv.memory.records.add`, `gv.artifacts.create`, and `knowledge.ingest.artifact`; `HomeView.tsx:211` `QuickCapture` writes a note and deep-links here (Wave F) |
 | 12 | Learning review (stale/low-confidence/duplicates) | PARTIAL | the underlying wire surfaces exist and are wired — `memory.review-queue` (Memory view, §7 row 3) and `knowledge.candidates.*` (Knowledge RefinePanel, §6 row 11) — but there is no distinct Agent-Brain-side "curator" UI that combines them as this row describes; a user has to know to visit Memory and Knowledge separately |
 | 13 | Away digest ("while you were away") | SHIPPED | `AwayDigest.tsx:88,97,183` → `automation.runs.list` + `deliveries.list` + `tasks.list`, filtered against `last-seen.ts:6` (`localStorage` "goodvibes.app.home.lastSeen") |
 | 14 | Coming-up rail (next runs + calendar) | SHIPPED | `ComingUpRail.tsx:46,79` — schedules `nextRunAt` merged with `calendar.events.list`, silent per-source degradation via `calendarRefusal` |
 
-**Section 8 tally: 10 shipped, 1 partial, 3 missing.**
+**Section 8 tally: 13 shipped, 1 partial, 0 missing.** Wave F closed row 7 (profiles panel, honest scope), row 9 (project-context file viewer over `/app/local/context`), and row 11 (scratchpad/notes panel + promote flows). The lone remaining partial is row 12 (learning review): Wave F added the memory-side triage bucket in `MemoryView.tsx`, but there is still no single combined curator surface merging the memory and knowledge-candidate queues.
 
 ## 9. Personal Ops (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
-| 1 | Daily briefing (inbox/agenda/tasks/reminders/deliveries) | PARTIAL | `BriefingChips.tsx:44-63` composes calendar/inbox/approvals/tasks (`calendar.events.list`, `email.inbox.list`, shared `useApprovalsSnapshot`/`useTasksSnapshot`) into 4 chips; `deliveries.list` is not part of the briefing composition — the row's own 5th source is absent |
+| 1 | Daily briefing (inbox/agenda/tasks/reminders/deliveries) | SHIPPED | `BriefingChips.tsx` composes calendar/inbox/approvals/tasks plus the previously-absent 5th source `deliveries.list` (`:83`, capability-honest refusal at `:101`) into the briefing (Wave F) |
 | 2 | Email inbox list / read | SHIPPED | `personal-ops-data.ts:238` (`email.inbox.list`), `EmailPanel.tsx:346` (`email.inbox.read`) |
 | 3 | Email draft (confirm-gated) | SHIPPED | `EmailPanel.tsx:83` → `email.draft.create` |
 | 4 | Email send (confirm-gated) | SHIPPED | `EmailPanel.tsx:116` → `email.send` |
 | 5 | Calendar windowed list + event peek | SHIPPED | `personal-ops-data.ts:250` (`calendar.events.list`), `CalendarPanel.tsx:432` (`calendar.events.get`) |
 | 6 | Calendar create (admin) | SHIPPED | `CalendarPanel.tsx:102` → `calendar.events.create` |
 | 7 | ICS import / export | SHIPPED | `CalendarPanel.tsx:138,163` → `calendar.ics.export`/`.import` |
-| 8 | Unified inbox (channels + email merged) | MISSING | `channels.inbox.list` is wired only inside the Channels view (`InboxPanel.tsx:27`); Personal Ops's "Inbox" tab (`PersonalOpsView.tsx:19-132`) is email-only via `EmailPanel` — the two are never merged into one unified inbox as the row describes |
+| 8 | Unified inbox (channels + email merged) | SHIPPED | `UnifiedInboxPanel.tsx` (Personal Ops `unified` tab, `PersonalOpsView.tsx:147`) merges `channels.inbox.list` with the email inbox into one list (Wave F) |
 | 9 | Reminders | SHIPPED | `RemindersPanel.tsx:77` → `automation.schedules.create` kind=at |
 
-**Section 9 tally: 7 shipped, 1 partial, 1 missing.**
+**Section 9 tally: 9 shipped, 0 partial, 0 missing.** Wave F closed row 1 (briefing now includes `deliveries.list`) and row 8 (unified channels+email inbox).
 
 ## 10. Research (7 rows)
 
@@ -234,17 +238,17 @@ evidence found; stated plainly, no inference.
 | 4 | Source triage + credibility scoring | SHIPPED | `research-data.ts:84,100`, `ResearchView.tsx:319-427,696-721` `credibilityFrom` UI |
 | 5 | Sourced report artifacts (citation coverage, source maps) | SHIPPED | `ResearchView.tsx:671` → `gv.artifacts.create`; markdown report built from findings (`research-data.ts:220-230`) |
 | 6 | Promote research → Knowledge | SHIPPED | `ResearchView.tsx:462` → `knowledge.ingest.url`, capability-probed at `:73` |
-| 7 | URL inspection (read-only fetch preview) | MISSING | no URL-preview route or viewer found anywhere in `src/ui` or `src/bun` — no `urlPreview`/`inspectUrl` handler exists |
+| 7 | URL inspection (read-only fetch preview) | SHIPPED | new Bun route `POST /app/local/fetch-preview` (`src/bun/local-tools.ts`) does a read-only fetch with a private-address/non-http-scheme refusal guard (tested in `test/local-tools.test.ts`); consumed by a `usePeek`-backed drawer in `ResearchView.tsx:129` via `research-data.ts:266` (Wave F, F0 backing) |
 
-**Section 10 tally: 5 shipped, 1 partial, 1 missing.**
+**Section 10 tally: 6 shipped, 1 partial, 0 missing.** Wave F closed row 7 (URL inspection over new `/app/local/fetch-preview` Bun route). Row 3 remains partial (research runs tracked in the app-local `research-runs` registry, not `tasks.create`-backed cancellable wire tasks).
 
 ## 11. Documents & Compare (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
 | 1 | Versioned markdown drafts | SHIPPED | `documents-data.ts:49-81` (`listDocuments`/`createDocument`/`updateDocument`/`deleteDocument`/`listVersions`/`saveVersion` over `/app/registries/documents`) |
-| 2 | Review comments + AI suggestion accept/reject | PARTIAL | comments shipped: `documents-data.ts:124,168` (`commentFrom`, `rawWithComments`), rendered `DocumentsView.tsx` `CommentsSection` (line 436). No AI-suggestion accept/reject flow exists — zero hits for `suggestion`/`accept`/`reject` anywhere in `src/ui/views/documents/` |
-| 3 | Uploads / exports | PARTIAL | export shipped: `documents-data.ts:178-189` (`downloadText`/`exportFilename`); uploads via `artifacts.*` are missing — zero `artifacts.` calls anywhere in `src/ui/views/documents/` |
+| 2 | Review comments + AI suggestion accept/reject | SHIPPED | comments shipped (`documents-data.ts:124,168`); AI-suggestion accept/reject now shipped — `DocumentComment.suggestion`/`decision` fields (`documents-data.ts:129-158`) with an accept path at `DocumentsView.tsx:392` applying the suggestion via `saveVersion` (Wave F) |
+| 3 | Uploads / exports | SHIPPED | export shipped (`documents-data.ts:178-189`); uploads now shipped — `DocumentsView.tsx:371` → `gv.artifacts.create` (Wave F) |
 | 4 | Review packets: wizard + presets + freshness check | SHIPPED | `PacketsPanel.tsx` (mounted `DocumentsView.tsx:41` as a `packets` tab) + `packets-data.ts` — preset-driven wizard and `checkFreshness` re-run at `PacketsPanel.tsx:343` (Wave E) |
 | 5 | Reviewer handoff ZIP archives | SHIPPED | `zip-writer.ts` `createZip`/`downloadBlob` (store-only archive); consumed at `PacketsPanel.tsx:359` (Wave E) |
 | 6 | Share packet via channel (confirm-gated) | SHIPPED | `PacketsPanel.tsx:494` → `channels.actions.invoke`, admin+dangerous ConfirmSurface (`:447`) (Wave E) |
@@ -252,7 +256,7 @@ evidence found; stated plainly, no inference.
 | 8 | Preference analytics / synthesis | SHIPPED (basic) | judgments recorded to the app-local `notes` registry tagged `"model-compare"` (comment `CompareLab.tsx:4-5`) with a "Past judgments" history list (`:405-422`) — this is a plain history list, not a deeper win-rate/synthesis rollup, but it satisfies the row as an app-local store |
 | 9 | Winner → model route update (confirm-gated) | SHIPPED | `CompareLab.tsx:227` → `gv.config.set({key:"provider.model"})`, gated behind `promoteTarget`/confirm at `:388` |
 
-**Section 11 tally: 7 shipped, 2 partial, 0 missing.** Wave E built the entire review-packet workflow (wizard, presets, freshness check, ZIP handoff, channel share) that was previously absent. Remaining partials are rows 2 (comments ship, no AI-suggestion accept/reject) and 3 (export ships, no `artifacts.*` upload).
+**Section 11 tally: 9 shipped, 0 partial, 0 missing.** Wave E built the entire review-packet workflow. Wave F closed the two remaining partials: row 2 (AI-suggestion accept/reject) and row 3 (`artifacts.create` upload).
 
 ## 12. Artifacts (7 rows)
 
@@ -285,10 +289,10 @@ evidence found; stated plainly, no inference.
 | 11 | Routing: list / assign / delete | SHIPPED | `RoutingPanel.tsx:28,34,143` |
 | 12 | Delivery receipts (redacted) + dead-letter states | SHIPPED | `DeliveriesPanel.tsx` (mounted `ChannelsView.tsx:140`) — `deliveries.list` (`:120`) as a status/surface-filterable master list, `deliveries.get` detail peek (`:49`) showing failure reason, explicit `dead_lettered` state handling (`:26-35,182-184`) (Wave E) |
 | 13 | Companion pairing (QR) | SHIPPED | `PairingModal.tsx:11,47-56,65-66` — real QR SVG rendered from `GET /app/pairing/connection` (`src/bun/pairing.ts`) |
-| 14 | Notification targets (ntfy/webhook) manage + test | PARTIAL | config keys are editable generically through the schema-driven Settings editor (`config-schema.generated.ts:907-928` `surfaces.ntfy.*`), but there is no dedicated "send test notification through this ntfy/webhook target" action — `NotificationsSection.tsx`'s test button (`:67`) tests the app's own native-notification bridge, not an outbound channel target |
+| 14 | Notification targets (ntfy/webhook) manage + test | SHIPPED | `NotificationTargetsSection.tsx` (Settings, `SettingsView.tsx:156`) lists outbound targets via `channels.actions.list` and fires a real per-target test send via `channels.actions.invoke`, distinct from the app's own native-notification bridge test (Wave F) |
 | 15 | Realtime channel events | SHIPPED | `realtime.ts:28-29` → `communication: [queryKeys.channels]`, `deliveries: [queryKeys.deliveries]` |
 
-**Section 13 tally: 14 shipped, 1 partial, 0 missing.** Wave E closed row 12 (deliveries receipts/dead-letter view). The lone remaining partial is row 14 (ntfy/webhook targets editable via generic Settings, no dedicated per-target "send test" action). (Row 6 `agent_tools.invoke` remains list-only, as originally noted, folded into the shipped count as before.)
+**Section 13 tally: 15 shipped, 0 partial, 0 missing.** Wave E closed row 12; Wave F closed row 14 (dedicated per-target manage + test-send via `NotificationTargetsSection`). (Row 6 `agent_tools.invoke` remains list-only, as originally noted, folded into the shipped count as before.)
 
 ## 14. Providers & Models (13 rows)
 
@@ -299,16 +303,16 @@ evidence found; stated plainly, no inference.
 | 3 | Accounts snapshot (route posture, fallback risk) | SHIPPED | `AccountsPanel.tsx:52` → `gv.accounts.snapshot()` |
 | 4 | Model workspace: multi-target routes | SHIPPED | `ModelWorkspaceModal.tsx:80,85,128` → `providers.list` + `config.get/.set` |
 | 5 | Model catalog (models.dev, 4000+ models, tiers) | SHIPPED (Wave E) | `providers/model-dev-catalog.ts` (models.dev api.json fetch, 24h localStorage TTL, manual refresh) + `ModelCatalogPanel.tsx` (browse/search/filter by provider/modality/tier, offline fallback to providers.list with honest note), mounted in `ModelWorkspaceModal.tsx:308` |
-| 6 | Synthetic failover posture display | MISSING | zero references to "failover" anywhere in `src/ui/views/providers/` |
+| 6 | Synthetic failover posture display | SHIPPED (honest degrade) | `FailoverPostureCard.tsx` (rendered `ProvidersView.tsx:502`) is the display-only posture surface the row asks for; it searches provider/config for failover/fallback/synthetic keys and, finding none on the current daemon, renders an honest "no provider-failover config key on this daemon — synthetic failover is daemon-side and reports nothing to this client" state (Wave F) |
 | 7 | Credential status (secret-free) | SHIPPED | `CredentialStatusPanel.tsx:45` → `gv.config.credentials()` (cross-referenced in §20 correction above) |
-| 8 | Custom provider JSON management | MISSING | zero references to `~/.goodvibes/tui/providers/*.json` or a custom-provider editor anywhere in `src/ui/views/providers/` |
-| 9 | Local LLM server scan (opt-in, never silent) | MISSING | zero references to Ollama/LM Studio/vLLM/llama.cpp or any `platform/discovery` import anywhere in `src/ui` |
+| 8 | Custom provider JSON management | SHIPPED | `CustomProvidersPanel.tsx` (rendered `ProvidersView.tsx:506`) does full CRUD over provider JSON files via new Bun routes `GET/PUT/DELETE /app/local/providers[/name]` (`providers-local-api.ts` → `src/bun/local-tools.ts`), with filename/`.json`/object validation tested in `test/local-tools.test.ts` (Wave F, F0 backing) |
+| 9 | Local LLM server scan (opt-in, never silent) | SHIPPED | `LlmScanPanel.tsx` (rendered `ProvidersView.tsx:503`) runs an opt-in scan via new Bun route `POST /app/local/llm-scan` (`providers-local-api.ts` → `src/bun/local-tools.ts`), with a "use as custom provider" handoff prefilling `CustomProvidersPanel` (Wave F, F0 backing) |
 | 10 | Refresh models | SHIPPED (as list refetch) | `ProvidersView.tsx:231` `providers.refetch()` — refreshes the `providers.list` query; not a distinct catalog-refresh action since no separate catalog exists (row 5) |
 | 11 | Subscriptions status (OAuth-backed) | PARTIAL | subscription posture is shown via `AccountsPanel.tsx` (comment `:1-3` "Accounts/subscription health") and a `"subscription"` filter option in `ModelWorkspaceModal.tsx:365`, sourced from `accounts.snapshot`/`providers.list`; no OAuth flow that opens an external browser via RPC was found anywhere in `src/ui` or `src/bun` |
 | 12 | Reasoning effort defaults | SHIPPED | shared with §1 row 12 — `gv.config.set({key:"provider.reasoningEffort"})` |
 | 13 | Pin/unpin favorite models | SHIPPED | `favorites.ts:34,38` `isFavoriteModel`/`toggleFavoriteModel`, localStorage-backed |
 
-**Section 14 tally: 9 shipped, 1 partial, 3 missing.**
+**Section 14 tally: 12 shipped, 1 partial, 0 missing.** Wave F closed all three provider holes around the (Wave-E) catalog: row 6 (failover posture, honest-degrade display), row 8 (custom-provider JSON CRUD over `/app/local/providers`), and row 9 (opt-in local-LLM scan over `/app/local/llm-scan`). Row 11 (subscriptions: no external-browser OAuth flow) remains the lone partial. (Note: the prior summary table listed this section as 8/1/4 — an arithmetic error; the rows count 9/1/3 pre-Wave-F, now 12/1/0.)
 
 ## 15. Coding / Dev (12 rows)
 
@@ -321,13 +325,13 @@ evidence found; stated plainly, no inference.
 | 5 | Worktrees: snapshot + list | SHIPPED | `WorktreesView.tsx:58` → `worktrees.snapshot`; `git-api.ts:141` → `/app/git/worktrees` |
 | 6 | Checkpoints: create/list/diff/restore | SHIPPED | `CheckpointsView.tsx:68,84,92,118` → `gv.checkpoints.{list,diff,create,restore}` `[ws]` |
 | 7 | Embedded terminal tabs (PTY) | SHIPPED | `pty-client.ts:32,45,71,75,83,144` → `/app/pty/sessions*` (list/create/delete/input/resize/stream) |
-| 8 | Intelligence snapshot (LSP/tree-sitter posture) | MISSING | `intelligence.snapshot` is declared in `operator-routes.ts:154` but never invoked anywhere in `src/ui` — no read-only tile exists despite the row calling for one |
+| 8 | Intelligence snapshot (LSP/tree-sitter posture) | SHIPPED | `DevSnapshotsPanel.tsx` (rendered `GitView.tsx:174`) → `gv.invoke("intelligence.snapshot")` as a read-only posture tile, capability-honest when the daemon lacks the route (Wave F; v1.3.3 now serves the method) |
 | 9 | Repo file browser + preview | SHIPPED (Wave E follow-up) | `src/bun/git.ts` `/app/git/files` (git ls-files, 20k cap) + `/app/git/file` (tracked-only bounded 512KB read — tracked-only is the traversal guard); `GitView.tsx` `RepoFilesPanel` (filter, 500-row render cap, text preview with binary/truncation honesty) |
 | 10 | Per-repo session table (sessions in this project) | SHIPPED | `RepoSessionsPanel.tsx` (mounted `GitView.tsx:166`) → `gv.sessions.list()` (`:75`) filtered to the current `workspaceDir` (Wave E) |
 | 11 | GitHub: device-flow auth + PR/issue list/create | PARTIAL | `GitHubPanel.tsx` (mounted `GitView.tsx:163`) is a complete, capability-honest UI — it probes `control.methods.get` for `github.auth.deviceStart`/`.devicePoll`/`github.pulls.*`/`github.issues.*` and renders `UnavailableState` when absent. But **no `github.*` method exists in `operator-routes.ts` (0 matches)**, so on every known daemon the panel renders Unavailable — the UI is built and wired but has no live wire to talk to (Wave E, honest degrade) |
-| 12 | Review snapshot | MISSING | `review.snapshot` is declared in `operator-routes.ts:280` but never invoked anywhere in `src/ui` |
+| 12 | Review snapshot | SHIPPED | same `DevSnapshotsPanel.tsx` (`GitView.tsx:174`) → `gv.invoke("review.snapshot")` as a read-only tile, capability-honest (Wave F; v1.3.3 now serves the method) |
 
-**Section 15 tally: 7 shipped, 3 partial, 2 missing.** Wave E closed row 10 (per-repo session table) and built the GitHub UI (row 11 → PARTIAL, capability-honest but no `github.*` wire methods exist); the Wave E follow-up closed row 9 (repo file browser — new Bun endpoints + panel). Both read-only snapshot tiles (rows 8/12) remain absent (out of Wave E scope).
+**Section 15 tally: 9 shipped, 3 partial, 0 missing.** Wave E closed row 10 and built the GitHub UI; the Wave E follow-up closed row 9. Wave F closed both read-only snapshot tiles — row 8 (`intelligence.snapshot`) and row 12 (`review.snapshot`) via `DevSnapshotsPanel` (v1.3.3 now serves both methods). Remaining partials are rows 2 (branch checkout/create not wired), 3 (no tag/remote/reflog management), and 11 (GitHub UI capability-honest but no `github.*` wire methods exist). (Note: the prior summary table listed this section as 6/3/3 — an arithmetic error; the rows count 7/3/2 pre-Wave-F, now 9/3/0.)
 
 ## 16. MCP (7 rows)
 
@@ -428,9 +432,9 @@ evidence found; stated plainly, no inference.
 | 3 | Pair requests: list / approve / reject | SHIPPED | `PairRequestsSection.tsx:38,49,63` → `remote.pair.requests.list`/`.approve`/`.reject` (Wave E) |
 | 4 | Work queue: list / cancel | SHIPPED | `WorkSection.tsx:34,41` → `remote.work.list`/`.cancel` (Wave E) |
 | 5 | Node-host contract inspection | SHIPPED | `NodeHostContractSection.tsx:17` → `remote.node_host.contract` (Wave E) |
-| 6 | Web-push subscriptions manage (for PWA companions) | MISSING | `push.vapid.get`/`push.subscriptions.*` `[ws]` declared, still never invoked — the Wave E Peers view covers the `remote.*` surface but not the ws-only `push.*` subscription methods |
+| 6 | Web-push subscriptions manage (for PWA companions) | SHIPPED | `PushSection.tsx` (rendered `PeersView.tsx:46`) → `gv.invoke("push.vapid.get")` + `push.subscriptions.list`/`.verify`/`.delete` (ws-only), capability-honest when absent (Wave F; v1.3.3 now serves `push.*`) |
 
-**Section 21 tally: 5 shipped, 0 partial, 1 missing.** Wave E built the whole `src/ui/views/peers/` view — `PeersView.tsx` (registered as `peers` in `registry.tsx:234-238`, in the "System" sidebar group) with Overview/Peers/PairRequests/Work/NodeHostContract/InvokeConsole sections covering all 12 `remote.*` methods, each capability-probed with honest `UnavailableState` when the daemon lacks the route. The only remaining gap is row 6 (ws-only `push.*` subscription management for PWA companions), which no view invokes.
+**Section 21 tally: 6 shipped, 0 partial, 0 missing.** Wave F closed row 6 (web-push subscription management via `PushSection`, now that v1.3.3 serves `push.*`). Wave E built the whole `src/ui/views/peers/` view — `PeersView.tsx` (registered as `peers` in `registry.tsx:234-238`, in the "System" sidebar group) with Overview/Peers/PairRequests/Work/NodeHostContract/InvokeConsole sections covering all 12 `remote.*` methods, each capability-probed with honest `UnavailableState` when the daemon lacks the route. Every row is now shipped.
 
 ## 22. Onboarding (9 rows)
 
@@ -439,14 +443,14 @@ evidence found; stated plainly, no inference.
 | 1 | Daemon detect → adopt-or-spawn | SHIPPED | `src/bun/daemon-manager.ts:120` "Adopt-or-spawn. Never starts a competing daemon on an occupied port" |
 | 2 | Token provisioning (automatic) | SHIPPED | `src/bun/pairing.ts` companion-token bootstrap, proxy-injected |
 | 3 | Provider key entry / detection (env inventory) | SHIPPED | `OnboardingChecks.tsx:104,174-208` (`PROVIDER_ENV_KEYS`, `envKeyForProvider`) → `gv.config.set` |
-| 4 | Default model pick (+ effort) | PARTIAL | model pick shipped (`OnboardingChecks.tsx:121` → `config.set provider.model`); no reasoning-effort control anywhere in the onboarding flow — zero hits for "effort" in `OnboardingChecks.tsx` |
+| 4 | Default model pick (+ effort) | SHIPPED | model pick shipped (`OnboardingChecks.tsx:121`); reasoning-effort control now added as `ReasoningEffortStep.tsx` (`OnboardingOverlay.tsx:121`) → `gv.config.get`/`.set` for `provider.reasoningEffort` (Wave F) |
 | 5 | Permissions posture pick | SHIPPED | `PermissionsStep.tsx` (mounted `OnboardingOverlay.tsx:117`) audits `permissions.mode` and offers a picker → `config.set permissions.mode` (admin+dangerous, ConfirmSurface); renders honestly when the daemon exposes no `permissions.mode` key (`:83`) (Wave E) |
-| 6 | Doctor (gtk/webkit deps, daemon reachable, token valid, provider sane) | PARTIAL | daemon-reachable/token-valid/provider-sane are the three live checks (`checks.ts:36-152` `daemonCheck`/`principalFrom`/`providerOptionsFrom`); there is no reported gtk/webkit dependency check — the only related code is a fire-and-forget env workaround (`src/bun/env.ts:10` `WEBKIT_DISABLE_DMABUF_RENDERER`), not a pass/fail check surfaced to the user |
+| 6 | Doctor (gtk/webkit deps, daemon reachable, token valid, provider sane) | SHIPPED | daemon/token/provider checks shipped (`checks.ts:36-152`); the gtk/webkit dependency check is now added as `DepsCheckStep.tsx` (`OnboardingOverlay.tsx:122`) → new Bun route `GET /app/local/deps` returning a `{id,label,ok,detail}` checks array (`src/bun/local-tools.ts`, tested in `test/local-tools.test.ts`) (Wave F, F0 backing) |
 | 7 | Welcome tour + first-run cards | SHIPPED | `WelcomeTour.tsx` + `tour.ts` (first-run-only, `hasTourBeenSeen` gate); shown on first run via `OnboardingOverlay.tsx:61,97` before the checks screen (Wave E) |
 | 8 | Import from existing tui/agent installs | SHIPPED | `ImportStep.tsx` now mounted directly in the onboarding flow (`OnboardingOverlay.tsx:118`), surfacing the import bridge at first run (Wave E) |
 | 9 | QR pairing display for mobile companions | SHIPPED | `PairingStep.tsx` now mounted in the onboarding flow (`OnboardingOverlay.tsx:119`), surfacing companion pairing at first run (Wave E) |
 
-**Section 22 tally: 7 shipped, 2 partial, 0 missing.** Wave E expanded onboarding from the lean 3-check screen into a first-run flow with a welcome tour (row 7), permissions pick (row 5), import-bridge step (row 8), and QR pairing step (row 9). The two remaining partials are row 4 (model pick ships, no reasoning-effort control in the flow) and row 6 (daemon/token/provider checks ship, no gtk/webkit dependency check surfaced).
+**Section 22 tally: 9 shipped, 0 partial, 0 missing.** Wave E expanded onboarding into a first-run flow (welcome tour, permissions pick, import-bridge, QR pairing). Wave F closed the two remaining partials: row 4 (reasoning-effort step) and row 6 (gtk/webkit dependency check over new `/app/local/deps` Bun route).
 
 ## 23. Command Palette & Keyboard (8 rows)
 
@@ -454,14 +458,14 @@ evidence found; stated plainly, no inference.
 |---|---|---|---|
 | 1 | Command palette (fuzzy, every action registered) | SHIPPED | `components/CommandPalette.tsx`; registry `lib/commands.ts:39-130` (`registerCommand`/`fuzzyMatch`/`filterCommands`) |
 | 2 | Chord hotkeys (`g c` style) + customizable bindings | SHIPPED | `lib/hotkeys.ts:91-149` `useHotkeys` sequence/chord handling; bindings customizable via `ShellPrefsSection.tsx` (§19) |
-| 3 | Shortcut cheatsheet overlay | MISSING | zero hits for "cheatsheet" (any spelling) anywhere in `src/ui` — no such overlay exists |
-| 4 | Quick switcher (sessions/chats/views) | MISSING | zero hits for a switcher component — the only "switcher" matches in the codebase are the Knowledge view's unrelated agent/operator store-scope toggle (`AskPanel.tsx:4`, `KnowledgeView.tsx:15`) |
+| 3 | Shortcut cheatsheet overlay | SHIPPED | `ShortcutCheatsheet` (`components/CommandPalette.tsx:184`, mounted in `components/shell/AppShell.tsx:19`) renders a grouped shortcut overlay from the command registry (Wave F) |
+| 4 | Quick switcher (sessions/chats/views) | SHIPPED | `components/QuickSwitcher.tsx` (mounted in `App.tsx:22`) — a fuzzy switcher across sessions/chats/views (Wave F; F6's new component + the two legitimate `App.tsx` mount lines) |
 | 5 | Global focus management + focus traps in modals | SHIPPED | `lib/focus-trap.ts:18,24` `getFocusableElements`/`useFocusTrap`, used across modals |
 | 6 | ARIA announcer wired to real events | SHIPPED | `lib/announcer.ts:43,78` `announce`/`useAnnounce`; called from real state transitions (e.g. `SessionsView.tsx:647` "Transcript exported") |
 | 7 | Reduced-motion support | SHIPPED | `ShellPrefsSection.tsx:46-70` `theme.motion` (cross-ref §19) |
 | 8 | Keyboard shortcuts work regardless of focused pane | SHIPPED | `TerminalScreen.tsx:73-90` — deliberate escape hatch: Ctrl/Cmd+K always reaches the palette even while the terminal is focused, copy/paste passes through, everything else is captured by the terminal and `stopPropagation()`-ed so chords like `g c` don't misfire while typing |
 
-**Section 23 tally: 6 shipped, 0 partial, 2 missing.**
+**Section 23 tally: 8 shipped, 0 partial, 0 missing.** Wave F closed row 3 (shortcut cheatsheet overlay) and row 4 (quick switcher).
 
 ## 24. Notifications & Tray (4 rows)
 
@@ -483,7 +487,7 @@ Spot-checked every falsifiable claim in this section against the actual route ta
 | Item | Claim made | Verified? |
 |---|---|---|
 | Plugin runtime hosting | "v1 shows `plugins` domain events read-only" | **INACCURATE.** There is no `plugins` domain anywhere — not in `realtime.ts`'s `DOMAIN_INVALIDATIONS` map, not in `operator-routes.ts`. Nothing shows plugin events, read-only or otherwise; the claim describes a feature that was never built |
-| LSP/tree-sitter intelligence control room | "only `intelligence.snapshot` exists on the wire. Read-only tile ships" | **INACCURATE.** `intelligence.snapshot` is declared in `operator-routes.ts:154` but is never invoked anywhere in `src/ui` (confirmed in §15 row 8) — no read-only tile exists. The method-availability half of the claim is true; the "tile ships" half is not |
+| LSP/tree-sitter intelligence control room | "only `intelligence.snapshot` exists on the wire. Read-only tile ships" | **NOW ACCURATE (Wave F).** Was inaccurate through Wave E (method declared but no tile); Wave F added the read-only tile in `DevSnapshotsPanel.tsx` (`GitView.tsx:174`) invoking `intelligence.snapshot`, so the claim now holds |
 | Companion-chat compaction | "App manages long chats via history windowing + 'start fresh with summary' (app-local), labeled as such" | **INACCURATE.** No history-windowing or "start fresh with summary" feature exists anywhere in `src/ui/views/chat/` — the only "compact" hit in the codebase is `compactJson()` (`lib/wire.ts`), an unrelated JSON-formatting helper. Long chats are handled by ordinary pagination/scroll only |
 | Fleet interrupt/kill/pause/resume | "no wire method (only steer/detach/watcher-stop/task-cancel are wire-backed)" | **CONFIRMED.** No `interrupt`/`kill`/`pause`/`resume` method exists in the 327-method route table |
 | ACP delegate management | "Engine-internal delegation plumbing; invisible to end users" | **CONFIRMED** (no `acp.*` methods exist in the route table, consistent with "invisible") |
@@ -500,50 +504,51 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 
 | § | Section | Shipped | Partial | Missing | Excluded | Rows |
 |---|---|---|---|---|---|---|
-| 1 | Chat | 37 | 2 | 2 | — | 41 |
+| 1 | Chat | 39 | 2 | 0 | — | 41 |
 | 2 | Sessions | 12 | 0 | 0 | — | 12 |
-| 3 | Fleet | 9 | 1 | 1 | 1 | 12 |
+| 3 | Fleet | 11 | 0 | 0 | 1 | 12 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | — | 9 |
-| 5 | Automation | 10 | 1 | 1 | — | 12 |
+| 5 | Automation | 12 | 0 | 0 | — | 12 |
 | 6 | Knowledge | 23 | 2 | 0 | — | 25 |
 | 7 | Memory | 9 | 0 | 0 | — | 9 |
-| 8 | Agent Brain | 10 | 1 | 3 | — | 14 |
-| 9 | Personal Ops | 7 | 1 | 1 | — | 9 |
-| 10 | Research | 5 | 1 | 1 | — | 7 |
-| 11 | Documents & Compare | 7 | 2 | 0 | — | 9 |
+| 8 | Agent Brain | 13 | 1 | 0 | — | 14 |
+| 9 | Personal Ops | 9 | 0 | 0 | — | 9 |
+| 10 | Research | 6 | 1 | 0 | — | 7 |
+| 11 | Documents & Compare | 9 | 0 | 0 | — | 9 |
 | 12 | Artifacts | 7 | 0 | 0 | — | 7 |
-| 13 | Channels | 14 | 1 | 0 | — | 15 |
-| 14 | Providers & Models | 8 | 1 | 4 | — | 13 |
-| 15 | Coding / Dev | 6 | 3 | 3 | — | 12 |
+| 13 | Channels | 15 | 0 | 0 | — | 15 |
+| 14 | Providers & Models | 12 | 1 | 0 | — | 13 |
+| 15 | Coding / Dev | 9 | 3 | 0 | — | 12 |
 | 16 | MCP | 7 | 0 | 0 | — | 7 |
 | 17 | Observability | 18 | 0 | 0 | — | 18 |
 | 18 | Voice & Media | 8 | 1 | 0 | — | 9 |
 | 19 | Settings & Config | 12 | 0 | 0 | — | 12 |
 | 20 | Security & Auth | 7 | 1 | 1 | — | 9 |
-| 21 | Remote / Peers | 5 | 0 | 1 | — | 6 |
-| 22 | Onboarding | 7 | 2 | 0 | — | 9 |
-| 23 | Palette & Keyboard | 6 | 0 | 2 | — | 8 |
+| 21 | Remote / Peers | 6 | 0 | 0 | — | 6 |
+| 22 | Onboarding | 9 | 0 | 0 | — | 9 |
+| 23 | Palette & Keyboard | 8 | 0 | 0 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **247** | **20** | **20** | **1** | **288** |
+| — | **Total** | **274** | **12** | **1** | **1** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **86.5% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave F gap-closure, **95.1% shipped, 4.2% partial, 0.35% missing** of audited rows (was 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave F closed 25 previously-missing/partial rows verified against the tree by the integration gate: §1 (undo/redo, honest chat fork), §3 (fleet watcher start/run + task cancel/retry), §5 (delivery picker, hooks editor), §8 (profiles, project-context viewer, scratchpad), §9 (briefing deliveries, unified inbox), §10 (URL inspection), §11 (AI-suggestion accept/reject, artifact upload), §13 (notification-target test), §14 (failover posture, custom-provider JSON, local-LLM scan), §15 (`intelligence.snapshot` + `review.snapshot` tiles — v1.3.3 now serves them), §21 (web-push subscriptions — v1.3.3 now serves `push.*`), §22 (reasoning-effort step, gtk/webkit deps check), and §23 (cheatsheet, quick switcher). A new Bun local-tools surface (`src/bun/local-tools.ts`, F0, with `test/local-tools.test.ts` — 58/58 tests pass) backs `/app/local/{hooks,context,providers,llm-scan,deps,fetch-preview}`. **The single remaining MISSING row is §20 row 8 (OS service lifecycle):** `services.install/.start/.stop/.restart/.uninstall/.status` are declared on the wire (`operator-routes.ts:288-293`) but no Wave F agent's brief covered them, so no UI invokes them yet — reported honestly, not silently. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
 
-## Top 10 gaps by user impact (post-Wave-E)
+## Remaining gaps by user impact (post-Wave-F)
 
-Wave E closed seven of the previous top-ten entries (Remote/Peers, Home-graph & Planning,
-Documents review-packets, chat conveniences, delivery receipts, onboarding flow, and fleet
-worktree/WRFC badges). The remaining and newly-surfaced gaps, ranked by how much a real user
-would notice and be blocked or misled:
+Wave F closed 25 rows, including every entry on the prior top-ten list except OS-service
+lifecycle. What remains is one true app-side MISSING row plus a short tail of partials, most
+of which are honestly **wire-blocked** (the app surface is built but the daemon lacks the
+method) rather than unbuilt. Ranked by how much a real user would notice:
 
-1. **Provider surface has three holes around the (now shipped) catalog (§14 rows 6/8/9).** No synthetic-failover posture display, no custom-provider JSON editor, and no opt-in local-LLM server scan. (The models.dev catalog itself SHIPPED in Wave E — this entry previously overcounted.)
-2. **GitHub integration is UI-only / degraded (§15 row 11).** Wave E built a complete, capability-honest `GitHubPanel`, but **no `github.*` method exists in the route table**, so on every known daemon it renders Unavailable. The device-flow/PR/issue experience is wired but has nothing live to talk to.
-3. **Two read-only Coding/Dev snapshot tiles are absent (§15 rows 8, 12).** `intelligence.snapshot` (LSP/tree-sitter posture) and `review.snapshot` are declared on the wire but no tile invokes them.
-4. **OS service lifecycle is unwired (§20 row 8).** `services.install/.start/.stop/.restart/.uninstall/.status` have no UI — a user wanting the daemon to run as a managed OS service has no in-app control.
-5. **Web-push subscriptions for PWA companions are missing (§21 row 6).** The one remaining Peers gap: the ws-only `push.vapid.get`/`push.subscriptions.*` methods have no management UI.
-6. **Hooks file editor is missing (§5 row 10).** No dedicated `.goodvibes/hooks.json` editor with schema validation / event-path reference — only a generic settings-schema key exposes the file path.
-7. **Agent-brain surfaces have three holes (§8 rows 7, 9, 11).** Named isolated profile homes with starter templates, project-context file viewing (CLAUDE.md/AGENTS.md/.cursorrules), and a scratchpad/notes panel are all absent despite server-side collections existing.
-8. **Chat still lacks prompt undo/redo and whole-chat fork (§1 rows 29, 40), and has no literal `/image` command (§1 row 35).** Small daily-use conveniences that remain after Wave E closed `/note`/`/keep`/`/imagine`/long-turn-notify.
-9. **Palette has no cheatsheet overlay or quick switcher (§23 rows 3, 4).** Two discoverability affordances (a shortcut cheatsheet, a sessions/chats/views quick switcher) are still absent.
+1. **OS service lifecycle is unwired (§20 row 8) — the single remaining MISSING row.** `services.install/.start/.stop/.restart/.uninstall/.status` exist on the wire (`operator-routes.ts:288-293`) but no Wave F agent's brief covered them, so there is still no in-app control to run the daemon as a managed OS service. Not wire-blocked — genuinely unbuilt, and the honest next target.
+2. **GitHub integration is UI-only / wire-blocked (§15 row 11).** The capability-honest `GitHubPanel` is complete, but **no `github.*` method exists in the route table**, so it renders Unavailable on every known daemon. Nothing app-side to fix until the wire ships the methods.
+3. **Git branch/tag/remote/reflog management is partial (§15 rows 2, 3).** Branch checkout/create is not wired, and there is no tag/remote/reflog-rescue UI — the honestly-labeled in-UI gaps from earlier waves.
+4. **Research runs are app-local, not `tasks.create`-backed (§10 row 3).** Run status/cancel is a local `research-runs` registry field, not a real cancellable wire task.
+5. **Learning-review has no single combined curator (§8 row 12).** Wave F added the memory-side triage bucket, but the memory and knowledge-candidate queues are still two separate surfaces rather than one curator.
+6. **Subscriptions show posture but no external-browser OAuth flow (§14 row 11).** No RPC opens a browser for OAuth-backed subscription sign-in; posture is derived from `accounts.snapshot`/`providers.list` only.
+7. **Knowledge has no single-item `schedule.get`/`refinement.task.get` fetch (§6 rows 15, 17).** Both edit off the list-query cache; a narrow convenience gap.
+8. **Small chat conveniences remain (§1 rows 35, 39).** No literal `/image` slash command (Ctrl+V paste-to-attachment ships), and companion-turn Stop is local-render-only because the wire has no companion-turn cancel.
+9. **Redundant one-shot TTS method is dead (§18 row 1).** `voice.tts` is superseded by streaming TTS everywhere; cosmetic.
+10. **No in-chrome interactive login form (§20 row 2).** The app relies on zero-friction companion-token bootstrap; `control.auth.login` is unused. Only matters if a daemon ever demands interactive login.
 
 
 

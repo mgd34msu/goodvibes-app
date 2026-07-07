@@ -1258,3 +1258,93 @@
 .repo-files__preview { margin-top: var(--space-2); }
 .repo-files__content { max-height: 320px; overflow: auto; padding: var(--space-3); background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.5; }
 .repo-files__note { color: var(--text-tertiary); font-size: var(--text-xs); margin: var(--space-2) 0 0; }
+
+/* ── Coding/Dev snapshot tiles: intelligence.snapshot + review.snapshot ──
+   (docs/FEATURES.md §15 rows 8/12, docs/GAPS.md top-10 gap #3) ──────────── */
+
+.git-column--wide {
+  grid-column: 1 / -1;
+}
+
+.dev-snapshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.dev-snapshot-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.dev-snapshot-tile__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.dev-snapshot-tile__fact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.dev-snapshot-tile__fact-row dt {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.dev-snapshot-tile__fact-row dd {
+  margin: 0;
+}
+
+.dev-snapshot-tile__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.dev-snapshot-tile__count strong {
+  color: var(--text-primary);
+}
+
+.dev-snapshot-tile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dev-snapshot-tile__note {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.dev-snapshot-tile__routes {
+  font-size: var(--text-xs);
+}
+
+.dev-snapshot-tile__routes ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-snapshot-tile__routes code {
+  color: var(--text-secondary);
+}

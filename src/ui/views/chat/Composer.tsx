@@ -20,7 +20,20 @@ import {
   type RefObject,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AtSign, Check, ChevronDown, Gauge, Paperclip, Send, Volume2, VolumeX, X } from "lucide-react";
+import {
+  AtSign,
+  Check,
+  ChevronDown,
+  Gauge,
+  Image as ImageIcon,
+  Paperclip,
+  Redo2,
+  Send,
+  Undo2,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { gv, listFrom } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError } from "../../lib/errors.ts";
@@ -58,6 +71,7 @@ export interface ComposerProps {
   onSelectModel: (providerId: string, modelId: string) => void;
   composerRef: RefObject<HTMLTextAreaElement | null>;
   fileInputRef: RefObject<HTMLInputElement | null>;
+  imageFileInputRef: RefObject<HTMLInputElement | null>;
   slashCommands: readonly SlashCommandHint[];
   reasoning: ReasoningControl | null;
   alwaysSpeak: boolean;
@@ -69,6 +83,13 @@ export interface ComposerProps {
   onRemoveAttachedFile: (index: number) => void;
   onAddArtifactRef: (ref: AttachedArtifactRef) => void;
   onRemoveArtifactRef: (index: number) => void;
+  /** Prompt undo/redo (docs/GAPS.md §1 row 29) — checkpoint fires right
+   * before a slash-command selection overwrites the draft. */
+  onCheckpointDraft: () => void;
+  onUndoDraft: () => void;
+  onRedoDraft: () => void;
+  canUndoDraft: boolean;
+  canRedoDraft: boolean;
 }
 
 // ─── Attachment chips ────────────────────────────────────────────────────────
@@ -291,6 +312,7 @@ export function Composer({
   onSelectModel,
   composerRef,
   fileInputRef,
+  imageFileInputRef,
   slashCommands,
   reasoning,
   alwaysSpeak,
@@ -302,6 +324,11 @@ export function Composer({
   onRemoveAttachedFile,
   onAddArtifactRef,
   onRemoveArtifactRef,
+  onCheckpointDraft,
+  onUndoDraft,
+  onRedoDraft,
+  canUndoDraft,
+  canRedoDraft,
 }: ComposerProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
@@ -511,6 +538,7 @@ export function Composer({
           const selected = filteredSlashCommands[slashActiveIndex];
           if (selected) {
             event.preventDefault();
+            onCheckpointDraft();
             onDraftChange(`/${selected.name} `);
             return;
           }
@@ -546,6 +574,7 @@ export function Composer({
       mentionActiveIndex,
       mentionItems,
       mentionQuery,
+      onCheckpointDraft,
       onComposerKeyDown,
       onDraftChange,
       recallHistory,
@@ -679,6 +708,7 @@ export function Composer({
             commands={filteredSlashCommands}
             activeIndex={slashActiveIndex}
             onSelect={(name) => {
+              onCheckpointDraft();
               onDraftChange(`/${name} `);
               composerRef.current?.focus();
             }}
@@ -732,9 +762,37 @@ export function Composer({
           rows={1}
         />
         <input ref={fileInputRef} type="file" hidden multiple onChange={handleFileSelection} />
+        <input
+          ref={imageFileInputRef}
+          type="file"
+          hidden
+          multiple
+          accept="image/*"
+          onChange={handleFileSelection}
+        />
 
         <div className="composer-toolbar">
           <div className="composer-tools">
+            <button
+              type="button"
+              className="composer-tool"
+              title="Undo draft (restores the text before the last send/clear/idle checkpoint)"
+              aria-label="Undo draft"
+              onClick={onUndoDraft}
+              disabled={!canUndoDraft}
+            >
+              <Undo2 size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="composer-tool"
+              title="Redo draft"
+              aria-label="Redo draft"
+              onClick={onRedoDraft}
+              disabled={!canRedoDraft}
+            >
+              <Redo2 size={15} aria-hidden="true" />
+            </button>
             <button
               type="button"
               className="composer-tool"
@@ -744,6 +802,16 @@ export function Composer({
               disabled={isSendPending}
             >
               <Paperclip size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="composer-tool"
+              title="Attach an image (/image)"
+              aria-label="Attach an image"
+              onClick={() => imageFileInputRef.current?.click()}
+              disabled={isSendPending}
+            >
+              <ImageIcon size={15} aria-hidden="true" />
             </button>
             <MicButton onTranscript={handleTranscript} disabled={isSendPending} />
             <button

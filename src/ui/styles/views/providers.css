@@ -660,3 +660,153 @@
     max-height: 240px;
   }
 }
+
+/* ── Accounts: subscription/route detail (GAPS.md §14 row 11) ──────────── */
+
+.providers-accounts__routes,
+.providers-accounts__fallback,
+.providers-accounts__token {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.providers-accounts__subscription {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.providers-accounts__subscription span {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.providers-accounts__notes {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* ── Failover posture (GAPS.md §14 row 6) ───────────────────────────────── */
+
+.providers-failover code {
+  color: var(--text-accent);
+}
+
+/* ── Custom providers + local LLM scan (GAPS.md §14 rows 8/9) ──────────── */
+
+.providers-custom__title-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.providers-custom__note {
+  margin: 0 0 var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.providers-custom__note code {
+  color: var(--text-accent);
+}
+
+.providers-custom__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.providers-custom__row {
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.providers-custom__row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.providers-custom__row-head code {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.providers-custom__row-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.providers-custom__preview {
+  margin-top: var(--space-2);
+  max-height: 160px;
+}
+
+.providers-custom__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.providers-custom__create {
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.providers-custom__filename-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.providers-custom__filename-field input {
+  padding: 6px 8px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.providers-custom__textarea {
+  width: 100%;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  resize: vertical;
+}
+
+.providers-button--danger {
+  color: var(--status-danger);
+  border-color: var(--status-danger-soft);
+}
+
+.providers-button--danger:hover:not(:disabled) {
+  border-color: var(--status-danger);
+  background: var(--status-danger-soft);
+}

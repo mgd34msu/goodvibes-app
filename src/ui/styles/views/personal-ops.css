@@ -694,3 +694,210 @@
   white-space: nowrap;
   min-width: 0;
 }
+
+/* ── Unified inbox (§9 row 8) ─────────────────────────────────────────── */
+
+.po-unified-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.po-unified-inbox__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.po-unified-inbox__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.po-unified-inbox__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 140px) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  font-size: var(--text-sm);
+}
+
+.po-unified-inbox__row--unread {
+  background: var(--accent-muted);
+}
+
+.po-unified-inbox__from,
+.po-unified-inbox__subject,
+.po-unified-inbox__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.po-unified-inbox__subject {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-primary);
+}
+
+.po-unified-inbox__preview {
+  color: var(--text-tertiary);
+}
+
+.po-unified-inbox__when {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.po-unified-inbox__footnote {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* ── Project context viewer (§8 row 9) ───────────────────────────────── */
+
+.po-context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.po-context__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.po-context__dirform {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.po-context__dirform input {
+  flex: 1;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.po-context__dir {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.po-context__files {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.po-context__file-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: none;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.po-context__file--missing .po-context__file-button {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.po-context__file-button:hover:not(:disabled) {
+  background: var(--accent-muted);
+}
+
+.po-context__file-name {
+  flex: 1;
+  font-family: var(--font-mono);
+}
+
+.po-context__file-meta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.po-context__viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.po-context__viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.po-context__viewer-head button {
+  padding: 2px 8px;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.po-context__truncated {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.po-context__markdown {
+  max-height: 480px;
+  overflow: auto;
+}

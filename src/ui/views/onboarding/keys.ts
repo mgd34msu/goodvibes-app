@@ -5,4 +5,6 @@
 export const onboardingKeys = {
   /** GET security.settings, read for the permissions-mode pick's live audit. */
   security: ["onboarding", "security"] as const,
+  /** GET /app/local/deps, the dependency-doctor step (docs/GAPS.md §22 row 6). */
+  deps: ["onboarding", "deps"] as const,
 };

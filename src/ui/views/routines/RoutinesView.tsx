@@ -7,10 +7,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, DownloadCloud, MessageSquare, Pencil, Plus, RefreshCw, Repeat, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  DownloadCloud,
+  MessageSquare,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Repeat,
+  Sparkles,
+  StickyNote,
+  Trash2,
+} from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { formatError } from "../../lib/errors.ts";
 import { registerCommand, runCommand, unregisterCommand } from "../../lib/commands.ts";
+import { useUrlState } from "../../lib/router.ts";
 import { useToast } from "../../lib/toast.ts";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
@@ -31,10 +43,73 @@ import {
 import { RoutineEditorModal, type RoutineDraft } from "./RoutineEditorModal.tsx";
 import { PromoteScheduleModal, type PromoteCapability } from "./PromoteScheduleModal.tsx";
 import { ImportBridgeModal } from "./ImportBridgeModal.tsx";
+import { ProfilesPanel } from "./ProfilesPanel.tsx";
+import { ScratchpadPanel } from "./ScratchpadPanel.tsx";
 
 type EditorTarget = { mode: "create" } | { mode: "edit"; routine: RoutineItem } | null;
 
+const RTAB_IDS = ["routines", "profiles", "scratchpad"] as const;
+type RTabId = (typeof RTAB_IDS)[number];
+
+function isRTabId(value: string): value is RTabId {
+  return (RTAB_IDS as readonly string[]).includes(value);
+}
+
 export function RoutinesView() {
+  const { filters, setFilters } = useUrlState();
+  const urlTab = filters["rtab"] ?? "";
+  const [rtab, setRtab] = useState<RTabId>(() => (isRTabId(urlTab) ? urlTab : "routines"));
+
+  useEffect(() => {
+    if (isRTabId(urlTab) && urlTab !== rtab) setRtab(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab]);
+
+  const setTab = (next: RTabId) => {
+    setRtab(next);
+    setFilters({ rtab: next === "routines" ? undefined : next }, { replace: true });
+  };
+
+  return (
+    <div className="routines-shell">
+      <div className="reg-tabs" role="tablist" aria-label="Agent brain surfaces">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={rtab === "routines"}
+          className={rtab === "routines" ? "reg-tab reg-tab--active" : "reg-tab"}
+          onClick={() => setTab("routines")}
+        >
+          <Repeat size={14} aria-hidden="true" /> Routines
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={rtab === "profiles"}
+          className={rtab === "profiles" ? "reg-tab reg-tab--active" : "reg-tab"}
+          onClick={() => setTab("profiles")}
+        >
+          <Sparkles size={14} aria-hidden="true" /> Profiles
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={rtab === "scratchpad"}
+          className={rtab === "scratchpad" ? "reg-tab reg-tab--active" : "reg-tab"}
+          onClick={() => setTab("scratchpad")}
+        >
+          <StickyNote size={14} aria-hidden="true" /> Scratchpad
+        </button>
+      </div>
+
+      {rtab === "routines" && <RoutinesTab />}
+      {rtab === "profiles" && <ProfilesPanel />}
+      {rtab === "scratchpad" && <ScratchpadPanel />}
+    </div>
+  );
+}
+
+function RoutinesTab() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editor, setEditor] = useState<EditorTarget>(null);

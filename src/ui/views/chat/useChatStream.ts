@@ -47,8 +47,20 @@ export interface UseChatStreamResult {
   /** Live metrics for the thinking strip; null when no turn has run. */
   turnMetrics: TurnMetrics | null;
   /** Stop rendering the in-flight turn: closes the stream and marks the turn
-   * cancelled. Honest note: companion chat has no server-side cancel verb —
-   * the daemon may still finish the turn; the refetched list shows it. */
+   * cancelled. Honest note: probed live against daemon 1.3.3 (docs/GAPS.md
+   * §1 row 39) — a companion-chat session IS visible through the operator
+   * sessions union (`sessions.get` on its id returns `kind: "companion-chat"`
+   * successfully), so `sessions.inputs.list`/`sessions.inputs.cancel` are
+   * reachable for it. But driving a real send through
+   * `companion.chat.messages.create` and polling `sessions.inputs.list` on
+   * the same session id every 400ms for the full duration of the turn never
+   * surfaced an entry — `inputs` stayed `[]` and `pendingInputCount` stayed 0
+   * throughout, even though the message round-tripped and the assistant
+   * reply landed. The operator "inputs" read model simply never observes
+   * companion-chat turns, so there is no input id to hand to
+   * `sessions.inputs.cancel` — the wire has no cancel handle for this turn
+   * type. Closes the stream and marks the turn cancelled locally; the daemon
+   * may still finish the turn, and the refetched list shows it if it does. */
   stop: () => void;
   /** Re-open the stream after a stop (or to force a fresh connection). */
   retryStream: () => void;
@@ -84,7 +96,9 @@ export function useChatStream({
     setLiveText("");
     setStreamHealth("idle");
     setTurnState("cancelled");
-    setTurnError("Stopped rendering. Companion chat has no wire cancel — the daemon may still finish this turn; it will appear in the history if it does.");
+    setTurnError(
+      "Stopped rendering. Probed live: the operator sessions union never reports an input for a companion-chat turn (sessions.inputs.list stayed empty for the whole turn), so there is no id to cancel on the wire — the daemon may still finish this turn; it will appear in the history if it does.",
+    );
   }, [liveTextRef, setLiveText, setTurnError, setTurnState]);
 
   const retryStream = useCallback(() => {

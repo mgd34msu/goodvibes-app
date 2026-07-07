@@ -5,9 +5,10 @@
 // palette command. "Start chatting" enables the moment all checks pass — that
 // gate and its outcome are unchanged by everything below it.
 //
-// Below the checks: three skippable, purely additive sections closing
-// docs/GAPS.md §22 rows 5/8/9 (permissions posture, import bridge, companion
-// pairing) — none of them affect the finish() gate above. On first run only,
+// Below the checks: skippable, purely additive sections closing docs/GAPS.md
+// §22 rows 4/5/6/8/9 (reasoning effort, permissions posture, dependency
+// doctor, import bridge, companion pairing) — none of them affect the
+// finish() gate above. On first run only,
 // finishing (skip or start-chat) hands off to a one-time coach-mark tour
 // (row 7) before the overlay actually closes; Doctor mode can replay that
 // tour on demand without ever auto-triggering it.
@@ -18,6 +19,8 @@ import { useFocusTrap } from "../../lib/focus-trap.ts";
 import { announce } from "../../lib/announcer.ts";
 import { OnboardingChecks } from "./OnboardingChecks.tsx";
 import { PermissionsStep } from "./PermissionsStep.tsx";
+import { ReasoningEffortStep } from "./ReasoningEffortStep.tsx";
+import { DepsCheckStep } from "./DepsCheckStep.tsx";
 import { ImportStep } from "./ImportStep.tsx";
 import { PairingStep } from "./PairingStep.tsx";
 import { WelcomeTour } from "./WelcomeTour.tsx";
@@ -115,6 +118,8 @@ export function OnboardingOverlay({ mode, onClose, onStartChat }: OnboardingOver
 
         <div className="onboarding-extras">
           <PermissionsStep daemonUp={daemonUp} />
+          <ReasoningEffortStep daemonUp={daemonUp} />
+          <DepsCheckStep />
           <ImportStep />
           <PairingStep />
         </div>

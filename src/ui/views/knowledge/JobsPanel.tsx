@@ -1,6 +1,7 @@
 // Jobs tab: job definitions (knowledge.jobs.list / job.get / job.run),
 // recent job runs (knowledge.job-runs.list), schedules CRUD
-// (knowledge.schedules.*), and index maintenance (knowledge.lint /
+// (knowledge.schedules.* PLUS the single-item knowledge.schedule.get detail
+// peek — docs/GAPS.md §6 row 15), and index maintenance (knowledge.lint /
 // knowledge.reindex). Admin actions that kick off daemon-side work or
 // destroy state (run job, reindex, delete schedule) go through the shared
 // ConfirmSurface and forward confirm:true + explicitUserRequest.
@@ -135,6 +136,26 @@ function JobDetailPeek({ jobId }: { jobId: string }) {
   );
 }
 
+function ScheduleDetailPeek({ scheduleId }: { scheduleId: string }) {
+  const schedule = useQuery({
+    queryKey: kKeys.scheduleDetail(scheduleId),
+    queryFn: () => invoke("knowledge.schedule.get", { params: { id: scheduleId } }),
+  });
+  return (
+    <div className="knowledge-peek-body">
+      <QueryStates
+        query={schedule}
+        capability="knowledge.schedule.get"
+        unavailableDescription="schedule details cannot be loaded."
+        isEmpty={false}
+        empty={null}
+      >
+        <DataBlock title="Schedule" value={schedule.data} open />
+      </QueryStates>
+    </div>
+  );
+}
+
 // ─── Job runs ────────────────────────────────────────────────────────────────
 
 function JobRunsSection({ active }: { active: boolean }) {
@@ -201,6 +222,7 @@ function JobRunsSection({ active }: { active: boolean }) {
 
 function SchedulesSection({ active }: { active: boolean }) {
   const queryClient = useQueryClient();
+  const peek = usePeek();
   const { toast } = useToast();
   const [jobId, setJobId] = useState("");
   const [scheduleText, setScheduleText] = useState("");
@@ -348,6 +370,14 @@ function SchedulesSection({ active }: { active: boolean }) {
                   <StatusBadge value={enabled ? "enabled" : "disabled"} />
                 </span>
                 <span className="knowledge-schedules__actions">
+                  <button
+                    type="button"
+                    className="knowledge-button"
+                    disabled={!id}
+                    onClick={() => id && peek.open({ title, content: <ScheduleDetailPeek scheduleId={id} /> })}
+                  >
+                    Details
+                  </button>
                   <button
                     type="button"
                     className="knowledge-button"

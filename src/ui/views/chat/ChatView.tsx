@@ -17,13 +17,13 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, MessageSquare, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Download, GitBranch, MessageSquare, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { appJson } from "../../lib/http.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { asRecord, bestId, bestTitle, firstString, formatRelative, readPath } from "../../lib/wire.ts";
 import { formatError, isMethodUnavailableError, isSessionNotFoundError } from "../../lib/errors.ts";
-import { runCommand } from "../../lib/commands.ts";
+import { runCommand, registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { useToast } from "../../lib/toast.ts";
 import { announce } from "../../lib/announcer.ts";
 import { useUrlState } from "../../lib/router.ts";
@@ -37,6 +37,7 @@ import { useChatStream } from "./useChatStream.ts";
 import { useChatSend, useSendBudget, type AttachedArtifactRef } from "./useChatSend.ts";
 import {
   companionMessagesFromListResponse,
+  companionSessionFromDetail,
   mergeCompanionMessages,
   extractSessionId,
   readStoredActiveSessionId,
@@ -68,6 +69,7 @@ import {
 } from "./chat-local.ts";
 import { useSlashCommands } from "./useSlashCommands.ts";
 import { speakText, useVoiceStatus } from "./voice.ts";
+import { useDraftHistory } from "./draft-history.ts";
 import { CHAT_FOCUS_COMPOSER_EVENT, CHAT_NEW_EVENT, CHAT_SEARCH_EVENT } from "./chat-events.ts";
 import type { ChatMessage } from "./types.ts";
 
@@ -78,6 +80,7 @@ const SLASH_COMMANDS: readonly SlashCommandHint[] = [
   { name: "note", description: "Save text to a note (Documents → Packets & notes)" },
   { name: "keep", description: "Promote the last reply to durable memory" },
   { name: "imagine", description: "Generate an image inline (media.generate)" },
+  { name: "image", description: "Attach an image (opens the file picker)" },
 ];
 
 /** Enter sends, Shift+Enter newlines, IME composition never submits. */
@@ -99,6 +102,7 @@ export function ChatView() {
   const { toast } = useToast();
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const liveTextRef = useRef("");
   const autoTitledSessionsRef = useRef<Set<string>>(new Set());
@@ -106,6 +110,9 @@ export function ChatView() {
 
   const [activeSessionId, setActiveSessionIdState] = useState<string>(() => readStoredActiveSessionId());
   const [draft, setDraft] = useState("");
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const draftHistory = useDraftHistory(draft);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [artifactRefs, setArtifactRefs] = useState<AttachedArtifactRef[]>([]);
   const [liveText, setLiveText] = useState("");
@@ -295,6 +302,62 @@ export function ChatView() {
     [activeSessionId, selectModel],
   );
 
+  // --- fork a chat (docs/GAPS.md §1 row 40) ----------------------------------
+  // companion.chat.sessions.create's inputSchema only accepts title/model/
+  // provider/systemPrompt (verified against the pinned SDK's operator
+  // contract — no messages/seed field), and companion.chat.messages.create
+  // always posts a real user turn with no "seed without replying" mode — so
+  // there is no wire path to replay the source transcript into the new
+  // session. This creates the new session (carrying over provider/model) and
+  // is honest about the rest: a local-only note explains the fork starts
+  // fresh, matching FEATURES.md's own documented caveat for this row.
+  const forkChat = useMutation({
+    mutationFn: async () => {
+      if (!activeSessionId) throw new Error("Open a chat first — there is nothing to fork.");
+      const sourceTitle = activeSessionTitle;
+      const created = await gv.chat.sessions.create({
+        title: `Fork of ${sourceTitle}`.slice(0, 120),
+        ...(sessionProvider ? { provider: sessionProvider } : {}),
+        ...(sessionModel ? { model: sessionModel } : {}),
+      });
+      const newSessionId = extractSessionId(created);
+      if (!newSessionId) throw new Error("companion.chat.sessions.create did not return a session id.");
+      const createdSession = companionSessionFromDetail(created);
+      addLocalSession(
+        bestId(createdSession)
+          ? createdSession
+          : {
+              id: newSessionId,
+              sessionId: newSessionId,
+              kind: "companion-chat",
+              title: `Fork of ${sourceTitle}`,
+              status: "active",
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            },
+      );
+      return { newSessionId, sourceTitle };
+    },
+    onSuccess: ({ newSessionId, sourceTitle }) => {
+      setActiveSessionId(newSessionId);
+      setShowSearch(false);
+      setLocalMessages((current) => [
+        ...current,
+        {
+          id: `fork-note-${Date.now()}`,
+          sessionId: newSessionId,
+          role: "assistant",
+          content: `_Forked from "${sourceTitle}". Companion chat has no wire-level transcript replay, so this chat starts fresh — nothing from the original is sent to the model here._`,
+          createdAt: Date.now(),
+          deliveryState: "sent",
+        },
+      ]);
+      toast({ title: "Forked chat", description: "New chat starts fresh — see the note at the top.", tone: "success" });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.chatSessions });
+    },
+    onError: (error: unknown) => toast({ title: "Fork failed", description: formatError(error), tone: "danger" }),
+  });
+
   // --- reasoning effort (provider.reasoningEffort, shared config) -----------
   const config = useQuery({ queryKey: queryKeys.configAll, queryFn: () => gv.config.get() });
   const setReasoning = useMutation({
@@ -382,6 +445,7 @@ export function ChatView() {
 
   // --- draft / send ----------------------------------------------------------
   const startDraft = useCallback(() => {
+    draftHistory.checkpoint(draftRef.current);
     stop();
     setActiveSessionId("");
     setTurnState("idle");
@@ -391,12 +455,13 @@ export function ChatView() {
     setShowSearch(false);
     announce("New chat");
     composerRef.current?.focus();
-  }, [setActiveSessionId, stop]);
+  }, [draftHistory, setActiveSessionId, stop]);
 
   const sendText = useCallback(
     (text: string, files: File[] = [], refs: AttachedArtifactRef[] = []) => {
       const body = text.trim();
       if (send.isPending || (!body && !files.length && !refs.length)) return;
+      draftHistory.checkpoint(draftRef.current);
       if (body.startsWith("/")) {
         const slash = body.slice(1).toLowerCase();
         if (slash === "new" || slash === "clear") {
@@ -407,6 +472,15 @@ export function ChatView() {
         if (slash === "help") {
           setDraft("");
           runCommand("system.shortcuts");
+          return;
+        }
+        // /image (docs/GAPS.md §1 row 35): alias into the existing attachment
+        // flow — opens the file picker filtered to images, same chip path as
+        // drag-drop/paste-image (row 10) once a file is chosen.
+        if (slash === "image") {
+          setDraft("");
+          imageFileInputRef.current?.click();
+          composerRef.current?.focus();
           return;
         }
         if (slashCommands.tryHandle(body)) {
@@ -422,8 +496,25 @@ export function ChatView() {
       composerRef.current?.focus();
       send.mutate({ body, files: [...files], artifactRefs: refs });
     },
-    [send, slashCommands, startDraft],
+    [draftHistory, send, slashCommands, startDraft],
   );
+
+  // --- prompt undo/redo (docs/GAPS.md §1 row 29) ----------------------------
+  const undoDraft = useCallback(() => {
+    const restored = draftHistory.undo(draftRef.current);
+    if (restored !== null) {
+      setDraft(restored);
+      composerRef.current?.focus();
+    }
+  }, [draftHistory]);
+
+  const redoDraft = useCallback(() => {
+    const restored = draftHistory.redo(draftRef.current);
+    if (restored !== null) {
+      setDraft(restored);
+      composerRef.current?.focus();
+    }
+  }, [draftHistory]);
 
   const submitDraft = useCallback(() => {
     sendText(draft, attachedFiles, artifactRefs);
@@ -485,6 +576,57 @@ export function ChatView() {
       window.removeEventListener(CHAT_SEARCH_EVENT, onSearch);
     };
   }, [startDraft]);
+
+  // --- palette commands: draft undo/redo + fork (docs/GAPS.md §1 rows 29/40) -
+  // Registered once via stable refs (ChatView already uses this ref idiom for
+  // always-speak/tts availability above) so remaps/`when` stay live without
+  // re-registering the command on every keystroke or history checkpoint.
+  const draftHistoryRef = useRef(draftHistory);
+  draftHistoryRef.current = draftHistory;
+  const undoDraftRef = useRef(undoDraft);
+  undoDraftRef.current = undoDraft;
+  const redoDraftRef = useRef(redoDraft);
+  redoDraftRef.current = redoDraft;
+
+  useEffect(() => {
+    registerCommand({
+      id: "chat.undoDraft",
+      title: "Chat: Undo Draft",
+      group: "work",
+      keywords: ["undo", "draft", "composer", "prompt"],
+      when: () => draftHistoryRef.current.canUndo,
+      run: () => undoDraftRef.current(),
+    });
+    registerCommand({
+      id: "chat.redoDraft",
+      title: "Chat: Redo Draft",
+      group: "work",
+      keywords: ["redo", "draft", "composer", "prompt"],
+      when: () => draftHistoryRef.current.canRedo,
+      run: () => redoDraftRef.current(),
+    });
+    return () => {
+      unregisterCommand("chat.undoDraft");
+      unregisterCommand("chat.redoDraft");
+    };
+  }, []);
+
+  const activeSessionIdRef = useRef(activeSessionId);
+  activeSessionIdRef.current = activeSessionId;
+  const forkChatRef = useRef(forkChat);
+  forkChatRef.current = forkChat;
+
+  useEffect(() => {
+    registerCommand({
+      id: "chat.forkSession",
+      title: "Chat: Fork This Chat",
+      group: "work",
+      keywords: ["fork", "branch", "duplicate", "copy", "chat"],
+      when: () => Boolean(activeSessionIdRef.current),
+      run: () => forkChatRef.current.mutate(),
+    });
+    return () => unregisterCommand("chat.forkSession");
+  }, []);
 
   // --- rail rename/delete -----------------------------------------------------
   const finishRename = useCallback(() => {
@@ -684,6 +826,20 @@ export function ChatView() {
             <button
               type="button"
               className="icon-button"
+              aria-label="Fork this chat"
+              title={
+                activeSessionId
+                  ? "Fork this chat: creates a new chat (same provider/model); starts fresh — no wire replay of this transcript"
+                  : "Open a chat first"
+              }
+              disabled={!activeSessionId || forkChat.isPending}
+              onClick={() => forkChat.mutate()}
+            >
+              <GitBranch size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
               aria-pressed={showSearch}
               aria-label={showSearch ? "Close search" : "Search messages"}
               title="Search messages"
@@ -798,6 +954,7 @@ export function ChatView() {
           onSelectModel={onSelectModel}
           composerRef={composerRef}
           fileInputRef={fileInputRef}
+          imageFileInputRef={imageFileInputRef}
           slashCommands={SLASH_COMMANDS}
           reasoning={reasoning}
           alwaysSpeak={alwaysSpeak}
@@ -810,6 +967,11 @@ export function ChatView() {
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
           onComposerKeyDown={handleComposerKeyDown}
+          onCheckpointDraft={() => draftHistory.checkpoint(draftRef.current)}
+          onUndoDraft={undoDraft}
+          onRedoDraft={redoDraft}
+          canUndoDraft={draftHistory.canUndo}
+          canRedoDraft={draftHistory.canRedo}
           onFilesAdded={(files) => setAttachedFiles((current) => [...current, ...files])}
           onRemoveAttachedFile={(index) =>
             setAttachedFiles((current) => current.filter((_file, i) => i !== index))

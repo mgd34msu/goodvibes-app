@@ -29,15 +29,17 @@ import {
 import { JobsSection } from "./JobsSection.tsx";
 import { RunsSection } from "./RunsSection.tsx";
 import { HeartbeatSection } from "./HeartbeatSection.tsx";
+import { HooksSection } from "./HooksSection.tsx";
 import { ScheduleForm, type ScheduleCreateBody } from "./ScheduleForm.tsx";
 
-type AutomationTab = "jobs" | "schedules" | "runs" | "heartbeat";
+type AutomationTab = "jobs" | "schedules" | "runs" | "heartbeat" | "hooks";
 
 const TAB_LABELS: Record<AutomationTab, string> = {
   jobs: "Jobs",
   schedules: "Schedules",
   runs: "Runs",
   heartbeat: "Heartbeat",
+  hooks: "Hooks",
 };
 
 const TAB_IDS = Object.keys(TAB_LABELS) as AutomationTab[];
@@ -117,9 +119,17 @@ export function AutomationView() {
       keywords: ["automation", "schedule", "create", "cron", "reminder"],
       run: () => setCreateNoun("schedule"),
     });
+    registerCommand({
+      id: "automation.open-hooks",
+      title: "Automation: Open Hooks",
+      group: "automate",
+      keywords: ["hooks", "hooks.json", "events", "automation"],
+      run: () => selectTab("hooks"),
+    });
     return () => {
       unregisterCommand("automation.refresh");
       unregisterCommand("automation.new-job");
+      unregisterCommand("automation.open-hooks");
       unregisterCommand("automation.new-schedule");
     };
   }, [queryClient]);
@@ -180,6 +190,8 @@ export function AutomationView() {
       {tab === "runs" && <RunsSection jobNames={jobNames} />}
 
       {tab === "heartbeat" && <HeartbeatSection />}
+
+      {tab === "hooks" && <HooksSection />}
 
       <Modal
         open={createNoun !== null}

@@ -96,6 +96,41 @@ export interface SkillItem {
   raw: Record<string, unknown>;
 }
 
+/** Scratchpad note (docs/FEATURES.md §8 row 11) — app-local only, no daemon
+ * verb backs the "notes" collection itself. Promotion is a separate,
+ * confirm-gated write to memory.records.add / knowledge.ingest.artifact;
+ * `promotedTo` records the id it landed at so a promoted note can say so. */
+export interface NoteItem {
+  id: string;
+  text: string;
+  tags: string[];
+  promoted: boolean;
+  promotedTo?: { kind: "memory" | "knowledge"; id: string };
+  createdAt: string;
+  updatedAt: string;
+  raw: Record<string, unknown>;
+}
+
+/** Named app-level preset bundle (docs/FEATURES.md §8 row 7). SCOPE NOTE: this
+ * is an app-level preset, not an isolated GOODVIBES_APP_HOME root — activating
+ * one only (a) sets a persona active and (b) overwrites VIBE.md content, both
+ * via the same registries API a user could drive by hand from Personas. The
+ * skills list is informational (shown, not enforced) unless the user opens
+ * each skill from Skills and enables it themselves. */
+export interface ProfileItem {
+  id: string;
+  name: string;
+  description: string;
+  template: string;
+  active: boolean;
+  personaName: string;
+  personaDescription: string;
+  personaPrompt: string;
+  skills: string[];
+  vibeContent: string;
+  raw: Record<string, unknown>;
+}
+
 function stringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((entry): entry is string => typeof entry === "string");
@@ -141,6 +176,46 @@ export function parseSkill(value: unknown): SkillItem {
     enabled: raw["enabled"] !== false,
     requirements: stringArray(raw["requirements"]),
     source: firstString(raw, ["source"]),
+    raw,
+  };
+}
+
+function isPromotedTo(value: unknown): { kind: "memory" | "knowledge"; id: string } | undefined {
+  const record = asRecord(value);
+  const kind = record["kind"];
+  const id = firstString(record, ["id"]);
+  if ((kind === "memory" || kind === "knowledge") && id) return { kind, id };
+  return undefined;
+}
+
+export function parseNote(value: unknown): NoteItem {
+  const raw = asRecord(value);
+  return {
+    id: firstString(raw, ["id"]),
+    text: typeof raw["text"] === "string" ? raw["text"] : "",
+    tags: stringArray(raw["tags"]),
+    promoted: raw["promoted"] === true,
+    promotedTo: isPromotedTo(raw["promotedTo"]),
+    createdAt: firstString(raw, ["createdAt"]),
+    updatedAt: firstString(raw, ["updatedAt"]),
+    raw,
+  };
+}
+
+export function parseProfile(value: unknown): ProfileItem {
+  const raw = asRecord(value);
+  const persona = asRecord(raw["persona"]);
+  return {
+    id: firstString(raw, ["id"]),
+    name: firstString(raw, ["name"]) || "Untitled profile",
+    description: firstString(raw, ["description"]),
+    template: firstString(raw, ["template"]) || "custom",
+    active: raw["active"] === true,
+    personaName: firstString(persona, ["name"]) || firstString(raw, ["name"]) || "Untitled profile",
+    personaDescription: firstString(persona, ["description"]),
+    personaPrompt: typeof persona["prompt"] === "string" ? persona["prompt"] : "",
+    skills: stringArray(raw["skills"]),
+    vibeContent: typeof raw["vibeContent"] === "string" ? raw["vibeContent"] : "",
     raw,
   };
 }

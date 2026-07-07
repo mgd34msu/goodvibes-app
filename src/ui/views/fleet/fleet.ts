@@ -7,6 +7,7 @@
 // value we have never seen; render it verbatim, never drop it.
 
 import { asArray, asRecord, firstString, readPath } from "../../lib/wire.ts";
+import type { TaskSummary } from "../../lib/approvals.ts";
 
 /** PROCESS_KIND_SCHEMA at the time of writing (contract v1, operator 1.3.1). */
 export const KNOWN_PROCESS_KINDS = [
@@ -283,18 +284,26 @@ export function activeCount(nodes: readonly FleetNode[]): number {
 // direct in-process calls; none of that is an operator wire verb today except:
 //   - steer: sessions.steer, for an 'agent' node with a live sessionRef.sessionId.
 //   - detach: sessions.detach — a session-level action, any node with a sessionId.
-//   - stop: watchers.stop, for a 'watcher' node only (WatcherRecord.id IS the
-//     node id; no other kind's node id maps to a verb-addressable entity).
+//   - stop/start/run: watchers.{stop,start,run}, for a 'watcher' node only
+//     (WatcherRecord.id IS the node id; no other kind's node id maps to a
+//     verb-addressable entity). start/run are offered unconditionally, same
+//     as the Watchers view itself (adaptWatcher's `killable` flag only says
+//     "currently alive", not "may be started/run" — the daemon is the one
+//     that accepts or rejects an invalid transition).
 // Every other true capability flag is real but UNBACKED — the honest note
 // below says so instead of a button that would no-op or 404.
-export type FleetWireAction = "steer" | "detach" | "stop";
+export type FleetWireAction = "steer" | "detach" | "stop" | "start" | "run";
 
 export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction> {
   const actions = new Set<FleetWireAction>();
   const hasSession = node.sessionId.length > 0;
   if (node.kind === "agent" && node.capabilities.steerable && hasSession) actions.add("steer");
   if (hasSession) actions.add("detach");
-  if (node.kind === "watcher" && node.capabilities.killable) actions.add("stop");
+  if (node.kind === "watcher") {
+    if (node.capabilities.killable) actions.add("stop");
+    actions.add("start");
+    actions.add("run");
+  }
   return actions;
 }
 
@@ -466,4 +475,25 @@ export function wrfcConstraintTally(node: FleetNode): WrfcConstraintTally | null
     else uns += 1;
   }
   return { sat, uns, unv };
+}
+
+// ─── Task correlation (GAPS.md §3 row 6) ──────────────────────────────────────
+//
+// fleet.snapshot never emits a 'task' node kind — tasks.* is a separate
+// runtime registry (goodvibes-sdk platform/runtime/tasks). The one genuine,
+// provable link between a fleet node and a RuntimeTask is the 'agent' kind:
+// AgentTaskAdapter.wrapAgent (platform/runtime/tasks/adapters/agent-adapter)
+// creates every kind:'agent' RuntimeTask with `owner: agentId`, and an
+// 'agent' fleet node's id IS that agentId. No other node kind's id maps to a
+// task field at all — never fabricate a task action for one.
+
+/** The RuntimeTask backing this 'agent' node, or null when there isn't one (no task, or a non-agent node). */
+export function taskForNode(node: FleetNode, tasks: readonly TaskSummary[]): TaskSummary | null {
+  if (node.kind !== "agent" || !node.id) return null;
+  return tasks.find((task) => task.kind === "agent" && task.owner === node.id) ?? null;
+}
+
+/** Same transition guard the daemon itself enforces (TasksSection.tsx parity): retry only from a terminal failure/cancellation. */
+export function canRetryTask(task: TaskSummary): boolean {
+  return task.status === "failed" || task.status === "cancelled";
 }

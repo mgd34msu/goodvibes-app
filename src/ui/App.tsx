@@ -8,6 +8,7 @@ import { ToastProvider } from "./lib/toast.ts";
 import { useNotifyBridge } from "./lib/notify-bridge.ts";
 import { ErrorBoundary } from "./components/feedback.tsx";
 import { AppShell } from "./components/shell/AppShell.tsx";
+import { QuickSwitcher } from "./components/QuickSwitcher.tsx";
 
 export function App(): ReactElement {
   // Desktop-notification bridge: watches the shared query cache (no 2nd SSE) and
@@ -19,6 +20,7 @@ export function App(): ReactElement {
       <ErrorBoundary>
         <ToastProvider>
           <AppShell />
+          <QuickSwitcher />
         </ToastProvider>
       </ErrorBoundary>
     </ThemeProvider>

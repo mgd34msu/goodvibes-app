@@ -3,10 +3,12 @@
 // idiom) rather than tabs: Overview (remote.snapshot), Peers
 // (list/disconnect/token rotate+revoke), Pair requests
 // (list/approve/reject), Work queue (list/cancel), the node-host contract
-// viewer, and an advanced invoke-on-peer console. None of the remote.*
-// methods are on the realtime invalidation stream (lib/realtime.ts
-// DOMAIN_INVALIDATIONS has no `remote` domain) — every section polls at
-// REMOTE_POLL_MS (peers-model.ts) while this view is mounted.
+// viewer, a Push panel (5 push.* methods — §21 row 6, Wave F), and an
+// advanced invoke-on-peer console. None of the remote.* methods are on the
+// realtime invalidation stream (lib/realtime.ts DOMAIN_INVALIDATIONS has no
+// `remote` domain) — every section polls at REMOTE_POLL_MS (peers-model.ts)
+// while this view is mounted; Push polls independently at its own interval
+// (push-model.ts is a separate wire family, not remote.*).
 
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +18,7 @@ import { PeersSection } from "./PeersSection.tsx";
 import { PairRequestsSection } from "./PairRequestsSection.tsx";
 import { WorkSection } from "./WorkSection.tsx";
 import { NodeHostContractSection } from "./NodeHostContractSection.tsx";
+import { PushSection } from "./PushSection.tsx";
 import { InvokeConsole } from "./InvokeConsole.tsx";
 import { peersKeys } from "./peers-model.ts";
 
@@ -40,6 +43,7 @@ export function PeersView() {
       <PairRequestsSection />
       <WorkSection />
       <NodeHostContractSection />
+      <PushSection />
       <InvokeConsole />
     </div>
   );

@@ -26,6 +26,7 @@ import { SyncSection } from "./SyncSection.tsx";
 import { SecretsSection } from "./SecretsSection.tsx";
 import { ServicesSection } from "./ServicesSection.tsx";
 import { NotificationsSection } from "./NotificationsSection.tsx";
+import { NotificationTargetsSection } from "./NotificationTargetsSection.tsx";
 import { AppLaunchSection } from "./AppLaunchSection.tsx";
 import { ProfilesSection } from "./ProfilesSection.tsx";
 import { flashSection, searchSettings, type SettingsSectionId } from "./settings-search.ts";
@@ -149,7 +150,12 @@ export function SettingsView(): React.ReactElement {
           <ServicesSection />
         </>
       )}
-      {section === "notifications" && <NotificationsSection />}
+      {section === "notifications" && (
+        <>
+          <NotificationsSection />
+          <NotificationTargetsSection />
+        </>
+      )}
       {section === "launch" && <AppLaunchSection />}
       {section === "profiles" && <ProfilesSection />}
     </div>

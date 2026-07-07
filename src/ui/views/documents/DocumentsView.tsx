@@ -9,9 +9,10 @@
 // refetchInterval keeps other-window edits visible; mutations invalidate the
 // "documents-registry" prefix.
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, GitCompare, History, MessageSquare, Package } from "lucide-react";
+import { FileText, GitCompare, History, MessageSquare, Package, Upload } from "lucide-react";
+import { gv } from "../../lib/gv.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { formatError, errorStatus } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
@@ -20,7 +21,9 @@ import { useUrlState } from "../../lib/router.ts";
 import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
+import { createdArtifactId } from "../artifacts/artifacts-data.ts";
 import {
+  base64FromText,
   createDocument,
   deleteDocument,
   docKeys,
@@ -30,9 +33,12 @@ import {
   listDocuments,
   listVersions,
   rawWithComments,
+  readFileAsText,
   saveVersion,
+  titleFromFilename,
   updateDocument,
   versionFrom,
+  type DocComment,
   type DocRecord,
   type DocVersion,
 } from "./documents-data.ts";
@@ -162,6 +168,7 @@ function DraftsSection() {
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // App-local registry: no wire events — poll every 30s.
   const docsQuery = useQuery({
@@ -184,12 +191,38 @@ function DraftsSection() {
     onError: (error: unknown) => toast({ title: "Create failed", description: formatError(error), tone: "danger" }),
   });
 
+  // Upload (docs/GAPS.md §11 row 3): a file picker reads the text
+  // client-side, creates a document item, then saves that text as v1 — no
+  // wire round-trip for the file content itself.
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      const text = await readFileAsText(file);
+      const item = await createDocument({ title: titleFromFilename(file.name), headVersion: 0 });
+      const id = documentFrom(item).id;
+      if (!id) throw new Error("createDocument did not return an id");
+      await saveVersion(id, text, `Uploaded from ${file.name}`);
+      return id;
+    },
+    onSuccess: async (id) => {
+      await queryClient.invalidateQueries({ queryKey: docKeys.all });
+      setSelectedId(id);
+      toast({ title: "Draft uploaded", tone: "success" });
+    },
+    onError: (error: unknown) => toast({ title: "Upload failed", description: formatError(error), tone: "danger" }),
+  });
+
   const unavailable = docsQuery.isError && isRegistryUnavailable(docsQuery.error);
 
   function handleCreate(event: FormEvent): void {
     event.preventDefault();
     const trimmed = newTitle.trim();
     if (trimmed && !create.isPending) create.mutate(trimmed);
+  }
+
+  function handleFileSelected(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file && !upload.isPending) upload.mutate(file);
   }
 
   return (
@@ -209,6 +242,21 @@ function DraftsSection() {
             {create.isPending ? "…" : "Create"}
           </button>
         </form>
+        <button
+          type="button"
+          className="documents-list__upload"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={unavailable || upload.isPending}
+        >
+          <Upload size={13} aria-hidden="true" /> {upload.isPending ? "Uploading…" : "Upload .md / .txt"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".md,.markdown,.txt,text/markdown,text/plain"
+          hidden
+          onChange={handleFileSelected}
+        />
 
         {docsQuery.isPending && <SkeletonBlock variant="text" lines={4} />}
         {unavailable && (
@@ -285,6 +333,8 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
   const [label, setLabel] = useState("");
   const [preview, setPreview] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
+  const [acceptTarget, setAcceptTarget] = useState<DocComment | null>(null);
 
   // The editor buffer starts from the head version content once it loads;
   // user edits (draft !== null) are never clobbered by refetches.
@@ -313,6 +363,57 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
     onError: (error: unknown) => toast({ title: "Delete failed", description: formatError(error), tone: "danger" }),
   });
 
+  // Export-to-artifact (docs/GAPS.md §11 row 3), alongside the existing
+  // browser .md download — puts the current buffer into the shared
+  // Artifacts store visible on every surface.
+  const exportArtifact = useMutation({
+    mutationFn: async () => {
+      const created = await gv.artifacts.create({
+        filename: exportFilename(doc.title),
+        mimeType: "text/markdown",
+        dataBase64: base64FromText(text),
+        metadata: { surface: "app", kind: "document-export", documentId: doc.id, title: doc.title },
+      });
+      const artifactId = createdArtifactId(created);
+      if (!artifactId) throw new Error("artifacts.create did not return an artifact id");
+      return artifactId;
+    },
+    onSuccess: (artifactId) => {
+      setExportConfirmOpen(false);
+      toast({
+        title: "Exported to Artifacts",
+        description: `Artifact ${artifactId} — view it in the Artifacts view.`,
+        tone: "success",
+      });
+    },
+    onError: (error: unknown) => toast({ title: "Export failed", description: formatError(error), tone: "danger" }),
+  });
+
+  // Accept a comment's suggestion (docs/GAPS.md §11 row 2): applies the
+  // suggested text to the draft as a brand-new version, then marks the
+  // comment resolved+accepted. Confirm-gated — it overwrites the draft.
+  const acceptSuggestion = useMutation({
+    mutationFn: async (comment: DocComment) => {
+      await saveVersion(doc.id, comment.suggestion, `Applied suggestion from comment`);
+      await updateDocument(
+        doc.id,
+        rawWithComments(
+          doc,
+          doc.comments.map((c) => (c.id === comment.id ? { ...c, resolved: true, resolution: "accepted" } : c)),
+        ),
+      );
+    },
+    onSuccess: async () => {
+      setAcceptTarget(null);
+      setDraft(null);
+      await queryClient.invalidateQueries({ queryKey: docKeys.all });
+      await queryClient.invalidateQueries({ queryKey: docKeys.versions(doc.id) });
+      toast({ title: "Suggestion applied", description: "Saved as a new version.", tone: "success" });
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Accept failed", description: formatError(error), tone: "danger" }),
+  });
+
   return (
     <div className="document-editor">
       <header className="document-editor__header">
@@ -339,6 +440,9 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
           </button>
           <button type="button" onClick={() => downloadText(exportFilename(doc.title), text)}>
             Export .md
+          </button>
+          <button type="button" onClick={() => setExportConfirmOpen(true)} disabled={!text}>
+            Export to Artifact
           </button>
           <button type="button" className="document-editor__delete" onClick={() => setDeleteOpen(true)}>
             Delete
@@ -378,7 +482,7 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
 
       {versions.length > 0 && <VersionTimeline versions={versions} />}
 
-      <CommentsSection doc={doc} />
+      <CommentsSection doc={doc} onAcceptSuggestion={(comment) => setAcceptTarget(comment)} />
 
       <ConfirmSurface
         open={deleteOpen}
@@ -390,6 +494,28 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
         confirmLabel="Delete draft"
         onCancel={() => setDeleteOpen(false)}
         onConfirm={() => remove.mutate()}
+      />
+
+      <ConfirmSurface
+        open={exportConfirmOpen}
+        action="Export draft to Artifact"
+        target={doc.title}
+        blastRadius="Adds a new artifact holding the current buffer to the shared Artifacts store, visible on every surface (TUI, agent, this app)."
+        confirmLabel="Create artifact"
+        onCancel={() => setExportConfirmOpen(false)}
+        onConfirm={() => exportArtifact.mutate()}
+      />
+
+      <ConfirmSurface
+        open={acceptTarget !== null}
+        action="Apply suggestion"
+        target={doc.title}
+        blastRadius={`Overwrites the draft's content with the comment's suggested text, saved as v${doc.headVersion + 1}. The current head version is kept in history, not lost.`}
+        confirmLabel="Apply as new version"
+        onCancel={() => setAcceptTarget(null)}
+        onConfirm={() => {
+          if (acceptTarget) acceptSuggestion.mutate(acceptTarget);
+        }}
       />
     </div>
   );
@@ -483,10 +609,19 @@ function VersionTimeline({ versions }: { versions: DocVersion[] }) {
 
 // ─── Review comments (stored on the item, superset-tolerant) ─────────────────
 
-function CommentsSection({ doc }: { doc: DocRecord }) {
+function CommentsSection({
+  doc,
+  onAcceptSuggestion,
+}: {
+  doc: DocRecord;
+  /** Escalates to DocumentEditor — accepting overwrites the draft's content
+   * with a new version, which needs its own confirm gate. */
+  onAcceptSuggestion: (comment: DocComment) => void;
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [text, setText] = useState("");
+  const [suggestion, setSuggestion] = useState("");
 
   const saveComments = useMutation({
     mutationFn: (comments: typeof doc.comments) => updateDocument(doc.id, rawWithComments(doc, comments)),
@@ -499,15 +634,25 @@ function CommentsSection({ doc }: { doc: DocRecord }) {
     event.preventDefault();
     const trimmed = text.trim();
     if (!trimmed || saveComments.isPending) return;
-    const comment = {
+    const comment: DocComment = {
       id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text: trimmed,
       createdAt: Date.now(),
       resolved: false,
+      suggestion: suggestion.trim(),
+      range: undefined,
+      resolution: "",
       raw: {},
     };
     saveComments.mutate([...doc.comments, comment]);
     setText("");
+    setSuggestion("");
+  }
+
+  function rejectSuggestion(comment: DocComment): void {
+    saveComments.mutate(
+      doc.comments.map((c) => (c.id === comment.id ? { ...c, resolved: true, resolution: "rejected" } : c)),
+    );
   }
 
   return (
@@ -521,19 +666,37 @@ function CommentsSection({ doc }: { doc: DocRecord }) {
           {doc.comments.map((comment) => (
             <li key={comment.id || comment.text} className={comment.resolved ? "document-comment document-comment--resolved" : "document-comment"}>
               <p className="document-comment__text">{comment.text}</p>
+              {comment.suggestion && (
+                <div className="document-comment__suggestion">
+                  <span className="document-comment__suggestion-label">Suggested replacement</span>
+                  <pre className="document-comment__suggestion-text">{comment.suggestion}</pre>
+                </div>
+              )}
               <div className="document-comment__meta">
                 <span>{formatRelative(comment.createdAt)}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    saveComments.mutate(
-                      doc.comments.map((c) => (c.id === comment.id ? { ...c, resolved: !c.resolved } : c)),
-                    )
-                  }
-                  disabled={saveComments.isPending}
-                >
-                  {comment.resolved ? "Reopen" : "Resolve"}
-                </button>
+                {comment.resolution && <span className="badge neutral">{comment.resolution}</span>}
+                {comment.suggestion && !comment.resolved ? (
+                  <>
+                    <button type="button" onClick={() => onAcceptSuggestion(comment)}>
+                      Accept
+                    </button>
+                    <button type="button" onClick={() => rejectSuggestion(comment)} disabled={saveComments.isPending}>
+                      Reject
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      saveComments.mutate(
+                        doc.comments.map((c) => (c.id === comment.id ? { ...c, resolved: !c.resolved } : c)),
+                      )
+                    }
+                    disabled={saveComments.isPending}
+                  >
+                    {comment.resolved ? "Reopen" : "Resolve"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => saveComments.mutate(doc.comments.filter((c) => c.id !== comment.id))}
@@ -553,6 +716,14 @@ function CommentsSection({ doc }: { doc: DocRecord }) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Add a review comment…"
           aria-label="New review comment"
+        />
+        <textarea
+          className="document-comments__suggestion-input"
+          value={suggestion}
+          onChange={(e) => setSuggestion(e.target.value)}
+          placeholder="Optional: suggested replacement text (imported or hand-entered — no AI generation is wired here)"
+          aria-label="Optional suggested replacement text"
+          rows={2}
         />
         <button type="submit" disabled={!text.trim() || saveComments.isPending}>
           Comment

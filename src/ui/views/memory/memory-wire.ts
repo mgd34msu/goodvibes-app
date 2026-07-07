@@ -369,6 +369,64 @@ export function formatConfidence(confidence: number): string {
   return `${Math.round(confidence)}%`;
 }
 
+// ─── Learning-review triage buckets (docs/GAPS.md §8 row 12 — the memory-side
+// half: client-side buckets over the SAME review-queue data, using the
+// review-state transitions memory.records.update-review already ships. No
+// new wire verb; this is purely a client-side lens over memory.review-queue). ─
+
+/** Below this, a record is "low confidence" for triage purposes — a fixed,
+ * documented threshold (matches the AddMemoryForm default of 60), NOT the
+ * dynamic per-search recallFloor (the review queue response carries no
+ * recallFloor of its own to compare against). */
+export const LOW_CONFIDENCE_TRIAGE_THRESHOLD = 60;
+
+export function isStaleRecord(record: MemoryRecord): boolean {
+  return record.reviewState === "stale";
+}
+
+export function isLowConfidenceRecord(record: MemoryRecord): boolean {
+  return record.confidence < LOW_CONFIDENCE_TRIAGE_THRESHOLD;
+}
+
+/** Normalize a summary for duplicate grouping: lowercase, collapse whitespace,
+ * strip trailing punctuation — a heuristic, not a semantic match. */
+function normalizeSummary(summary: string): string {
+  return summary.trim().toLowerCase().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
+}
+
+/** Ids of records that share a normalized summary + class with at least one
+ * OTHER record in the same list — a cheap duplicate-candidate heuristic
+ * (exact-ish text match, not embeddings) over whatever page of records the
+ * review queue returned. */
+export function findDuplicateRecordIds(records: readonly MemoryRecord[]): ReadonlySet<string> {
+  const groups = new Map<string, string[]>();
+  for (const record of records) {
+    const key = `${record.cls}|${normalizeSummary(record.summary)}`;
+    const group = groups.get(key);
+    if (group) group.push(record.id);
+    else groups.set(key, [record.id]);
+  }
+  const duplicateIds = new Set<string>();
+  for (const group of groups.values()) {
+    if (group.length > 1) for (const id of group) duplicateIds.add(id);
+  }
+  return duplicateIds;
+}
+
+export const REVIEW_TRIAGE_BUCKETS = ["all", "stale", "low-confidence", "duplicates"] as const;
+export type ReviewTriageBucket = (typeof REVIEW_TRIAGE_BUCKETS)[number];
+
+export function isReviewTriageBucket(value: string): value is ReviewTriageBucket {
+  return (REVIEW_TRIAGE_BUCKETS as readonly string[]).includes(value);
+}
+
+export const REVIEW_TRIAGE_LABELS: ReadonlyArray<[ReviewTriageBucket, string]> = [
+  ["all", "All"],
+  ["stale", "Stale"],
+  ["low-confidence", "Low confidence"],
+  ["duplicates", "Possible duplicates"],
+];
+
 export function formatSimilarity(similarity: number): string {
   return `${Math.round(similarity * 100)}% match`;
 }

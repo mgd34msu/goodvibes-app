@@ -32,6 +32,7 @@ import {
 import { jumpToDiff } from "./diff-model.ts";
 import { GitHubPanel } from "./GitHubPanel.tsx";
 import { RepoSessionsPanel } from "./RepoSessionsPanel.tsx";
+import { DevSnapshotsPanel } from "./DevSnapshotsPanel.tsx";
 
 const STATUS_POLL_MS = 15_000; // no wire events for app-local git — targeted poll
 const LISTS_POLL_MS = 30_000;
@@ -165,6 +166,12 @@ export function GitView() {
         <div className="git-column">
           <RepoSessionsPanel workspaceDir={workspace.data.workspaceDir} />
           <RepoFilesPanel />
+        </div>
+      </div>
+
+      <div className="git-columns">
+        <div className="git-column git-column--wide">
+          <DevSnapshotsPanel />
         </div>
       </div>
     </div>

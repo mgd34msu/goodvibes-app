@@ -126,6 +126,16 @@ export interface DocComment {
   text: string;
   createdAt: number | undefined;
   resolved: boolean;
+  /** Superset-tolerant suggestion semantics (docs/GAPS.md §11 row 2): a
+   * comment MAY carry a proposed replacement for the draft's content, plus
+   * an optional free-form range descriptor. Accept applies `suggestion` to
+   * the draft as a new version; Reject just resolves the comment without
+   * applying it. Absent on plain comments (imported or hand-entered). */
+  suggestion: string;
+  /** Opaque range descriptor — carried through verbatim, never parsed here. */
+  range: unknown;
+  /** "accepted" | "rejected" | "" — set once a suggestion is actioned. */
+  resolution: string;
   raw: AnyRecord;
 }
 
@@ -145,6 +155,9 @@ export function commentFrom(value: unknown): DocComment {
     text: firstString(raw, ["text", "body", "comment"]),
     createdAt: firstTimestamp(raw, ["createdAt"]),
     resolved: raw["resolved"] === true,
+    suggestion: firstString(raw, ["suggestion", "suggestedText", "replacement"]),
+    range: raw["range"],
+    resolution: firstString(raw, ["resolution"]),
     raw,
   };
 }
@@ -185,7 +198,16 @@ export function versionFrom(value: unknown): DocVersion {
 export function rawWithComments(doc: DocRecord, comments: DocComment[]): AnyRecord {
   return {
     ...doc.raw,
-    comments: comments.map((c) => ({ ...c.raw, id: c.id, text: c.text, resolved: c.resolved, createdAt: c.createdAt })),
+    comments: comments.map((c) => ({
+      ...c.raw,
+      id: c.id,
+      text: c.text,
+      resolved: c.resolved,
+      createdAt: c.createdAt,
+      ...(c.suggestion ? { suggestion: c.suggestion } : {}),
+      ...(c.range !== undefined ? { range: c.range } : {}),
+      ...(c.resolution ? { resolution: c.resolution } : {}),
+    })),
   };
 }
 
@@ -211,4 +233,40 @@ export function exportFilename(title: string): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "document";
   return `${slug}.md`;
+}
+
+/** UTF-8 safe base64 (btoa alone corrupts non-Latin-1 text) — used by the
+ * export-to-artifact flow (docs/GAPS.md §11 row 3). */
+export function base64FromText(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+// ─── Upload (docs/GAPS.md §11 row 3) ─────────────────────────────────────────
+
+/** Read a File's contents as text client-side — no wire round-trip. */
+export function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error(`Failed to read ${file.name}`));
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsText(file);
+  });
+}
+
+/** A draft title from an uploaded filename: strip the extension, swap
+ * separators for spaces, title-case each word. */
+export function titleFromFilename(filename: string): string {
+  const base = filename.replace(/\.[^./\\]+$/, "");
+  const words = base.replace(/[-_]+/g, " ").trim();
+  if (!words) return "Untitled upload";
+  return words
+    .split(/\s+/)
+    .map((w) => (w.length > 0 ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(" ");
 }

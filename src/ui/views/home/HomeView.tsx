@@ -35,6 +35,7 @@ import { BriefingChips, useBriefing, type BriefingJumpTarget } from "../personal
 import { formatTime, poKeys } from "../personal-ops/personal-ops-data.ts";
 import { AwayDigest } from "./AwayDigest.tsx";
 import { ComingUpRail } from "./ComingUpRail.tsx";
+import { QuickCapture } from "./QuickCapture.tsx";
 
 function greeting(hour: number): string {
   if (hour < 5) return "Up late";
@@ -66,6 +67,10 @@ export function HomeView(): ReactElement {
   const jump = (target: BriefingJumpTarget) => {
     if (target === "approvals" || target === "tasks") {
       setView("approvals");
+      return;
+    }
+    if (target === "deliveries") {
+      setView("channels");
       return;
     }
     openPersonalOps(target === "events" ? "calendar" : undefined);
@@ -203,6 +208,8 @@ export function HomeView(): ReactElement {
         </div>
 
         <div className="home-view__rail">
+          <QuickCapture onOpenScratchpad={() => setUrlState({ view: "routines", filters: { rtab: "scratchpad" } })} />
+
           <ComingUpRail
             onOpenCalendar={() => openPersonalOps("calendar")}
             onOpenAutomation={() => setView("automation")}

@@ -19,7 +19,17 @@
 
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, ChevronLeft, GitBranch, OctagonX, RefreshCw, SendHorizontal, Unlink, Workflow } from "lucide-react";
+import {
+  Boxes,
+  ChevronLeft,
+  GitBranch,
+  OctagonX,
+  Play,
+  RefreshCw,
+  SendHorizontal,
+  Unlink,
+  Workflow,
+} from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError, isMethodUnavailableError, isWsBridgeUnavailableError } from "../../lib/errors.ts";
@@ -53,6 +63,7 @@ import {
   type FleetNode,
 } from "./fleet.ts";
 import { FleetApprovalInline } from "./FleetApprovalInline.tsx";
+import { FleetTaskInline } from "./FleetTaskInline.tsx";
 import { APP_SURFACE_ID, APP_SURFACE_KIND } from "../sessions/sessions-union.ts";
 
 /** No wire event exists for fleet.* — poll while visible (docs/UX.md §6). */
@@ -359,17 +370,43 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [confirmStop, setConfirmStop] = useState(false);
+  const [confirmStart, setConfirmStart] = useState(false);
+  const [confirmRun, setConfirmRun] = useState(false);
   const backed = useMemo(() => wireBackedActions(node), [node]);
   const unbackedNote = useMemo(() => unbackedCapabilityNote(node), [node]);
+
+  const invalidateWatchers = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.watchers });
+  };
 
   const stopWatcher = useMutation({
     mutationFn: (watcherId: string) => invoke("watchers.stop", { params: { watcherId } }),
     onSuccess: async () => {
       toast({ title: "Stop requested", tone: "info" });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.watchers });
+      await invalidateWatchers();
     },
     onError: (error: unknown) => toast({ title: "Stop failed", description: formatError(error), tone: "danger" }),
+  });
+
+  const startWatcher = useMutation({
+    mutationFn: (watcherId: string) => invoke("watchers.start", { params: { watcherId } }),
+    onSuccess: async () => {
+      setConfirmStart(false);
+      toast({ title: "Watcher started", tone: "success" });
+      await invalidateWatchers();
+    },
+    onError: (error: unknown) => toast({ title: "Start failed", description: formatError(error), tone: "danger" }),
+  });
+
+  const runWatcher = useMutation({
+    mutationFn: (watcherId: string) => invoke("watchers.run", { params: { watcherId } }),
+    onSuccess: async () => {
+      setConfirmRun(false);
+      toast({ title: "Watcher run triggered", tone: "success" });
+      await invalidateWatchers();
+    },
+    onError: (error: unknown) => toast({ title: "Run failed", description: formatError(error), tone: "danger" }),
   });
 
   const detach = useMutation({
@@ -418,7 +455,7 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
 
       <FleetApprovalInline node={node} />
 
-      {(backed.has("steer") || backed.has("detach") || backed.has("stop")) && (
+      {(backed.has("steer") || backed.has("detach") || backed.has("stop") || backed.has("start") || backed.has("run")) && (
         <div className="fleet-detail__actions">
           {backed.has("steer") && node.sessionId && <FleetSteerBox sessionId={node.sessionId} />}
           {backed.has("detach") && node.sessionId && (
@@ -432,6 +469,16 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
               <Unlink size={13} aria-hidden="true" /> {detach.isPending ? "Detaching…" : "Detach"}
             </button>
           )}
+          {backed.has("start") && (
+            <button
+              type="button"
+              className="fleet-action"
+              disabled={startWatcher.isPending}
+              onClick={() => setConfirmStart(true)}
+            >
+              <Play size={13} aria-hidden="true" /> {startWatcher.isPending ? "Starting…" : "Start"}
+            </button>
+          )}
           {backed.has("stop") && (
             <button
               type="button"
@@ -442,8 +489,20 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
               <OctagonX size={14} aria-hidden="true" /> {stopWatcher.isPending ? "Stopping…" : "Stop"}
             </button>
           )}
+          {backed.has("run") && (
+            <button
+              type="button"
+              className="fleet-action"
+              disabled={runWatcher.isPending}
+              onClick={() => setConfirmRun(true)}
+            >
+              <Play size={13} aria-hidden="true" /> {runWatcher.isPending ? "Triggering…" : "Run once"}
+            </button>
+          )}
         </div>
       )}
+
+      <FleetTaskInline node={node} />
 
       {unbackedNote && (
         <p className="fleet-detail__unbacked-note" role="note">
@@ -506,6 +565,24 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
           stopWatcher.mutate(node.id);
         }}
         onCancel={() => setConfirmStop(false)}
+      />
+      <ConfirmSurface
+        open={confirmStart}
+        action="Start watcher"
+        target={`${node.label} (${node.id})`}
+        blastRadius="The watcher resumes observing its source and will run its trigger again on the next matching event or interval."
+        confirmLabel="Start watcher"
+        onConfirm={() => startWatcher.mutate(node.id)}
+        onCancel={() => setConfirmStart(false)}
+      />
+      <ConfirmSurface
+        open={confirmRun}
+        action="Run watcher once"
+        target={`${node.label} (${node.id})`}
+        blastRadius="Manually triggers this watcher's action once, right now, outside of its normal schedule or event source."
+        confirmLabel="Run once"
+        onConfirm={() => runWatcher.mutate(node.id)}
+        onCancel={() => setConfirmRun(false)}
       />
     </div>
   );

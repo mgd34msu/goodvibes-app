@@ -445,3 +445,218 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ─── Agent-brain tab shell (Routines / Profiles / Scratchpad) ────────── */
+
+.routines-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.reg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.reg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
+}
+
+.reg-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.reg-tab--active {
+  color: var(--text-accent);
+  background: var(--accent-muted);
+  border-color: var(--border-strong);
+}
+
+/* ─── Profiles panel ────────────────────────────────────────────────────── */
+
+.profiles-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profiles-panel__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.profile-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profile-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.profile-editor input,
+.profile-editor textarea {
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.profile-editor__persona {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.profile-editor__persona legend {
+  padding: 0 var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ─── Scratchpad panel ──────────────────────────────────────────────────── */
+
+.scratchpad-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scratchpad-panel__composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.scratchpad-panel__composer textarea {
+  resize: vertical;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.scratchpad-panel__composer-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.scratchpad-panel__composer-row input {
+  flex: 1;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.scratchpad-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scratchpad-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.scratchpad-note__text {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.scratchpad-note__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.scratchpad-note__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.scratchpad-note__editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.scratchpad-note__editor textarea,
+.scratchpad-note__editor input {
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.scratchpad-note__editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

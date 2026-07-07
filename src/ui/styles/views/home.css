@@ -389,3 +389,51 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* ── Quick capture rail widget (docs/FEATURES.md §8 row 11) ─────────── */
+
+.home-quick-capture__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.home-quick-capture__link:hover {
+  color: var(--text-accent);
+}
+
+.home-quick-capture__form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.home-quick-capture__form input {
+  flex: 1;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.home-quick-capture__submit {
+  padding: var(--space-2) var(--space-3);
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.home-quick-capture__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -37,6 +37,7 @@ export const researchKeys = {
   searchProviders: ["research", "web-search", "providers"] as const,
   search: (provider: string, query: string) => ["research", "web-search", "query", provider, query] as const,
   capability: (methodId: string) => ["research", "capability", methodId] as const,
+  inspect: (url: string) => ["research", "inspect", url] as const,
 };
 
 // ─── research-runs registry client ───────────────────────────────────────────
@@ -93,6 +94,12 @@ export interface ResearchRun {
   findings: ResearchFinding[];
   reportArtifactId: string;
   createdAt: number | undefined;
+  /** Timestamped status/finding/checkpoint/report history — see the
+   * "Findings log + checkpoints" section below. Superset field: absent on
+   * runs created before this shipped, populated going forward. */
+  log: RunLogEntry[];
+  /** Named findings snapshots taken by the "Checkpoint" action. */
+  checkpoints: RunCheckpoint[];
   /** Raw item record — the PUT payload is built from this. */
   raw: AnyRecord;
 }
@@ -116,6 +123,8 @@ export function findingFrom(value: unknown): ResearchFinding {
 export function runFrom(value: unknown): ResearchRun {
   const raw = asRecord(value);
   const findings = Array.isArray(raw["findings"]) ? raw["findings"].map(findingFrom) : [];
+  const log = Array.isArray(raw["log"]) ? raw["log"].map(logEntryFrom) : [];
+  const checkpoints = Array.isArray(raw["checkpoints"]) ? raw["checkpoints"].map(checkpointFrom) : [];
   return {
     id: firstString(raw, ["id"]),
     question: firstString(raw, ["question", "title", "name"]) || "(no question)",
@@ -123,16 +132,143 @@ export function runFrom(value: unknown): ResearchRun {
     findings,
     reportArtifactId: firstString(raw, ["reportArtifactId"]),
     createdAt: firstTimestamp(raw, ["createdAt"]),
+    log,
+    checkpoints,
     raw,
   };
 }
 
-/** Serialize the findings array back onto a raw run record. */
-export function rawWithFindings(run: ResearchRun, findings: ResearchFinding[]): AnyRecord {
+/** Serialize the findings array back onto a raw run record, optionally
+ * appending a log entry in the same PUT (never two racing mutations). */
+export function rawWithFindings(run: ResearchRun, findings: ResearchFinding[], logEntry?: AnyRecord): AnyRecord {
+  const existingLog = Array.isArray(run.raw["log"]) ? run.raw["log"] : [];
   return {
     ...run.raw,
     findings: findings.map((f) => ({ ...f.raw, url: f.url, title: f.title, note: f.note, credibility: f.credibility })),
+    ...(logEntry ? { log: [...existingLog, logEntry] } : {}),
   };
+}
+
+// ─── Findings log + checkpoints (docs/GAPS.md §10 row 3 — resumable runs) ────
+// A run is "resumable" when its status transitions and finding edits are
+// recorded as a timestamped, append-only log on the item itself (no wire
+// task backs this — the app-local registry item IS the source of truth),
+// and a "checkpoint" snapshots the findings-at-the-time into a versions
+// array so a run can be rolled back to what it looked like at that point.
+
+export interface RunLogEntry {
+  at: number | undefined;
+  type: string;
+  message: string;
+  raw: AnyRecord;
+}
+
+export function logEntryFrom(value: unknown): RunLogEntry {
+  const raw = asRecord(value);
+  return {
+    at: firstTimestamp(raw, ["at", "timestamp", "createdAt"]),
+    type: firstString(raw, ["type", "kind"]) || "note",
+    message: firstString(raw, ["message", "note", "text"]),
+    raw,
+  };
+}
+
+/** A fresh log-entry record (ISO timestamp — matches the registry's own
+ * nowIso() convention so ordering survives round-trips through the store). */
+export function makeLogEntry(type: string, message: string): AnyRecord {
+  return { at: new Date().toISOString(), type, message };
+}
+
+export interface RunCheckpoint {
+  at: number | undefined;
+  label: string;
+  findings: ResearchFinding[];
+  raw: AnyRecord;
+}
+
+export function checkpointFrom(value: unknown): RunCheckpoint {
+  const raw = asRecord(value);
+  const findings = Array.isArray(raw["findings"]) ? raw["findings"].map(findingFrom) : [];
+  return {
+    at: firstTimestamp(raw, ["at", "timestamp", "createdAt"]),
+    label: firstString(raw, ["label", "name"]) || "checkpoint",
+    findings,
+    raw,
+  };
+}
+
+/** Append a log entry (and, optionally, apply other field patches) onto a
+ * run's raw record in one shot — a single PUT for both, never a lost update
+ * from two separate mutations racing each other. */
+export function rawWithLog(run: ResearchRun, patch: AnyRecord, entry: AnyRecord): AnyRecord {
+  const existingLog = Array.isArray(run.raw["log"]) ? run.raw["log"] : [];
+  return {
+    ...run.raw,
+    ...patch,
+    log: [...existingLog, entry],
+  };
+}
+
+export function rawWithCheckpoint(run: ResearchRun, label: string): AnyRecord {
+  const existingCheckpoints = Array.isArray(run.raw["checkpoints"]) ? run.raw["checkpoints"] : [];
+  const existingLog = Array.isArray(run.raw["log"]) ? run.raw["log"] : [];
+  const snapshot = {
+    at: new Date().toISOString(),
+    label,
+    findings: run.findings.map((f) => ({ ...f.raw, url: f.url, title: f.title, note: f.note, credibility: f.credibility })),
+  };
+  return {
+    ...run.raw,
+    checkpoints: [...existingCheckpoints, snapshot],
+    log: [
+      ...existingLog,
+      makeLogEntry(
+        "checkpoint",
+        `Checkpointed ${run.findings.length} finding${run.findings.length === 1 ? "" : "s"} as “${label}”`,
+      ),
+    ],
+  };
+}
+
+/** Status transitions offered in the run-detail status selector — an open
+ * vocabulary (the raw field accepts any string; these are just the offered
+ * choices so a transition always has a readable log message). */
+export const RUN_STATUSES = ["open", "in-progress", "blocked", "done", "reported"] as const;
+
+// ─── URL inspection (docs/GAPS.md §10 row 7) ─────────────────────────────────
+// POST /app/local/fetch-preview (src/bun/local-tools.ts) — a read-only,
+// server-side GET with a private-address guard. Refusals come back as a
+// normal HTTP error whose JSON body carries {error, code}; lib/errors.ts's
+// errorCode()/formatError() read that shape directly from the HttpError.
+
+export interface UrlPreview {
+  url: string;
+  finalUrl: string;
+  status: number;
+  contentType: string;
+  title: string;
+  textExcerpt: string;
+}
+
+export function urlPreviewFrom(value: unknown): UrlPreview {
+  const raw = asRecord(value);
+  return {
+    url: firstString(raw, ["url"]),
+    finalUrl: firstString(raw, ["finalUrl", "url"]),
+    status: typeof raw["status"] === "number" ? raw["status"] : 0,
+    contentType: firstString(raw, ["contentType"]),
+    title: firstString(raw, ["title"]),
+    textExcerpt: firstString(raw, ["textExcerpt"]),
+  };
+}
+
+export async function fetchUrlPreview(url: string): Promise<UrlPreview> {
+  const res = await appJson<unknown>("/app/local/fetch-preview", {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ url }),
+  });
+  return urlPreviewFrom(res);
 }
 
 // ─── Web search parsing ──────────────────────────────────────────────────────
