@@ -39,6 +39,8 @@ export interface UiServerOptions {
   wsBridge: WsBridge;
   /** Extra same-origin route handlers (app-local services register here). */
   appRoutes?: Record<string, (req: Request, url: URL) => Response | Promise<Response>>;
+  /** Reported in /app/health so the UI knows to start its dev-driver module. */
+  devDriver?: boolean;
 }
 
 export interface UiServerHandle {
@@ -75,6 +77,17 @@ async function proxyToDaemon(req: Request, url: URL, daemon: DaemonHandle): Prom
     });
     const outHeaders = new Headers(upstream.headers);
     for (const h of STRIP_RESPONSE_HEADERS) outHeaders.delete(h);
+    // WebKitGTK aborts fetch streams that stay byte-silent for ~12s, and the
+    // daemon's quiet SSE domains can idle far longer. Inject SSE comment
+    // heartbeats (ignored by every spec-compliant parser) to keep the webview's
+    // network stack from reaping live-but-quiet streams.
+    const isSse = (outHeaders.get("content-type") ?? "").includes("text/event-stream");
+    if (isSse && upstream.body) {
+      return new Response(withSseHeartbeat(upstream.body), {
+        status: upstream.status,
+        headers: outHeaders,
+      });
+    }
     return new Response(upstream.body, { status: upstream.status, headers: outHeaders });
   } catch (err) {
     return Response.json(
@@ -86,6 +99,44 @@ async function proxyToDaemon(req: Request, url: URL, daemon: DaemonHandle): Prom
       { status: 502 },
     );
   }
+}
+
+const SSE_HEARTBEAT_MS = 8_000;
+const SSE_HEARTBEAT_CHUNK = new TextEncoder().encode(":hb\n\n");
+
+/** Pipe an SSE body through, emitting comment heartbeats during quiet spells. */
+function withSseHeartbeat(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  let timer: ReturnType<typeof setInterval> | null = null;
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      timer = setInterval(() => {
+        try {
+          controller.enqueue(SSE_HEARTBEAT_CHUNK);
+        } catch {
+          if (timer !== null) clearInterval(timer);
+        }
+      }, SSE_HEARTBEAT_MS);
+      void (async () => {
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) controller.enqueue(value);
+          }
+          controller.close();
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          if (timer !== null) clearInterval(timer);
+        }
+      })();
+    },
+    cancel(reason) {
+      if (timer !== null) clearInterval(timer);
+      void reader.cancel(reason);
+    },
+  });
 }
 
 function serveAsset(assetsDir: string, pathname: string): Response {
@@ -114,6 +165,7 @@ export function startUiServer(opts: UiServerOptions): UiServerHandle {
     app: { name: "goodvibes-app", version: opts.appVersion },
     daemon: opts.daemon.info,
     startedAt,
+    devDriver: opts.devDriver === true,
   });
 
   const server = Bun.serve({

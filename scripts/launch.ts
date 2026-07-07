@@ -27,6 +27,8 @@ const proc = Bun.spawn([launcher], {
     // WebKitGTK paints a blank window without this on this hardware
     // (verified 2026-07-07; docs/ARCHITECTURE.md §1).
     WEBKIT_DISABLE_DMABUF_RENDERER: "1",
+    // scripts/launch.ts is the dev launcher — enable the webview eval driver.
+    GOODVIBES_APP_DEV: "1",
   },
   stdin: "ignore",
   stdout: logPath ? Bun.file(logPath) : "inherit",

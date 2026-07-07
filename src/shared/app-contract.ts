@@ -19,6 +19,8 @@ export interface AppHealth {
   app: { name: string; version: string };
   daemon: DaemonInfo;
   startedAt: number;
+  /** True only in dev runs (GOODVIBES_APP_DEV=1): the webview eval driver is live. */
+  devDriver?: boolean;
 }
 
 /** Header the UI stamps on every /api and /app request (defense in depth). */

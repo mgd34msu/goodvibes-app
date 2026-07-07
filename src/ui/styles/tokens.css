@@ -1,40 +1,225 @@
-/* Skeleton token subset — the full webui token-contract port lands in Wave A.
-   Names follow docs/research/webui-map.md §3 (TOKEN-CONTRACT). */
+/*
+ * GoodVibes Design Token System — full port of goodvibes-webui
+ * src/styles/tokens.css (TOKEN-CONTRACT: all surfaces MUST use these exact
+ * names). Dark theme default, light opt-in, compact density, reduced motion.
+ *
+ * Theming mechanic:
+ *   :root  ............... dark theme (DEFAULT)
+ *   :root[data-theme="light"] ... light opt-in override
+ *   :root[data-density="compact"] ... compact density override
+ *   :root[data-motion="reduced"] ... app-level reduced-motion override
+ *   @media (prefers-reduced-motion: reduce) ... OS-level motion collapse
+ *
+ * This layer is the app's own visual identity (cyan/neon brand palette) —
+ * explicitly NOT the SDK presentation contract. The contract's glyph/state
+ * variables live in styles/generated/presentation-tokens.css (generated);
+ * lib/presentation-bridge.ts owns the semantic mapping.
+ */
 
+/* ─────────────────────────────────────────
+   DARK THEME (DEFAULT)
+───────────────────────────────────────── */
 :root {
   color-scheme: dark;
 
-  --surface-base: #08080f;
-  --surface-raised: rgb(8 8 15 / 86%);
+  /* ── Surface ──────────────────────────── */
+  --surface-base:    #08080f;
+  --surface-raised:  rgb(8 8 15 / 86%);
   --surface-overlay: rgb(12 10 28 / 94%);
+  --surface-sunken:  rgb(0 0 0 / 34%);
 
-  --border-subtle: rgb(0 255 255 / 18%);
-  --border-strong: rgb(0 255 255 / 40%);
+  /* ── Border ───────────────────────────── */
+  --border-subtle:  rgb(0 255 255 / 18%);
+  --border-strong:  rgb(0 255 255 / 38%);
+  --border-focus:   rgb(0 255 255 / 64%);
 
-  --text-primary: #f8fbff;
+  /* ── Text ─────────────────────────────── */
+  --text-primary:   #f8fbff;
   --text-secondary: #a7b7d8;
-  --text-muted: #7583a4;
-  --text-accent: #8ffcff;
+  --text-tertiary:  #7583a4;
+  --text-inverse:   #090717;
+  --text-accent:    #8ffcff;
+  /* Legacy alias from the walking skeleton — prefer --text-tertiary. */
+  --text-muted:     var(--text-tertiary);
 
-  --accent: #00dede;
-  --accent-hover: #00ffff;
+  /* ── Accent (teal) ────────────────────── */
+  --accent:          #00dede;
+  --accent-hover:    #00ffff;
+  --accent-muted:    rgb(0 255 255 / 10%);
+  --accent-contrast: #090717;
 
-  --status-success: #38ff8b;
-  --status-warning: #ffcc66;
-  --status-danger: #ff6ac8;
-  --status-info: #8da2ff;
+  /* ── Semantic status ──────────────────── */
+  --status-success:      #38ff8b;
+  --status-success-soft: rgb(56 255 139 / 12%);
+  --status-warning:      #ffcc66;
+  --status-warning-soft: rgb(255 204 102 / 12%);
+  --status-danger:       #ff6ac8;
+  --status-danger-soft:  rgb(255 106 200 / 12%);
+  --status-info:         #8da2ff;
+  --status-info-soft:    rgb(141 162 255 / 14%);
 
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
+  /* ── Brand neon — glow/accent use only, never large fills ── */
+  --brand-cyan:   #00ffff;
+  --brand-pink:   #ff00ff;
+  --brand-yellow: #ffcc00;
+  --brand-purple: #1a0b2e;
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-mono: "Space Mono", ui-monospace, monospace;
+  /* ── Elevation shadows ────────────────── */
+  --elevation-1: 0 0 0 1px rgb(0 255 255 / 8%), 0 2px 8px rgb(0 0 0 / 24%);
+  --elevation-2: 0 0 0 1px rgb(0 255 255 / 12%), 0 8px 24px rgb(0 0 0 / 28%);
+  --elevation-3: 0 0 0 1px rgb(0 255 255 / 14%), 0 18px 44px rgb(0 0 0 / 32%);
+  --elevation-4: 0 0 0 1px rgb(0 255 255 / 18%), 0 28px 68px rgb(0 0 0 / 40%);
 }
+
+/* ─────────────────────────────────────────
+   LIGHT THEME (OPT-IN)
+───────────────────────────────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* ── Surface ──────────────────────────── */
+  --surface-base:    #eef3f1;
+  --surface-raised:  #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-sunken:  #f7faf9;
+
+  /* ── Border ───────────────────────────── */
+  --border-subtle:  #d9e3e3;
+  --border-strong:  #bac9c8;
+  --border-focus:   rgb(49 91 220 / 48%);
+
+  /* ── Text ─────────────────────────────── */
+  --text-primary:   #14191f;
+  --text-secondary: #60717c;
+  --text-tertiary:  #8998a2;
+  --text-inverse:   #ffffff;
+  --text-accent:    #066b57;
+
+  /* ── Accent (teal) ────────────────────── */
+  --accent:          #0a8f73;
+  --accent-hover:    #066b57;
+  --accent-muted:    #ddf4ed;
+  --accent-contrast: #ffffff;
+
+  /* ── Semantic status ──────────────────── */
+  --status-success:      #09583f;
+  --status-success-soft: #dff7ed;
+  --status-warning:      #b66b00;
+  --status-warning-soft: #fff2d7;
+  --status-danger:       #b4233a;
+  --status-danger-soft:  #ffe4e8;
+  --status-info:         #315bdc;
+  --status-info-soft:    #e5ebff;
+
+  /* ── Brand neon — light fallbacks ──────── */
+  --brand-cyan:   #00dede;
+  --brand-pink:   #c0007a;
+  --brand-yellow: #b38600;
+  --brand-purple: #6840b8;
+
+  /* ── Elevation shadows ────────────────── */
+  --elevation-1: 0 1px 2px rgb(20 25 31 / 5%);
+  --elevation-2: 0 4px 12px rgb(20 25 31 / 7%);
+  --elevation-3: 0 14px 34px rgb(20 25 31 / 9%);
+  --elevation-4: 0 24px 56px rgb(20 25 31 / 12%);
+}
+
+/* ─────────────────────────────────────────
+   SCALE TOKENS (theme-invariant)
+───────────────────────────────────────── */
+:root {
+  /* ── Space (4px base) ─────────────────── */
+  --space-0:  0px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Radius ───────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-full: 999px;
+
+  /* ── Typography (fonts bundled locally — see app.css @font-face) ── */
+  --font-sans:    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "Space Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-display: "Press Start 2P", cursive;
+
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 14px;
+  --text-md:   15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+
+  --leading-tight:  1.2;
+  --leading-normal: 1.5;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-bold:    700;
+
+  /* ── Motion ───────────────────────────── */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Z-index ──────────────────────────── */
+  --z-nav:     10;
+  --z-peek:    40;
+  --z-overlay: 50;
+  --z-palette: 60;
+  --z-toast:   70;
+
+  /* ── Layout ───────────────────────────── */
+  --sidebar-width:           264px;
+  --sidebar-width-collapsed: 60px;
+  --statusstrip-height:      32px;
+  --row-h:                   36px;
+  --row-h-compact:           28px;
+}
+
+/* ─────────────────────────────────────────
+   COMPACT DENSITY
+───────────────────────────────────────── */
+:root[data-density="compact"] {
+  --row-h:    28px;
+  --space-4:  12px;
+  --space-6:  18px;
+  --space-8:  24px;
+  --space-10: 32px;
+  --space-12: 40px;
+}
+
+/* ─────────────────────────────────────────
+   REDUCED MOTION (OS signal + app override)
+───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}
+
+:root[data-motion="reduced"] {
+  --motion-fast: 0ms;
+  --motion-base: 0ms;
+  --motion-slow: 0ms;
+}
+
+/* The SDK presentation-contract variables (--contract-glyph-*,
+   --contract-state-*) live in styles/generated/presentation-tokens.css —
+   generated by scripts/generate-presentation-tokens.ts, linked from
+   index.html after this file. Glyphs, not colors, are the cross-surface
+   parity mechanism; this brand palette is never repainted onto them. */

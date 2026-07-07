@@ -1,0 +1,374 @@
+// Tolerant readers + display helpers for fleet.snapshot / fleet.list [ws].
+// Ported from goodvibes-webui src/lib/fleet.ts, with one adaptation: the ws
+// bridge returns `unknown`, so the snapshot is NORMALIZED field-by-field
+// (never cast) against the installed contract artifact's fleet.snapshot
+// output schema. kind/state/costState are read as OPEN STRINGS even though
+// the wire enum is closed — a daemon newer than this client may introduce a
+// value we have never seen; render it verbatim, never drop it.
+
+import { asArray, asRecord, firstString, readPath } from "../../lib/wire.ts";
+
+/** PROCESS_KIND_SCHEMA at the time of writing (contract v1, operator 1.3.1). */
+export const KNOWN_PROCESS_KINDS = [
+  "agent",
+  "wrfc-chain",
+  "wrfc-subtask",
+  "workflow",
+  "trigger",
+  "schedule",
+  "watcher",
+  "background-process",
+  "workstream",
+  "phase",
+  "work-item",
+  "code-index",
+] as const;
+
+/** PROCESS_STATE_SCHEMA at the time of writing. */
+export const KNOWN_PROCESS_STATES = [
+  "thinking",
+  "executing-tool",
+  "awaiting-approval",
+  "streaming",
+  "stalled",
+  "retrying",
+  "done",
+  "failed",
+  "killed",
+  "interrupted",
+  "idle",
+  "queued",
+  "paused",
+] as const;
+
+const TERMINAL_STATES = new Set(["done", "failed", "killed", "interrupted"]);
+
+/** The workstream sub-filter's kinds (orchestration nodes). */
+export const WORKSTREAM_KINDS = new Set(["workstream", "phase", "work-item"]);
+
+export interface FleetNodeUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  llmCallCount: number;
+  turnCount: number;
+  toolCallCount: number;
+}
+
+export interface FleetNodeActivity {
+  kind: string;
+  text: string;
+  toolName: string;
+  at: number;
+}
+
+export interface FleetNodeCapabilities {
+  interruptible: boolean;
+  killable: boolean;
+  pausable: boolean;
+  resumable: boolean;
+  steerable: boolean;
+}
+
+export interface FleetNode {
+  id: string;
+  kind: string;
+  parentId: string;
+  label: string;
+  task: string;
+  state: string;
+  startedAt: number | null;
+  elapsedMs: number | null;
+  model: string;
+  provider: string;
+  /** null when the wire sent null/omitted it — costState says why. */
+  costUsd: number | null;
+  costState: string;
+  usage: FleetNodeUsage | null;
+  currentActivity: FleetNodeActivity | null;
+  capabilities: FleetNodeCapabilities;
+  sessionId: string;
+  agentId: string;
+  raw: unknown;
+}
+
+export interface FleetSnapshot {
+  capturedAt: number | null;
+  nodes: FleetNode[];
+  truncated: boolean;
+  totalCount: number | null;
+}
+
+function optionalNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function booleanField(record: Record<string, unknown>, key: string): boolean {
+  return record[key] === true;
+}
+
+function normalizeNode(value: unknown): FleetNode {
+  const record = asRecord(value);
+  const capabilities = asRecord(record["capabilities"]);
+  const usageRecord = record["usage"] !== undefined ? asRecord(record["usage"]) : null;
+  const activityRecord = record["currentActivity"] !== undefined ? asRecord(record["currentActivity"]) : null;
+  const sessionRef = asRecord(record["sessionRef"]);
+  const id = firstString(record, ["id", "nodeId"]);
+  return {
+    id,
+    kind: firstString(record, ["kind"]),
+    parentId: firstString(record, ["parentId"]),
+    label: firstString(record, ["label", "title", "name"]) || id,
+    task: firstString(record, ["task"]),
+    state: firstString(record, ["state", "status"]),
+    startedAt: optionalNumber(record["startedAt"]),
+    elapsedMs: optionalNumber(record["elapsedMs"]),
+    model: firstString(record, ["model"]),
+    provider: firstString(record, ["provider"]),
+    costUsd: optionalNumber(record["costUsd"]),
+    costState: firstString(record, ["costState"]),
+    usage:
+      usageRecord && Object.keys(usageRecord).length > 0
+        ? {
+            inputTokens: optionalNumber(usageRecord["inputTokens"]) ?? 0,
+            outputTokens: optionalNumber(usageRecord["outputTokens"]) ?? 0,
+            cacheReadTokens: optionalNumber(usageRecord["cacheReadTokens"]) ?? 0,
+            cacheWriteTokens: optionalNumber(usageRecord["cacheWriteTokens"]) ?? 0,
+            llmCallCount: optionalNumber(usageRecord["llmCallCount"]) ?? 0,
+            turnCount: optionalNumber(usageRecord["turnCount"]) ?? 0,
+            toolCallCount: optionalNumber(usageRecord["toolCallCount"]) ?? 0,
+          }
+        : null,
+    currentActivity:
+      activityRecord && Object.keys(activityRecord).length > 0
+        ? {
+            kind: firstString(activityRecord, ["kind"]),
+            text: firstString(activityRecord, ["text"]),
+            toolName: firstString(activityRecord, ["toolName"]),
+            at: optionalNumber(activityRecord["at"]) ?? 0,
+          }
+        : null,
+    capabilities: {
+      interruptible: booleanField(capabilities, "interruptible"),
+      killable: booleanField(capabilities, "killable"),
+      pausable: booleanField(capabilities, "pausable"),
+      resumable: booleanField(capabilities, "resumable"),
+      steerable: booleanField(capabilities, "steerable"),
+    },
+    sessionId: firstString(sessionRef, ["sessionId"]),
+    agentId: firstString(sessionRef, ["agentId"]),
+    raw: value,
+  };
+}
+
+export function normalizeFleetSnapshot(value: unknown): FleetSnapshot {
+  const record = asRecord(value);
+  return {
+    capturedAt: optionalNumber(record["capturedAt"]),
+    nodes: asArray(record["nodes"]).map(normalizeNode),
+    truncated: record["truncated"] === true,
+    totalCount: optionalNumber(record["totalCount"]),
+  };
+}
+
+export function isKnownProcessKind(kind: string): boolean {
+  return (KNOWN_PROCESS_KINDS as readonly string[]).includes(kind);
+}
+
+export function isKnownProcessState(state: string): boolean {
+  return (KNOWN_PROCESS_STATES as readonly string[]).includes(state);
+}
+
+export function kindLabel(kind: string): string {
+  return kind.trim() || "unknown";
+}
+
+export function stateLabel(state: string): string {
+  return state.trim() || "unknown";
+}
+
+export function isTerminalState(state: string): boolean {
+  return TERMINAL_STATES.has(state.trim());
+}
+
+export function isStalledState(state: string): boolean {
+  return state.trim() === "stalled";
+}
+
+export function isAwaitingApprovalState(state: string): boolean {
+  return state.trim() === "awaiting-approval";
+}
+
+/**
+ * Honest cost label. costState ∈ 'priced' | 'unpriced' | 'estimated' —
+ * never show $0.00 for a node the daemon could not price.
+ */
+export function costLabel(node: Pick<FleetNode, "costUsd" | "costState">): string {
+  if (node.costState === "unpriced") return "unpriced";
+  if (node.costUsd == null) return node.costState === "estimated" ? "estimating…" : "unpriced";
+  const amount = `$${node.costUsd.toFixed(node.costUsd < 1 ? 4 : 2)}`;
+  return node.costState === "estimated" ? `~${amount}` : amount;
+}
+
+export function formatDurationMs(ms: number | null): string {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "unknown";
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) return `${minutes}m ${seconds}s`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
+}
+
+export interface FleetRow {
+  readonly node: FleetNode;
+  readonly depth: number;
+}
+
+/**
+ * Flatten the flat, parentId-linked node list into a depth-annotated display
+ * order: roots first, each followed by its descendants (depth-first,
+ * newest-started-first within siblings). Cycle-guarded so a malformed
+ * snapshot degrades to a flat list instead of hanging the view.
+ */
+export function buildFleetRows(nodes: readonly FleetNode[]): FleetRow[] {
+  const byId = new Map(nodes.map((n) => [n.id, n] as const));
+  const childrenByParent = new Map<string, FleetNode[]>();
+  const roots: FleetNode[] = [];
+
+  for (const node of nodes) {
+    if (node.parentId && byId.has(node.parentId)) {
+      const bucket = childrenByParent.get(node.parentId) ?? [];
+      bucket.push(node);
+      childrenByParent.set(node.parentId, bucket);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const byRecency = (a: FleetNode, b: FleetNode) => (b.startedAt ?? 0) - (a.startedAt ?? 0);
+  roots.sort(byRecency);
+  for (const bucket of childrenByParent.values()) bucket.sort(byRecency);
+
+  const rows: FleetRow[] = [];
+  const visited = new Set<string>();
+
+  function visit(node: FleetNode, depth: number): void {
+    if (visited.has(node.id)) return; // cycle guard
+    visited.add(node.id);
+    rows.push({ node, depth });
+    for (const child of childrenByParent.get(node.id) ?? []) visit(child, depth + 1);
+  }
+
+  for (const root of roots) visit(root, 0);
+  // A node whose parent chain cycles still renders (at depth 0) rather than
+  // silently vanishing.
+  for (const node of nodes) {
+    if (!visited.has(node.id)) visit(node, 0);
+  }
+
+  return rows;
+}
+
+export function activeCount(nodes: readonly FleetNode[]): number {
+  return nodes.filter((n) => !isTerminalState(n.state)).length;
+}
+
+// ─── Actions this app can genuinely back over the wire ───────────────────────
+//
+// fleet.snapshot's per-node `capabilities` describe what the underlying
+// process CAN do — but the daemon performs interrupt/kill/pause/resume with
+// direct in-process calls; none of that is an operator wire verb today except:
+//   - steer: sessions.steer, for an 'agent' node with a live sessionRef.sessionId.
+//   - detach: sessions.detach — a session-level action, any node with a sessionId.
+//   - stop: watchers.stop, for a 'watcher' node only (WatcherRecord.id IS the
+//     node id; no other kind's node id maps to a verb-addressable entity).
+// Every other true capability flag is real but UNBACKED — the honest note
+// below says so instead of a button that would no-op or 404.
+export type FleetWireAction = "steer" | "detach" | "stop";
+
+export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction> {
+  const actions = new Set<FleetWireAction>();
+  const hasSession = node.sessionId.length > 0;
+  if (node.kind === "agent" && node.capabilities.steerable && hasSession) actions.add("steer");
+  if (hasSession) actions.add("detach");
+  if (node.kind === "watcher" && node.capabilities.killable) actions.add("stop");
+  return actions;
+}
+
+/**
+ * The honest note for capabilities the daemon reports but this app cannot act
+ * on over the wire — null when every true flag is wire-backed. Never silently
+ * drops the gap; never fabricates a button.
+ */
+export function unbackedCapabilityNote(node: FleetNode): string | null {
+  const backed = wireBackedActions(node);
+  const hasUnbackedStop = node.capabilities.killable && !(node.kind === "watcher" && backed.has("stop"));
+  const hasUnbackedInterrupt = node.capabilities.interruptible;
+  const hasUnbackedPauseResume = node.capabilities.pausable || node.capabilities.resumable;
+  if (!hasUnbackedStop && !hasUnbackedInterrupt && !hasUnbackedPauseResume) return null;
+  const verbs = [
+    hasUnbackedStop && "stop/kill",
+    hasUnbackedInterrupt && "interrupt",
+    hasUnbackedPauseResume && "pause/resume",
+  ].filter((v): v is string => Boolean(v));
+  return (
+    `The daemon reports this ${kindLabel(node.kind)} process as ${verbs.join("/")}-able, ` +
+    `but no operator wire verb exists for '${node.kind}' processes yet — use the TUI for those controls.`
+  );
+}
+
+// ─── Approvals correlation ────────────────────────────────────────────────────
+
+export interface FleetApproval {
+  id: string;
+  sessionId: string;
+  status: string;
+  tool: string;
+  category: string;
+  riskLevel: string;
+  summary: string;
+  metadataAgentId: string;
+  createdAt: number;
+  raw: unknown;
+}
+
+/** Tolerant reader over approvals.list's {approvals} envelope. */
+export function approvalsFromListResponse(value: unknown): FleetApproval[] {
+  const rows = asArray(readPath(value, ["approvals"]));
+  return rows.map((entry) => {
+    const record = asRecord(entry);
+    const request = asRecord(record["request"]);
+    const analysis = asRecord(request["analysis"]);
+    const metadata = asRecord(record["metadata"]);
+    return {
+      id: firstString(record, ["id", "approvalId"]),
+      sessionId: firstString(record, ["sessionId"]),
+      status: firstString(record, ["status"]),
+      tool: firstString(request, ["tool"]),
+      category: firstString(request, ["category"]),
+      riskLevel: firstString(analysis, ["riskLevel"]),
+      summary: firstString(analysis, ["summary"]),
+      metadataAgentId: firstString(metadata, ["agentId"]),
+      createdAt: optionalNumber(record["createdAt"]) ?? 0,
+      raw: entry,
+    };
+  });
+}
+
+/**
+ * Correlate a fleet node to pending approvals — the SAME two signals the
+ * daemon's own fleet registry uses to derive 'awaiting-approval':
+ * approval.sessionId === node.sessionId, or (agent nodes) metadata.agentId ===
+ * node.id. Not a guess.
+ */
+export function approvalsForNode(node: FleetNode, approvals: readonly FleetApproval[]): FleetApproval[] {
+  return approvals.filter((approval) => {
+    if (approval.status !== "pending" && approval.status !== "claimed") return false;
+    if (node.sessionId && approval.sessionId === node.sessionId) return true;
+    if (node.kind === "agent" && approval.metadataAgentId && approval.metadataAgentId === node.id) return true;
+    return false;
+  });
+}
