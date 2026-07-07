@@ -42,6 +42,8 @@ const CURATED: ReadonlyArray<Omit<SettingsSearchEntry, "keywords">> = [
   { sectionId: "auth", sectionLabel: "Local auth", label: "Bootstrap credential clear", anchorSelector: ".settings-auth" },
   { sectionId: "security", sectionLabel: "Security", label: "Permission mode + per-tool rules", anchorSelector: ".settings-security" },
   { sectionId: "security", sectionLabel: "Security", label: "Security settings snapshot", anchorSelector: ".settings-security" },
+  { sectionId: "security", sectionLabel: "Security", label: "OS service install/start/stop/restart/uninstall", anchorSelector: ".settings-os-service" },
+  { sectionId: "security", sectionLabel: "Security", label: "OS service status (systemd/launchd)", anchorSelector: ".settings-os-service" },
   { sectionId: "credentials", sectionLabel: "Credentials", label: "Credential configured/usable status", anchorSelector: ".settings-credentials" },
   { sectionId: "sync", sectionLabel: "Sync & storage", label: "Settings sync snapshot", anchorSelector: ".settings-sync" },
   { sectionId: "sync", sectionLabel: "Sync & storage", label: "Storage posture", anchorSelector: ".settings-sync" },

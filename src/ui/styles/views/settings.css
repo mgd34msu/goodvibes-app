@@ -1339,3 +1339,116 @@
   color: var(--text-tertiary);
   font-size: var(--text-xs);
 }
+
+/* ── OS service (GAPS.md §20 row 8) ─────────────────────────────────────── */
+
+.settings-os-service {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-os-service__note {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-os-service__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.settings-os-service__facts code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+}
+
+.settings-os-service__preview {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.settings-os-service__suggested {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-os-service__suggested-label {
+  color: var(--text-secondary);
+}
+
+.settings-os-service__suggested ul {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-os-service__suggested code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.settings-os-service__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.settings-os-service__btn,
+.settings-os-service__danger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  background: transparent;
+}
+
+.settings-os-service__btn {
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.settings-os-service__btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.settings-os-service__danger-btn {
+  border: 1px solid var(--status-danger);
+  color: var(--status-danger);
+}
+
+.settings-os-service__danger-btn:hover:not(:disabled) {
+  background: var(--status-danger-soft);
+}
+
+.settings-os-service__btn:disabled,
+.settings-os-service__danger-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

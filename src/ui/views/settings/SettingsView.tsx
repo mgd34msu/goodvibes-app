@@ -21,6 +21,7 @@ import { ConfigSettingsSection } from "./ConfigSettingsSection.tsx";
 import { ShellPrefsSection } from "./ShellPrefsSection.tsx";
 import { LocalAuthSection } from "./LocalAuthSection.tsx";
 import { SecuritySection } from "./SecuritySection.tsx";
+import { OsServiceSection } from "./OsServiceSection.tsx";
 import { CredentialsSection } from "./CredentialsSection.tsx";
 import { SyncSection } from "./SyncSection.tsx";
 import { SecretsSection } from "./SecretsSection.tsx";
@@ -141,7 +142,12 @@ export function SettingsView(): React.ReactElement {
       {section === "config" && <ConfigSettingsSection />}
       {section === "app" && <ShellPrefsSection />}
       {section === "auth" && <LocalAuthSection />}
-      {section === "security" && <SecuritySection />}
+      {section === "security" && (
+        <>
+          <SecuritySection />
+          <OsServiceSection />
+        </>
+      )}
       {section === "credentials" && <CredentialsSection />}
       {section === "sync" && <SyncSection />}
       {section === "secrets" && (

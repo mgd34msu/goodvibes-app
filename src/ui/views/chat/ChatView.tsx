@@ -80,7 +80,7 @@ const SLASH_COMMANDS: readonly SlashCommandHint[] = [
   { name: "note", description: "Save text to a note (Documents → Packets & notes)" },
   { name: "keep", description: "Promote the last reply to durable memory" },
   { name: "imagine", description: "Generate an image inline (media.generate)" },
-  { name: "image", description: "Attach an image (opens the file picker)" },
+  { name: "image", description: "Attach an image (opens the file picker; or paste with Ctrl+V)" },
 ];
 
 /** Enter sends, Shift+Enter newlines, IME composition never submits. */

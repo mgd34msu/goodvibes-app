@@ -1,15 +1,28 @@
 // Git view — workspace status master (docs/FEATURES.md §15): staged /
 // unstaged / untracked / conflicted groups with per-file stage/unstage, a
 // commit composer that refuses no-op commits with visible reasons, a bounded
-// log with a detail peek, a read-only branch list (checkout is NOT wired in
-// this wave — honest note), and a stash panel. All data is app-local
+// log with a detail peek, a branch list with dirty-guarded checkout (via
+// ConfirmSurface) and a create-branch form, a stash panel, and read-only
+// tags/remotes/reflog-rescue panels (§15 rows 2-3). All data is app-local
 // (/app/git/* — src/bun/git.ts): no wire events exist, so freshness is a
 // targeted 15s status poll + mutation-driven invalidation of the
 // ["code","git"] prefix.
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderGit2, GitBranch, GitCommitHorizontal, History, Layers, RefreshCw } from "lucide-react";
+import {
+  Check,
+  Copy,
+  FolderGit2,
+  GitBranch,
+  GitCommitHorizontal,
+  Globe,
+  History,
+  Layers,
+  RefreshCw,
+  RotateCcw,
+  Tag,
+} from "lucide-react";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { usePeek } from "../../components/PeekPanel.tsx";
@@ -19,13 +32,16 @@ import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import {
   codeKeys,
   gitApi,
+  isCheckoutDirtyError,
   isGitMissingError,
   isNotARepoError,
   stagedStatusLabel,
   unstagedStatusLabel,
   formatCommitDate,
+  type GitBranch as GitBranchRecord,
   type GitCommitRecord,
   type GitFileEntry,
+  type GitGuard,
   type GitStashEntry,
   type GitStatus,
 } from "./git-api.ts";
@@ -37,6 +53,7 @@ import { DevSnapshotsPanel } from "./DevSnapshotsPanel.tsx";
 const STATUS_POLL_MS = 15_000; // no wire events for app-local git — targeted poll
 const LISTS_POLL_MS = 30_000;
 const LOG_LIMIT = 50;
+const REFLOG_LIMIT = 50;
 
 export function GitView() {
   const queryClient = useQueryClient();
@@ -155,7 +172,7 @@ export function GitView() {
         </div>
         <div className="git-column">
           <LogSection enabled={repoOk} />
-          <BranchesSection enabled={repoOk} />
+          <BranchesSection enabled={repoOk} guard={status.data?.guard} />
         </div>
       </div>
 
@@ -166,6 +183,16 @@ export function GitView() {
         <div className="git-column">
           <RepoSessionsPanel workspaceDir={workspace.data.workspaceDir} />
           <RepoFilesPanel />
+        </div>
+      </div>
+
+      <div className="git-columns">
+        <div className="git-column">
+          <TagsPanel enabled={repoOk} />
+        </div>
+        <div className="git-column">
+          <RemotesPanel enabled={repoOk} />
+          <ReflogSection enabled={repoOk} />
         </div>
       </div>
 
@@ -594,9 +621,15 @@ function CommitPeek({ commit }: { commit: GitCommitRecord }) {
   );
 }
 
-// ─── branches (read-only this wave) ──────────────────────────────────────────
+// ─── branches (checkout + create wired; §15 row 2) ──────────────────────────
 
-function BranchesSection({ enabled }: { enabled: boolean }) {
+function BranchesSection({ enabled, guard }: { enabled: boolean; guard: GitGuard | undefined }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [checkoutTarget, setCheckoutTarget] = useState<GitBranchRecord | null>(null);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [newBranchFrom, setNewBranchFrom] = useState("");
+
   const branches = useQuery({
     queryKey: codeKeys.branches,
     queryFn: gitApi.branches,
@@ -605,13 +638,65 @@ function BranchesSection({ enabled }: { enabled: boolean }) {
     retry: false,
   });
 
+  const invalidateGit = () => queryClient.invalidateQueries({ queryKey: codeKeys.git });
+
+  const checkout = useMutation({
+    mutationFn: (branch: string) => gitApi.checkout(branch),
+    onSuccess: async (result) => {
+      setCheckoutTarget(null);
+      await invalidateGit();
+      toast({ title: "Checked out", description: result.branch, tone: "success" });
+    },
+    onError: (error: unknown) => {
+      setCheckoutTarget(null);
+      toast({
+        title: "Checkout failed",
+        description: isCheckoutDirtyError(error)
+          ? "Working tree is dirty — commit or stash first."
+          : formatError(error),
+        tone: "danger",
+        durationMs: 0,
+      });
+    },
+  });
+
+  const createBranch = useMutation({
+    mutationFn: () => gitApi.branchCreate(newBranchName.trim(), newBranchFrom.trim() || undefined),
+    onSuccess: async (result) => {
+      setNewBranchName("");
+      setNewBranchFrom("");
+      await queryClient.invalidateQueries({ queryKey: codeKeys.branches });
+      toast({ title: "Branch created", description: result.name, tone: "success" });
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Branch create failed", description: formatError(error), tone: "danger" }),
+  });
+
+  const dirtyCount = guard
+    ? guard.stagedCount + guard.unstagedCount + guard.untrackedCount + guard.conflictedCount
+    : 0;
+
+  function checkoutReason(branch: GitBranchRecord): string {
+    if (branch.current) return "Already on this branch";
+    if (checkout.isPending) return "Checking out…";
+    if (guard === undefined) return "Checking working tree status…";
+    if (guard.dirty) return `Working tree has ${dirtyCount} dirty file(s) — commit or stash first`;
+    return "";
+  }
+
+  const createReason = createBranch.isPending
+    ? "Creating…"
+    : newBranchName.trim() === ""
+      ? "A branch name is required"
+      : "";
+
   return (
     <section className="git-branches" aria-label="Branches">
       <h3 className="git-section-title">
         <GitBranch size={14} aria-hidden="true" /> Branches
       </h3>
       <p className="git-honest-note" role="note">
-        Read-only listing — checkout and branch creation are not wired in this wave.
+        No force flags anywhere — checkout refuses when the working tree is dirty; deleting branches is not wired.
       </p>
       {branches.isPending && <SkeletonBlock variant="text" lines={3} />}
       {branches.isError && (
@@ -623,14 +708,29 @@ function BranchesSection({ enabled }: { enabled: boolean }) {
             <EmptyState title="No local branches" description="This repository has no local branches yet." />
           ) : (
             <ul className="git-branch-rows">
-              {branches.data.local.map((branch) => (
-                <li key={branch.name} className="git-branch-row">
-                  <code className="git-branch-row__name">{branch.name}</code>
-                  {branch.current && <span className="badge ok">current</span>}
-                  {branch.upstream && <span className="git-branch-row__upstream">→ {branch.upstream}</span>}
-                  <code className="git-branch-row__sha">{branch.sha}</code>
-                </li>
-              ))}
+              {branches.data.local.map((branch) => {
+                const reason = checkoutReason(branch);
+                return (
+                  <li key={branch.name} className="git-branch-row">
+                    <code className="git-branch-row__name">{branch.name}</code>
+                    {branch.current && <span className="badge ok">current</span>}
+                    {branch.upstream && <span className="git-branch-row__upstream">→ {branch.upstream}</span>}
+                    <code className="git-branch-row__sha">{branch.sha}</code>
+                    {!branch.current && (
+                      <button
+                        type="button"
+                        className="git-mini-button"
+                        onClick={() => setCheckoutTarget(branch)}
+                        disabled={reason !== ""}
+                        title={reason || `Checkout ${branch.name}`}
+                        aria-label={`Checkout ${branch.name}`}
+                      >
+                        Checkout
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
           {branches.data.remote.length > 0 && (
@@ -640,7 +740,231 @@ function BranchesSection({ enabled }: { enabled: boolean }) {
           )}
         </>
       )}
+
+      <form
+        className="git-branch-create"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (createReason === "") createBranch.mutate();
+        }}
+      >
+        <input
+          type="text"
+          className="git-branch-create__name"
+          placeholder="New branch name"
+          value={newBranchName}
+          onChange={(e) => setNewBranchName(e.target.value)}
+          disabled={createBranch.isPending}
+          aria-label="New branch name"
+        />
+        <input
+          type="text"
+          className="git-branch-create__from"
+          placeholder="from (optional, defaults to HEAD)"
+          value={newBranchFrom}
+          onChange={(e) => setNewBranchFrom(e.target.value)}
+          disabled={createBranch.isPending}
+          aria-label="Start point (optional)"
+        />
+        <button type="submit" className="git-mini-button" disabled={createReason !== ""} title={createReason}>
+          {createBranch.isPending ? "Creating…" : "Create branch"}
+        </button>
+      </form>
+
+      <ConfirmSurface
+        open={checkoutTarget !== null}
+        action="Checkout branch"
+        target={checkoutTarget?.name ?? ""}
+        blastRadius="Switches the working tree to this branch's files. Refused automatically when the working tree is dirty; no force flag exists to override that."
+        confirmLabel={checkout.isPending ? "Checking out…" : "Checkout"}
+        onConfirm={() => {
+          if (checkoutTarget) checkout.mutate(checkoutTarget.name);
+        }}
+        onCancel={() => setCheckoutTarget(null)}
+      />
     </section>
+  );
+}
+
+// ─── tags (read-only; §15 row 3) ─────────────────────────────────────────────
+
+function TagsPanel({ enabled }: { enabled: boolean }) {
+  const tags = useQuery({
+    queryKey: codeKeys.tags,
+    queryFn: gitApi.tags,
+    enabled,
+    refetchInterval: LISTS_POLL_MS, // app-local, no wire events
+    retry: false,
+  });
+
+  return (
+    <section className="git-tags" aria-label="Tags">
+      <h3 className="git-section-title">
+        <Tag size={14} aria-hidden="true" /> Tags
+        {tags.isSuccess ? ` · ${tags.data.tags.length}` : ""}
+      </h3>
+      <p className="git-honest-note" role="note">
+        Read-only — tag creation and deletion are not wired.
+      </p>
+      {tags.isPending && <SkeletonBlock variant="text" lines={2} />}
+      {tags.isError && <ErrorState error={tags.error} onRetry={() => void tags.refetch()} title="Failed to load tags" />}
+      {tags.isSuccess && tags.data.tags.length === 0 && (
+        <EmptyState title="No tags" description="This repository has no tags yet." />
+      )}
+      {tags.isSuccess && tags.data.tags.length > 0 && (
+        <ul className="git-tag-rows">
+          {tags.data.tags.map((tag) => (
+            <li key={tag.name} className="git-tag-row">
+              <code className="git-tag-row__name">{tag.name}</code>
+              <span className={tag.annotated ? "badge info" : "badge neutral"}>
+                {tag.annotated ? "annotated" : "lightweight"}
+              </span>
+              <code className="git-tag-row__sha" title={tag.target}>
+                {tag.target.slice(0, 12)}
+              </code>
+              {tag.message && (
+                <span className="git-tag-row__message" title={tag.message}>
+                  {tag.message}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ─── remotes (read-only; §15 row 3) ──────────────────────────────────────────
+
+function RemotesPanel({ enabled }: { enabled: boolean }) {
+  const remotes = useQuery({
+    queryKey: codeKeys.remotes,
+    queryFn: gitApi.remotes,
+    enabled,
+    refetchInterval: LISTS_POLL_MS, // app-local, no wire events
+    retry: false,
+  });
+
+  return (
+    <section className="git-remotes" aria-label="Remotes">
+      <h3 className="git-section-title">
+        <Globe size={14} aria-hidden="true" /> Remotes
+        {remotes.isSuccess ? ` · ${remotes.data.remotes.length}` : ""}
+      </h3>
+      <p className="git-honest-note" role="note">
+        Read-only — no add/remove/fetch/push wired.
+      </p>
+      {remotes.isPending && <SkeletonBlock variant="text" lines={2} />}
+      {remotes.isError && (
+        <ErrorState error={remotes.error} onRetry={() => void remotes.refetch()} title="Failed to load remotes" />
+      )}
+      {remotes.isSuccess && remotes.data.remotes.length === 0 && (
+        <EmptyState title="No remotes" description="This repository has no configured remotes." />
+      )}
+      {remotes.isSuccess && remotes.data.remotes.length > 0 && (
+        <ul className="git-remote-rows">
+          {remotes.data.remotes.map((remote) => (
+            <li key={remote.name} className="git-remote-row">
+              <code className="git-remote-row__name">{remote.name}</code>
+              <span className="git-remote-row__url" title={remote.fetchUrl}>
+                {remote.fetchUrl}
+              </span>
+              {remote.pushUrl && remote.pushUrl !== remote.fetchUrl && (
+                <span className="git-remote-row__push" title={`push: ${remote.pushUrl}`}>
+                  push differs
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ─── reflog rescue drawer (read-only; §15 row 3) ─────────────────────────────
+
+function ReflogSection({ enabled }: { enabled: boolean }) {
+  const peek = usePeek();
+  return (
+    <section className="git-reflog" aria-label="Reflog rescue">
+      <h3 className="git-section-title">
+        <RotateCcw size={14} aria-hidden="true" /> Reflog rescue
+      </h3>
+      <p className="git-honest-note" role="note">
+        Read-only browsing of the last {REFLOG_LIMIT} HEAD movements. Restoring from a reflog entry is a terminal
+        operation this app does not perform yet — copy a hash and use your own tools if you need to act on it.
+      </p>
+      <button
+        type="button"
+        className="git-mini-button"
+        disabled={!enabled}
+        onClick={() => peek.open({ title: "Reflog rescue", content: <ReflogDrawerContent /> })}
+      >
+        Open reflog
+      </button>
+    </section>
+  );
+}
+
+function ReflogDrawerContent() {
+  const reflog = useQuery({
+    queryKey: codeKeys.reflog,
+    queryFn: gitApi.reflog,
+    refetchInterval: false,
+    retry: false,
+  });
+
+  return (
+    <div className="git-reflog-peek">
+      <p className="git-honest-note" role="note">
+        Bounded to the last {REFLOG_LIMIT} entries. Restoring from reflog is a terminal operation for now — this
+        drawer only browses and copies ids.
+      </p>
+      {reflog.isPending && <SkeletonBlock variant="text" lines={5} />}
+      {reflog.isError && (
+        <ErrorState error={reflog.error} onRetry={() => void reflog.refetch()} title="Failed to load reflog" />
+      )}
+      {reflog.isSuccess && reflog.data.entries.length === 0 && (
+        <EmptyState title="No reflog entries" description={reflog.data.note ?? "Nothing to rescue yet."} />
+      )}
+      {reflog.isSuccess && reflog.data.entries.length > 0 && (
+        <ul className="git-reflog-rows">
+          {reflog.data.entries.map((entry, index) => (
+            <li key={`${entry.selector}:${index}`} className="git-reflog-row">
+              <code className="git-reflog-row__selector">{entry.selector}</code>
+              <span className="git-reflog-row__subject" title={entry.subject}>
+                {entry.subject || "(no message)"}
+              </span>
+              <CopyChip value={entry.hash} label={`hash ${entry.shortHash}`} display={entry.shortHash} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Small copy-to-clipboard chip — local to Git views (no shared component owns this). */
+function CopyChip({ value, label, display }: { value: string; label: string; display: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="git-copy-chip"
+      aria-label={`Copy ${label}`}
+      title={value}
+      onClick={() => {
+        void navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+    >
+      <code>{display}</code>
+      {copied ? <Check size={11} aria-hidden="true" /> : <Copy size={11} aria-hidden="true" />}
+    </button>
   );
 }
 

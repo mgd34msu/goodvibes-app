@@ -601,6 +601,143 @@ async function handleWorktrees(workspaceDir: string): Promise<Response> {
   return json({ worktrees });
 }
 
+// ─── checkout / branch-create (§15 row 2 — dirty-guarded, no force) ─────────
+
+/** Switch branches. REFUSES when the working tree is dirty (reuses the same
+ * porcelain-v2 guard as commit/stage) so the UI can explain before acting —
+ * no `git checkout -f` path exists anywhere in this module. */
+async function handleCheckout(workspaceDir: string, req: Request): Promise<Response> {
+  const body = await readJsonBody(req);
+  const branch = typeof body["branch"] === "string" ? body["branch"] : "";
+  if (!isSafeRef(branch)) return json({ error: `Invalid branch: ${branch}`, code: "GIT_BAD_REF" }, 400);
+
+  const status = await loadStatus(workspaceDir);
+  if (status instanceof Response) return status;
+  const guard = dirtyGuard(status);
+  if (guard.dirty) {
+    const dirtyCount = guard.stagedCount + guard.unstagedCount + guard.untrackedCount + guard.conflictedCount;
+    return json(
+      {
+        error: `Refusing to checkout '${branch}' — working tree has ${dirtyCount} dirty file(s). Commit or stash first.`,
+        code: "GIT_CHECKOUT_DIRTY",
+        guard,
+      },
+      409,
+    );
+  }
+
+  const result = await runGit(workspaceDir, ["checkout", branch]);
+  if (result.code !== 0) {
+    if (/not a git repository/i.test(result.stderr)) return notARepo(workspaceDir);
+    return gitError(result, "GIT_CHECKOUT_FAILED", 409);
+  }
+  return json({ ok: true, branch, summary: (result.stderr.trim() || result.stdout.trim()) });
+}
+
+/** Create a new local branch, optionally from a start point. Never switches
+ * to it — checkout is a separate, explicitly confirmed call from the UI. */
+async function handleBranchCreate(workspaceDir: string, req: Request): Promise<Response> {
+  const body = await readJsonBody(req);
+  const name = typeof body["name"] === "string" ? body["name"] : "";
+  const from = typeof body["from"] === "string" ? body["from"] : "";
+  if (!isSafeRef(name)) return json({ error: `Invalid branch name: ${name}`, code: "GIT_BAD_REF" }, 400);
+  if (from && !isSafeRef(from)) return json({ error: `Invalid start point: ${from}`, code: "GIT_BAD_REF" }, 400);
+
+  const args = ["branch", name];
+  if (from) args.push(from);
+  const result = await runGit(workspaceDir, args);
+  if (result.code !== 0) {
+    if (/not a git repository/i.test(result.stderr)) return notARepo(workspaceDir);
+    return gitError(result, "GIT_BRANCH_CREATE_FAILED", 409);
+  }
+  return json({ ok: true, name, from: from || undefined });
+}
+
+// ─── tags / remotes / reflog (§15 row 3 — read-only) ────────────────────────
+
+async function handleTags(workspaceDir: string): Promise<Response> {
+  const format = [
+    "%(refname:short)",
+    "%(objecttype)",
+    "%(objectname:short)",
+    "%(*objectname:short)",
+    "%(contents:subject)",
+    "%(creatordate:iso8601-strict)",
+  ].join(US) + RS;
+  const result = await runGit(workspaceDir, ["for-each-ref", `--format=${format}`, "refs/tags"]);
+  if (result.code !== 0) {
+    if (/not a git repository/i.test(result.stderr)) return notARepo(workspaceDir);
+    return gitError(result, "GIT_TAGS_FAILED");
+  }
+  const tags = result.stdout
+    .split(RS)
+    .map((chunk) => chunk.replace(/^\n/, ""))
+    .filter((chunk) => chunk.trim().length > 0)
+    .map((chunk) => {
+      const f = chunk.split(US);
+      const annotated = (f[1] ?? "") === "tag";
+      const objectSha = f[2] ?? "";
+      const dereferencedSha = f[3] ?? "";
+      return {
+        name: f[0] ?? "",
+        annotated,
+        sha: objectSha,
+        target: annotated && dereferencedSha ? dereferencedSha : objectSha,
+        message: annotated ? (f[4] ?? "").trim() : "",
+        date: f[5] ?? "",
+      };
+    });
+  return json({ tags });
+}
+
+async function handleRemotes(workspaceDir: string): Promise<Response> {
+  const result = await runGit(workspaceDir, ["remote", "-v"]);
+  if (result.code !== 0) {
+    if (/not a git repository/i.test(result.stderr)) return notARepo(workspaceDir);
+    return gitError(result, "GIT_REMOTES_FAILED");
+  }
+  const byName = new Map<string, { name: string; fetchUrl: string; pushUrl: string }>();
+  for (const line of result.stdout.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = /^(\S+)\s+(\S+)\s+\((fetch|push)\)$/.exec(trimmed);
+    if (!match) continue;
+    const name = match[1] ?? "";
+    const url = match[2] ?? "";
+    const kind = match[3] ?? "";
+    const entry = byName.get(name) ?? { name, fetchUrl: "", pushUrl: "" };
+    if (kind === "fetch") entry.fetchUrl = url;
+    else if (kind === "push") entry.pushUrl = url;
+    byName.set(name, entry);
+  }
+  return json({ remotes: [...byName.values()] });
+}
+
+const REFLOG_LIMIT = 50;
+
+/** Bounded, read-only reflog for rescue browsing. No restore endpoint exists
+ * yet — the UI labels that honestly rather than wiring a destructive reset. */
+async function handleReflog(workspaceDir: string): Promise<Response> {
+  const format = `%H${US}%h${US}%gd${US}%gs${US}%cI${RS}`;
+  const result = await runGit(workspaceDir, ["reflog", "show", `-n${REFLOG_LIMIT}`, `--format=${format}`, "HEAD"]);
+  if (result.code !== 0) {
+    if (/not a git repository/i.test(result.stderr)) return notARepo(workspaceDir);
+    if (/does not have any commits yet|bad default revision|unknown revision/i.test(result.stderr)) {
+      return json({ entries: [], limit: REFLOG_LIMIT, note: "No reflog entries yet." });
+    }
+    return gitError(result, "GIT_REFLOG_FAILED");
+  }
+  const entries = result.stdout
+    .split(RS)
+    .map((chunk) => chunk.replace(/^\n/, ""))
+    .filter((chunk) => chunk.trim().length > 0)
+    .map((chunk) => {
+      const f = chunk.split(US);
+      return { hash: f[0] ?? "", shortHash: f[1] ?? "", selector: f[2] ?? "", subject: f[3] ?? "", date: f[4] ?? "" };
+    });
+  return json({ entries, limit: REFLOG_LIMIT });
+}
+
 // ─── router ──────────────────────────────────────────────────────────────────
 
 export function createGitRoutes(): AppRouteHandler {
@@ -636,6 +773,12 @@ export function createGitRoutes(): AppRouteHandler {
             return await handleStashList(workspaceDir);
           case "/worktrees":
             return await handleWorktrees(workspaceDir);
+          case "/tags":
+            return await handleTags(workspaceDir);
+          case "/remotes":
+            return await handleRemotes(workspaceDir);
+          case "/reflog":
+            return await handleReflog(workspaceDir);
           default:
             return json({ error: `Unknown git route: ${sub}`, code: "GIT_ROUTE_NOT_FOUND" }, 404);
         }
@@ -653,6 +796,10 @@ export function createGitRoutes(): AppRouteHandler {
             return await handleStashPush(workspaceDir, req);
           case "/stash/pop":
             return await handleStashPop(workspaceDir, req);
+          case "/checkout":
+            return await handleCheckout(workspaceDir, req);
+          case "/branch-create":
+            return await handleBranchCreate(workspaceDir, req);
           default:
             return json({ error: `Unknown git route: ${sub}`, code: "GIT_ROUTE_NOT_FOUND" }, 404);
         }

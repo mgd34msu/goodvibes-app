@@ -17,6 +17,8 @@ export const settingsKeys = {
   localAuth: ["local-auth", "status"] as const,
   /** security.settings. */
   security: ["security-settings"] as const,
+  /** services.status — OS service (systemd/launchd) install/run posture. */
+  osService: ["os-service-status"] as const,
   /** credentials.get — configured/usable flags only, never secret material. */
   credentials: ["credentials-status"] as const,
   /** Capability probes (settings surface). */

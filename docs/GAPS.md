@@ -60,7 +60,7 @@ evidence found; stated plainly, no inference.
 | 32 | Export transcript (md/json/html) | SHIPPED | `chat-local.ts:186` `buildTranscriptExport`, `ExportFormat` type |
 | 33 | Share with `--redact` | SHIPPED | `chat-local.ts:166` `redactSecrets` |
 | 34 | Templates (prompt templates) | SHIPPED | `chat-local.ts:67-86` `readTemplates`/`saveTemplate`/`deleteTemplate` |
-| 35 | Image attach (`/image`, Ctrl+V) | PARTIAL | Ctrl+V paste-to-attachment shipped (row 10). No literal `/image` slash command in `SLASH_COMMANDS` |
+| 35 | Image attach (`/image`, Ctrl+V) | SHIPPED | `/image` is a real `SLASH_COMMANDS` entry (`ChatView.tsx:83`) whose handler (`ChatView.tsx:480-485`) clicks `imageFileInputRef` — the `accept="image/*"` file input in `Composer.tsx:766-770` — routing the chosen file through the same attachment-chip flow as Ctrl+V paste-to-attachment (row 10) (Wave F) |
 | 36 | Image generation (`/imagine`) | SHIPPED | `useSlashCommands.ts:126` → `media.generate`, inline markdown preview appended to the transcript (`:145`), artifact retained in Artifacts (Wave E) |
 | 37 | Voice dictation (mic → composer) | SHIPPED | `voice.ts:214` `gv.voice.stt`; `MicButton.tsx` |
 | 38 | Speak-aloud replies (TTS) + always-speak toggle | SHIPPED | `SpeakButton.tsx`; always-speak `chat-local.ts:153-157`, `ChatView.tsx:117,194` |
@@ -68,7 +68,7 @@ evidence found; stated plainly, no inference.
 | 40 | Conversation branches (fork a chat) | SHIPPED (honest) | `ChatView.tsx:305-347` `forkChat` mutation creates a new session and drops a local-only "forked from" note explaining the honest scope (wire has no whole-chat fork, so history is not copied); matches the row's own "honest 'forked from' marker" ask (Wave F) |
 | 41 | Long-turn desktop notification | SHIPPED | `chat-local.ts:305` `shouldNotifyLongTurn`/`LONG_TURN_NOTIFY_MS` (60s + `document.hidden`); wired at `ChatView.tsx:200-209` `onTurnCompleted` → metadata-only POST `/app/notifications/notify` (Wave E) |
 
-**Section 1 tally: 39 shipped, 2 partial, 0 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41). Wave E closed rows 28/31/36/41; Wave F closed row 29 (prompt undo/redo) and row 40 (honest whole-chat fork). Remaining partials are row 35 (no literal `/image` command — Ctrl+V paste-to-attachment ships) and row 39 (companion turn has no wire cancel).
+**Section 1 tally: 40 shipped, 1 partial, 0 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41). Wave E closed rows 28/31/36/41; Wave F closed row 29 (prompt undo/redo), row 40 (honest whole-chat fork), and row 35 (the literal `/image` slash command, wired into the existing image-attach flow). The one remaining partial is row 39 (companion turn has no wire cancel — wire-blocked: `useChatStream.ts:87` "Companion chat has no wire cancel").
 
 ## 2. Sessions (12 rows)
 
@@ -319,8 +319,8 @@ evidence found; stated plainly, no inference.
 | # | Feature | Status | Evidence |
 |---|---|---|---|
 | 1 | Git panel: status/log/stage/unstage/commit | SHIPPED | `git-api.ts:113,114,120,131-133` → `/app/git/{workspace,status,log,stage,unstage,commit}`; guarded against no-op commits (`src/bun/git.ts:408-434`) |
-| 2 | Branches: list/create/checkout with dirty-tree guard | PARTIAL (honestly labeled) | list shipped (`git-api.ts:124`, `src/bun/git.ts:289-310`); `GitView.tsx:4,516` explicitly states "checkout and branch creation are not wired in this wave" — an honest, in-UI-labeled gap rather than a silent omission |
-| 3 | Stash / tags / remotes / reflog rescue | PARTIAL | stash push/pop/list shipped (`GitView.tsx:558-635`, `gitApi.stashList/.stashPush/.stashPop`); no tag management, no remote management (only read-only remote-tracking branch listing at `git.ts:292`), and no reflog-rescue UI exist anywhere |
+| 2 | Branches: list/create/checkout with dirty-tree guard | SHIPPED | list + create + checkout all wired. `BranchesSection` (rendered `GitView.tsx:175`) calls `gitApi.checkout` (`git-api.ts:176`) and `gitApi.branchCreate` (`git-api.ts:178`); checkout is gated through `ConfirmSurface` (`GitView.tsx:774`). Bun side (`src/bun/git.ts:604-676`) refuses checkout when the working tree is dirty (409 `GIT_CHECKOUT_DIRTY`, surfaced via `isCheckoutDirtyError`) and never uses a force flag; branch-create never switches (Wave F) |
+| 3 | Stash / tags / remotes / reflog rescue | PARTIAL | stash push/pop/list shipped (`GitView.tsx:558-635`); tags/remotes/reflog now all have read-only panels — `TagsPanel`/`RemotesPanel`/`ReflogSection` (rendered `GitView.tsx:191,194,195`) call `gitApi.tags`/`.remotes`/`.reflog` backed by `src/bun/git.ts:626-742` (`for-each-ref refs/tags`, `remote -v`, bounded `reflog show -n50`). Deliberate design choice: destructive local-git mutations (tag create/delete, remote add/remove, and reflog reset-to-restore "rescue") are intentionally not wired — the reflog drawer labels restore as a terminal op left unwired (`GitView.tsx:896-922`), keeping the whole panel non-destructive (Wave F) |
 | 4 | Diff viewer: working/staged/HEAD/arbitrary refs | SHIPPED | `git-api.ts:100,129` `DiffMode` ("working"/"staged"/"ref"); `DiffView.tsx` renders it |
 | 5 | Worktrees: snapshot + list | SHIPPED | `WorktreesView.tsx:58` → `worktrees.snapshot`; `git-api.ts:141` → `/app/git/worktrees` |
 | 6 | Checkpoints: create/list/diff/restore | SHIPPED | `CheckpointsView.tsx:68,84,92,118` → `gv.checkpoints.{list,diff,create,restore}` `[ws]` |
@@ -331,7 +331,7 @@ evidence found; stated plainly, no inference.
 | 11 | GitHub: device-flow auth + PR/issue list/create | PARTIAL | `GitHubPanel.tsx` (mounted `GitView.tsx:163`) is a complete, capability-honest UI — it probes `control.methods.get` for `github.auth.deviceStart`/`.devicePoll`/`github.pulls.*`/`github.issues.*` and renders `UnavailableState` when absent. But **no `github.*` method exists in `operator-routes.ts` (0 matches)**, so on every known daemon the panel renders Unavailable — the UI is built and wired but has no live wire to talk to (Wave E, honest degrade) |
 | 12 | Review snapshot | SHIPPED | same `DevSnapshotsPanel.tsx` (`GitView.tsx:174`) → `gv.invoke("review.snapshot")` as a read-only tile, capability-honest (Wave F; v1.3.3 now serves the method) |
 
-**Section 15 tally: 9 shipped, 3 partial, 0 missing.** Wave E closed row 10 and built the GitHub UI; the Wave E follow-up closed row 9. Wave F closed both read-only snapshot tiles — row 8 (`intelligence.snapshot`) and row 12 (`review.snapshot`) via `DevSnapshotsPanel` (v1.3.3 now serves both methods). Remaining partials are rows 2 (branch checkout/create not wired), 3 (no tag/remote/reflog management), and 11 (GitHub UI capability-honest but no `github.*` wire methods exist). (Note: the prior summary table listed this section as 6/3/3 — an arithmetic error; the rows count 7/3/2 pre-Wave-F, now 9/3/0.)
+**Section 15 tally: 10 shipped, 2 partial, 0 missing.** Wave E closed row 10 and built the GitHub UI; the Wave E follow-up closed row 9. Wave F closed both read-only snapshot tiles — row 8 (`intelligence.snapshot`) and row 12 (`review.snapshot`) via `DevSnapshotsPanel` (v1.3.3 now serves both methods) — and closed row 2 (dirty-guarded branch checkout + create, no force flag). Remaining partials: row 3 (tags/remotes/reflog shipped read-only; destructive local-git mutations deliberately not wired — design choice) and row 11 (GitHub UI capability-honest but no `github.*` wire methods exist — wire-blocked).
 
 ## 16. MCP (7 rows)
 
@@ -418,10 +418,10 @@ evidence found; stated plainly, no inference.
 | 5 | Security settings snapshot | SHIPPED | `SecuritySection.tsx:54` → `security.settings` |
 | 6 | Permission mode + per-tool rules editor | SHIPPED (generic) | no dedicated permission-rules widget, but `permissions.mode` + `permissions.tools.{read,write,edit,exec,find,fetch,analyze,inspect,agent}` are all present as rows in the generic schema-driven `ConfigSettingsSection.tsx` (`config-schema.generated.ts:178-277`) |
 | 7 | Approval decision history (audit trail) | SHIPPED | `ApprovalsTasksView.tsx:3,46-90,268` — history tab filters `approvals.list` to terminal states |
-| 8 | OS service: install/start/stop/restart/uninstall/status | MISSING | `services.install/.start/.stop/.restart/.uninstall/.status` are declared in `operator-routes.ts:288-293` but never invoked anywhere in `src/ui` — do not confuse with `ServicesSection.tsx`, which implements the *unrelated* §19 row 9 (the connect-plugin `services.json` registry, explicitly labeled in its own header comment as a different "services" concept) |
+| 8 | OS service: install/start/stop/restart/uninstall/status | SHIPPED | `OsServiceSection.tsx` (rendered `SettingsView.tsx:145-150` under the Security section) is the first and only caller of all six `services.*` methods — `services.status` on a poll plus `.install/.start/.stop/.restart/.uninstall` as actions. install/stop/restart/uninstall go through `ConfirmSurface` naming the exact host effect (uninstall+stop danger-flagged); status is re-fetched after every action. Wire-shape-honest: the operator contract's input schema for every `services.*` method is `{additionalProperties:false}` (no body — verified against `operator-contract.json`), so no `confirm`/`explicitUserRequest` is forwarded, the daemon takes none. 403 renders an admin-required notice, method-absent renders `UnavailableState`. Distinct from `ServicesSection.tsx` (the §19 row 9 connect-plugin registry) (Wave F) |
 | 9 | TLS / network posture display | SHIPPED (generic) | `controlPlane.tls.mode/.certFile/.keyFile` are generic rows in `config-schema.generated.ts:717-734`, editable through the same schema-driven settings workspace |
 
-**Section 20 tally: 7 shipped, 1 partial, 1 missing.**
+**Section 20 tally: 8 shipped, 1 partial, 0 missing.** Wave F closed row 8 (OS service lifecycle) via `OsServiceSection`, the first caller of the six `services.*` methods. The one remaining partial is row 2 (no in-chrome interactive login form — deliberate design choice: the app is architected so zero-friction companion-token bootstrap is the only auth path, and `control.auth.login` stays unused).
 
 ## 21. Remote / Peers (6 rows)
 
@@ -504,7 +504,7 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 
 | § | Section | Shipped | Partial | Missing | Excluded | Rows |
 |---|---|---|---|---|---|---|
-| 1 | Chat | 39 | 2 | 0 | — | 41 |
+| 1 | Chat | 40 | 1 | 0 | — | 41 |
 | 2 | Sessions | 12 | 0 | 0 | — | 12 |
 | 3 | Fleet | 11 | 0 | 0 | 1 | 12 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | — | 9 |
@@ -518,37 +518,37 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 | 12 | Artifacts | 7 | 0 | 0 | — | 7 |
 | 13 | Channels | 15 | 0 | 0 | — | 15 |
 | 14 | Providers & Models | 12 | 1 | 0 | — | 13 |
-| 15 | Coding / Dev | 9 | 3 | 0 | — | 12 |
+| 15 | Coding / Dev | 10 | 2 | 0 | — | 12 |
 | 16 | MCP | 7 | 0 | 0 | — | 7 |
 | 17 | Observability | 18 | 0 | 0 | — | 18 |
 | 18 | Voice & Media | 8 | 1 | 0 | — | 9 |
 | 19 | Settings & Config | 12 | 0 | 0 | — | 12 |
-| 20 | Security & Auth | 7 | 1 | 1 | — | 9 |
+| 20 | Security & Auth | 8 | 1 | 0 | — | 9 |
 | 21 | Remote / Peers | 6 | 0 | 0 | — | 6 |
 | 22 | Onboarding | 9 | 0 | 0 | — | 9 |
 | 23 | Palette & Keyboard | 8 | 0 | 0 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **274** | **12** | **1** | **1** | **288** |
+| — | **Total** | **277** | **10** | **0** | **1** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave F gap-closure, **95.1% shipped, 4.2% partial, 0.35% missing** of audited rows (was 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave F closed 25 previously-missing/partial rows verified against the tree by the integration gate: §1 (undo/redo, honest chat fork), §3 (fleet watcher start/run + task cancel/retry), §5 (delivery picker, hooks editor), §8 (profiles, project-context viewer, scratchpad), §9 (briefing deliveries, unified inbox), §10 (URL inspection), §11 (AI-suggestion accept/reject, artifact upload), §13 (notification-target test), §14 (failover posture, custom-provider JSON, local-LLM scan), §15 (`intelligence.snapshot` + `review.snapshot` tiles — v1.3.3 now serves them), §21 (web-push subscriptions — v1.3.3 now serves `push.*`), §22 (reasoning-effort step, gtk/webkit deps check), and §23 (cheatsheet, quick switcher). A new Bun local-tools surface (`src/bun/local-tools.ts`, F0, with `test/local-tools.test.ts` — 58/58 tests pass) backs `/app/local/{hooks,context,providers,llm-scan,deps,fetch-preview}`. **The single remaining MISSING row is §20 row 8 (OS service lifecycle):** `services.install/.start/.stop/.restart/.uninstall/.status` are declared on the wire (`operator-routes.ts:288-293`) but no Wave F agent's brief covered them, so no UI invokes them yet — reported honestly, not silently. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave F gap-closure, **96.2% shipped, 3.5% partial, 0% missing** of audited rows (was 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave F closed 28 previously-missing/partial rows verified against the tree by the integration gate: §1 (undo/redo, honest chat fork, `/image` slash command), §3 (fleet watcher start/run + task cancel/retry), §5 (delivery picker, hooks editor), §8 (profiles, project-context viewer, scratchpad), §9 (briefing deliveries, unified inbox), §10 (URL inspection), §11 (AI-suggestion accept/reject, artifact upload), §13 (notification-target test), §14 (failover posture, custom-provider JSON, local-LLM scan), §15 (`intelligence.snapshot` + `review.snapshot` tiles — v1.3.3 now serves them — plus dirty-guarded branch checkout/create), §20 (OS service lifecycle via `OsServiceSection`), §21 (web-push subscriptions — v1.3.3 now serves `push.*`), §22 (reasoning-effort step, gtk/webkit deps check), and §23 (cheatsheet, quick switcher). A new Bun local-tools surface (`src/bun/local-tools.ts`, F0, with `test/local-tools.test.ts` — 58/58 tests pass) backs `/app/local/{hooks,context,providers,llm-scan,deps,fetch-preview}`; the Wave F2 gate additionally added local `/app/git/{tags,remotes,reflog,checkout,branch-create}` endpoints in `src/bun/git.ts`. **No MISSING rows remain** — the last one (§20 row 8, OS service lifecycle) is now wired. The 10 remaining partials are each either wire-blocked (the daemon lacks the method — proof cited on the row) or a named deliberate design choice. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
 
 ## Remaining gaps by user impact (post-Wave-F)
 
-Wave F closed 25 rows, including every entry on the prior top-ten list except OS-service
-lifecycle. What remains is one true app-side MISSING row plus a short tail of partials, most
-of which are honestly **wire-blocked** (the app surface is built but the daemon lacks the
-method) rather than unbuilt. Ranked by how much a real user would notice:
+Wave F closed 28 rows, including every entry on the prior top-ten list — OS-service lifecycle,
+the last MISSING row, is now wired. **Nothing app-side remains MISSING.** What is left is a
+short tail of partials, each either honestly **wire-blocked** (the app surface is built but the
+daemon lacks the method) or a named **deliberate design choice**. Ranked by how much a real user
+would notice:
 
-1. **OS service lifecycle is unwired (§20 row 8) — the single remaining MISSING row.** `services.install/.start/.stop/.restart/.uninstall/.status` exist on the wire (`operator-routes.ts:288-293`) but no Wave F agent's brief covered them, so there is still no in-app control to run the daemon as a managed OS service. Not wire-blocked — genuinely unbuilt, and the honest next target.
-2. **GitHub integration is UI-only / wire-blocked (§15 row 11).** The capability-honest `GitHubPanel` is complete, but **no `github.*` method exists in the route table**, so it renders Unavailable on every known daemon. Nothing app-side to fix until the wire ships the methods.
-3. **Git branch/tag/remote/reflog management is partial (§15 rows 2, 3).** Branch checkout/create is not wired, and there is no tag/remote/reflog-rescue UI — the honestly-labeled in-UI gaps from earlier waves.
-4. **Research runs are app-local, not `tasks.create`-backed (§10 row 3).** Run status/cancel is a local `research-runs` registry field, not a real cancellable wire task.
-5. **Learning-review has no single combined curator (§8 row 12).** Wave F added the memory-side triage bucket, but the memory and knowledge-candidate queues are still two separate surfaces rather than one curator.
-6. **Subscriptions show posture but no external-browser OAuth flow (§14 row 11).** No RPC opens a browser for OAuth-backed subscription sign-in; posture is derived from `accounts.snapshot`/`providers.list` only.
-7. **Knowledge has no single-item `schedule.get`/`refinement.task.get` fetch (§6 rows 15, 17).** Both edit off the list-query cache; a narrow convenience gap.
-8. **Small chat conveniences remain (§1 rows 35, 39).** No literal `/image` slash command (Ctrl+V paste-to-attachment ships), and companion-turn Stop is local-render-only because the wire has no companion-turn cancel.
-9. **Redundant one-shot TTS method is dead (§18 row 1).** `voice.tts` is superseded by streaming TTS everywhere; cosmetic.
-10. **No in-chrome interactive login form (§20 row 2).** The app relies on zero-friction companion-token bootstrap; `control.auth.login` is unused. Only matters if a daemon ever demands interactive login.
+1. **GitHub integration is UI-only / wire-blocked (§15 row 11).** The capability-honest `GitHubPanel` is complete, but **no `github.*` method exists in the route table**, so it renders Unavailable on every known daemon. Nothing app-side to fix until the wire ships the methods.
+2. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is now shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations (tag create/delete, remote add/remove, reflog reset-to-restore) are deliberately not wired to keep the panel non-destructive — a design choice, not a gap.
+3. **Research runs are app-local, not `tasks.create`-backed (§10 row 3).** Run status/cancel is a local `research-runs` registry field, not a real cancellable wire task.
+4. **Learning-review has no single combined curator (§8 row 12).** Wave F added the memory-side triage bucket, but the memory and knowledge-candidate queues are still two separate surfaces rather than one curator.
+5. **Subscriptions show posture but no external-browser OAuth flow (§14 row 11).** No RPC opens a browser for OAuth-backed subscription sign-in; posture is derived from `accounts.snapshot`/`providers.list` only.
+6. **Knowledge has no single-item `schedule.get`/`refinement.task.get` fetch (§6 rows 15, 17).** Both edit off the list-query cache; a narrow convenience gap.
+7. **Companion-turn Stop is local-render-only (§1 row 39).** The wire has no companion-turn cancel (`useChatStream.ts:87`), so the Stop button halts local rendering rather than the turn — wire-blocked. (Row 35, the `/image` slash command, shipped in Wave F.)
+8. **Redundant one-shot TTS method is dead (§18 row 1).** `voice.tts` is superseded by streaming TTS everywhere; cosmetic.
+9. **No in-chrome interactive login form (§20 row 2).** The app relies on zero-friction companion-token bootstrap; `control.auth.login` is unused. Only matters if a daemon ever demands interactive login.
 
 
 

@@ -17,6 +17,9 @@ export const codeKeys = {
   diff: (mode: string, ref: string) => ["code", "git", "diff", mode, ref] as const,
   localWorktrees: ["code", "git", "worktrees"] as const,
   daemonWorktrees: ["code", "worktrees", "daemon"] as const,
+  tags: ["code", "git", "tags"] as const,
+  remotes: ["code", "git", "remotes"] as const,
+  reflog: ["code", "git", "reflog"] as const,
 } as const;
 
 // ─── shapes (mirror src/bun/git.ts responses; parsed defensively) ────────────
@@ -86,6 +89,29 @@ export interface GitDiffResponse {
   truncated: boolean;
 }
 
+export interface GitTag {
+  name: string;
+  annotated: boolean;
+  sha: string;
+  target: string;
+  message: string;
+  date: string;
+}
+
+export interface GitRemote {
+  name: string;
+  fetchUrl: string;
+  pushUrl: string;
+}
+
+export interface GitReflogEntry {
+  hash: string;
+  shortHash: string;
+  selector: string;
+  subject: string;
+  date: string;
+}
+
 export interface GitLocalWorktree {
   path: string;
   head: string;
@@ -144,6 +170,13 @@ export const gitApi = {
     }),
   stashPop: (ref?: string) => post<{ ok: boolean; summary?: string }>("/app/git/stash/pop", ref ? { ref } : {}),
   worktrees: () => appJson<{ worktrees: GitLocalWorktree[] }>("/app/git/worktrees"),
+  tags: () => appJson<{ tags: GitTag[] }>("/app/git/tags"),
+  remotes: () => appJson<{ remotes: GitRemote[] }>("/app/git/remotes"),
+  reflog: () => appJson<{ entries: GitReflogEntry[]; limit: number; note?: string }>("/app/git/reflog"),
+  checkout: (branch: string) =>
+    post<{ ok: boolean; branch: string; summary?: string }>("/app/git/checkout", { branch }),
+  branchCreate: (name: string, from?: string) =>
+    post<{ ok: boolean; name: string; from?: string }>("/app/git/branch-create", from ? { name, from } : { name }),
 } as const;
 
 // ─── error helpers ───────────────────────────────────────────────────────────
@@ -156,6 +189,11 @@ export function isNotARepoError(error: unknown): boolean {
 /** The git binary is missing from PATH (Bun side reports 501). */
 export function isGitMissingError(error: unknown): boolean {
   return errorCode(error) === "GIT_BINARY_MISSING";
+}
+
+/** Checkout was refused because the working tree is dirty. */
+export function isCheckoutDirtyError(error: unknown): boolean {
+  return errorCode(error) === "GIT_CHECKOUT_DIRTY";
 }
 
 // ─── display helpers ─────────────────────────────────────────────────────────
