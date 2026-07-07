@@ -1,0 +1,40 @@
+/* Skeleton token subset — the full webui token-contract port lands in Wave A.
+   Names follow docs/research/webui-map.md §3 (TOKEN-CONTRACT). */
+
+:root {
+  color-scheme: dark;
+
+  --surface-base: #08080f;
+  --surface-raised: rgb(8 8 15 / 86%);
+  --surface-overlay: rgb(12 10 28 / 94%);
+
+  --border-subtle: rgb(0 255 255 / 18%);
+  --border-strong: rgb(0 255 255 / 40%);
+
+  --text-primary: #f8fbff;
+  --text-secondary: #a7b7d8;
+  --text-muted: #7583a4;
+  --text-accent: #8ffcff;
+
+  --accent: #00dede;
+  --accent-hover: #00ffff;
+
+  --status-success: #38ff8b;
+  --status-warning: #ffcc66;
+  --status-danger: #ff6ac8;
+  --status-info: #8da2ff;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+}

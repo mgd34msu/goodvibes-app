@@ -1,0 +1,13 @@
+# deps / build
+node_modules/
+build/
+artifacts/
+dist/
+*.tsbuildinfo
+
+# plugin/session state (not app code)
+.goodvibes/
+
+# logs & local scratch
+*.log
+tmp/
