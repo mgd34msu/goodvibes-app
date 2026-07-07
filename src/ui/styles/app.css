@@ -785,6 +785,192 @@ a {
   text-align: right;
 }
 
+.onboarding-panel__replay-tour {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.onboarding-panel__replay-tour:hover {
+  color: var(--text-secondary);
+  text-decoration-color: currentColor;
+}
+
+.onboarding-panel__actions-spacer {
+  flex: 1;
+}
+
+/* ── Onboarding extras: permissions / import / pairing (append-only, GAPS §22 rows 5/8/9) ── */
+
+.onboarding-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.onboarding-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.onboarding-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.onboarding-section__hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+.onboarding-section__hint--warn {
+  color: var(--status-warning);
+}
+
+.onboarding-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding-permissions__option label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-2);
+  align-items: baseline;
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.onboarding-permissions__option label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.onboarding-permissions__label {
+  grid-column: 2;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.onboarding-permissions__desc {
+  grid-column: 2;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* ── Welcome tour coach marks (GAPS §22 row 7) — no dark backdrop, the real
+   shell stays visible; a spotlight ring + positioned card do the pointing. ── */
+
+.tour-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+}
+
+.tour-spotlight {
+  position: fixed;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 4000px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+  transition: top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.tour-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-4);
+  pointer-events: auto;
+}
+
+.tour-card--centered {
+  transform: translate(-50%, -50%);
+}
+
+.tour-card__step {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tour-card__title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.tour-card__body {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.tour-card__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.tour-card__skip {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.tour-card__next {
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--accent-contrast);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+.tour-card__next:hover {
+  background: var(--accent-hover);
+}
+
 .spinning {
   animation: gv-spin 1s linear infinite;
 }

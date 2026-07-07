@@ -9,13 +9,14 @@
 // refetchInterval keeps other-window edits visible; mutations invalidate the
 // "documents-registry" prefix.
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, GitCompare, History, MessageSquare } from "lucide-react";
+import { FileText, GitCompare, History, MessageSquare, Package } from "lucide-react";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { formatError, errorStatus } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
 import { formatRelative } from "../../lib/wire.ts";
+import { useUrlState } from "../../lib/router.ts";
 import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
@@ -37,6 +38,7 @@ import {
 } from "./documents-data.ts";
 import { diffLines, diffStats } from "./line-diff.ts";
 import { CompareLab } from "./CompareLab.tsx";
+import { PacketsPanel } from "./PacketsPanel.tsx";
 
 function isRegistryUnavailable(error: unknown): boolean {
   const status = errorStatus(error);
@@ -45,10 +47,33 @@ function isRegistryUnavailable(error: unknown): boolean {
 
 const NEW_DOC_INPUT_ID = "documents-new-title-input";
 
-type DocTab = "drafts" | "compare";
+type DocTab = "drafts" | "compare" | "packets";
+
+function tabFromFilter(value: string | undefined): DocTab | null {
+  return value === "drafts" || value === "compare" || value === "packets" ? value : null;
+}
 
 export function DocumentsView() {
-  const [tab, setTab] = useState<DocTab>("drafts");
+  // Deep-linkable tab: ?view=documents&filter[tab]=packets&filter[note]=<id>
+  // — the /note toast's "Open in Documents" jump link lands here (chat's
+  // useSlashCommands.ts drives this same filter shape).
+  const { filters, setFilters } = useUrlState();
+  const [tab, setTab] = useState<DocTab>(() => tabFromFilter(filters.tab) ?? "drafts");
+  // setFilters is re-created by useUrlState on every URL change (it closes
+  // over the current urlState) — the palette-command effect below registers
+  // ONCE on mount, so it goes through this ref rather than a stale closure.
+  const setFiltersRef = useRef(setFilters);
+  setFiltersRef.current = setFilters;
+
+  useEffect(() => {
+    const fromFilter = tabFromFilter(filters.tab);
+    if (fromFilter && fromFilter !== tab) setTab(fromFilter);
+  }, [filters.tab, tab]);
+
+  function selectTab(next: DocTab): void {
+    setTab(next);
+    setFiltersRef.current({ tab: next }, { replace: true });
+  }
 
   useEffect(() => {
     registerCommand({
@@ -56,19 +81,31 @@ export function DocumentsView() {
       title: "Documents: new draft",
       group: "know",
       keywords: ["document", "draft", "markdown"],
-      run: () => document.getElementById(NEW_DOC_INPUT_ID)?.focus(),
+      run: () => {
+        selectTab("drafts");
+        document.getElementById(NEW_DOC_INPUT_ID)?.focus();
+      },
     });
     registerCommand({
       id: "documents.compare",
       title: "Documents: blind model compare",
       group: "know",
       keywords: ["compare", "models", "blind", "a/b"],
-      run: () => setTab("compare"),
+      run: () => selectTab("compare"),
+    });
+    registerCommand({
+      id: "documents.packets",
+      title: "Documents: review packets & notes",
+      group: "know",
+      keywords: ["packet", "wizard", "preset", "freshness", "zip", "share", "note"],
+      run: () => selectTab("packets"),
     });
     return () => {
       unregisterCommand("documents.new");
       unregisterCommand("documents.compare");
+      unregisterCommand("documents.packets");
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -79,7 +116,7 @@ export function DocumentsView() {
           role="tab"
           aria-selected={tab === "drafts"}
           className={tab === "drafts" ? "documents-tab documents-tab--active" : "documents-tab"}
-          onClick={() => setTab("drafts")}
+          onClick={() => selectTab("drafts")}
         >
           <FileText size={14} aria-hidden="true" /> Drafts
         </button>
@@ -88,18 +125,31 @@ export function DocumentsView() {
           role="tab"
           aria-selected={tab === "compare"}
           className={tab === "compare" ? "documents-tab documents-tab--active" : "documents-tab"}
-          onClick={() => setTab("compare")}
+          onClick={() => selectTab("compare")}
         >
           <GitCompare size={14} aria-hidden="true" /> Model compare
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "packets"}
+          className={tab === "packets" ? "documents-tab documents-tab--active" : "documents-tab"}
+          onClick={() => selectTab("packets")}
+        >
+          <Package size={14} aria-hidden="true" /> Packets & notes
+        </button>
       </div>
-      {/* Both tabs stay mounted (display toggling) so a running compare and an
-          unsaved draft both survive tab switches — docs/UX.md §4. */}
+      {/* All three tabs stay mounted (display toggling) so a running compare,
+          an unsaved draft, and the packet wizard all survive tab switches —
+          docs/UX.md §4. */}
       <div style={tab === "drafts" ? undefined : { display: "none" }}>
         <DraftsSection />
       </div>
       <div style={tab === "compare" ? undefined : { display: "none" }}>
         <CompareLab />
+      </div>
+      <div style={tab === "packets" ? undefined : { display: "none" }}>
+        <PacketsPanel highlightNoteId={filters.note} />
       </div>
     </div>
   );

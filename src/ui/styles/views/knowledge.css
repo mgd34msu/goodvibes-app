@@ -1372,3 +1372,40 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* ── Home-graph / project-planning (docs/FEATURES.md §6 rows 21-24) ─────── */
+
+.knowledge-homegraph {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.knowledge-form__json {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.knowledge-form__json textarea {
+  padding: 6px 8px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.knowledge-form__json textarea[aria-invalid="true"] {
+  border-color: var(--status-danger);
+}
+
+.knowledge-form__json textarea:focus-visible {
+  border-color: var(--border-focus);
+  outline: none;
+}

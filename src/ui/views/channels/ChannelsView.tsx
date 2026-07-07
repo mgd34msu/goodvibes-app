@@ -1,13 +1,16 @@
-// Channels — omnichannel operations (docs/FEATURES.md §13, all 15 rows minus
-// the delivery-receipts row which lives with the deliveries surface).
+// Channels — omnichannel operations (docs/FEATURES.md §13, all 15 rows).
 // Tabbed observability page: Status board (per-surface health + doctor/
 // setup/lifecycle/repairs drill-in), Inbox, Accounts, Catalog (actions/
 // tools/agent tools/capabilities/directory), Policies (+ audit), Drafts,
-// Routing — every mutating verb confirm-gated (see each panel's docblock).
+// Routing, Deliveries (row 12: deliveries.list/.get, read-only — no
+// deliveries.retry exists on this pin, see DeliveriesPanel.tsx) — every
+// mutating verb confirm-gated (see each panel's docblock).
 //
 // Freshness: the `communication` realtime domain invalidates the ["channels"]
 // key prefix (lib/realtime.ts) that every local key extends (keys.ts); the
-// status board and inbox add slow polls as the no-event floor.
+// status board and inbox add slow polls as the no-event floor. Deliveries
+// rides the SEPARATE `deliveries` domain/["deliveries"] prefix (shared
+// queryKeys.deliveries, not a local key) — refresh here invalidates both.
 //
 // Deep links: ?filter[channels-tab]=<tab> selects a tab so palette jumps and
 // notifications compose (docs/UX.md §2).
@@ -19,6 +22,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { QrCode, RefreshCw } from "lucide-react";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
+import { queryKeys } from "../../lib/queries.ts";
 import { useUrlState } from "../../lib/router.ts";
 import { useViewActions } from "../../components/shell/Topbar.tsx";
 import { channelsKeys } from "./keys.ts";
@@ -29,9 +33,10 @@ import { CatalogPanel } from "./CatalogPanel.tsx";
 import { PoliciesPanel } from "./PoliciesPanel.tsx";
 import { DraftsPanel } from "./DraftsPanel.tsx";
 import { RoutingPanel } from "./RoutingPanel.tsx";
+import { DeliveriesPanel } from "./DeliveriesPanel.tsx";
 import { PairingModal } from "./PairingModal.tsx";
 
-type ChannelsTab = "status" | "inbox" | "accounts" | "catalog" | "policies" | "drafts" | "routing";
+type ChannelsTab = "status" | "inbox" | "accounts" | "catalog" | "policies" | "drafts" | "routing" | "deliveries";
 
 const TAB_LABELS: Record<ChannelsTab, string> = {
   status: "Status",
@@ -41,6 +46,7 @@ const TAB_LABELS: Record<ChannelsTab, string> = {
   policies: "Policies",
   drafts: "Drafts",
   routing: "Routing",
+  deliveries: "Deliveries",
 };
 
 const TAB_IDS = Object.keys(TAB_LABELS) as ChannelsTab[];
@@ -63,16 +69,18 @@ export function ChannelsView() {
     setFilters({ "channels-tab": next === "status" ? undefined : next }, { replace: true });
   }
 
+  // Both prefixes: channelsKeys.all (communication domain) plus the
+  // separately-invalidated deliveries domain the Deliveries tab now rides.
+  function refreshAll(): void {
+    void queryClient.invalidateQueries({ queryKey: channelsKeys.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.deliveries });
+  }
+
   // Topbar view-scoped actions (the view unmounts when hidden — keepAlive:false).
   useEffect(() => {
     setViewActions(
       <>
-        <button
-          type="button"
-          className="channels-btn"
-          onClick={() => void queryClient.invalidateQueries({ queryKey: channelsKeys.all })}
-          aria-label="Refresh channels data"
-        >
+        <button type="button" className="channels-btn" onClick={refreshAll} aria-label="Refresh channels data">
           <RefreshCw size={14} aria-hidden="true" /> Refresh
         </button>
         <button type="button" className="channels-btn channels-btn--primary" onClick={() => setPairingOpen(true)}>
@@ -89,8 +97,8 @@ export function ChannelsView() {
       id: "channels.refresh",
       title: "Refresh Channels",
       group: "automate",
-      keywords: ["channels", "reload", "surfaces", "inbox"],
-      run: () => void queryClient.invalidateQueries({ queryKey: channelsKeys.all }),
+      keywords: ["channels", "reload", "surfaces", "inbox", "deliveries"],
+      run: refreshAll,
     });
     registerCommand({
       id: "channels.pair",
@@ -129,6 +137,7 @@ export function ChannelsView() {
       {tab === "policies" && <PoliciesPanel />}
       {tab === "drafts" && <DraftsPanel />}
       {tab === "routing" && <RoutingPanel />}
+      {tab === "deliveries" && <DeliveriesPanel />}
 
       <PairingModal open={pairingOpen} onClose={() => setPairingOpen(false)} />
     </div>

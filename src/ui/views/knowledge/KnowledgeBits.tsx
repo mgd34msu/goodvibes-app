@@ -9,6 +9,7 @@ import { Check, Copy } from "lucide-react";
 import { compactJson } from "../../lib/wire.ts";
 import { isMethodUnavailableError } from "../../lib/errors.ts";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
+import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 
 // ─── Four-state wrapper ──────────────────────────────────────────────────────
 
@@ -122,6 +123,101 @@ export function CopyValue({ value, label }: { value: string; label?: string }) {
         {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
       </button>
     </span>
+  );
+}
+
+// ─── Single shared pending-confirm surface ──────────────────────────────────
+//
+// The Home-graph and Project-planning panels each wire a dozen+ admin-access
+// methods (docs/FEATURES.md §6 rows 21-24). Rather than one ConfirmSurface
+// instance per action, callers hold ONE `PendingAction | null` and render one
+// <PendingConfirmSurface>; this still emits confirm:true + explicitUserRequest
+// per docs/UX.md §4 — it just shares the modal shell.
+
+export interface PendingAction {
+  action: string;
+  target: string;
+  blastRadius: string;
+  danger?: boolean;
+  confirmLabel?: string;
+  requireTypedText?: string;
+  run: (meta: ConfirmMetadata) => void;
+}
+
+export function PendingConfirmSurface({
+  pending,
+  onCancel,
+}: {
+  pending: PendingAction | null;
+  onCancel: () => void;
+}) {
+  return (
+    <ConfirmSurface
+      open={pending !== null}
+      action={pending?.action ?? ""}
+      target={pending?.target ?? ""}
+      blastRadius={pending?.blastRadius ?? ""}
+      danger={pending?.danger}
+      confirmLabel={pending?.confirmLabel}
+      requireTypedText={pending?.requireTypedText}
+      onConfirm={(meta) => pending?.run(meta)}
+      onCancel={onCancel}
+    />
+  );
+}
+
+// ─── Raw JSON extra-params field ────────────────────────────────────────────
+//
+// A few admin methods here (home-graph device-passport/room-page/packet
+// generation) accept daemon-side object shapes richer than this view can
+// enumerate as named fields. Rather than hardcode a guessed field name and
+// silently drop what the user actually wanted, this exposes exactly what the
+// route accepts — a JSON object merged into the request body — wired to the
+// real method, capability-honest about what it does.
+
+export function parseJsonParams(value: string): Record<string, unknown> {
+  const trimmed = value.trim();
+  if (!trimmed) return {};
+  try {
+    const parsed = JSON.parse(trimmed);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+export function JsonParamsField({
+  value,
+  onChange,
+  label = "Extra parameters (JSON, optional)",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label?: string;
+}) {
+  let parseError: string | null = null;
+  if (value.trim()) {
+    try {
+      JSON.parse(value);
+    } catch (error) {
+      parseError = error instanceof Error ? error.message : "Invalid JSON";
+    }
+  }
+  return (
+    <label className="knowledge-form__json">
+      {label}
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="{}"
+        rows={3}
+        spellCheck={false}
+        aria-invalid={parseError !== null}
+      />
+      {parseError && <span className="knowledge-form__error">{parseError}</span>}
+    </label>
   );
 }
 

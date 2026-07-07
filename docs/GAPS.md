@@ -1,7 +1,9 @@
 # goodvibes-app — Parity Gap Audit
 
-Row-by-row audit of `docs/FEATURES.md` against the code as of commit `b2ca124`
-(working tree). Method: for each row, the Backing method id was checked against
+Row-by-row audit of `docs/FEATURES.md` against the code. Original audit at commit
+`b2ca124`; **refreshed after the Wave E gap-closure pass** (six agents + integration
+gate) — closed rows are marked `(Wave E)` in their evidence cell and the counts below
+reflect the post-Wave-E working tree. Method: for each row, the Backing method id was checked against
 every literal string passed to `invoke(...)` / `streamPath(...)` in `src/ui`
 (220 unique method ids actually called, out of 327 known in
 `src/ui/lib/generated/operator-routes.ts`), then the calling component was
@@ -47,22 +49,22 @@ evidence found; stated plainly, no inference.
 | 25 | `@` file reference picker | SHIPPED | `Composer.tsx:309-372` `mentionQuery` against artifacts list |
 | 26 | Multi-line composer, grows with content | SHIPPED | `Composer.tsx` textarea auto-grow + `shouldSubmitComposerKey` (`ChatView.tsx:77-79`) |
 | 27 | Paste normalization (big paste → chip) | SHIPPED | `Composer.tsx:407-426` (`onFilesAdded` for pasted text as a file/chip) |
-| 28 | Input history + reverse search (Ctrl+R) | PARTIAL | history storage shipped: `chat-local.ts:44-49` `readInputHistory`/`pushInputHistory`. Reverse-search (Ctrl+R) keybinding not found — no `Ctrl+R`/reverse-search handler in `Composer.tsx` |
+| 28 | Input history + reverse search (Ctrl+R) | SHIPPED | history storage `chat-local.ts:44-49` `readInputHistory`/`pushInputHistory`; ArrowUp/Down recall + Ctrl+R reverse-search handler now wired in `Composer.tsx:432,466` (Wave E) |
 | 29 | Prompt undo/redo | MISSING | no `undo`/`redo` logic in `Composer.tsx` or `chat-local.ts`; textarea relies on native browser undo only |
 | 30 | Conversation clear / reset | SHIPPED | `/clear` slash command (`ChatView.tsx:72`) starts a new session |
-| 31 | Notes: `/note`, `/keep` (session → durable memory) | MISSING | `SLASH_COMMANDS` only has `new`/`clear`/`help` (`ChatView.tsx:70-74`); no `/note` or `/keep` handler; `memory.records.add` is called elsewhere (Memory view) but not from chat |
+| 31 | Notes: `/note`, `/keep` (session → durable memory) | SHIPPED | `useSlashCommands.ts:71` handles `/note`→app-local notes registry (`chat-local.ts:262` `NOTES_BASE`) and `/keep`→`gv.memory.records.add` (`:108`, ConfirmSurface-gated); registered from chat at `ChatView.tsx:250` (Wave E) |
 | 32 | Export transcript (md/json/html) | SHIPPED | `chat-local.ts:186` `buildTranscriptExport`, `ExportFormat` type |
 | 33 | Share with `--redact` | SHIPPED | `chat-local.ts:166` `redactSecrets` |
 | 34 | Templates (prompt templates) | SHIPPED | `chat-local.ts:67-86` `readTemplates`/`saveTemplate`/`deleteTemplate` |
 | 35 | Image attach (`/image`, Ctrl+V) | PARTIAL | Ctrl+V paste-to-attachment shipped (row 10). No literal `/image` slash command in `SLASH_COMMANDS` |
-| 36 | Image generation (`/imagine`) | MISSING | no `/imagine` command, and `media.generate` (used in Artifacts view's MediaLab, `media-data.ts:139`) is never called from chat |
+| 36 | Image generation (`/imagine`) | SHIPPED | `useSlashCommands.ts:126` → `media.generate`, inline markdown preview appended to the transcript (`:145`), artifact retained in Artifacts (Wave E) |
 | 37 | Voice dictation (mic → composer) | SHIPPED | `voice.ts:214` `gv.voice.stt`; `MicButton.tsx` |
 | 38 | Speak-aloud replies (TTS) + always-speak toggle | SHIPPED | `SpeakButton.tsx`; always-speak `chat-local.ts:153-157`, `ChatView.tsx:117,194` |
 | 39 | Turn cancel (stop button) | PARTIAL (honest) | `ChatView.tsx:745` wires a Stop button, but `useChatStream.ts:87` explicitly states "Companion chat has no wire cancel" — stops local rendering only, no `sessions.inputs.cancel` call for companion turns. This matches the row's own caveat but is not a true cancel |
 | 40 | Conversation branches (fork a chat) | MISSING | no distinct "fork whole chat" action found; only per-message edit-and-branch (row 7) exists. FEATURES.md itself flags this as a known gap ("wire fork doesn't exist... honest 'forked from' marker") but no marker/action was found in `ChatView.tsx`/`MessageItem.tsx` |
-| 41 | Long-turn desktop notification | MISSING | no `notifyAfterSeconds` / timing-based notification hook found anywhere under `src/ui/views/chat` or `src/bun/notifications.ts` |
+| 41 | Long-turn desktop notification | SHIPPED | `chat-local.ts:305` `shouldNotifyLongTurn`/`LONG_TURN_NOTIFY_MS` (60s + `document.hidden`); wired at `ChatView.tsx:200-209` `onTurnCompleted` → metadata-only POST `/app/notifications/notify` (Wave E) |
 
-**Section 1 tally: 34 shipped, 4 partial, 3 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41).
+**Section 1 tally: 37 shipped, 2 partial, 2 missing** (of 41 rows; FEATURES.md's own row-count table claims 44 — the table overcounts, actual rows in the section are 41). Wave E closed rows 28/31/36/41; remaining gaps are row 29 (prompt undo/redo), row 35 (no literal `/image` command), and the honest partials on rows 35/39.
 
 ## 2. Sessions (12 rows)
 
@@ -96,11 +98,11 @@ evidence found; stated plainly, no inference.
 | 7 | Interrupt / kill / pause / resume of agents | EXCLUDED (confirmed accurate) | matches §25 exclusion — no such wire method exists; not attempted, correctly a documented gap rather than a silent omission |
 | 8 | Inline approval cards on correlated nodes | SHIPPED | `FleetApprovalInline.tsx:33,43,117` → `gv.approvals.{approve,deny,list}` |
 | 9 | Workstream view (phases / work-items) | SHIPPED | `FleetView.tsx:57,115,137-141,171-176` — dedicated "Workstreams" scope filter + palette command |
-| 10 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | MISSING | node-kind taxonomy recognizes `wrfc-chain`/`wrfc-subtask` (`fleet.ts:14-15`) but no `c:N/M` or SAT/UNS/UNV badge text is rendered anywhere in `FleetView.tsx` |
-| 11 | Worktree detail per agent | MISSING | `worktrees.snapshot` is only called from the separate Worktrees code view (`src/ui/views/code/WorktreesView.tsx:58`); zero worktree references inside `src/ui/views/fleet/` |
+| 10 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | SHIPPED | derived in `fleet.ts:424-452` (`chainProgress` `c:N/M`, `reviewTally` SAT/UNS/UNV from the node's own `constraintFindings`); rendered as badges in `FleetView.tsx:95-122` (Wave E) |
+| 11 | Worktree detail per agent | SHIPPED | `fleet.ts:386-392` `agentWorkingDirectory`/`worktreeLabel` off the node's reported worktree path; rendered on rows and in detail at `FleetView.tsx:287-289,411-413` (Wave E) |
 | 12 | Deep links into fleet nodes | SHIPPED | `FleetView.tsx:92-103` `writeNodeToUrl`/`selectedId` round-trips through `router.ts` URL filters |
 
-**Section 3 tally: 9 shipped, 1 partial, 1 missing, 1 correctly-excluded.**
+**Section 3 tally: 9 shipped, 1 partial, 1 missing, 1 correctly-excluded.** Wave E closed rows 10-11; the remaining partial (row 5, only `watchers.stop` wired) and missing (row 6, no task cancel/retry from fleet) were out of the Wave E fleet agent's scope.
 
 ## 4. Approvals & Tasks (9 rows)
 
@@ -161,13 +163,13 @@ evidence found; stated plainly, no inference.
 | 18 | Connectors: list/get/doctor | SHIPPED | `IngestPanel.tsx:355,454,458` → `.connectors.list`, `.connector.doctor`, `.connector.get` |
 | 19 | GraphQL console (query + schema) | SHIPPED | `GraphqlPanel.tsx:29,36` → `knowledge.graphql.schema`/`.execute` |
 | 20 | Agent-scoped knowledge (isolated store) | SHIPPED | `scope.ts` `agentKnowledgePath`; runtime probe pattern in `KnowledgeView.tsx:16,89`, `AskPanel.tsx:5,42,92` — routes to `/api/goodvibes-agent/knowledge/*` when `scope==="agent"` |
-| 21 | Home-graph: ask/browse/map/sync/import/export/ingest/link | MISSING | zero references to `homeassistant.homeGraph.*` anywhere under `src/ui` — the 21 home-graph methods in `operator-routes.ts:129-153` are declared but never invoked; no home-graph UI exists in the Knowledge view or anywhere else |
-| 22 | Home-graph facts review / device passport / room page / reset | MISSING | same as above — `reviewHomeGraphFact`/`refreshDevicePassport`/`generateRoomPage`/`reset` are all unreferenced |
-| 23 | Project planning: status/state/language/decisions/evaluate | MISSING | zero references to `projectPlanning.*` anywhere under `src/ui` — 12 methods declared in `operator-routes.ts:243-259`, none invoked; no project-planning UI exists |
-| 24 | Work plan: snapshot + tasks CRUD/status/reorder/clearCompleted | MISSING | same as above — `projectPlanning.workPlan.*` unreferenced |
+| 21 | Home-graph: ask/browse/map/sync/import/export/ingest/link | SHIPPED | `HomeGraphPanel.tsx` (mounted `KnowledgeView.tsx:238`) invokes `homeassistant.homeGraph.askHomeGraph` (`:78`), `.browse` (`:153`), `.map` (`:206`), `.ingestHomeGraphUrl/Note/Artifact` (`:422,433,444`), `.linkHomeGraphKnowledge` (`:455`), `.export`/`.import` (`:679,689`); capability-probed (Wave E) |
+| 22 | Home-graph facts review / device passport / room page / reset | SHIPPED | same panel: `.reviewHomeGraphFact` (`HomeGraphPanel.tsx:291`), `.refreshDevicePassport` (`:640`), `.generateRoomPage` (`:650`), `.generateHomeGraphPacket` (`:660`), all ConfirmSurface-gated (Wave E) |
+| 23 | Project planning: status/state/language/decisions/evaluate | SHIPPED | `PlanningPanel.tsx` (mounted `KnowledgeView.tsx:239`) → `projectPlanning.state.get` (`:101`), `.language.get/.upsert` (`:214,217`), `.decisions.list/.record` (`:315,319`), `.evaluate` (`:410`) (Wave E) |
+| 24 | Work plan: snapshot + tasks CRUD/status/reorder/clearCompleted | SHIPPED | `PlanningPanel.tsx` `WorkPlanSection` → `projectPlanning.workPlan.snapshot` (`:601`), `.tasks.list` (`:604`), `.task.create/.get/.update/.status/.delete` (`:609,476,492,623,633`), `.tasks.reorder` (`:643`), `.clearCompleted` (`:651`) (Wave E) |
 | 25 | Knowledge realtime updates | SHIPPED | `realtime.ts:24` `knowledge: [queryKeys.knowledgeStatus, queryKeys.knowledgeSources, queryKeys.knowledgeIssues]` |
 
-**Section 6 tally: 19 shipped, 2 partial, 4 missing.** The home-graph and project-planning sub-surfaces (rows 21-24, 33 wire methods between them) have no UI at all — this is the single largest concentration of missing surface in the whole audit.
+**Section 6 tally: 23 shipped, 2 partial, 0 missing.** Wave E closed rows 21-24 — the home-graph (`HomeGraphPanel.tsx`) and project-planning (`PlanningPanel.tsx`) sub-surfaces are now full, capability-probed panels, eliminating what was the single largest concentration of missing surface. The only remaining partials are rows 15/17 (no single-item `schedule.get`/`refinement.task.get` fetch — both edit off list-query cache).
 
 ## 7. Memory (9 rows)
 
@@ -243,14 +245,14 @@ evidence found; stated plainly, no inference.
 | 1 | Versioned markdown drafts | SHIPPED | `documents-data.ts:49-81` (`listDocuments`/`createDocument`/`updateDocument`/`deleteDocument`/`listVersions`/`saveVersion` over `/app/registries/documents`) |
 | 2 | Review comments + AI suggestion accept/reject | PARTIAL | comments shipped: `documents-data.ts:124,168` (`commentFrom`, `rawWithComments`), rendered `DocumentsView.tsx` `CommentsSection` (line 436). No AI-suggestion accept/reject flow exists — zero hits for `suggestion`/`accept`/`reject` anywhere in `src/ui/views/documents/` |
 | 3 | Uploads / exports | PARTIAL | export shipped: `documents-data.ts:178-189` (`downloadText`/`exportFilename`); uploads via `artifacts.*` are missing — zero `artifacts.` calls anywhere in `src/ui/views/documents/` |
-| 4 | Review packets: wizard + presets + freshness check | MISSING | zero hits for `wizard`/`packet`/`preset`/`freshness` anywhere under `src/ui/views/documents/` — no such surface exists |
-| 5 | Reviewer handoff ZIP archives | MISSING | zero hits for `zip`/`Zip` anywhere under `src/ui/views/documents/` — no Bun-side zip helper either |
-| 6 | Share packet via channel (confirm-gated) | MISSING | zero hits for `channel` anywhere under `src/ui/views/documents/` — no `channels.actions.invoke` call from Documents |
+| 4 | Review packets: wizard + presets + freshness check | SHIPPED | `PacketsPanel.tsx` (mounted `DocumentsView.tsx:41` as a `packets` tab) + `packets-data.ts` — preset-driven wizard and `checkFreshness` re-run at `PacketsPanel.tsx:343` (Wave E) |
+| 5 | Reviewer handoff ZIP archives | SHIPPED | `zip-writer.ts` `createZip`/`downloadBlob` (store-only archive); consumed at `PacketsPanel.tsx:359` (Wave E) |
+| 6 | Share packet via channel (confirm-gated) | SHIPPED | `PacketsPanel.tsx:494` → `channels.actions.invoke`, admin+dangerous ConfirmSurface (`:447`) (Wave E) |
 | 7 | Blind model comparison (delayed reveal) | SHIPPED | `CompareLab.tsx:164-190,260-261` — randomized A/B assignment, `revealed` gate before showing which model answered |
 | 8 | Preference analytics / synthesis | SHIPPED (basic) | judgments recorded to the app-local `notes` registry tagged `"model-compare"` (comment `CompareLab.tsx:4-5`) with a "Past judgments" history list (`:405-422`) — this is a plain history list, not a deeper win-rate/synthesis rollup, but it satisfies the row as an app-local store |
 | 9 | Winner → model route update (confirm-gated) | SHIPPED | `CompareLab.tsx:227` → `gv.config.set({key:"provider.model"})`, gated behind `promoteTarget`/confirm at `:388` |
 
-**Section 11 tally: 4 shipped, 2 partial, 3 missing.** Documents & Compare has the highest concentration of missing rows relative to its size (3 of 9) — the "review packet" workflow (wizard, presets, freshness check, ZIP handoff, channel share) described in the parity matrix does not exist in any form; only drafting, versioning, comments, and blind-compare shipped.
+**Section 11 tally: 7 shipped, 2 partial, 0 missing.** Wave E built the entire review-packet workflow (wizard, presets, freshness check, ZIP handoff, channel share) that was previously absent. Remaining partials are rows 2 (comments ship, no AI-suggestion accept/reject) and 3 (export ships, no `artifacts.*` upload).
 
 ## 12. Artifacts (7 rows)
 
@@ -281,12 +283,12 @@ evidence found; stated plainly, no inference.
 | 9 | Policies: list / audit / update | SHIPPED | `PoliciesPanel.tsx:70,158,315` |
 | 10 | Drafts: list/get/save/delete | SHIPPED | `DraftsPanel.tsx:30,68,76,221` |
 | 11 | Routing: list / assign / delete | SHIPPED | `RoutingPanel.tsx:28,34,143` |
-| 12 | Delivery receipts (redacted) + dead-letter states | MISSING | `deliveries.list` is called exactly once anywhere in `src/ui` — `AwayDigest.tsx` (Home view), for an unread-style count only. No `deliveries.get` call, no redacted-content receipts view, no dead-letter-state UI exists anywhere, despite `ChannelsView.tsx:2`'s own comment pointing to "the deliveries surface" as where this row lives |
+| 12 | Delivery receipts (redacted) + dead-letter states | SHIPPED | `DeliveriesPanel.tsx` (mounted `ChannelsView.tsx:140`) — `deliveries.list` (`:120`) as a status/surface-filterable master list, `deliveries.get` detail peek (`:49`) showing failure reason, explicit `dead_lettered` state handling (`:26-35,182-184`) (Wave E) |
 | 13 | Companion pairing (QR) | SHIPPED | `PairingModal.tsx:11,47-56,65-66` — real QR SVG rendered from `GET /app/pairing/connection` (`src/bun/pairing.ts`) |
 | 14 | Notification targets (ntfy/webhook) manage + test | PARTIAL | config keys are editable generically through the schema-driven Settings editor (`config-schema.generated.ts:907-928` `surfaces.ntfy.*`), but there is no dedicated "send test notification through this ntfy/webhook target" action — `NotificationsSection.tsx`'s test button (`:67`) tests the app's own native-notification bridge, not an outbound channel target |
 | 15 | Realtime channel events | SHIPPED | `realtime.ts:28-29` → `communication: [queryKeys.channels]`, `deliveries: [queryKeys.deliveries]` |
 
-**Section 13 tally: 12 shipped, 2 partial, 1 missing.**
+**Section 13 tally: 14 shipped, 1 partial, 0 missing.** Wave E closed row 12 (deliveries receipts/dead-letter view). The lone remaining partial is row 14 (ntfy/webhook targets editable via generic Settings, no dedicated per-target "send test" action). (Row 6 `agent_tools.invoke` remains list-only, as originally noted, folded into the shipped count as before.)
 
 ## 14. Providers & Models (13 rows)
 
@@ -320,12 +322,12 @@ evidence found; stated plainly, no inference.
 | 6 | Checkpoints: create/list/diff/restore | SHIPPED | `CheckpointsView.tsx:68,84,92,118` → `gv.checkpoints.{list,diff,create,restore}` `[ws]` |
 | 7 | Embedded terminal tabs (PTY) | SHIPPED | `pty-client.ts:32,45,71,75,83,144` → `/app/pty/sessions*` (list/create/delete/input/resize/stream) |
 | 8 | Intelligence snapshot (LSP/tree-sitter posture) | MISSING | `intelligence.snapshot` is declared in `operator-routes.ts:154` but never invoked anywhere in `src/ui` — no read-only tile exists despite the row calling for one |
-| 9 | Repo file browser + preview | MISSING | zero references to a file-browser/`fs` route anywhere under `src/ui/views/code/` or `src/bun/git.ts` |
-| 10 | Per-repo session table (sessions in this project) | MISSING | zero `sessions.list` usage anywhere under `src/ui/views/code/` — no project-filtered session table exists |
-| 11 | GitHub: device-flow auth + PR/issue list/create | MISSING | zero references to GitHub, device-flow, or a GitHub REST client anywhere in `src/ui` or `src/bun` |
+| 9 | Repo file browser + preview | MISSING (now honestly surfaced) | still no wire method — `src/bun/git.ts` exposes no `ls-tree`/`ls-files`/read-file route and no `fs.`/`files.`/`workspace.`/`tree.` route exists in `operator-routes.ts`. Wave E replaced the silent omission with an in-UI `RepoFilesNotice` (`GitView.tsx:178-190`) that states plainly what is missing and why (needs a new Bun-side endpoint, out of the UI-only scope) |
+| 10 | Per-repo session table (sessions in this project) | SHIPPED | `RepoSessionsPanel.tsx` (mounted `GitView.tsx:166`) → `gv.sessions.list()` (`:75`) filtered to the current `workspaceDir` (Wave E) |
+| 11 | GitHub: device-flow auth + PR/issue list/create | PARTIAL | `GitHubPanel.tsx` (mounted `GitView.tsx:163`) is a complete, capability-honest UI — it probes `control.methods.get` for `github.auth.deviceStart`/`.devicePoll`/`github.pulls.*`/`github.issues.*` and renders `UnavailableState` when absent. But **no `github.*` method exists in `operator-routes.ts` (0 matches)**, so on every known daemon the panel renders Unavailable — the UI is built and wired but has no live wire to talk to (Wave E, honest degrade) |
 | 12 | Review snapshot | MISSING | `review.snapshot` is declared in `operator-routes.ts:280` but never invoked anywhere in `src/ui` |
 
-**Section 15 tally: 6 shipped, 2 partial, 4 missing.** This is the second-largest concentration of gaps after Documents & Compare — GitHub integration, the repo file browser, per-repo session table, and both snapshot-only read-only tiles (`intelligence.snapshot`, `review.snapshot`) are entirely absent.
+**Section 15 tally: 6 shipped, 3 partial, 3 missing.** Wave E closed row 10 (per-repo session table) and built the GitHub UI (row 11 → PARTIAL, capability-honest but no `github.*` wire methods exist). Row 9 (repo file browser) stays MISSING but is now surfaced honestly in-UI; both read-only snapshot tiles (rows 8/12) remain absent (out of Wave E scope).
 
 ## 16. MCP (7 rows)
 
@@ -421,14 +423,14 @@ evidence found; stated plainly, no inference.
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
-| 1 | Remote snapshot | MISSING | `remote.snapshot` declared (`operator-routes.ts:277`), never invoked |
-| 2 | Peers: list / invoke / disconnect / token rotate / revoke | MISSING | `remote.peers.*` (5 methods, `operator-routes.ts:272-276`) declared, never invoked |
-| 3 | Pair requests: list / approve / reject | MISSING | `remote.pair.requests.*` (3 methods, `:269-271`) declared, never invoked |
-| 4 | Work queue: list / cancel | MISSING | `remote.work.*` (2 methods, `:278-279`) declared, never invoked |
-| 5 | Node-host contract inspection | MISSING | `remote.node_host.contract` declared (`:268`), never invoked |
-| 6 | Web-push subscriptions manage (for PWA companions) | MISSING | `push.vapid.get`/`push.subscriptions.*` `[ws]` declared, never invoked |
+| 1 | Remote snapshot | SHIPPED | `OverviewSection.tsx:23` → `remote.snapshot` (`PeersView.tsx` Overview section, capability-probed) (Wave E) |
+| 2 | Peers: list / invoke / disconnect / token rotate / revoke | SHIPPED | `PeersSection.tsx:34,58,71` (`remote.peers.list`/`.disconnect`/`.token.rotate`, `.token.revoke`) + `InvokeConsole.tsx:60` (`remote.peers.invoke`) (Wave E) |
+| 3 | Pair requests: list / approve / reject | SHIPPED | `PairRequestsSection.tsx:38,49,63` → `remote.pair.requests.list`/`.approve`/`.reject` (Wave E) |
+| 4 | Work queue: list / cancel | SHIPPED | `WorkSection.tsx:34,41` → `remote.work.list`/`.cancel` (Wave E) |
+| 5 | Node-host contract inspection | SHIPPED | `NodeHostContractSection.tsx:17` → `remote.node_host.contract` (Wave E) |
+| 6 | Web-push subscriptions manage (for PWA companions) | MISSING | `push.vapid.get`/`push.subscriptions.*` `[ws]` declared, still never invoked — the Wave E Peers view covers the `remote.*` surface but not the ws-only `push.*` subscription methods |
 
-**Section 21 tally: 0 shipped, 0 partial, 6 missing.** There is no Remote/Peers view at all — `src/ui/views/registry.tsx` has no `remote` entry among its 26 `ViewId`s, no sidebar group references it, and there is no `src/ui/views/remote/` directory. This entire FEATURES.md section (all 12 `remote.*` wire methods plus 2 `push.*` methods) has zero UI surface — not degraded, not stubbed, simply absent from the view registry.
+**Section 21 tally: 5 shipped, 0 partial, 1 missing.** Wave E built the whole `src/ui/views/peers/` view — `PeersView.tsx` (registered as `peers` in `registry.tsx:234-238`, in the "System" sidebar group) with Overview/Peers/PairRequests/Work/NodeHostContract/InvokeConsole sections covering all 12 `remote.*` methods, each capability-probed with honest `UnavailableState` when the daemon lacks the route. The only remaining gap is row 6 (ws-only `push.*` subscription management for PWA companions), which no view invokes.
 
 ## 22. Onboarding (9 rows)
 
@@ -438,13 +440,13 @@ evidence found; stated plainly, no inference.
 | 2 | Token provisioning (automatic) | SHIPPED | `src/bun/pairing.ts` companion-token bootstrap, proxy-injected |
 | 3 | Provider key entry / detection (env inventory) | SHIPPED | `OnboardingChecks.tsx:104,174-208` (`PROVIDER_ENV_KEYS`, `envKeyForProvider`) → `gv.config.set` |
 | 4 | Default model pick (+ effort) | PARTIAL | model pick shipped (`OnboardingChecks.tsx:121` → `config.set provider.model`); no reasoning-effort control anywhere in the onboarding flow — zero hits for "effort" in `OnboardingChecks.tsx` |
-| 5 | Permissions posture pick | MISSING | zero hits for `permissions.mode` anywhere under `src/ui/views/onboarding/` — the onboarding flow never asks the user to pick a permission mode |
+| 5 | Permissions posture pick | SHIPPED | `PermissionsStep.tsx` (mounted `OnboardingOverlay.tsx:117`) audits `permissions.mode` and offers a picker → `config.set permissions.mode` (admin+dangerous, ConfirmSurface); renders honestly when the daemon exposes no `permissions.mode` key (`:83`) (Wave E) |
 | 6 | Doctor (gtk/webkit deps, daemon reachable, token valid, provider sane) | PARTIAL | daemon-reachable/token-valid/provider-sane are the three live checks (`checks.ts:36-152` `daemonCheck`/`principalFrom`/`providerOptionsFrom`); there is no reported gtk/webkit dependency check — the only related code is a fire-and-forget env workaround (`src/bun/env.ts:10` `WEBKIT_DISABLE_DMABUF_RENDERER`), not a pass/fail check surfaced to the user |
-| 7 | Welcome tour + first-run cards | MISSING | `OnboardingOverlay.tsx:1-5` is explicitly scoped to "one screen, three live checks" — no separate dismissible welcome-tour/first-run-cards surface exists |
-| 8 | Import from existing tui/agent installs | MISSING (not in this flow) | the import bridge exists (`ImportBridgeModal.tsx`, `ProfilesSection.tsx`) but is reachable only from Routines/Settings, not surfaced anywhere in the onboarding flow itself |
-| 9 | QR pairing display for mobile companions | MISSING (not in this flow) | the QR pairing surface exists (`PairingModal.tsx`) but lives entirely in the Channels view — the onboarding flow never mentions or links to it |
+| 7 | Welcome tour + first-run cards | SHIPPED | `WelcomeTour.tsx` + `tour.ts` (first-run-only, `hasTourBeenSeen` gate); shown on first run via `OnboardingOverlay.tsx:61,97` before the checks screen (Wave E) |
+| 8 | Import from existing tui/agent installs | SHIPPED | `ImportStep.tsx` now mounted directly in the onboarding flow (`OnboardingOverlay.tsx:118`), surfacing the import bridge at first run (Wave E) |
+| 9 | QR pairing display for mobile companions | SHIPPED | `PairingStep.tsx` now mounted in the onboarding flow (`OnboardingOverlay.tsx:119`), surfacing companion pairing at first run (Wave E) |
 
-**Section 22 tally: 3 shipped, 2 partial, 4 missing.** The onboarding flow itself is a lean, honest 3-check screen exactly as designed — but several rows the parity matrix assigned to *this* section (permissions pick, tour, import bridge, QR pairing) either don't exist or live somewhere the first-run user would never see them.
+**Section 22 tally: 7 shipped, 2 partial, 0 missing.** Wave E expanded onboarding from the lean 3-check screen into a first-run flow with a welcome tour (row 7), permissions pick (row 5), import-bridge step (row 8), and QR pairing step (row 9). The two remaining partials are row 4 (model pick ships, no reasoning-effort control in the flow) and row 6 (daemon/token/provider checks ship, no gtk/webkit dependency check surfaced).
 
 ## 23. Command Palette & Keyboard (8 rows)
 
@@ -498,48 +500,51 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 
 | § | Section | Shipped | Partial | Missing | Excluded | Rows |
 |---|---|---|---|---|---|---|
-| 1 | Chat | 34 | 4 | 3 | — | 41 |
+| 1 | Chat | 37 | 2 | 2 | — | 41 |
 | 2 | Sessions | 12 | 0 | 0 | — | 12 |
 | 3 | Fleet | 9 | 1 | 1 | 1 | 12 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | — | 9 |
 | 5 | Automation | 10 | 1 | 1 | — | 12 |
-| 6 | Knowledge | 19 | 2 | 4 | — | 25 |
+| 6 | Knowledge | 23 | 2 | 0 | — | 25 |
 | 7 | Memory | 9 | 0 | 0 | — | 9 |
 | 8 | Agent Brain | 10 | 1 | 3 | — | 14 |
 | 9 | Personal Ops | 7 | 1 | 1 | — | 9 |
 | 10 | Research | 5 | 1 | 1 | — | 7 |
-| 11 | Documents & Compare | 4 | 2 | 3 | — | 9 |
+| 11 | Documents & Compare | 7 | 2 | 0 | — | 9 |
 | 12 | Artifacts | 7 | 0 | 0 | — | 7 |
-| 13 | Channels | 12 | 2 | 1 | — | 15 |
+| 13 | Channels | 14 | 1 | 0 | — | 15 |
 | 14 | Providers & Models | 8 | 1 | 4 | — | 13 |
-| 15 | Coding / Dev | 6 | 2 | 4 | — | 12 |
+| 15 | Coding / Dev | 6 | 3 | 3 | — | 12 |
 | 16 | MCP | 7 | 0 | 0 | — | 7 |
 | 17 | Observability | 18 | 0 | 0 | — | 18 |
 | 18 | Voice & Media | 8 | 1 | 0 | — | 9 |
 | 19 | Settings & Config | 12 | 0 | 0 | — | 12 |
 | 20 | Security & Auth | 7 | 1 | 1 | — | 9 |
-| 21 | Remote / Peers | 0 | 0 | 6 | — | 6 |
-| 22 | Onboarding | 3 | 2 | 4 | — | 9 |
+| 21 | Remote / Peers | 5 | 0 | 1 | — | 6 |
+| 22 | Onboarding | 7 | 2 | 0 | — | 9 |
 | 23 | Palette & Keyboard | 6 | 0 | 2 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **226** | **22** | **39** | **1** | **288** |
+| — | **Total** | **247** | **20** | **20** | **1** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). **78.5% shipped, 7.6% partial, 13.5% missing** of audited rows. §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **85.8% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
 
-## Top 10 gaps by user impact
+## Top 10 gaps by user impact (post-Wave-E)
 
-Ranked by how much a real user would notice and be blocked or misled, not by wire-method count:
+Wave E closed seven of the previous top-ten entries (Remote/Peers, Home-graph & Planning,
+Documents review-packets, chat conveniences, delivery receipts, onboarding flow, and fleet
+worktree/WRFC badges). The remaining and newly-surfaced gaps, ranked by how much a real user
+would notice and be blocked or misled:
 
-1. **Remote/Peers has no UI at all (§21, 6 rows / 14 wire methods).** Anyone running multiple peer nodes or PWA companions has zero visibility or control from this app — not degraded, simply absent. Highest-impact gap because it's a whole capability class, not a missing button.
-2. **Home-graph and Project Planning have no UI at all (§6 rows 21-24, 33 wire methods).** Same shape of gap as #1 — Home Assistant users and anyone using goodvibes-agent's project-planning surface get nothing here, despite 33 backing methods sitting ready in the route table.
-3. **GitHub integration is entirely missing (§15 row 11).** No device-flow auth, no PR/issue list or create — a core "Coding/Dev" promise with zero implementation, in a section otherwise well-built (git/diff/checkpoints/terminal all ship).
-4. **Documents & Compare's review-packet workflow is entirely missing (§11 rows 4-6).** Wizard, presets, freshness check, ZIP handoff, and channel-share — the entire "hand this off for review" story — do not exist; only drafting/versioning/comments/blind-compare shipped.
-5. **Chat has no `/note`, `/keep`, or `/imagine`, and no long-turn desktop notification (§1 rows 31, 36, 41).** These are exactly the kind of small-but-frequent conveniences a daily chat user would hit within the first session.
-6. **Delivery receipts have no dedicated view (§13 row 12).** `deliveries.list` is called exactly once, for a background count — a user chasing down why a Slack message never arrived has nowhere to look.
-7. **Onboarding never offers a permissions-mode pick, tour, import bridge, or QR pairing (§22 rows 5, 7, 8, 9).** First-run is the one moment every user passes through; four of nine promised onboarding rows are absent or unreachable from that flow.
-8. **Provider/model catalog is not a real catalog (§14 row 5).** No models.dev fetch, no 4000+-model tier browsing, no 24h cache — the model list is just whatever `providers.list` already returns. Power users comparing models lose the browsing experience entirely.
-9. **Repo file browser and per-repo session table are both missing (§15 rows 9-10).** Two of the more commonly-reached-for coding-view conveniences (browse files without a terminal, see which sessions touched this repo) don't exist.
-10. **Fleet has no worktree awareness and no WRFC chain badges (§3 rows 10-11).** A user watching a multi-agent run in Fleet can't tell which worktree an agent is in or see chain progress (`c:N/M`, SAT/UNS/UNV) — exactly the orchestration-visibility detail Fleet exists to provide.
+1. **Provider/model catalog is not a real catalog (§14 row 5), and the provider surface has three more holes around it (§14 rows 6/8/9).** No models.dev fetch, no 4000+-model tier browsing, no 24h cache; plus no synthetic-failover posture, no custom-provider JSON editor, and no opt-in local-LLM server scan. Power users managing models lose the whole browsing/comparison experience.
+2. **Repo file browser still missing (§15 row 9).** No `ls-tree`/read-file route exists on the wire, so the app shows an honest "not available, needs a new Bun endpoint" notice instead of a browser — browsing repo files without dropping to the terminal is still impossible.
+3. **GitHub integration is UI-only / degraded (§15 row 11).** Wave E built a complete, capability-honest `GitHubPanel`, but **no `github.*` method exists in the route table**, so on every known daemon it renders Unavailable. The device-flow/PR/issue experience is wired but has nothing live to talk to.
+4. **Two read-only Coding/Dev snapshot tiles are absent (§15 rows 8, 12).** `intelligence.snapshot` (LSP/tree-sitter posture) and `review.snapshot` are declared on the wire but no tile invokes them.
+5. **OS service lifecycle is unwired (§20 row 8).** `services.install/.start/.stop/.restart/.uninstall/.status` have no UI — a user wanting the daemon to run as a managed OS service has no in-app control.
+6. **Web-push subscriptions for PWA companions are missing (§21 row 6).** The one remaining Peers gap: the ws-only `push.vapid.get`/`push.subscriptions.*` methods have no management UI.
+7. **Hooks file editor is missing (§5 row 10).** No dedicated `.goodvibes/hooks.json` editor with schema validation / event-path reference — only a generic settings-schema key exposes the file path.
+8. **Agent-brain surfaces have three holes (§8 rows 7, 9, 11).** Named isolated profile homes with starter templates, project-context file viewing (CLAUDE.md/AGENTS.md/.cursorrules), and a scratchpad/notes panel are all absent despite server-side collections existing.
+9. **Chat still lacks prompt undo/redo and whole-chat fork (§1 rows 29, 40), and has no literal `/image` command (§1 row 35).** Small daily-use conveniences that remain after Wave E closed `/note`/`/keep`/`/imagine`/long-turn-notify.
+10. **Palette has no cheatsheet overlay or quick switcher (§23 rows 3, 4).** Two discoverability affordances (a shortcut cheatsheet, a sessions/chats/views quick switcher) are still absent.
 
 
 

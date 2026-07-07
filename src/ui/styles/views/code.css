@@ -999,3 +999,252 @@
   max-height: 60vh;
   color: var(--text-secondary);
 }
+
+/* ── GitHub panel (§15 row 11) ──────────────────────────────────── */
+
+.github-panel,
+.github-panel__sections,
+.github-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.github-subsection {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+}
+
+.github-subsection__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.github-subsection__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.github-device {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.github-device__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.github-device__code {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  letter-spacing: 0.15em;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.github-device__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.github-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.github-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.github-row:hover {
+  border-color: var(--border-subtle);
+  background: var(--surface-sunken);
+}
+
+.github-row__title {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.github-row__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.github-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-3);
+}
+
+.github-form__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.github-form__input,
+.github-form__textarea {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+}
+
+.github-form__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.github-form__textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.github-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.github-peek {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.github-peek__title {
+  margin: 0;
+  font-size: var(--text-md);
+  color: var(--text-primary);
+}
+
+.github-peek__badges {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.github-peek__body {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* ── Per-repo sessions (§15 row 10) ──────────────────────────────── */
+
+.repo-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.repo-sessions__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.repo-sessions__jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.repo-sessions__jump:hover {
+  border-color: var(--border-subtle);
+  background: var(--surface-sunken);
+}
+
+.repo-sessions__title {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.repo-sessions__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+/* ── Repo file browser honest gap (§15 row 9) ───────────────────── */
+
+.repo-files-notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

@@ -19,12 +19,14 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, MessageSquare, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
+import { appJson } from "../../lib/http.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { asRecord, bestId, bestTitle, firstString, formatRelative, readPath } from "../../lib/wire.ts";
 import { formatError, isMethodUnavailableError, isSessionNotFoundError } from "../../lib/errors.ts";
 import { runCommand } from "../../lib/commands.ts";
 import { useToast } from "../../lib/toast.ts";
 import { announce } from "../../lib/announcer.ts";
+import { useUrlState } from "../../lib/router.ts";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { MessageList } from "./MessageList.tsx";
@@ -58,11 +60,13 @@ import {
   readBookmarks,
   readCollapseThreshold,
   readLineNumbersPref,
+  shouldNotifyLongTurn,
   toggleBookmark,
   writeAlwaysSpeakPref,
   writeLineNumbersPref,
   type ExportFormat,
 } from "./chat-local.ts";
+import { useSlashCommands } from "./useSlashCommands.ts";
 import { speakText, useVoiceStatus } from "./voice.ts";
 import { CHAT_FOCUS_COMPOSER_EVENT, CHAT_NEW_EVENT, CHAT_SEARCH_EVENT } from "./chat-events.ts";
 import type { ChatMessage } from "./types.ts";
@@ -71,6 +75,9 @@ const SLASH_COMMANDS: readonly SlashCommandHint[] = [
   { name: "new", description: "Start a new chat" },
   { name: "clear", description: "Start fresh (new chat; this one stays in the rail)" },
   { name: "help", description: "Show keyboard shortcuts" },
+  { name: "note", description: "Save text to a note (Documents → Packets & notes)" },
+  { name: "keep", description: "Promote the last reply to durable memory" },
+  { name: "imagine", description: "Generate an image inline (media.generate)" },
 ];
 
 /** Enter sends, Shift+Enter newlines, IME composition never submits. */
@@ -190,9 +197,20 @@ export function ChatView() {
   alwaysSpeakRef.current = alwaysSpeak;
   const ttsAvailableRef = useRef(voiceAvailability.ttsAvailable);
   ttsAvailableRef.current = voiceAvailability.ttsAvailable;
-  const onTurnCompleted = useCallback((content: string, _elapsedMs: number) => {
+  const onTurnCompleted = useCallback((content: string, elapsedMs: number) => {
     if (alwaysSpeakRef.current && ttsAvailableRef.current && content) {
       speakText(`turn-${Date.now()}`, content);
+    }
+    // Long-turn desktop notification (docs/UX.md §4, docs/GAPS.md §1 row 41).
+    // lib/notify-bridge.ts only watches the approvals/tasks query caches, so
+    // companion-chat turns need their own hook — this is it, metadata-only
+    // (title + viewId, never the reply text) same as that bridge's contract.
+    if (shouldNotifyLongTurn(elapsedMs)) {
+      void appJson("/app/notifications/notify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Turn complete", viewId: "chat" }),
+      }).catch(() => undefined);
     }
   }, []);
 
@@ -227,6 +245,21 @@ export function ChatView() {
     // 'idle'/'connecting' are not drops — only a lost stream demotes the send.
     streamHealthy: streamHealth !== "reconnecting",
     createDefaults,
+  });
+
+  // --- extra slash commands: /note /keep /imagine ---------------------------
+  const { setUrlState } = useUrlState();
+  const jumpToNote = useCallback(
+    (noteId: string) => setUrlState({ view: "documents", filters: { tab: "packets", note: noteId } }),
+    [setUrlState],
+  );
+  const slashCommands = useSlashCommands({
+    activeSessionId,
+    activeSessionTitle,
+    renderedMessageItems,
+    setLocalMessages,
+    onJumpToNote: jumpToNote,
+    toast,
   });
 
   // --- provider/model picker (daemon-owned per session) ---------------------
@@ -376,6 +409,11 @@ export function ChatView() {
           runCommand("system.shortcuts");
           return;
         }
+        if (slashCommands.tryHandle(body)) {
+          setDraft("");
+          composerRef.current?.focus();
+          return;
+        }
       }
       if (body) pushInputHistory(body);
       setDraft("");
@@ -384,7 +422,7 @@ export function ChatView() {
       composerRef.current?.focus();
       send.mutate({ body, files: [...files], artifactRefs: refs });
     },
-    [send, startDraft],
+    [send, slashCommands, startDraft],
   );
 
   const submitDraft = useCallback(() => {
@@ -795,6 +833,22 @@ export function ChatView() {
         onConfirm={() => void confirmDelete()}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <ConfirmSurface
+        open={slashCommands.keepConfirmOpen}
+        action="Keep to memory"
+        target="Last assistant reply in this chat"
+        blastRadius="Writes a new durable memory record (memory.records.add, scope: session) from this reply's text. Memory records are visible in the Memory view and influence future context."
+        confirmLabel={slashCommands.keepPending ? "Keeping…" : "Keep"}
+        onConfirm={() => slashCommands.confirmKeep()}
+        onCancel={slashCommands.cancelKeep}
+      >
+        <p className="chat-keep-preview">
+          {slashCommands.keepPreview.length > 400
+            ? `${slashCommands.keepPreview.slice(0, 400)}…`
+            : slashCommands.keepPreview}
+        </p>
+      </ConfirmSurface>
     </div>
   );
 }

@@ -22,6 +22,10 @@ export const docKeys = {
   list: ["documents-registry", "list"] as const,
   versions: (id: string) => ["documents-registry", "versions", id] as const,
   compareNotes: ["documents-registry", "compare-notes"] as const,
+  /** All /app/registries/notes items (superset: model-compare judgments,
+   * review packets, presets, and plain /note-saved chat notes all live in
+   * this one collection, distinguished by their `tag` field). */
+  allNotes: ["documents-registry", "all-notes"] as const,
 };
 
 /** Epoch millis from a numeric or ISO-string timestamp field — the app-local
@@ -100,6 +104,19 @@ export async function createNote(item: AnyRecord): Promise<AnyRecord> {
     body: JSON.stringify({ item }),
   });
   return asRecord(asRecord(res)["item"]);
+}
+
+export async function updateNote(id: string, item: AnyRecord): Promise<AnyRecord> {
+  const res = await appJson<unknown>(`${NOTES_BASE}/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ item }),
+  });
+  return asRecord(asRecord(res)["item"]);
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  await appJson<unknown>(`${NOTES_BASE}/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 // ─── Parsed shapes ───────────────────────────────────────────────────────────

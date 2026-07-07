@@ -19,7 +19,7 @@
 
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, ChevronLeft, OctagonX, RefreshCw, SendHorizontal, Unlink, Workflow } from "lucide-react";
+import { Boxes, ChevronLeft, GitBranch, OctagonX, RefreshCw, SendHorizontal, Unlink, Workflow } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError, isMethodUnavailableError, isWsBridgeUnavailableError } from "../../lib/errors.ts";
@@ -33,6 +33,7 @@ import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../c
 import {
   WORKSTREAM_KINDS,
   activeCount,
+  agentWorkingDirectory,
   buildFleetRows,
   costLabel,
   formatDurationMs,
@@ -46,6 +47,9 @@ import {
   stateLabel,
   unbackedCapabilityNote,
   wireBackedActions,
+  worktreeLabel,
+  wrfcChainProgress,
+  wrfcConstraintTally,
   type FleetNode,
 } from "./fleet.ts";
 import { FleetApprovalInline } from "./FleetApprovalInline.tsx";
@@ -85,6 +89,40 @@ function StateBadge({ state }: { state: string }) {
     <span className={`badge ${tone}`} data-contract-state={contractStateForBadgeTone(tone)}>
       {stateLabel(state)}
     </span>
+  );
+}
+
+/** "c:N/M" — subtask completion progress on a compound WRFC chain; renders
+ * nothing when the chain has no subtasks to count (fleet.ts wrfcChainProgress). */
+function ChainProgressBadge({ node }: { node: FleetNode }) {
+  const progress = wrfcChainProgress(node);
+  if (!progress) return null;
+  return (
+    <span className="badge neutral" title={`${progress.completed} of ${progress.total} subtasks complete`}>
+      c:{progress.completed}/{progress.total}
+    </span>
+  );
+}
+
+/** SAT/UNS/UNV constraint-verdict tally from the wire's own reviewer findings
+ * (fleet.ts wrfcConstraintTally) — absent entirely until a review has reported. */
+function ConstraintVerdictBadges({ node }: { node: FleetNode }) {
+  const tally = wrfcConstraintTally(node);
+  if (!tally) return null;
+  return (
+    <>
+      <span className="badge ok" title="Constraints the reviewer found satisfied">
+        {tally.sat} SAT
+      </span>
+      <span className="badge bad" title="Constraints the reviewer found unsatisfied">
+        {tally.uns} UNS
+      </span>
+      {tally.unv > 0 && (
+        <span className="badge warning" title="Constraints the fan-out collapse made impossible to satisfy">
+          {tally.unv} UNV
+        </span>
+      )}
+    </>
   );
 }
 
@@ -243,7 +281,14 @@ export function FleetView() {
                     <KindBadge kind={node.kind} />
                     <StateBadge state={node.state} />
                     {node.kind !== "phase" && <span className="badge neutral">{costLabel(node)}</span>}
+                    <ChainProgressBadge node={node} />
+                    <ConstraintVerdictBadges node={node} />
                   </span>
+                  {worktreeLabel(node) && (
+                    <span className="fleet-row__worktree" title={agentWorkingDirectory(node)}>
+                      <GitBranch size={11} aria-hidden="true" /> {worktreeLabel(node)}
+                    </span>
+                  )}
                 </button>
               </li>
             ))}
@@ -350,6 +395,8 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
           <KindBadge kind={node.kind} />
           <StateBadge state={node.state} />
           {node.kind !== "phase" && <span className="badge neutral">{costLabel(node)}</span>}
+          <ChainProgressBadge node={node} />
+          <ConstraintVerdictBadges node={node} />
         </div>
         {node.task && <p className="fleet-detail__task">{node.task}</p>}
         <div className="fleet-detail__meta">
@@ -359,6 +406,11 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
             <small>
               · {node.provider ? `${node.provider}/` : ""}
               {node.model}
+            </small>
+          )}
+          {worktreeLabel(node) && (
+            <small className="fleet-detail__worktree" title={agentWorkingDirectory(node)}>
+              <GitBranch size={11} aria-hidden="true" /> {worktreeLabel(node)}
             </small>
           )}
         </div>

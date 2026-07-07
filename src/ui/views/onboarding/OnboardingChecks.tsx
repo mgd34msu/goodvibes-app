@@ -234,8 +234,13 @@ function ProviderFix({
 // ---------------------------------------------------------------------------
 
 export interface OnboardingChecksProps {
-  /** Reports whether all three checks currently pass (drives "Start chatting"). */
-  onStatus: (allPass: boolean) => void;
+  /**
+   * Reports whether all three checks currently pass (drives "Start
+   * chatting") and whether the daemon is reachable at all (drives whether
+   * daemon-dependent sections below the checks — permissions/import/pairing —
+   * render their live content or wait).
+   */
+  onStatus: (allPass: boolean, daemonUp: boolean) => void;
 }
 
 export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
@@ -332,8 +337,8 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
 
   const allPass = daemonResult.state === "pass" && authResult.state === "pass" && providerResult.state === "pass";
   useEffect(() => {
-    onStatus(allPass);
-  }, [allPass, onStatus]);
+    onStatus(allPass, daemonUp);
+  }, [allPass, daemonUp, onStatus]);
 
   return (
     <ol className="onboarding-checks">

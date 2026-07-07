@@ -24,7 +24,9 @@ import {
   Braces,
   FileText,
   Hammer,
+  Home,
   Link as LinkIcon,
+  ListTodo,
   Map as MapIcon,
   MessageCircleQuestion,
   PackageSearch,
@@ -46,6 +48,8 @@ import { ProjectionsPanel } from "./ProjectionsPanel.tsx";
 import { PacketPanel } from "./PacketPanel.tsx";
 import { GraphqlPanel } from "./GraphqlPanel.tsx";
 import { ReportsPanel } from "./ReportsPanel.tsx";
+import { HomeGraphPanel } from "./HomeGraphPanel.tsx";
+import { PlanningPanel } from "./PlanningPanel.tsx";
 
 const TAB_IDS = [
   "overview",
@@ -58,6 +62,8 @@ const TAB_IDS = [
   "packet",
   "graphql",
   "reports",
+  "homegraph",
+  "planning",
 ] as const;
 type TabId = (typeof TAB_IDS)[number];
 
@@ -72,6 +78,8 @@ const TAB_DEFS: ReadonlyArray<{ id: TabId; label: string; icon: React.ReactNode 
   { id: "packet", label: "Packet", icon: <PackageSearch size={14} aria-hidden="true" /> },
   { id: "graphql", label: "GraphQL", icon: <Braces size={14} aria-hidden="true" /> },
   { id: "reports", label: "Reports", icon: <BarChart3 size={14} aria-hidden="true" /> },
+  { id: "homegraph", label: "Home graph", icon: <Home size={14} aria-hidden="true" /> },
+  { id: "planning", label: "Planning", icon: <ListTodo size={14} aria-hidden="true" /> },
 ];
 
 function isTabId(value: string): value is TabId {
@@ -139,6 +147,8 @@ export function KnowledgeView() {
       { id: "knowledge.ingest", title: "Knowledge: Ingest", tab: "ingest", keywords: ["ingest", "url", "import", "bookmarks"] },
       { id: "knowledge.graphql", title: "Knowledge: GraphQL Console", tab: "graphql", keywords: ["graphql", "query", "console"] },
       { id: "knowledge.candidates", title: "Knowledge: Review Candidates", tab: "refine", keywords: ["candidates", "review", "consolidation"] },
+      { id: "knowledge.homegraph", title: "Knowledge: Home Graph", tab: "homegraph", keywords: ["home", "graph", "homeassistant", "ha", "entity", "device"] },
+      { id: "knowledge.planning", title: "Knowledge: Project Planning", tab: "planning", keywords: ["planning", "project", "work plan", "task", "decision"] },
     ];
     for (const jump of jumps) {
       registerCommand({
@@ -225,6 +235,8 @@ export function KnowledgeView() {
         { id: "packet" as TabId, node: <PacketPanel /> },
         { id: "graphql" as TabId, node: <GraphqlPanel /> },
         { id: "reports" as TabId, node: <ReportsPanel active={tab === "reports"} /> },
+        { id: "homegraph" as TabId, node: <HomeGraphPanel /> },
+        { id: "planning" as TabId, node: <PlanningPanel /> },
       ] as const,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tab, scope, agentScopeState, effectiveScope],

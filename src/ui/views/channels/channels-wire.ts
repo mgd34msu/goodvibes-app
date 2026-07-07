@@ -5,7 +5,7 @@
 // crashes. Status/state strings are rendered VERBATIM (presentation-bridge
 // classifies tone) — this module never invents vocabulary.
 
-import { asArray, asRecord, firstNumber, firstString } from "../../lib/wire.ts";
+import { asArray, asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 
 function readBool(value: unknown, key: string, fallback = false): boolean {
   const item = asRecord(value)[key];
@@ -609,4 +609,98 @@ export function readRouting(data: unknown): { routes: RoutingAssignment[]; total
     updatedAt: firstString(row, ["updatedAt"]),
   }));
   return { routes, total: firstNumber(record, ["total"]) ?? routes.length };
+}
+
+// ── deliveries.list / deliveries.get (docs/GAPS.md top-10 gap #6) ───────────
+//
+// Verified against contracts/artifacts/operator-contract.json (sdk 1.3.1)
+// methods[108]/[109]: deliveries.get takes {deliveryId} and returns
+// {delivery}; deliveries.list takes no input and returns {totals, attempts}.
+// There is NO deliveries.retry (or any deliveries.* mutating verb) anywhere
+// in the generated route table — this surface is read-only on this pin;
+// DeliveriesPanel.tsx renders that as an honest note, never a fabricated
+// button. `status`/`target.kind`/`target.surfaceKind` are closed enums on the
+// wire but read as open strings here anyway (same posture as fleet.ts) so an
+// unrecognized future value still renders verbatim instead of vanishing.
+
+export interface DeliveryTarget {
+  kind: string;
+  surfaceKind: string;
+  address: string;
+  routeId: string;
+  label: string;
+}
+
+export interface DeliveryRecord {
+  id: string;
+  runId: string;
+  jobId: string;
+  target: DeliveryTarget;
+  status: string;
+  startedAt: number | undefined;
+  endedAt: number | undefined;
+  /** The daemon's own failure reason, verbatim — never summarized/truncated here. */
+  error: string;
+  responseId: string;
+}
+
+export interface DeliveryTotals {
+  queued: number;
+  started: number;
+  succeeded: number;
+  failed: number;
+  deadLettered: number;
+}
+
+function readDeliveryTarget(value: unknown): DeliveryTarget {
+  const record = asRecord(value);
+  return {
+    kind: firstString(record, ["kind"]) || "none",
+    surfaceKind: firstString(record, ["surfaceKind"]),
+    address: firstString(record, ["address"]),
+    routeId: firstString(record, ["routeId"]),
+    label: firstString(record, ["label"]),
+  };
+}
+
+export function readDelivery(row: unknown): DeliveryRecord {
+  const record = asRecord(row);
+  return {
+    id: firstString(record, ["id"]),
+    runId: firstString(record, ["runId"]),
+    jobId: firstString(record, ["jobId"]),
+    target: readDeliveryTarget(record["target"]),
+    status: firstString(record, ["status"]) || "unknown",
+    startedAt: firstNumber(record, ["startedAt"]),
+    endedAt: firstNumber(record, ["endedAt"]),
+    error: firstString(record, ["error"]),
+    responseId: firstString(record, ["responseId"]),
+  };
+}
+
+/** deliveries.list's envelope is {totals, attempts}; the array-key fallback
+ * list matches AwayDigest.tsx's own parseDeliveries tolerance for cross-pin
+ * naming drift ("deliveries"/"items" alongside the documented "attempts"). */
+export function readDeliveries(data: unknown): { deliveries: DeliveryRecord[]; totals: DeliveryTotals | null } {
+  const record = asRecord(data);
+  const deliveries = firstArray(record, ["attempts", "deliveries", "items"]).map(readDelivery);
+  const totalsRaw = record["totals"];
+  const totals =
+    totalsRaw !== undefined
+      ? {
+          queued: firstNumber(totalsRaw, ["queued"]) ?? 0,
+          started: firstNumber(totalsRaw, ["started"]) ?? 0,
+          succeeded: firstNumber(totalsRaw, ["succeeded"]) ?? 0,
+          failed: firstNumber(totalsRaw, ["failed"]) ?? 0,
+          deadLettered: firstNumber(totalsRaw, ["deadLettered"]) ?? 0,
+        }
+      : null;
+  return { deliveries, totals };
+}
+
+/** deliveries.get returns {delivery}; tolerate a bare record too (same
+ * cross-pin allowance readDraftDetail already applies to drafts.get). */
+export function readDeliveryDetail(data: unknown): DeliveryRecord {
+  const record = asRecord(data);
+  return readDelivery(record["delivery"] !== undefined ? record["delivery"] : record);
 }

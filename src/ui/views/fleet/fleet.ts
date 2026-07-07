@@ -372,3 +372,98 @@ export function approvalsForNode(node: FleetNode, approvals: readonly FleetAppro
     return false;
   });
 }
+
+// ─── Worktree label (GAPS.md §3 row 11) ───────────────────────────────────────
+//
+// AgentRecord.workingDirectory (goodvibes-sdk platform/tools/agent/manager)
+// is the per-agent tool working-directory override — set to the agent's
+// isolated git worktree path when the orchestrator spawned it into one.
+// fleet's agent adapter puts the WHOLE AgentRecord onto ProcessNode.raw, so
+// the field rides the wire honestly; this reads it defensively (never cast)
+// and renders NOTHING when the daemon didn't set it (main-tree agents, or an
+// older daemon that predates the field) — never a fabricated label.
+
+/** The agent's worktree directory, or "" when the node/daemon doesn't report one. */
+export function agentWorkingDirectory(node: FleetNode): string {
+  return firstString(asRecord(node.raw), ["workingDirectory"]);
+}
+
+/** Last path segment of the working directory — a short, glanceable label; "" when absent. */
+export function worktreeLabel(node: FleetNode): string {
+  const dir = agentWorkingDirectory(node);
+  if (!dir) return "";
+  const segments = dir.split(/[\\/]+/).filter(Boolean);
+  return segments[segments.length - 1] ?? dir;
+}
+
+// ─── WRFC chain badges (GAPS.md §3 row 10) ────────────────────────────────────
+//
+// Neither WrfcChain nor WrfcSubtask (goodvibes-sdk platform/agents/wrfc-types)
+// carries a ready-made "c:N/M" or SAT/UNS/UNV field — those are DERIVED here
+// from real arrays the wire does send on ProcessNode.raw (the raw WrfcChain /
+// WrfcSubtask), never fabricated:
+//   - "c:N/M" — subtask completion progress on a compound chain: N of M
+//     entries in chain.subtasks have reached a terminal state (passed/failed).
+//     A chain with no subtasks array (a simple, non-compound chain) has
+//     nothing to count — renders nothing, not "c:0/0".
+//   - SAT/UNS/UNV — reviewer constraintFindings tallied by
+//     ConstraintFinding.satisfied, with any constraintId present in the
+//     chain's own systemUnsatisfiableConstraintIds (constraints the fan-out
+//     collapse made impossible for any fix agent to ever satisfy — see
+//     WrfcChain.systemUnsatisfiableConstraintIds) reclassified out of
+//     UNS into UNV. Absent constraintFindings (no review has run yet) → null,
+//     never a zeroed-out tally.
+
+export interface WrfcChainProgress {
+  readonly completed: number;
+  readonly total: number;
+}
+
+const TERMINAL_SUBTASK_STATES = new Set(["passed", "failed"]);
+
+/** "c:N/M" data for a wrfc-chain node with subtasks; null when there is nothing to count. */
+export function wrfcChainProgress(node: FleetNode): WrfcChainProgress | null {
+  if (node.kind !== "wrfc-chain") return null;
+  const subtasks = asArray(readPath(node.raw, ["subtasks"]));
+  if (subtasks.length === 0) return null;
+  const completed = subtasks.filter((subtask) => TERMINAL_SUBTASK_STATES.has(firstString(subtask, ["state"]))).length;
+  return { completed, total: subtasks.length };
+}
+
+export interface WrfcConstraintTally {
+  readonly sat: number;
+  readonly uns: number;
+  readonly unv: number;
+}
+
+/** Every constraintFindings entry reachable from this node's raw chain/subtask data. */
+function collectConstraintFindings(raw: unknown): unknown[] {
+  const direct = asArray(readPath(raw, ["reviewerReport", "constraintFindings"]));
+  const fromSubtasks = asArray(readPath(raw, ["subtasks"])).flatMap((subtask) =>
+    asArray(readPath(subtask, ["reviewerReport", "constraintFindings"])),
+  );
+  return [...direct, ...fromSubtasks];
+}
+
+/** SAT/UNS/UNV tally for a wrfc-chain or wrfc-subtask node; null when no review has reported findings. */
+export function wrfcConstraintTally(node: FleetNode): WrfcConstraintTally | null {
+  if (node.kind !== "wrfc-chain" && node.kind !== "wrfc-subtask") return null;
+  const findings = collectConstraintFindings(node.raw);
+  if (findings.length === 0) return null;
+  const systemUnsatisfiable = new Set(
+    asArray(readPath(node.raw, ["systemUnsatisfiableConstraintIds"])).filter(
+      (id): id is string => typeof id === "string",
+    ),
+  );
+  let sat = 0;
+  let uns = 0;
+  let unv = 0;
+  for (const finding of findings) {
+    const record = asRecord(finding);
+    const constraintId = firstString(record, ["constraintId"]);
+    if (constraintId && systemUnsatisfiable.has(constraintId)) unv += 1;
+    else if (record["satisfied"] === true) sat += 1;
+    else uns += 1;
+  }
+  return { sat, uns, unv };
+}

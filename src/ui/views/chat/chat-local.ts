@@ -4,7 +4,14 @@
 // they persist to localStorage behind the same read/write API — the store can
 // be re-pointed at /app routes later without touching callers. Honest
 // deviation, noted in the view header.
+//
+// /note (below) is the one exception: it writes through the REAL
+// /app/registries/notes collection (the same one docs/views/documents/
+// documents-data.ts uses for blind-compare judgments), tagged "chat-note",
+// so a saved note is a real superset-tolerant registry record — not another
+// localStorage-only store — and shows up in Documents → Packets & notes.
 
+import { appJson } from "../../lib/http.ts";
 import { asRecord } from "../../lib/wire.ts";
 import { messageAttachments, messageText, messageTimestamp, messageTone, bestId } from "./message-utils.ts";
 import { attachmentLabel } from "./message-utils.ts";
@@ -248,4 +255,55 @@ export function downloadContent(filename: string, mimeType: string, content: str
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5_000);
+}
+
+// ─── /note: save to the app-local notes registry ─────────────────────────────
+
+const NOTES_BASE = "/app/registries/notes";
+export const CHAT_NOTE_TAG = "chat-note";
+
+export interface SavedChatNote {
+  id: string;
+}
+
+/** Saves free text (the /note argument, or a selection/draft the caller
+ * already extracted) as a "chat-note"-tagged item in the same /app/registries
+ * "notes" collection Documents reads (Documents → Packets & notes lists
+ * every tag). Returns the new item's id so the caller can offer a jump link. */
+export async function saveChatNote(
+  text: string,
+  meta: { sessionId?: string; sessionTitle?: string },
+): Promise<SavedChatNote> {
+  const res = await appJson<unknown>(NOTES_BASE, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      item: {
+        tag: CHAT_NOTE_TAG,
+        text,
+        ...(meta.sessionId ? { sessionId: meta.sessionId } : {}),
+        ...(meta.sessionTitle ? { sessionTitle: meta.sessionTitle } : {}),
+        createdAt: Date.now(),
+      },
+    }),
+  });
+  const item = asRecord(asRecord(res)["item"]);
+  return { id: typeof item["id"] === "string" ? item["id"] : "" };
+}
+
+// ─── Long-turn desktop notification (docs/UX.md §4) ──────────────────────────
+//
+// lib/notify-bridge.ts only watches the "approvals" and "tasks" query-cache
+// keys (verified: src/ui/lib/notify-bridge.ts has no chat/companion-chat
+// handling) — companion-chat turns are invisible to it, so this is NOT a
+// duplicate of an existing feature. useChatStream.ts's onTurnCompleted hook
+// is the documented seam for this ("long-turn notification ... hooks live in
+// the view"); this helper decides whether the moment qualifies, and the view
+// does the metadata-only POST, matching the bridge's own privacy rule (title
+// + viewId, never message content).
+
+export const LONG_TURN_NOTIFY_MS = 60_000;
+
+export function shouldNotifyLongTurn(elapsedMs: number): boolean {
+  return elapsedMs >= LONG_TURN_NOTIFY_MS && typeof document !== "undefined" && document.hidden;
 }

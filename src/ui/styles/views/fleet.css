@@ -435,3 +435,24 @@
     display: inline-flex;
   }
 }
+
+/* ── Worktree label (GAPS.md §3 row 11) ─────────────────────── */
+
+.fleet-row__worktree {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-detail__worktree {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+}

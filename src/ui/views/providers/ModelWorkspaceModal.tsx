@@ -44,6 +44,7 @@ import {
   type ModelTarget,
 } from "./model-catalog.ts";
 import { isFavoriteModel, toggleFavoriteModel, useFavoriteModels } from "./favorites.ts";
+import { ModelCatalogPanel } from "./ModelCatalogPanel.tsx";
 
 export interface ModelWorkspaceModalProps {
   open: boolean;
@@ -66,6 +67,7 @@ const REASONING_LEVELS = ["instant", "low", "medium", "high"] as const;
 export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [mode, setMode] = useState<"workspace" | "catalog">("workspace");
   const [target, setTarget] = useState<ModelTarget>("main");
   const [query, setQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState("");
@@ -255,230 +257,265 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
         title="Model Workspace"
         size="lg"
         headerExtra={
-          <div className="model-workspace-targets" role="tablist" aria-label="Model routing target">
-            {MODEL_TARGETS.map((t) => (
+          <div className="model-workspace-header-extra">
+            <div className="model-workspace-mode" role="tablist" aria-label="Model workspace mode">
               <button
-                key={t}
                 type="button"
                 role="tab"
-                aria-selected={t === target}
+                aria-selected={mode === "workspace"}
                 className={
-                  t === target ? "model-workspace-target model-workspace-target--active" : "model-workspace-target"
+                  mode === "workspace" ? "model-workspace-target model-workspace-target--active" : "model-workspace-target"
                 }
-                onClick={() => setTarget(t)}
+                onClick={() => setMode("workspace")}
               >
-                {TARGET_LABELS[t]}
+                Workspace
               </button>
-            ))}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "catalog"}
+                className={
+                  mode === "catalog" ? "model-workspace-target model-workspace-target--active" : "model-workspace-target"
+                }
+                title="Browse the models.dev catalog — 4000+ models across every provider it tracks"
+                onClick={() => setMode("catalog")}
+              >
+                Catalog
+              </button>
+            </div>
+            {mode === "workspace" && (
+              <div className="model-workspace-targets" role="tablist" aria-label="Model routing target">
+                {MODEL_TARGETS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={t === target}
+                    className={
+                      t === target ? "model-workspace-target model-workspace-target--active" : "model-workspace-target"
+                    }
+                    onClick={() => setTarget(t)}
+                  >
+                    {TARGET_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         }
       >
-        <div className="model-workspace-routing" aria-live="polite">
-          {configRefused ? (
-            <span className="model-workspace-routing__note">
-              {routing.label}: current routing hidden — config.get requires an admin-scoped token.
-            </span>
-          ) : routing.unset ? (
-            <span className="model-workspace-routing__note">
-              {routing.label}: not configured{routing.configuredNote ? ` — ${routing.configuredNote}` : ""}
-            </span>
-          ) : (
-            <span className="model-workspace-routing__current">
-              {routing.label}:{" "}
-              <strong>{embeddingsMode ? routing.provider : `${routing.provider}:${routing.model}`}</strong>
-              {routing.configuredNote ? ` (${routing.configuredNote})` : ""}
-            </span>
-          )}
-          {enableEntry && !configRefused && (
-            <label className="model-workspace-toggle">
-              <input
-                type="checkbox"
-                checked={routing.enabled}
-                disabled={write.isPending}
-                onChange={(event) => requestToggleEnabled(event.target.checked)}
-              />
-              <span>Enabled</span>
-            </label>
-          )}
-          {target === "main" && !configRefused && config.isSuccess && (
-            <label className="model-workspace-reasoning" title="provider.reasoningEffort — daemon-wide default">
-              <span>Reasoning effort</span>
-              <select
-                value={REASONING_LEVELS.includes(reasoningEffort as (typeof REASONING_LEVELS)[number]) ? reasoningEffort : ""}
-                disabled={write.isPending}
-                onChange={(event) => {
-                  if (event.target.value) requestReasoningEffort(event.target.value);
-                }}
-              >
-                <option value="" disabled>
-                  {reasoningEffort ? reasoningEffort : "unset"}
-                </option>
-                {REASONING_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
+        {mode === "catalog" ? (
+          <ModelCatalogPanel />
+        ) : (
+          <>
+          <div className="model-workspace-routing" aria-live="polite">
+            {configRefused ? (
+              <span className="model-workspace-routing__note">
+                {routing.label}: current routing hidden — config.get requires an admin-scoped token.
+              </span>
+            ) : routing.unset ? (
+              <span className="model-workspace-routing__note">
+                {routing.label}: not configured{routing.configuredNote ? ` — ${routing.configuredNote}` : ""}
+              </span>
+            ) : (
+              <span className="model-workspace-routing__current">
+                {routing.label}:{" "}
+                <strong>{embeddingsMode ? routing.provider : `${routing.provider}:${routing.model}`}</strong>
+                {routing.configuredNote ? ` (${routing.configuredNote})` : ""}
+              </span>
+            )}
+            {enableEntry && !configRefused && (
+              <label className="model-workspace-toggle">
+                <input
+                  type="checkbox"
+                  checked={routing.enabled}
+                  disabled={write.isPending}
+                  onChange={(event) => requestToggleEnabled(event.target.checked)}
+                />
+                <span>Enabled</span>
+              </label>
+            )}
+            {target === "main" && !configRefused && config.isSuccess && (
+              <label className="model-workspace-reasoning" title="provider.reasoningEffort — daemon-wide default">
+                <span>Reasoning effort</span>
+                <select
+                  value={REASONING_LEVELS.includes(reasoningEffort as (typeof REASONING_LEVELS)[number]) ? reasoningEffort : ""}
+                  disabled={write.isPending}
+                  onChange={(event) => {
+                    if (event.target.value) requestReasoningEffort(event.target.value);
+                  }}
+                >
+                  <option value="" disabled>
+                    {reasoningEffort ? reasoningEffort : "unset"}
                   </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-
-        <div className="model-workspace-filters">
-          <label className="model-workspace-search">
-            <Search size={14} aria-hidden="true" />
-            <input
-              type="search"
-              placeholder="Search models"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-label="Search models"
-            />
-          </label>
-
-          {!embeddingsMode && (
-            <>
-              <label className="model-workspace-filter">
-                <span>Provider</span>
-                <select value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)}>
-                  <option value="">All</option>
-                  {providerIds.map((id) => (
-                    <option key={id} value={id}>
-                      {id}
+                  {REASONING_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
                     </option>
                   ))}
                 </select>
               </label>
-
-              <label
-                className="model-workspace-filter"
-                title={priceDataAvailable ? undefined : "No tier data reported by this daemon"}
-              >
-                <span>Price</span>
-                <select
-                  value={categoryFilter}
-                  disabled={!priceDataAvailable}
-                  onChange={(event) => setCategoryFilter(event.target.value as CategoryFilter)}
-                >
-                  <option value="all">All</option>
-                  <option value="free">Free</option>
-                  <option value="paid">Paid</option>
-                  <option value="subscription">Subscription</option>
-                </select>
-                {!priceDataAvailable && (
-                  <small className="model-workspace-filter__note">Not reported by this daemon</small>
-                )}
-              </label>
-
-              <label className="model-workspace-filter" title="Not reported by this daemon">
-                <span>Capability</span>
-                <select value="none" disabled={!capabilityDataAvailable} onChange={() => undefined}>
-                  <option value="none">None</option>
-                  <option value="reasoning">Reasoning</option>
-                  <option value="toolUse">Tool use</option>
-                  <option value="multimodal">Multimodal</option>
-                </select>
-                <small className="model-workspace-filter__note">Not reported by this daemon</small>
-              </label>
-
-              <label className="model-workspace-filter">
-                <span>Group</span>
-                <select value={groupBy} onChange={(event) => setGroupBy(event.target.value as GroupByMode)}>
-                  <option value="provider">Provider</option>
-                  <option value="family">Family</option>
-                  <option value="pricingTier">Pricing tier</option>
-                  <option value="qualityTier" disabled={!qualityTierDataAvailable}>
-                    Quality tier{qualityTierDataAvailable ? "" : " (unavailable)"}
-                  </option>
-                </select>
-              </label>
-
-              <label className="model-workspace-toggle">
-                <input
-                  type="checkbox"
-                  checked={availableOnly}
-                  onChange={(event) => setAvailableOnly(event.target.checked)}
-                />
-                <span>Available only</span>
-              </label>
-            </>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="providers-skeleton-list" aria-label="Loading model workspace" aria-busy="true">
-            {Array.from({ length: 4 }, (_, i) => (
-              <SkeletonBlock key={i} variant="block" height={48} />
-            ))}
-          </div>
-        ) : loadError !== null ? (
-          <ErrorState
-            error={loadError}
-            title="Failed to load the model workspace"
-            onRetry={() => {
-              void providers.refetch();
-              void config.refetch();
-            }}
-          />
-        ) : embeddingsMode ? (
-          providerIds.length === 0 ? (
-            <EmptyState title="No providers" description="No providers are registered with the daemon." />
-          ) : (
-            <div className="providers-model-grid" role="list" aria-label="Embedding providers">
-              {providerIds.map((id) => {
-                const isCurrent = id === routing.provider;
-                return (
-                  <article
-                    key={id}
-                    className={isCurrent ? "providers-model-row providers-model-row--current" : "providers-model-row"}
-                    role="listitem"
-                  >
-                    <div
-                      className={`providers-model-row__current-icon${isCurrent ? "" : " providers-model-row__current-icon--hidden"}`}
-                      aria-hidden="true"
-                    >
-                      <Check size={16} />
-                    </div>
-                    <div className="providers-model-row__copy">
-                      <strong>{id}</strong>
-                    </div>
-                    <div className="providers-model-row__actions">
-                      <button
-                        type="button"
-                        className={isCurrent ? "providers-button" : "providers-button providers-button--primary"}
-                        disabled={isCurrent || write.isPending || configRefused}
-                        onClick={() => requestUseModel({ id: "", registryKey: id, provider: id, label: id })}
-                      >
-                        {isCurrent ? "Current" : "Use"}
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )
-        ) : filtered.length === 0 ? (
-          <EmptyState title="No models" description="No models match the current search/filter." />
-        ) : (
-          <div className="model-workspace-groups">
-            {pinned.length > 0 && (
-              <section className="model-workspace-group" aria-label="Pinned models">
-                <h3 className="model-workspace-group__title">Pinned</h3>
-                <div className="providers-model-grid" role="list" aria-label="Pinned models">
-                  {pinned.map(modelRow)}
-                </div>
-              </section>
             )}
-            {groups.map((group) => (
-              <section key={group.key} className="model-workspace-group" aria-label={group.label}>
-                {(groups.length > 1 || pinned.length > 0) && (
-                  <h3 className="model-workspace-group__title">{group.label}</h3>
-                )}
-                <div className="providers-model-grid" role="list" aria-label={`Models in ${group.label}`}>
-                  {group.models.map(modelRow)}
-                </div>
-              </section>
-            ))}
           </div>
+
+          <div className="model-workspace-filters">
+            <label className="model-workspace-search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                type="search"
+                placeholder="Search models"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label="Search models"
+              />
+            </label>
+
+            {!embeddingsMode && (
+              <>
+                <label className="model-workspace-filter">
+                  <span>Provider</span>
+                  <select value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)}>
+                    <option value="">All</option>
+                    {providerIds.map((id) => (
+                      <option key={id} value={id}>
+                        {id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label
+                  className="model-workspace-filter"
+                  title={priceDataAvailable ? undefined : "No tier data reported by this daemon"}
+                >
+                  <span>Price</span>
+                  <select
+                    value={categoryFilter}
+                    disabled={!priceDataAvailable}
+                    onChange={(event) => setCategoryFilter(event.target.value as CategoryFilter)}
+                  >
+                    <option value="all">All</option>
+                    <option value="free">Free</option>
+                    <option value="paid">Paid</option>
+                    <option value="subscription">Subscription</option>
+                  </select>
+                  {!priceDataAvailable && (
+                    <small className="model-workspace-filter__note">Not reported by this daemon</small>
+                  )}
+                </label>
+
+                <label className="model-workspace-filter" title="Not reported by this daemon">
+                  <span>Capability</span>
+                  <select value="none" disabled={!capabilityDataAvailable} onChange={() => undefined}>
+                    <option value="none">None</option>
+                    <option value="reasoning">Reasoning</option>
+                    <option value="toolUse">Tool use</option>
+                    <option value="multimodal">Multimodal</option>
+                  </select>
+                  <small className="model-workspace-filter__note">Not reported by this daemon</small>
+                </label>
+
+                <label className="model-workspace-filter">
+                  <span>Group</span>
+                  <select value={groupBy} onChange={(event) => setGroupBy(event.target.value as GroupByMode)}>
+                    <option value="provider">Provider</option>
+                    <option value="family">Family</option>
+                    <option value="pricingTier">Pricing tier</option>
+                    <option value="qualityTier" disabled={!qualityTierDataAvailable}>
+                      Quality tier{qualityTierDataAvailable ? "" : " (unavailable)"}
+                    </option>
+                  </select>
+                </label>
+
+                <label className="model-workspace-toggle">
+                  <input
+                    type="checkbox"
+                    checked={availableOnly}
+                    onChange={(event) => setAvailableOnly(event.target.checked)}
+                  />
+                  <span>Available only</span>
+                </label>
+              </>
+            )}
+          </div>
+
+          {isLoading ? (
+            <div className="providers-skeleton-list" aria-label="Loading model workspace" aria-busy="true">
+              {Array.from({ length: 4 }, (_, i) => (
+                <SkeletonBlock key={i} variant="block" height={48} />
+              ))}
+            </div>
+          ) : loadError !== null ? (
+            <ErrorState
+              error={loadError}
+              title="Failed to load the model workspace"
+              onRetry={() => {
+                void providers.refetch();
+                void config.refetch();
+              }}
+            />
+          ) : embeddingsMode ? (
+            providerIds.length === 0 ? (
+              <EmptyState title="No providers" description="No providers are registered with the daemon." />
+            ) : (
+              <div className="providers-model-grid" role="list" aria-label="Embedding providers">
+                {providerIds.map((id) => {
+                  const isCurrent = id === routing.provider;
+                  return (
+                    <article
+                      key={id}
+                      className={isCurrent ? "providers-model-row providers-model-row--current" : "providers-model-row"}
+                      role="listitem"
+                    >
+                      <div
+                        className={`providers-model-row__current-icon${isCurrent ? "" : " providers-model-row__current-icon--hidden"}`}
+                        aria-hidden="true"
+                      >
+                        <Check size={16} />
+                      </div>
+                      <div className="providers-model-row__copy">
+                        <strong>{id}</strong>
+                      </div>
+                      <div className="providers-model-row__actions">
+                        <button
+                          type="button"
+                          className={isCurrent ? "providers-button" : "providers-button providers-button--primary"}
+                          disabled={isCurrent || write.isPending || configRefused}
+                          onClick={() => requestUseModel({ id: "", registryKey: id, provider: id, label: id })}
+                        >
+                          {isCurrent ? "Current" : "Use"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )
+          ) : filtered.length === 0 ? (
+            <EmptyState title="No models" description="No models match the current search/filter." />
+          ) : (
+            <div className="model-workspace-groups">
+              {pinned.length > 0 && (
+                <section className="model-workspace-group" aria-label="Pinned models">
+                  <h3 className="model-workspace-group__title">Pinned</h3>
+                  <div className="providers-model-grid" role="list" aria-label="Pinned models">
+                    {pinned.map(modelRow)}
+                  </div>
+                </section>
+              )}
+              {groups.map((group) => (
+                <section key={group.key} className="model-workspace-group" aria-label={group.label}>
+                  {(groups.length > 1 || pinned.length > 0) && (
+                    <h3 className="model-workspace-group__title">{group.label}</h3>
+                  )}
+                  <div className="providers-model-grid" role="list" aria-label={`Models in ${group.label}`}>
+                    {group.models.map(modelRow)}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+          </>
         )}
       </Modal>
 

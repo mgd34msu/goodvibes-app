@@ -38,7 +38,31 @@ export const kKeys = {
   connectorDoctor: (id: string) => ["knowledge", "connectors", id, "doctor"] as const,
   graphqlSchema: ["knowledge", "graphql", "schema"] as const,
   agentScopeProbe: ["knowledge", "agent-scope-probe"] as const,
+  // Home-graph (docs/FEATURES.md §6 rows 21-22, `homeassistant.homeGraph.*`).
+  // View-local — not part of the `knowledge` SSE domain, no wire events.
+  homeGraphProbe: ["knowledge", "homegraph", "probe"] as const,
+  homeGraphStatus: ["knowledge", "homegraph", "status"] as const,
+  homeGraphSources: ["knowledge", "homegraph", "sources"] as const,
+  homeGraphIssues: ["knowledge", "homegraph", "issues"] as const,
+  homeGraphPages: ["knowledge", "homegraph", "pages"] as const,
+  homeGraphRefinementTasks: ["knowledge", "homegraph", "refinement", "tasks"] as const,
+  homeGraphRefinementTask: (id: string) => ["knowledge", "homegraph", "refinement", "tasks", id] as const,
+  // Project planning (docs/FEATURES.md §6 rows 23-24, `projectPlanning.*`).
+  planningProbe: ["knowledge", "planning", "probe"] as const,
+  planningStatus: ["knowledge", "planning", "status"] as const,
+  planningState: ["knowledge", "planning", "state"] as const,
+  planningLanguage: ["knowledge", "planning", "language"] as const,
+  planningDecisions: ["knowledge", "planning", "decisions"] as const,
+  planningWorkPlanSnapshot: ["knowledge", "planning", "work-plan", "snapshot"] as const,
+  planningWorkPlanTasks: (status: string) => ["knowledge", "planning", "work-plan", "tasks", status] as const,
+  planningWorkPlanTask: (id: string) => ["knowledge", "planning", "work-plan", "tasks", "detail", id] as const,
 } as const;
+
+/** Best-effort record id/title for home-graph and project-planning payloads —
+ * same defensive-reader shape as knowledgeId/knowledgeTitle above, reused
+ * because both surfaces' records use the same id/title/name/status vocabulary. */
+export const graphId = knowledgeId;
+export const graphTitle = knowledgeTitle;
 
 /** Client-side page window over a fully-fetched list (webui pattern). */
 export function pageSlice<T>(items: readonly T[], page: number, pageSize: number): T[] {

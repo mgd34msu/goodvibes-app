@@ -30,6 +30,8 @@ import {
   type GitStatus,
 } from "./git-api.ts";
 import { jumpToDiff } from "./diff-model.ts";
+import { GitHubPanel } from "./GitHubPanel.tsx";
+import { RepoSessionsPanel } from "./RepoSessionsPanel.tsx";
 
 const STATUS_POLL_MS = 15_000; // no wire events for app-local git — targeted poll
 const LISTS_POLL_MS = 30_000;
@@ -155,7 +157,44 @@ export function GitView() {
           <BranchesSection enabled={repoOk} />
         </div>
       </div>
+
+      <div className="git-columns">
+        <div className="git-column">
+          <GitHubPanel />
+        </div>
+        <div className="git-column">
+          <RepoSessionsPanel workspaceDir={workspace.data.workspaceDir} />
+          <RepoFilesNotice />
+        </div>
+      </div>
     </div>
+  );
+}
+
+// ─── repo file browser (docs/GAPS.md §15 row 9 — honest gap, see note) ──────
+
+/**
+ * NOT a stub of a working feature — a deliberate, visible statement of what
+ * is missing and why. src/bun/git.ts (this app's only workspace-file surface)
+ * exposes status/log/branches/diff/stash/worktrees and nothing that lists or
+ * reads arbitrary repo files (no ls-tree/ls-files/read-file route); no other
+ * daemon route fills that gap either (checked operator-routes.ts for
+ * fs./files./workspace./tree. — none exist). A real browser+preview needs a
+ * new Bun-side endpoint, which is outside this change's UI-only scope
+ * (src/bun/git.ts belongs to another agent). Left here instead of silently
+ * omitted per the wire-or-delete rule (components/feedback.tsx).
+ */
+function RepoFilesNotice() {
+  return (
+    <section className="repo-files-notice" aria-label="Repo file browser">
+      <h3 className="git-section-title">
+        <FolderGit2 size={14} aria-hidden="true" /> Repo files
+      </h3>
+      <UnavailableState
+        capability="/app/git file listing"
+        description="src/bun/git.ts has no route to list or read arbitrary workspace files (only status/log/branches/diff/stash/worktrees exist) — a repo file browser needs a Bun-side addition outside this change's scope."
+      />
+    </section>
   );
 }
 
