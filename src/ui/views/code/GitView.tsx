@@ -164,7 +164,7 @@ export function GitView() {
         </div>
         <div className="git-column">
           <RepoSessionsPanel workspaceDir={workspace.data.workspaceDir} />
-          <RepoFilesNotice />
+          <RepoFilesPanel />
         </div>
       </div>
     </div>
@@ -173,27 +173,79 @@ export function GitView() {
 
 // ─── repo file browser (docs/GAPS.md §15 row 9 — honest gap, see note) ──────
 
-/**
- * NOT a stub of a working feature — a deliberate, visible statement of what
- * is missing and why. src/bun/git.ts (this app's only workspace-file surface)
- * exposes status/log/branches/diff/stash/worktrees and nothing that lists or
- * reads arbitrary repo files (no ls-tree/ls-files/read-file route); no other
- * daemon route fills that gap either (checked operator-routes.ts for
- * fs./files./workspace./tree. — none exist). A real browser+preview needs a
- * new Bun-side endpoint, which is outside this change's UI-only scope
- * (src/bun/git.ts belongs to another agent). Left here instead of silently
- * omitted per the wire-or-delete rule (components/feedback.tsx).
- */
-function RepoFilesNotice() {
+// Repo file browser (docs/FEATURES.md §15 row 9) over the Bun-side
+// /app/git/files + /app/git/file endpoints (tracked files only; bounded
+// listing and reads — src/bun/git.ts). Filter is client-side; preview is
+// plain text with binary/truncation honesty.
+function RepoFilesPanel() {
+  const [filter, setFilter] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const files = useQuery({ queryKey: [...codeKeys.git, "files"], queryFn: gitApi.files, refetchInterval: false });
+  const preview = useQuery({
+    queryKey: [...codeKeys.git, "file", selected ?? ""],
+    queryFn: () => gitApi.file(selected ?? ""),
+    enabled: selected !== null,
+  });
+  const shown = useMemo(() => {
+    const all = files.data?.files ?? [];
+    const q = filter.trim().toLowerCase();
+    const hits = q ? all.filter((f) => f.toLowerCase().includes(q)) : all;
+    return { list: hits.slice(0, 500), total: hits.length };
+  }, [files.data, filter]);
   return (
-    <section className="repo-files-notice" aria-label="Repo file browser">
+    <section className="repo-files" aria-label="Repo file browser">
       <h3 className="git-section-title">
         <FolderGit2 size={14} aria-hidden="true" /> Repo files
+        {files.data && <span className="git-section-count">{files.data.total}{files.data.truncated ? "+" : ""}</span>}
       </h3>
-      <UnavailableState
-        capability="/app/git file listing"
-        description="src/bun/git.ts has no route to list or read arbitrary workspace files (only status/log/branches/diff/stash/worktrees exist) — a repo file browser needs a Bun-side addition outside this change's scope."
-      />
+      {files.isPending && <SkeletonBlock variant="text" lines={3} />}
+      {files.isError && <ErrorState error={files.error} onRetry={() => void files.refetch()} title="File listing failed" />}
+      {files.isSuccess && (
+        <>
+          <input
+            type="search"
+            className="repo-files__filter"
+            placeholder={`Filter ${files.data.total} tracked files…`}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            aria-label="Filter repo files"
+          />
+          {shown.list.length === 0 && <EmptyState title="No files match" description="Adjust the filter." />}
+          <ul className="repo-files__list">
+            {shown.list.map((f) => (
+              <li key={f}>
+                <button
+                  type="button"
+                  className={`repo-files__item${selected === f ? " is-active" : ""}`}
+                  onClick={() => setSelected(selected === f ? null : f)}
+                >
+                  {f}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {shown.total > 500 && (
+            <p className="repo-files__note">Showing first 500 of {shown.total} matches — narrow the filter.</p>
+          )}
+        </>
+      )}
+      {selected !== null && (
+        <div className="repo-files__preview" aria-label={`Preview of ${selected}`}>
+          {preview.isPending && <SkeletonBlock variant="text" lines={4} />}
+          {preview.isError && <ErrorState error={preview.error} title="File read failed" />}
+          {preview.isSuccess && preview.data.binary && (
+            <p className="repo-files__note">Binary file ({preview.data.size.toLocaleString()} bytes) — no preview.</p>
+          )}
+          {preview.isSuccess && !preview.data.binary && (
+            <>
+              {preview.data.truncated && (
+                <p className="repo-files__note">Showing first 512 KB of {preview.data.size.toLocaleString()} bytes.</p>
+              )}
+              <pre className="repo-files__content"><code>{preview.data.content}</code></pre>
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }

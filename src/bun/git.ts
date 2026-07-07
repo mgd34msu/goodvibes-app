@@ -12,6 +12,7 @@
 // literal "--" separator.
 
 import { homedir } from "node:os";
+import { join } from "node:path";
 import type { AppRouteHandler } from "./app-routes.ts";
 
 const GIT_TIMEOUT_MS = 15_000;
@@ -235,6 +236,45 @@ async function handleWorkspace(workspaceDir: string): Promise<Response> {
     isRepo: inside.code === 0 && inside.stdout.trim() === "true",
     gitVersion: version.code === 0 ? version.stdout.trim() : "",
     source: process.env["GOODVIBES_WORKING_DIR"]?.trim() ? "GOODVIBES_WORKING_DIR" : "home (default)",
+  });
+}
+
+const FILES_CAP = 20_000; // entries; repos larger than this get a truncated flag
+const FILE_READ_CAP = 512 * 1024; // bytes of file content served to the UI
+
+/** Tracked-file listing for the repo browser (git ls-files, bounded). */
+async function handleFiles(workspaceDir: string): Promise<Response> {
+  const result = await runGit(workspaceDir, ["ls-files", "-z"]);
+  if (result.code !== 0) {
+    return json({ error: "not a git repository", code: "GIT_NOT_REPO", detail: result.stderr.trim() }, 409);
+  }
+  const all = result.stdout.split("\0").filter(Boolean);
+  return json({ files: all.slice(0, FILES_CAP), total: all.length, truncated: all.length > FILES_CAP });
+}
+
+/** Bounded read of one TRACKED file inside the workspace (repo browser preview).
+ * Tracked-only (git ls-files --error-unmatch) doubles as the traversal guard:
+ * git resolves the pathspec relative to the repo and rejects anything outside
+ * or untracked, so /etc/passwd and ../ escapes never reach the filesystem read. */
+async function handleFileRead(workspaceDir: string, url: URL): Promise<Response> {
+  const rel = url.searchParams.get("path") ?? "";
+  if (!rel || rel.startsWith("/") || rel.includes("..")) {
+    return json({ error: "invalid path", code: "GIT_BAD_PATH" }, 400);
+  }
+  const tracked = await runGit(workspaceDir, ["ls-files", "--error-unmatch", "--", rel]);
+  if (tracked.code !== 0) {
+    return json({ error: "not a tracked file", code: "GIT_NOT_TRACKED", detail: rel }, 404);
+  }
+  const file = Bun.file(join(workspaceDir, rel));
+  const size = file.size;
+  const buf = new Uint8Array(await file.slice(0, Math.min(size, FILE_READ_CAP)).arrayBuffer());
+  const binary = buf.subarray(0, 8000).includes(0);
+  return json({
+    path: rel,
+    size,
+    truncated: size > FILE_READ_CAP,
+    binary,
+    content: binary ? "" : new TextDecoder().decode(buf),
   });
 }
 
@@ -582,6 +622,10 @@ export function createGitRoutes(): AppRouteHandler {
             return await handleWorkspace(workspaceDir);
           case "/status":
             return await handleStatus(workspaceDir);
+          case "/files":
+            return await handleFiles(workspaceDir);
+          case "/file":
+            return await handleFileRead(workspaceDir, url);
           case "/log":
             return await handleLog(workspaceDir, url);
           case "/branches":

@@ -1248,3 +1248,13 @@
   flex-direction: column;
   gap: var(--space-2);
 }
+
+/* ─── Repo files browser (Wave E follow-up) ─────────────────────────────── */
+.repo-files__filter { width: 100%; margin: var(--space-2) 0; padding: var(--space-2) var(--space-3); background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-primary); font: inherit; }
+.repo-files__list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
+.repo-files__item { display: block; width: 100%; text-align: left; padding: 2px var(--space-3); background: none; border: 0; color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-xs); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.repo-files__item:hover { background: var(--surface-2); color: var(--text-primary); }
+.repo-files__item.is-active { background: var(--surface-3); color: var(--accent); }
+.repo-files__preview { margin-top: var(--space-2); }
+.repo-files__content { max-height: 320px; overflow: auto; padding: var(--space-3); background: var(--surface-1); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.5; }
+.repo-files__note { color: var(--text-tertiary); font-size: var(--text-xs); margin: var(--space-2) 0 0; }

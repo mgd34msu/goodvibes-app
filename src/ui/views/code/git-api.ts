@@ -122,6 +122,11 @@ export const gitApi = {
     );
   },
   branches: () => appJson<{ local: GitBranch[]; remote: GitBranch[] }>("/app/git/branches"),
+  files: () => appJson<{ files: string[]; total: number; truncated: boolean }>("/app/git/files"),
+  file: (path: string) =>
+    appJson<{ path: string; size: number; truncated: boolean; binary: boolean; content: string }>(
+      `/app/git/file?path=${encodeURIComponent(path)}`,
+    ),
   diff: (mode: DiffMode, ref?: string, path?: string) => {
     const params = new URLSearchParams({ mode });
     if (ref) params.set("ref", ref);
