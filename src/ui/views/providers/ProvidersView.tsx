@@ -38,6 +38,7 @@ import {
 import { toggleFavoriteModel, useFavoriteModels } from "./favorites.ts";
 import { CredentialStatusPanel } from "./CredentialStatusPanel.tsx";
 import { AccountsPanel } from "./AccountsPanel.tsx";
+import { SubscriptionsPanel } from "./SubscriptionsPanel.tsx";
 import { ModelWorkspaceModal } from "./ModelWorkspaceModal.tsx";
 import { FailoverPostureCard } from "./FailoverPostureCard.tsx";
 import { CustomProvidersPanel } from "./CustomProvidersPanel.tsx";
@@ -499,6 +500,7 @@ export function ProvidersView() {
 
           <CredentialStatusPanel selectedProviderId={selectedId} />
           <AccountsPanel />
+          <SubscriptionsPanel />
           <FailoverPostureCard />
           <LlmScanPanel
             onUseAsCustomProvider={(suggestedFile, json) => setCustomProviderPrefill({ suggestedFile, json })}

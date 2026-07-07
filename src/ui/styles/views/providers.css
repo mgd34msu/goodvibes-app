@@ -810,3 +810,31 @@
   border-color: var(--status-danger);
   background: var(--status-danger-soft);
 }
+
+/* ── Subscriptions: OAuth-backed provider logins (GAPS.md §14 row 11) ──── */
+
+.providers-subscriptions__pending {
+  align-items: flex-start;
+}
+
+.providers-subscriptions__row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.providers-subscriptions__input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.providers-subscriptions__input:focus {
+  border-color: var(--border-focus);
+  outline: none;
+}
