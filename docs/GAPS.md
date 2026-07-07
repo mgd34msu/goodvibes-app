@@ -322,12 +322,12 @@ evidence found; stated plainly, no inference.
 | 6 | Checkpoints: create/list/diff/restore | SHIPPED | `CheckpointsView.tsx:68,84,92,118` → `gv.checkpoints.{list,diff,create,restore}` `[ws]` |
 | 7 | Embedded terminal tabs (PTY) | SHIPPED | `pty-client.ts:32,45,71,75,83,144` → `/app/pty/sessions*` (list/create/delete/input/resize/stream) |
 | 8 | Intelligence snapshot (LSP/tree-sitter posture) | MISSING | `intelligence.snapshot` is declared in `operator-routes.ts:154` but never invoked anywhere in `src/ui` — no read-only tile exists despite the row calling for one |
-| 9 | Repo file browser + preview | MISSING (now honestly surfaced) | still no wire method — `src/bun/git.ts` exposes no `ls-tree`/`ls-files`/read-file route and no `fs.`/`files.`/`workspace.`/`tree.` route exists in `operator-routes.ts`. Wave E replaced the silent omission with an in-UI `RepoFilesNotice` (`GitView.tsx:178-190`) that states plainly what is missing and why (needs a new Bun-side endpoint, out of the UI-only scope) |
+| 9 | Repo file browser + preview | SHIPPED (Wave E follow-up) | `src/bun/git.ts` `/app/git/files` (git ls-files, 20k cap) + `/app/git/file` (tracked-only bounded 512KB read — tracked-only is the traversal guard); `GitView.tsx` `RepoFilesPanel` (filter, 500-row render cap, text preview with binary/truncation honesty) |
 | 10 | Per-repo session table (sessions in this project) | SHIPPED | `RepoSessionsPanel.tsx` (mounted `GitView.tsx:166`) → `gv.sessions.list()` (`:75`) filtered to the current `workspaceDir` (Wave E) |
 | 11 | GitHub: device-flow auth + PR/issue list/create | PARTIAL | `GitHubPanel.tsx` (mounted `GitView.tsx:163`) is a complete, capability-honest UI — it probes `control.methods.get` for `github.auth.deviceStart`/`.devicePoll`/`github.pulls.*`/`github.issues.*` and renders `UnavailableState` when absent. But **no `github.*` method exists in `operator-routes.ts` (0 matches)**, so on every known daemon the panel renders Unavailable — the UI is built and wired but has no live wire to talk to (Wave E, honest degrade) |
 | 12 | Review snapshot | MISSING | `review.snapshot` is declared in `operator-routes.ts:280` but never invoked anywhere in `src/ui` |
 
-**Section 15 tally: 6 shipped, 3 partial, 3 missing.** Wave E closed row 10 (per-repo session table) and built the GitHub UI (row 11 → PARTIAL, capability-honest but no `github.*` wire methods exist). Row 9 (repo file browser) stays MISSING but is now surfaced honestly in-UI; both read-only snapshot tiles (rows 8/12) remain absent (out of Wave E scope).
+**Section 15 tally: 7 shipped, 3 partial, 2 missing.** Wave E closed row 10 (per-repo session table) and built the GitHub UI (row 11 → PARTIAL, capability-honest but no `github.*` wire methods exist); the Wave E follow-up closed row 9 (repo file browser — new Bun endpoints + panel). Both read-only snapshot tiles (rows 8/12) remain absent (out of Wave E scope).
 
 ## 16. MCP (7 rows)
 
@@ -526,7 +526,7 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
 | — | **Total** | **247** | **20** | **20** | **1** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **85.8% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave E gap-closure, **86.1% shipped, 6.9% partial, 6.9% missing** of audited rows (was 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave E closed 21 previously-missing/partial rows across §1 (chat conveniences), §3 (fleet worktree + WRFC badges), §6 (home-graph + project planning — the largest single block), §11 (review packets), §13 (deliveries), §15 (per-repo sessions + capability-honest GitHub UI), §21 (the entire Remote/Peers view), and §22 (first-run onboarding flow). §25's 17 deliberate-exclusion/honest-gap entries were spot-checked separately (3 of the checkable claims found inaccurate — see above) rather than folded into these counts, since they were never meant to reach `wired`.
 
 ## Top 10 gaps by user impact (post-Wave-E)
 
@@ -536,15 +536,14 @@ worktree/WRFC badges). The remaining and newly-surfaced gaps, ranked by how much
 would notice and be blocked or misled:
 
 1. **Provider/model catalog is not a real catalog (§14 row 5), and the provider surface has three more holes around it (§14 rows 6/8/9).** No models.dev fetch, no 4000+-model tier browsing, no 24h cache; plus no synthetic-failover posture, no custom-provider JSON editor, and no opt-in local-LLM server scan. Power users managing models lose the whole browsing/comparison experience.
-2. **Repo file browser still missing (§15 row 9).** No `ls-tree`/read-file route exists on the wire, so the app shows an honest "not available, needs a new Bun endpoint" notice instead of a browser — browsing repo files without dropping to the terminal is still impossible.
-3. **GitHub integration is UI-only / degraded (§15 row 11).** Wave E built a complete, capability-honest `GitHubPanel`, but **no `github.*` method exists in the route table**, so on every known daemon it renders Unavailable. The device-flow/PR/issue experience is wired but has nothing live to talk to.
-4. **Two read-only Coding/Dev snapshot tiles are absent (§15 rows 8, 12).** `intelligence.snapshot` (LSP/tree-sitter posture) and `review.snapshot` are declared on the wire but no tile invokes them.
-5. **OS service lifecycle is unwired (§20 row 8).** `services.install/.start/.stop/.restart/.uninstall/.status` have no UI — a user wanting the daemon to run as a managed OS service has no in-app control.
-6. **Web-push subscriptions for PWA companions are missing (§21 row 6).** The one remaining Peers gap: the ws-only `push.vapid.get`/`push.subscriptions.*` methods have no management UI.
-7. **Hooks file editor is missing (§5 row 10).** No dedicated `.goodvibes/hooks.json` editor with schema validation / event-path reference — only a generic settings-schema key exposes the file path.
-8. **Agent-brain surfaces have three holes (§8 rows 7, 9, 11).** Named isolated profile homes with starter templates, project-context file viewing (CLAUDE.md/AGENTS.md/.cursorrules), and a scratchpad/notes panel are all absent despite server-side collections existing.
-9. **Chat still lacks prompt undo/redo and whole-chat fork (§1 rows 29, 40), and has no literal `/image` command (§1 row 35).** Small daily-use conveniences that remain after Wave E closed `/note`/`/keep`/`/imagine`/long-turn-notify.
-10. **Palette has no cheatsheet overlay or quick switcher (§23 rows 3, 4).** Two discoverability affordances (a shortcut cheatsheet, a sessions/chats/views quick switcher) are still absent.
+2. **GitHub integration is UI-only / degraded (§15 row 11).** Wave E built a complete, capability-honest `GitHubPanel`, but **no `github.*` method exists in the route table**, so on every known daemon it renders Unavailable. The device-flow/PR/issue experience is wired but has nothing live to talk to.
+3. **Two read-only Coding/Dev snapshot tiles are absent (§15 rows 8, 12).** `intelligence.snapshot` (LSP/tree-sitter posture) and `review.snapshot` are declared on the wire but no tile invokes them.
+4. **OS service lifecycle is unwired (§20 row 8).** `services.install/.start/.stop/.restart/.uninstall/.status` have no UI — a user wanting the daemon to run as a managed OS service has no in-app control.
+5. **Web-push subscriptions for PWA companions are missing (§21 row 6).** The one remaining Peers gap: the ws-only `push.vapid.get`/`push.subscriptions.*` methods have no management UI.
+6. **Hooks file editor is missing (§5 row 10).** No dedicated `.goodvibes/hooks.json` editor with schema validation / event-path reference — only a generic settings-schema key exposes the file path.
+7. **Agent-brain surfaces have three holes (§8 rows 7, 9, 11).** Named isolated profile homes with starter templates, project-context file viewing (CLAUDE.md/AGENTS.md/.cursorrules), and a scratchpad/notes panel are all absent despite server-side collections existing.
+8. **Chat still lacks prompt undo/redo and whole-chat fork (§1 rows 29, 40), and has no literal `/image` command (§1 row 35).** Small daily-use conveniences that remain after Wave E closed `/note`/`/keep`/`/imagine`/long-turn-notify.
+9. **Palette has no cheatsheet overlay or quick switcher (§23 rows 3, 4).** Two discoverability affordances (a shortcut cheatsheet, a sessions/chats/views quick switcher) are still absent.
 
 
 
