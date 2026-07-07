@@ -13,6 +13,7 @@ import { createPairingRoutes } from "./pairing.ts";
 import { createPtyRoutes } from "./pty.ts";
 import { createNotificationsRoutes } from "./notifications.ts";
 import { createSecretsRoutes } from "./secrets.ts";
+import { createLocalToolsRoutes } from "./local-tools.ts";
 
 export type AppRouteHandler = (req: Request, url: URL) => Response | Promise<Response>;
 
@@ -29,5 +30,6 @@ export function buildAppRoutes(services: AppServices): Record<string, AppRouteHa
     "/app/pty": createPtyRoutes(),
     "/app/notifications": createNotificationsRoutes(),
     "/app/secrets": createSecretsRoutes(),
+    "/app/local": createLocalToolsRoutes(),
   };
 }
