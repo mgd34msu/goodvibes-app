@@ -78,16 +78,25 @@ async function probe(baseUrl: string, token: string): Promise<ProbeResult> {
 }
 
 /**
- * Version band policy mirroring the SDK's daemon-version-compat: 0.y needs a
- * minor match, >=1.0 needs a major match. Unparseable versions are treated as
- * incompatible (we refuse to drive a daemon we cannot reason about).
+ * The daemon major version this app speaks. A daemon must report the SAME major
+ * to be driven: a major bump means a breaking control-plane change, so both 0.x
+ * (pre-1.0) and >=2.0 daemons are treated as `incompatible` and surfaced to the
+ * user rather than proxied blindly. Bump this constant when the app adopts a new
+ * daemon major.
+ */
+export const SUPPORTED_DAEMON_MAJOR = 1;
+
+/**
+ * Compatible iff the remote reports the supported major (see SUPPORTED_DAEMON_MAJOR).
+ * Unparseable or off-major versions are incompatible — we refuse to drive a
+ * daemon whose protocol we cannot reason about.
  */
 export function versionCompatible(remote: string | undefined): boolean {
   if (!remote) return false;
   const m = /^(\d+)\.(\d+)\./.exec(remote.trim()) ?? /^(\d+)\.(\d+)$/.exec(remote.trim());
   if (!m) return false;
   const major = Number(m[1]);
-  return major >= 1;
+  return major === SUPPORTED_DAEMON_MAJOR;
 }
 
 function daemonBinPath(): string | null {
@@ -132,7 +141,7 @@ export async function ensureDaemon(): Promise<DaemonHandle> {
           baseUrl,
           version: first.version,
           probeMs: first.ms,
-          detail: `A GoodVibes daemon is running at ${baseUrl} but reports version ${first.version ?? "unknown"}, outside this app's supported band (>=1.0). Update the daemon (or this app) and relaunch.`,
+          detail: `A GoodVibes daemon is running at ${baseUrl} but reports version ${first.version ?? "unknown"}, outside this app's supported major (${SUPPORTED_DAEMON_MAJOR}.x). Update the daemon (or this app) and relaunch.`,
         },
         token,
       };

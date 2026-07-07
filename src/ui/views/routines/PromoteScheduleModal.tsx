@@ -9,8 +9,9 @@
 // view (the agent's "redacted local receipt" reimagined as a toast receipt).
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { gv } from "../../lib/gv.ts";
+import { automationKeys } from "../automation/automation-model.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { asRecord, firstString } from "../../lib/wire.ts";
 import { runCommand } from "../../lib/commands.ts";
@@ -59,6 +60,7 @@ interface ScheduleDraft {
 
 export function PromoteScheduleModal({ routine, capability, onClose }: PromoteScheduleModalProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [kind, setKind] = useState<ScheduleKind>("cron");
   const [expression, setExpression] = useState("");
   const [timezone, setTimezone] = useState("");
@@ -103,6 +105,11 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
       return gv.invoke("automation.schedules.create", { body });
     },
     onSuccess: (result) => {
+      // automation.* has no realtime invalidation stream — the Automation view
+      // refreshes via manual invalidation + poll. Promoting from here writes the
+      // same schedule store, so invalidate it too or the new schedule is absent
+      // from the Schedules tab until the next poll tick.
+      void queryClient.invalidateQueries({ queryKey: automationKeys.all });
       const record = asRecord(result);
       const scheduleId =
         firstString(record, ["id", "scheduleId", "jobId"]) ||

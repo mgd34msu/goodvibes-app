@@ -196,7 +196,48 @@ test/                     bun test (lib/logic), later Playwright against the pro
   fix. macOS/Windows targets stay buildable but are untested for now (documented).
 - Updates: Electrobun's bsdiff updater wired later; out of scope until the app is stable.
 
-## 9. Risks & fallbacks
+## 9. Display scale (Linux/XWayland)
+
+A user-global `GDK_SCALE=2` (set for other GTK3/XWayland apps on this machine) doubles
+the entire app UI when inherited into this process's environment. GTK4-native-Wayland
+apps ignore `GDK_SCALE`, which is why this app is the one thing on the machine affected —
+WebKitGTK's webview still renders through the X11/XWayland scaling path.
+
+- **Dev-launch fix (in place):** `scripts/launch.ts` builds the spawned child's env from a
+  copy of `process.env` with `GDK_SCALE` and `GDK_DPI_SCALE` deleted before `Bun.spawn`.
+  The user's own shell/session environment is never touched — only the launched app
+  process's env is stripped. This is verified working (2026-07-07).
+- **Production-launcher gap (open, not yet fixed):** the bundled release launcher
+  (the `.desktop` entry + wrapper script from §8) execs the built `bin/launcher`
+  directly and inherits whatever environment the desktop session hands it — it does
+  **not** go through `scripts/launch.ts`, so the `GDK_SCALE` strip does not apply to
+  installed/packaged builds today. A future wrapper script (or a patch to the
+  `.desktop`/wrapper generation in the electrobun CLI's Linux packaging step) needs to
+  perform the same env-stripping before exec. Until then, packaged builds on a machine
+  with a global `GDK_SCALE` override will render doubled.
+- **The port-50000 relaunch race (operational hazard, not a scale bug):** Electrobun
+  binds a fixed internal port (50000) for its own IPC. Killing and immediately
+  relaunching the app races that port's release — a relaunch that starts before the
+  previous process's port is freed dies at boot with GTK "invalid unclassed pointer in
+  cast to GtkWidget" errors. This race was repeatedly misdiagnosed as instability in the
+  `GDK_SCALE` env fix itself during investigation. Always poll `ss -tln | grep :50000`
+  until the port is free before spawning a new instance — never relaunch
+  back-to-back without that check.
+- **Known dead ends — do not retry these:**
+  - **CSS `zoom`** — blurry text/images and native form-control sizes desync from the
+    scaled layout (checkboxes, selects, etc. do not scale with `zoom`).
+  - **CSS `transform: scale(...)` on the root** — breaks `vh`/`vw`-relative sizing and
+    any resize-driven layout; scrolling and hit-testing region math goes wrong too.
+  - **Electrobun's `webviewSetPageZoom` / `setPageZoom` API** — semantics are inverted
+    from what the name implies on this build, and toggling it has produced webview
+    instability ("invalid unclassed pointer in cast to GtkWidget" — the same failure
+    signature as the port-50000 race, which is what made this dead end hard to isolate
+    from the operational hazard above).
+
+  All three were tried and rejected during the Wave D display-scale investigation
+  (2026-07-07); the only working fix remains the dev-launch env strip above.
+
+## 10. Risks & fallbacks
 
 | Risk | Mitigation |
 |---|---|
@@ -204,3 +245,4 @@ test/                     bun test (lib/logic), later Playwright against the pro
 | Daemon contract drift (sdk 1.3.1 vs daemon from tui 1.9.2) | Capability probes before non-core calls; `EXTRA_METHOD_ROUTES` seam; version-band gate at adopt time; honest "method unavailable" states. |
 | WebKitGTK quirks (fonts, media) | Bundle fonts; test TTS audio playback early (Wave D); `WEBKIT_DISABLE_DMABUF_RENDERER=1` baked into every launch path. |
 | Companion-chat rate limit (30 msg/min/client) | Client-side send throttle indicator; never silently drop. |
+| Linux window-class branding (`WM_CLASS` shows electrobun's own default, not "GoodVibes") | Upstream gap in electrobun 1.18.1's Linux native wrapper — `libNativeWrapper.so` has no JS-facing hook to set the X11 class hint; `app.name`/`app.identifier` in `electrobun.config.ts` already correctly drive the build folder name and `Info.plist` but never reach that native call. No app-side config fix exists; needs an electrobun upstream fix or a native-wrapper patch. Never target windows by title/class in tooling — match by PID/process instead. |

@@ -51,11 +51,23 @@ function frameByteLength(frame: string | Uint8Array): number {
   return typeof frame === "string" ? Buffer.byteLength(frame) : frame.byteLength;
 }
 
-/** True only for a well-formed {type:"auth"} frame (cheap substring pre-filter). */
+/**
+ * True for any {type:"auth"} frame the webview might send — in either text or
+ * binary encoding. The Bun side owns auth (open() sends it exactly once), so the
+ * webview must never be able to (re-)auth or de-auth the bridged connection. We
+ * decode and JSON-parse rather than substring-match: a substring pre-filter is
+ * defeated by a unicode-escaped payload (`{"type":"auth"}` contains no
+ * literal `"auth"` yet parses to {type:"auth"}) and by a binary-framed payload
+ * (which is never a string). Frames larger than the scan cap cannot be a real
+ * auth frame (which is a few dozen bytes) and are passed through unparsed to
+ * keep the hot path cheap.
+ */
+const MAX_AUTH_SCAN_BYTES = 1 << 20; // 1 MiB — an auth frame is tiny; this only bounds parse cost.
 function isAuthFrame(frame: string | Uint8Array): boolean {
-  if (typeof frame !== "string" || !frame.includes('"auth"')) return false;
+  if (frameByteLength(frame) > MAX_AUTH_SCAN_BYTES) return false;
+  const text = typeof frame === "string" ? frame : new TextDecoder().decode(frame);
   try {
-    const parsed = JSON.parse(frame) as { type?: unknown };
+    const parsed = JSON.parse(text) as { type?: unknown };
     return parsed !== null && typeof parsed === "object" && parsed.type === "auth";
   } catch {
     return false;
@@ -83,6 +95,14 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
     const ticket = crypto.randomUUID();
     tickets.set(ticket, now + TICKET_TTL_MS);
     return { ticket, expiresInMs: TICKET_TTL_MS };
+  }
+
+  /** Non-consuming validity check, so a 503 (daemon not ready) doesn't burn the
+   *  one-time ticket and force the UI to re-fetch. */
+  function ticketValid(ticket: string | null): boolean {
+    if (ticket === null || ticket === "") return false;
+    const expiresAt = tickets.get(ticket);
+    return expiresAt !== undefined && expiresAt > Date.now();
   }
 
   function redeemTicket(ticket: string | null): boolean {
@@ -194,7 +214,11 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
   };
 
   function handleUpgrade(req: Request, url: URL, server: Server<BridgeSocketData>): Response | undefined {
-    if (!redeemTicket(url.searchParams.get("ticket"))) {
+    const ticket = url.searchParams.get("ticket");
+    // Validate first WITHOUT consuming: if the daemon is still connecting we
+    // return 503 with the ticket intact so the UI can retry the same ticket
+    // instead of round-tripping to /app/ws-ticket again.
+    if (!ticketValid(ticket)) {
       return new Response("Forbidden", { status: 403 });
     }
     if (daemon.token === "") {
@@ -202,6 +226,10 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
         { error: "Daemon connection still being established", code: "APP_WS_CONNECTING" },
         { status: 503, headers: { "retry-after": "1" } },
       );
+    }
+    // Ready: now consume the ticket (single-use) and upgrade.
+    if (!redeemTicket(ticket)) {
+      return new Response("Forbidden", { status: 403 });
     }
     if (server.upgrade(req, { data: {} })) return undefined;
     return new Response("WebSocket upgrade required", { status: 426 });

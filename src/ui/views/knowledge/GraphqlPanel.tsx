@@ -10,9 +10,14 @@ import { invoke } from "../../lib/gv.ts";
 import { asRecord, compactJson, firstArray, firstString } from "../../lib/wire.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
+import { formatCombo } from "../../lib/keybindings.ts";
 import { kKeys } from "./lib.ts";
 
-const DEFAULT_QUERY = `# Knowledge GraphQL console — Ctrl+Enter to run
+// Platform-aware run hint: "Ctrl+Enter" on Linux/Windows, "⌘Enter" on macOS —
+// the handler accepts both ctrl and meta, so the label must match the OS.
+const RUN_HINT = formatCombo("mod+Enter");
+
+const DEFAULT_QUERY = `# Knowledge GraphQL console — ${RUN_HINT} to run
 {
   __typename
 }
@@ -111,7 +116,7 @@ export function GraphqlPanel() {
             disabled={execute.isPending || !query.trim()}
             onClick={run}
           >
-            {execute.isPending ? "Running…" : "Run (Ctrl+Enter)"}
+            {execute.isPending ? "Running…" : `Run (${RUN_HINT})`}
           </button>
         </div>
 

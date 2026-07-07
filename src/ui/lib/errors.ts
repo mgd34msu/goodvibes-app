@@ -119,13 +119,24 @@ export function isSessionActiveError(error: unknown): boolean {
 /**
  * True when a gateway method id is not registered on the connected daemon at
  * all — the honest "capability not available on this daemon" signal, distinct
- * from a normal 404 on a known resource (e.g. SESSION_NOT_FOUND). Code-first
- * (METHOD_NOT_FOUND), message-sniff fallback for pre-1.0 daemons.
+ * from a normal 404 on a known resource (e.g. SESSION_NOT_FOUND,
+ * MEMORY_RECORD_NOT_FOUND, REMOTE_PEER_NOT_FOUND — all resource-specific
+ * codes, never this generic pair). Two shapes both mean "no such capability
+ * on this daemon build", both code-first:
+ *   - METHOD_NOT_FOUND — the gateway dispatcher recognized the route but the
+ *     methodId itself isn't cataloged (daemon handlers/register.ts's 404).
+ *   - NOT_FOUND — the generic HTTP router's 404 for a path that was never
+ *     wired up at all (body `{error:"Route not found", code:"NOT_FOUND",
+ *     category:"not_found"}` — what email.inbox.list / calendar.events.list
+ *     get back from a daemon build with no email/calendar surface routed).
+ * Message-sniff fallback for pre-1.0 daemons that omit the code entirely.
  */
 export function isMethodUnavailableError(error: unknown): boolean {
   if (errorStatus(error) !== 404) return false;
-  if (errorCode(error) === "METHOD_NOT_FOUND") return true;
-  return messageText(error).includes("unknown gateway method");
+  const code = errorCode(error);
+  if (code === "METHOD_NOT_FOUND" || code === "NOT_FOUND") return true;
+  const text = messageText(error);
+  return text.includes("unknown gateway method") || text.includes("route not found");
 }
 
 /**

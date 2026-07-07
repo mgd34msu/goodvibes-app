@@ -48,6 +48,7 @@ import {
 } from "@pellux/goodvibes-sdk/platform/config";
 import type { AppRouteHandler } from "./app-routes.ts";
 import { writeFileAtomic } from "./registries/store.ts";
+import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
 
 const HOME = homedir();
 const TUI_SURFACE_ROOT = "tui"; // shared store — matches every other GoodVibes surface
@@ -61,8 +62,6 @@ const secretsManager = new SecretsManager({
 const servicesFilePath = join(HOME, ".goodvibes", TUI_SURFACE_ROOT, "services.json");
 const subscriptionManager = new SubscriptionManager(join(HOME, ".goodvibes", TUI_SURFACE_ROOT, "subscriptions.json"));
 const serviceRegistry = new ServiceRegistry(servicesFilePath, { secretsManager, subscriptionManager });
-
-const APP_SETTINGS_PATH = join(HOME, ".goodvibes", "app", "settings.json");
 
 // ─── literal-safety envelope (byte-for-byte the TUI's scheme) ───────────────
 
@@ -115,6 +114,30 @@ async function readJsonBody(req: Request): Promise<Record<string, unknown>> {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Reject a decoded secret/service name that carries a parent-directory segment
+ * or control characters. The route guards match single URL segments, but the
+ * name is percent-DECODED afterward, so `..%2F..%2Fx` slips through the segment
+ * check and decodes to `../../x`. We do not know how the SDK maps a name onto
+ * storage, so this is defense-in-depth: `..` path segments and control chars are
+ * never legitimate names, while an ordinary namespacing slash (e.g. "openai/key")
+ * is still allowed. Returns a 400 Response when unsafe, else null.
+ */
+function hasControlChar(name: string): boolean {
+  for (let i = 0; i < name.length; i++) {
+    const code = name.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+
+function rejectUnsafeName(name: string): Response | null {
+  if (hasControlChar(name) || /(^|\/)\.\.(\/|$)/.test(name)) {
+    return badRequest("SECRETS_BAD_NAME", "That name is not allowed (contains a parent-path segment or control characters).");
+  }
+  return null;
 }
 
 // ─── secrets: list / inspect / set / test / delete ──────────────────────────
@@ -176,6 +199,8 @@ async function handleSetSecret(req: Request): Promise<Response> {
 
 async function handleTestSecret(name: string): Promise<Response> {
   if (!name) return badRequest("SECRETS_NAME_REQUIRED", "A secret name is required.");
+  const unsafe = rejectUnsafeName(name);
+  if (unsafe) return unsafe;
   try {
     const raw = await secretsManager.get(name);
     if (raw === null) return json({ ok: false, name, reason: "not configured" });
@@ -187,6 +212,8 @@ async function handleTestSecret(name: string): Promise<Response> {
 
 async function handleDeleteSecret(name: string): Promise<Response> {
   if (!name) return badRequest("SECRETS_NAME_REQUIRED", "A secret name is required.");
+  const unsafe = rejectUnsafeName(name);
+  if (unsafe) return unsafe;
   await secretsManager.delete(name);
   return json({ ok: true, name });
 }
@@ -226,6 +253,8 @@ async function handleListServices(): Promise<Response> {
 }
 
 async function handleInspectService(name: string): Promise<Response> {
+  const unsafe = rejectUnsafeName(name);
+  if (unsafe) return unsafe;
   const inspection = await serviceRegistry.inspect(name);
   if (!inspection) return notFound("SECRETS_SERVICE_NOT_FOUND", `No service named "${name}" is registered.`);
   return json({
@@ -243,6 +272,8 @@ async function handleInspectService(name: string): Promise<Response> {
 }
 
 async function handleTestService(name: string): Promise<Response> {
+  const unsafe = rejectUnsafeName(name);
+  if (unsafe) return unsafe;
   if (!serviceRegistry.get(name)) {
     return notFound("SECRETS_SERVICE_NOT_FOUND", `No service named "${name}" is registered.`);
   }
@@ -277,28 +308,13 @@ interface AppOwnSettings {
 
 const DEFAULT_APP_SETTINGS: AppOwnSettings = { stopDaemonOnQuit: false };
 
-async function readSettingsFile(): Promise<Record<string, unknown>> {
-  try {
-    const raw = await readFile(APP_SETTINGS_PATH, "utf8");
-    const parsed: unknown = JSON.parse(raw);
-    return isRecord(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-async function writeSettingsFile(next: Record<string, unknown>): Promise<void> {
-  await mkdir(join(HOME, ".goodvibes", "app"), { recursive: true });
-  await writeFileAtomic(APP_SETTINGS_PATH, `${JSON.stringify(next, null, 2)}\n`);
-}
-
 function readAppOwnSettings(fileContents: Record<string, unknown>): AppOwnSettings {
   const raw = isRecord(fileContents["app"]) ? fileContents["app"] : {};
   return { stopDaemonOnQuit: raw["stopDaemonOnQuit"] === true };
 }
 
 async function handleGetAppSettings(): Promise<Response> {
-  const file = await readSettingsFile();
+  const file = await readAppSettings();
   const app = readAppOwnSettings(file);
   const autostart = await autostartStatus();
   return json({ app: { ...DEFAULT_APP_SETTINGS, ...app }, autostart });
@@ -307,16 +323,20 @@ async function handleGetAppSettings(): Promise<Response> {
 async function handlePutAppSettings(req: Request): Promise<Response> {
   const body = await readJsonBody(req);
   const patch = isRecord(body["app"]) ? body["app"] : {};
-  const file = await readSettingsFile();
-  const current = readAppOwnSettings(file);
-  const next: AppOwnSettings = {
-    stopDaemonOnQuit: typeof patch["stopDaemonOnQuit"] === "boolean" ? patch["stopDaemonOnQuit"] : current.stopDaemonOnQuit,
-  };
-  // Merge non-destructively: every OTHER top-level key (e.g. "notifications",
-  // owned by the notifications agent) passes through untouched.
-  await writeSettingsFile({ ...file, app: next });
+  let nextApp: AppOwnSettings = DEFAULT_APP_SETTINGS;
+  // Read-modify-write under the shared settings.json chain so a concurrent
+  // notifications write (its own top-level key) can't lose this update, and
+  // every OTHER top-level key passes through untouched.
+  await mutateAppSettings((file) => {
+    const current = readAppOwnSettings(file);
+    nextApp = {
+      stopDaemonOnQuit:
+        typeof patch["stopDaemonOnQuit"] === "boolean" ? patch["stopDaemonOnQuit"] : current.stopDaemonOnQuit,
+    };
+    return { ...file, app: nextApp };
+  });
   const autostart = await autostartStatus();
-  return json({ app: next, autostart });
+  return json({ app: nextApp, autostart });
 }
 
 // ─── launch-at-login posture (real when a built launcher exists, honest
@@ -350,8 +370,25 @@ interface AutostartStatus {
   launcherPath: string | null;
 }
 
+/** Platform-accurate reason for why launch-at-login is not available. The
+ *  desktop-entry mechanism below is Linux/XDG-only; macOS (LaunchAgent plist)
+ *  and Windows (Startup entry) need a packaged app that isn't built on this
+ *  machine, so we report the correct per-OS mechanism instead of a Linux one. */
+function autostartUnsupportedReason(): string {
+  switch (process.platform) {
+    case "darwin":
+      return "Launch at login is not available yet on macOS — it needs a packaged app and a LaunchAgent, which are not built on this machine.";
+    case "win32":
+      return "Launch at login is not available yet on Windows — it needs a packaged app and a Startup entry, which are not built on this machine.";
+    default:
+      return "Not implemented on this machine yet — no built launcher was found under build/*-linux-x64. Run `bun run build` first.";
+  }
+}
+
 async function autostartStatus(): Promise<AutostartStatus> {
-  const launcherPath = await findLauncher();
+  // The autostart entry we write is a Linux XDG .desktop file; only enable the
+  // toggle where that mechanism actually applies.
+  const launcherPath = process.platform === "linux" ? await findLauncher() : null;
   let enabled = false;
   try {
     await readFile(AUTOSTART_DESKTOP_PATH, "utf8");
@@ -363,7 +400,7 @@ async function autostartStatus(): Promise<AutostartStatus> {
     return {
       supported: false,
       enabled: false,
-      reason: "Not implemented on this machine yet — no built launcher was found under build/*-linux-x64. Run `bun run build` first.",
+      reason: autostartUnsupportedReason(),
       launcherPath: null,
     };
   }
@@ -411,9 +448,23 @@ interface ImportSuggestion {
   applicable: boolean;
 }
 
-/** Same last-segment secret-shape heuristic as config-redaction.ts, applied
- *  Bun-side to the raw settings.json before ANY of it leaves this process. */
-const SECRET_KEY_SUFFIX = /(token|secret|password|apikey|api_key)$/i;
+/** Last-segment secret-shape heuristic, applied Bun-side to the raw settings.json
+ *  before ANY of it leaves this process. Broadened past the original
+ *  token/secret/password/apikey suffixes to cover the other key shapes that carry
+ *  sensitive values in tui/agent settings (bare/qualified `key`, credential,
+ *  cookie, auth material, signing/webhook secrets). Over-redaction in a preview
+ *  is harmless; under-redaction would leak. */
+const SECRET_KEY_SUFFIX =
+  /(token|secret|password|passwd|apikey|api_key|accesskey|privatekey|authkey|signingkey|key|credential|cookie|auth|signature|webhook|bearer)$/i;
+
+/** URL with embedded userinfo (scheme://user:pass@host…) — mask the userinfo
+ *  regardless of the key name, since connection strings often hide credentials
+ *  under an innocuous key like "url" or "endpoint". */
+const URL_USERINFO = /^([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+:[^/@\s]+@/i;
+
+function maskTail(value: string): string {
+  return value.length <= 4 ? "••••" : `••••${value.slice(-4)}`;
+}
 
 function redactSettingsSnapshot(value: unknown, keyPath: string[] = []): unknown {
   if (isRecord(value)) {
@@ -424,7 +475,9 @@ function redactSettingsSnapshot(value: unknown, keyPath: string[] = []): unknown
   if (Array.isArray(value)) return value.map((v) => redactSettingsSnapshot(v, keyPath));
   if (typeof value === "string" && value !== "") {
     const lastSegment = keyPath[keyPath.length - 1] ?? "";
-    if (SECRET_KEY_SUFFIX.test(lastSegment)) return value.length <= 4 ? "••••" : `••••${value.slice(-4)}`;
+    if (SECRET_KEY_SUFFIX.test(lastSegment)) return maskTail(value);
+    const userinfo = URL_USERINFO.exec(value);
+    if (userinfo) return value.replace(URL_USERINFO, `${userinfo[1]}••••@`);
   }
   return value;
 }

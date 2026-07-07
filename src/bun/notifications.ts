@@ -18,9 +18,7 @@
 // "Pause notifications" toggle and this module share the single `enabled` pref, so
 // the tray and the settings UI never disagree.
 
-import { homedir } from "node:os";
-import { join, dirname } from "node:path";
-import { mkdir, readFile, rename, writeFile, unlink } from "node:fs/promises";
+import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
 import type { AppRouteHandler } from "./app-routes.ts";
 
 // ---------------------------------------------------------------------------
@@ -65,53 +63,15 @@ const VERBOSITY_VALUES: ReadonlySet<string> = new Set(["all", "important", "off"
 const IMPORTANT_DOMAINS: ReadonlySet<string> = new Set(["permissions"]);
 
 // ---------------------------------------------------------------------------
-// Storage: ~/.goodvibes/app/settings.json, "notifications" key
+// Storage: ~/.goodvibes/app/settings.json, "notifications" key. The whole-file
+// read-modify-write is serialized cross-module by settings-store.ts so a
+// concurrent app-settings write (its own "app" key) never loses our key.
 // ---------------------------------------------------------------------------
 
-const APP_HOME = process.env["GOODVIBES_APP_HOME"] ?? join(homedir(), ".goodvibes", "app");
-const SETTINGS_PATH = join(APP_HOME, "settings.json");
-
-let writeChain: Promise<unknown> = Promise.resolve();
 let cachedPrefs: NotificationPrefs = { ...DEFAULT_PREFS, perDomain: {} };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-async function writeFileAtomic(path: string, content: string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp-${process.pid}-${Math.random().toString(36).slice(2, 10)}`;
-  await writeFile(tmp, content, "utf8");
-  try {
-    await rename(tmp, path);
-  } catch (err) {
-    await unlink(tmp).catch(() => undefined);
-    throw err;
-  }
-}
-
-/** Read the whole settings.json object. Missing → {}. Corrupt → renamed aside, {}. */
-async function readSettings(): Promise<Record<string, unknown>> {
-  let raw: string;
-  try {
-    raw = await readFile(SETTINGS_PATH, "utf8");
-  } catch {
-    return {};
-  }
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) throw new Error("settings.json is not a JSON object");
-    return parsed;
-  } catch (err) {
-    const aside = `${SETTINGS_PATH}.corrupt-${Date.now()}`;
-    console.warn(
-      `[notifications] CORRUPT settings.json at ${SETTINGS_PATH}: ${
-        err instanceof Error ? err.message : String(err)
-      } — renaming to ${aside} and starting with defaults.`,
-    );
-    await rename(SETTINGS_PATH, aside).catch(() => undefined);
-    return {};
-  }
 }
 
 function coercePrefs(input: unknown): NotificationPrefs {
@@ -139,7 +99,7 @@ function coercePrefs(input: unknown): NotificationPrefs {
 }
 
 async function loadPrefs(): Promise<NotificationPrefs> {
-  const settings = await readSettings();
+  const settings = await readAppSettings();
   const prefs = coercePrefs(settings["notifications"]);
   cachedPrefs = prefs;
   return prefs;
@@ -148,16 +108,9 @@ async function loadPrefs(): Promise<NotificationPrefs> {
 /** Persist prefs under the "notifications" key, preserving every other key. */
 async function savePrefs(next: NotificationPrefs): Promise<NotificationPrefs> {
   const prefs = coercePrefs(next);
-  const run = writeChain.then(async () => {
-    const settings = await readSettings();
-    settings["notifications"] = prefs;
-    await writeFileAtomic(SETTINGS_PATH, `${JSON.stringify(settings, null, 2)}\n`);
-    cachedPrefs = prefs;
-    return prefs;
-  });
-  // Keep the chain alive even if this write rejects, so later writes still run.
-  writeChain = run.catch(() => undefined);
-  return run;
+  await mutateAppSettings((settings) => ({ ...settings, notifications: prefs }));
+  cachedPrefs = prefs;
+  return prefs;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,19 +119,49 @@ async function savePrefs(next: NotificationPrefs): Promise<NotificationPrefs> {
 
 const NOTIFY_SEND: string | null = Bun.which("notify-send");
 
-/** Fire a native notification. Returns false if notify-send is absent or failed to launch. */
+/**
+ * Cross-platform delivery fallback, injected from index.ts (which owns the
+ * electrobun import). notify-send is Linux-only and absent on macOS/Windows;
+ * index.ts wires electrobun's own Utils.showNotification here so notifications
+ * still fire on every OS. Kept as a callback so this module never imports
+ * electrobun (its stated boundary).
+ */
+type NativeDelivery = (title: string, body?: string) => boolean;
+let nativeFallback: NativeDelivery | null = null;
+export function setNotificationDelivery(fn: NativeDelivery | null): void {
+  nativeFallback = fn;
+}
+
+/** True when SOME native delivery mechanism exists (notify-send or the fallback). */
+function hasNativeDelivery(): boolean {
+  return NOTIFY_SEND !== null || nativeFallback !== null;
+}
+
+/** Fire a native notification. Returns false if no mechanism delivered it. */
 function showNative(title: string, body?: string): boolean {
-  if (!NOTIFY_SEND) return false;
-  try {
-    Bun.spawn([NOTIFY_SEND, "--app-name=GoodVibes", "--icon=dialog-information", title, body ?? ""], {
-      stdout: "ignore",
-      stderr: "ignore",
-    });
-    return true;
-  } catch (err) {
-    console.warn(`[notifications] notify-send failed to launch: ${String(err)}`);
-    return false;
+  if (NOTIFY_SEND) {
+    try {
+      // `--` terminates option parsing, so a title/body beginning with `-` is
+      // taken as the summary/body text rather than parsed as notify-send flags.
+      Bun.spawn([NOTIFY_SEND, "--app-name=GoodVibes", "--icon=dialog-information", "--", title, body ?? ""], {
+        stdout: "ignore",
+        stderr: "ignore",
+      });
+      return true;
+    } catch (err) {
+      console.warn(`[notifications] notify-send failed to launch: ${String(err)}`);
+      return false;
+    }
   }
+  if (nativeFallback) {
+    try {
+      return nativeFallback(title, body);
+    } catch (err) {
+      console.warn(`[notifications] native notification fallback failed: ${String(err)}`);
+      return false;
+    }
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -246,13 +229,13 @@ export async function notify(req: NotifyRequest): Promise<NotifyResult> {
     return { ok: true, shown: false, reason: `below "important" threshold for "${domain}"` };
   }
 
-  if (!NOTIFY_SEND) {
-    return { ok: true, shown: false, reason: "no desktop notification mechanism (notify-send not found)" };
+  if (!hasNativeDelivery()) {
+    return { ok: true, shown: false, reason: "no desktop notification mechanism available on this system" };
   }
 
   if (prefs.batching === "off") {
     const shown = showNative(req.title, req.body);
-    return { ok: true, shown, reason: shown ? undefined : "notify-send failed to launch" };
+    return { ok: true, shown, reason: shown ? undefined : "native notification delivery failed" };
   }
 
   enqueueBatched(prefs.batching, { title: req.title });

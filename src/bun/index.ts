@@ -13,7 +13,7 @@ import { startUiServer } from "./ui-server.ts";
 import { createWsBridge } from "./ws-bridge.ts";
 import { createDevDriver } from "./dev-driver.ts";
 import { buildAppRoutes } from "./app-routes.ts";
-import { notifications } from "./notifications.ts";
+import { notifications, setNotificationDelivery } from "./notifications.ts";
 import type { DaemonInfo } from "../shared/app-contract.ts";
 
 const APP_VERSION = "0.1.0";
@@ -66,6 +66,16 @@ async function main(): Promise<void> {
   // both verified live 2026-07-07. Unsetting GDK_SCALE at spawn also crashes
   // WebKitGTK (SIGILL). The transform approach is the only path that proved
   // stable.
+
+  // Give the notifications module a cross-platform delivery path. notify-send is
+  // Linux-only; electrobun's Utils.showNotification works on macOS/Windows/Linux
+  // but returns void, so we optimistically report delivery. The module prefers
+  // notify-send when present (which yields a real launch result) and only falls
+  // back to this on systems without it.
+  setNotificationDelivery((title, body) => {
+    Utils.showNotification({ title, body: body ?? "" });
+    return true;
+  });
 
   // Prime the notification pause state so the tray menu label is correct on
   // first paint (best-effort; never blocks the window).

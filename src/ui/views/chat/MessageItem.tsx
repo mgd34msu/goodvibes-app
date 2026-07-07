@@ -10,7 +10,12 @@ import { useArtifactsPanel } from "./ArtifactsPanel.tsx";
 import { MessageLineage, messageIsEdited } from "./MessageLineage.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
 import { downloadContent } from "./chat-local.ts";
+import { formatCombo } from "../../lib/keybindings.ts";
 import type { SupersededReason } from "./lineage.ts";
+
+// Platform-aware submit hint (Ctrl on Linux/Windows, ⌘ on macOS); the handler
+// accepts both ctrl and meta, so the assistive label must match the OS.
+const SUBMIT_HINT = formatCombo("mod+Enter");
 import {
   attachmentLabel,
   attachmentMeta,
@@ -149,7 +154,7 @@ export function MessageItem({
                 className="message-edit-submit"
                 onClick={handleEditSubmit}
                 disabled={!editDraft.trim() || isSendPending}
-                aria-label="Send edited message and branch (Ctrl+Enter)"
+                aria-label={`Send edited message and branch (${SUBMIT_HINT})`}
               >
                 Send &amp; branch
               </button>
