@@ -12,6 +12,7 @@ import { ensureDaemon, type DaemonHandle } from "./daemon-manager.ts";
 import { startUiServer } from "./ui-server.ts";
 import { createWsBridge } from "./ws-bridge.ts";
 import { createDevDriver } from "./dev-driver.ts";
+import { buildAppRoutes } from "./app-routes.ts";
 import type { DaemonInfo } from "../shared/app-contract.ts";
 
 const APP_VERSION = "0.1.0";
@@ -38,13 +39,15 @@ async function main(): Promise<void> {
   // adoption resolves pick up the real baseUrl/token automatically.
   const wsBridge = createWsBridge(handle);
   const devDriver = process.env["GOODVIBES_APP_DEV"] === "1" ? createDevDriver() : null;
+  const appRoutes = buildAppRoutes({ daemon: handle });
+  if (devDriver) appRoutes["/app/dev"] = devDriver.handle;
   const ui = startUiServer({
     assetsDir,
     daemon: handle,
     appVersion: APP_VERSION,
     wsBridge,
     devDriver: devDriver !== null,
-    appRoutes: devDriver ? { "/app/dev": devDriver.handle } : undefined,
+    appRoutes,
   });
   console.log(`[goodvibes-app] UI server at ${ui.url}`);
 
