@@ -1,7 +1,9 @@
 # deps / build
 node_modules/
 build/
-artifacts/
+# Electrobun build output at the repo root ONLY — an unanchored "artifacts/"
+# silently ignored src/ui/views/artifacts/ (the Artifacts view source).
+/artifacts/
 dist/
 *.tsbuildinfo
 

@@ -1,1 +1,696 @@
-/* Styles for views/personal-ops — owned by that view's wave agent. */
+/*
+ * Personal Ops view (src/ui/views/personal-ops/*).
+ * Briefing chip row → tab strip → one active panel (inbox / calendar /
+ * reminders). Also owns the .briefing-chip classes shared with the Home
+ * view's briefing card (BriefingChips.tsx lives in this view's directory).
+ * Feedback states (empty/error/unavailable/skeleton) ride components.css.
+ */
+
+.personal-ops-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ── Daily briefing chips (shared with Home) ─────────────────── */
+
+.briefing-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.briefing-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.briefing-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.briefing-chip__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-accent);
+}
+
+.briefing-chip__label {
+  white-space: nowrap;
+}
+
+/* Degraded source: muted chip, an em-dash count, cause in the tooltip. */
+.briefing-chip--degraded {
+  border-style: dashed;
+  color: var(--text-tertiary);
+}
+
+.briefing-chip--degraded .briefing-chip__count {
+  color: var(--text-tertiary);
+}
+
+/* ── Tab strip ───────────────────────────────────────────────── */
+
+.po-tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.po-tab {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-tab:hover {
+  color: var(--text-primary);
+}
+
+.po-tab--active {
+  color: var(--text-accent);
+  background: var(--accent-muted);
+  border-color: var(--border-subtle);
+}
+
+/* ── Panel scaffold ──────────────────────────────────────────── */
+
+.po-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.po-panel__footnote {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.po-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.po-toolbar__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.po-toolbar__actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+
+.po-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-button:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.po-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.po-button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: var(--weight-medium);
+}
+
+.po-button--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-contrast);
+}
+
+.po-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-icon-button:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.po-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.po-link:hover {
+  color: var(--accent-hover);
+}
+
+/* <label> styled as a button wrapping a visually-hidden file input. */
+.po-file-button {
+  position: relative;
+}
+
+.po-file-button:focus-within {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ── Day/week segment control ────────────────────────────────── */
+
+.po-segment {
+  display: inline-flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.po-segment__option {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-segment__option + .po-segment__option {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.po-segment__option--active {
+  background: var(--accent-muted);
+  color: var(--text-accent);
+}
+
+/* ── Email inbox list ────────────────────────────────────────── */
+
+.po-mail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.po-mail-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-mail-list li:last-child .po-mail-row {
+  border-bottom: none;
+}
+
+.po-mail-row:hover {
+  background: var(--accent-muted);
+}
+
+.po-mail-row--unread {
+  color: var(--text-primary);
+}
+
+.po-mail-row--unread .po-mail-row__from,
+.po-mail-row--unread .po-mail-row__subject {
+  font-weight: var(--weight-medium);
+}
+
+.po-mail-row__from,
+.po-mail-row__subject,
+.po-mail-row__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.po-mail-row__subject {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.po-mail-row__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+
+.po-mail-row__preview {
+  color: var(--text-tertiary);
+}
+
+.po-mail-row__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .po-mail-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .po-mail-row__preview {
+    display: none;
+  }
+}
+
+/* ── Email message peek ──────────────────────────────────────── */
+
+.po-mail-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.po-mail-detail__meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.po-mail-detail__meta dt {
+  color: var(--text-tertiary);
+}
+
+.po-mail-detail__meta dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.po-mail-detail__body {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.po-mail-detail__attachments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.po-mail-detail__attachments-title {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.po-mail-detail__attachments ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* ── Forms (compose / new event) ─────────────────────────────── */
+
+.po-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.po-form__label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.po-form__label input,
+.po-form__label textarea {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+}
+
+.po-form__label input:focus,
+.po-form__label textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+.po-form__label textarea {
+  resize: vertical;
+}
+
+.po-form__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.po-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.po-form__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+/* Recipient/subject echo inside the send ConfirmSurface. */
+.po-confirm-echo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--status-danger);
+  border-radius: var(--radius-md);
+  background: var(--status-danger-soft);
+  font-size: var(--text-sm);
+}
+
+.po-confirm-echo p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── Calendar agenda ─────────────────────────────────────────── */
+
+.po-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.po-agenda__day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.po-agenda__heading {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.po-agenda__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.po-agenda__row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.po-agenda__row:hover {
+  border-color: var(--border-strong);
+}
+
+.po-agenda__time {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.po-agenda__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.po-agenda__location {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .po-agenda__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .po-agenda__location {
+    display: none;
+  }
+}
+
+/* ── ICS import/export row ───────────────────────────────────── */
+
+.po-ics-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.po-ics-row__loaded {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* ── Calendar event peek ─────────────────────────────────────── */
+
+.po-event-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.po-event-detail__meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.po-event-detail__meta dt {
+  color: var(--text-tertiary);
+}
+
+.po-event-detail__meta dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.po-event-detail__description {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.po-event-detail__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+/* ── Reminders ───────────────────────────────────────────────── */
+
+.po-reminder-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.po-reminder-form__text,
+.po-reminder-form__when {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+}
+
+.po-reminder-form__text:focus,
+.po-reminder-form__when:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+@media (max-width: 700px) {
+  .po-reminder-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.po-reminder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.po-reminder-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  font-size: var(--text-sm);
+}
+
+.po-reminder-row__when {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.po-reminder-row__name {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}

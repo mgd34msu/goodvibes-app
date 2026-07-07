@@ -9,10 +9,25 @@ import { appJson } from "../../lib/http.ts";
 import {
   asRecord,
   firstArrayAtPath,
-  firstNumber,
   firstString,
   type AnyRecord,
 } from "../../lib/wire.ts";
+
+/** Epoch millis from a numeric or ISO-string timestamp field — the app-local
+ * registry store writes ISO strings (src/bun/registries/store.ts nowIso), so
+ * lib/wire.ts firstNumber alone would drop every createdAt. */
+export function firstTimestamp(value: unknown, keys: string[]): number | undefined {
+  const record = asRecord(value);
+  for (const key of keys) {
+    const item = record[key];
+    if (typeof item === "number" && Number.isFinite(item)) return item;
+    if (typeof item === "string" && item.trim()) {
+      const parsed = Date.parse(item);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
 
 // ─── Query keys (LOCAL, unique "research" prefix — not in lib/queries.ts) ────
 
@@ -107,7 +122,7 @@ export function runFrom(value: unknown): ResearchRun {
     status: firstString(raw, ["status", "state"]) || "open",
     findings,
     reportArtifactId: firstString(raw, ["reportArtifactId"]),
-    createdAt: firstNumber(raw, ["createdAt"]),
+    createdAt: firstTimestamp(raw, ["createdAt"]),
     raw,
   };
 }

@@ -198,6 +198,13 @@
   }
 }
 
+.channels-board__list,
+.channels-board__detail {
+  /* Grid children default to min-width:auto — without this a wide detail
+     panel (tables, long doctor output) blows out the list column. */
+  min-width: 0;
+}
+
 .channels-surface-list {
   list-style: none;
   margin: 0;
@@ -325,6 +332,10 @@
   align-items: baseline;
   gap: var(--space-2);
   font-size: var(--text-sm);
+}
+
+.channels-check__label {
+  font-weight: var(--weight-medium);
 }
 
 .channels-check__detail {
@@ -955,4 +966,58 @@
 .pairing-modal__btn:hover {
   color: var(--text-primary);
   border-color: var(--border-strong);
+}
+
+/* ── Access tools (Policies → Access tools sub-tab) ───────────────────────── */
+
+.channels-access {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.channels-access__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.channels-access__section .channels-health__heading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.channels-access__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.channels-access__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+
+.channels-access__resolved {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.channels-access__from {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }

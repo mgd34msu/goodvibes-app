@@ -489,6 +489,102 @@ export function readDraftDetail(data: unknown): DraftRecord {
   return readDraft(record["draft"] !== undefined ? record["draft"] : record);
 }
 
+// ── channels.allowlist.* / authorize / targets.resolve ──────────────────────
+
+export interface AllowlistResolvedEntry {
+  kind: string;
+  input: string;
+  id: string;
+  label: string;
+}
+
+export interface AllowlistResolution {
+  surface: string;
+  resolved: AllowlistResolvedEntry[];
+  unresolved: string[];
+}
+
+export function readAllowlistResolution(data: unknown): AllowlistResolution {
+  const record = asRecord(data);
+  return {
+    surface: firstString(record, ["surface"]),
+    resolved: asArray(record["resolved"]).map((row) => ({
+      kind: firstString(row, ["kind"]),
+      input: firstString(row, ["input"]),
+      id: firstString(row, ["id"]),
+      label: firstString(row, ["label"]) || firstString(row, ["id"]),
+    })),
+    unresolved: readStringArray(record, "unresolved"),
+  };
+}
+
+/** allowlist.edit echoes the updated policy — surface the new allowlist sizes. */
+export interface AllowlistEditResult {
+  surface: string;
+  userCount: number;
+  channelCount: number;
+  groupCount: number;
+}
+
+export function readAllowlistEditResult(data: unknown): AllowlistEditResult {
+  const record = asRecord(data);
+  const policy = asRecord(record["updatedPolicy"]);
+  return {
+    surface: firstString(record, ["surface"]),
+    userCount: asArray(policy["allowlistUserIds"]).length,
+    channelCount: asArray(policy["allowlistChannelIds"]).length,
+    groupCount: asArray(policy["allowlistGroupIds"]).length,
+  };
+}
+
+export interface AuthorizeResult {
+  surface: string;
+  allowed: boolean;
+  reason: string;
+  accountLabel: string;
+}
+
+export function readAuthorizeResult(data: unknown): AuthorizeResult {
+  const record = asRecord(data);
+  const result = asRecord(record["result"]);
+  return {
+    surface: firstString(record, ["surface"]),
+    allowed: readBool(result, "allowed"),
+    reason: firstString(result, ["reason"]),
+    accountLabel: firstString(asRecord(result["account"]), ["label", "id"]),
+  };
+}
+
+export interface ResolvedTarget {
+  surface: string;
+  input: string;
+  normalized: string;
+  kind: string;
+  to: string;
+  display: string;
+  accountId: string;
+  channelId: string;
+  threadId: string;
+  source: string;
+}
+
+export function readResolvedTarget(data: unknown): ResolvedTarget {
+  const record = asRecord(data);
+  const target = asRecord(record["target"]);
+  return {
+    surface: firstString(record, ["surface"]) || firstString(target, ["surface"]),
+    input: firstString(target, ["input"]),
+    normalized: firstString(target, ["normalized"]),
+    kind: firstString(target, ["kind"]),
+    to: firstString(target, ["to"]),
+    display: firstString(target, ["display"]),
+    accountId: firstString(target, ["accountId"]),
+    channelId: firstString(target, ["channelId"]),
+    threadId: firstString(target, ["threadId"]),
+    source: firstString(target, ["source"]),
+  };
+}
+
 // ── channels.routing.* ───────────────────────────────────────────────────────
 
 export interface RoutingAssignment {

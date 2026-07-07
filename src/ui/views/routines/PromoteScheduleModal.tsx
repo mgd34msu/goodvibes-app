@@ -25,8 +25,23 @@ type ScheduleKind = "cron" | "every" | "at";
 const KIND_HELP: Record<ScheduleKind, { label: string; placeholder: string; help: string }> = {
   cron: { label: "Cron expression", placeholder: "0 9 * * 1-5", help: "Standard 5-field cron, evaluated in the timezone below." },
   every: { label: "Interval", placeholder: "4h", help: "Repeat interval, e.g. 30m, 4h, 1d." },
-  at: { label: "Run at", placeholder: "2026-07-08T09:00", help: "One-shot ISO date-time, interpreted in the timezone below." },
+  at: { label: "Run at", placeholder: "2026-07-08T09:00", help: "One-shot date-time in this machine's local time (sent to the daemon as UTC)." },
 };
+
+/** Per-kind expression problem, or null when submittable. Mirrors the wire
+ * schema the Automation view verified against goodvibes-sdk
+ * runtime-automation-routes.ts: cron = 5 fields, every = duration string,
+ * at = ISO date-time (we normalize local input via Date → toISOString). */
+function expressionProblem(kind: ScheduleKind, expression: string): string | null {
+  if (!expression) return "Required.";
+  if (kind === "cron") {
+    return expression.split(/\s+/).length === 5 ? null : "Cron needs exactly 5 fields.";
+  }
+  if (kind === "every") {
+    return /^\d+\s*(ms|s|m|h|d)$/i.test(expression) ? null : "Use a duration like 30m, 4h, or 1d.";
+  }
+  return Number.isNaN(new Date(expression).getTime()) ? "Unparseable date/time." : null;
+}
 
 export type PromoteCapability = "available" | "unavailable" | "uncertain" | "checking";
 
@@ -71,12 +86,16 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
   const create = useMutation({
     mutationFn: ({ draft, meta }: { draft: ScheduleDraft; meta: ConfirmMetadata }) => {
       if (!routine) throw new Error("No routine selected");
+      // Wire shape mirrors the Automation view's verified ScheduleCreateBody:
+      // `at` normalized to an ISO/UTC string, `timezone` only with cron.
+      const expression =
+        draft.kind === "at" ? new Date(draft.expression).toISOString() : draft.expression;
       const body: Record<string, unknown> = {
         name: routine.name,
         prompt: taskBody,
         kind: draft.kind,
-        [draft.kind]: draft.expression,
-        timezone: draft.timezone,
+        [draft.kind]: expression,
+        ...(draft.kind === "cron" ? { timezone: draft.timezone } : {}),
         // ConfirmSurface metadata forwarded verbatim — the daemon-side
         // confirmation gate the agent's promotion flow also satisfies.
         ...meta,
@@ -109,11 +128,13 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
     },
   });
 
+  const trimmedExpression = expression.trim();
+  const problem = expressionProblem(kind, trimmedExpression);
+
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
-    const trimmed = expression.trim();
-    if (!routine || !trimmed || create.isPending) return;
-    setConfirming({ kind, expression: trimmed, timezone: timezone.trim() || "UTC" });
+    if (!routine || problem !== null || create.isPending) return;
+    setConfirming({ kind, expression: trimmedExpression, timezone: timezone.trim() || "UTC" });
   }
 
   const kindHelp = KIND_HELP[kind];
@@ -167,20 +188,25 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
                 onChange={(e) => setExpression(e.target.value)}
                 placeholder={kindHelp.placeholder}
                 spellCheck={false}
+                aria-invalid={trimmedExpression.length > 0 && problem !== null}
               />
-              <span className="reg-form__help">{kindHelp.help}</span>
+              <span className="reg-form__help">
+                {trimmedExpression.length > 0 && problem !== null ? problem : kindHelp.help}
+              </span>
             </label>
 
-            <label className="reg-form__field">
-              <span className="reg-form__label">Timezone</span>
-              <input
-                type="text"
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                placeholder="UTC"
-                spellCheck={false}
-              />
-            </label>
+            {kind === "cron" && (
+              <label className="reg-form__field">
+                <span className="reg-form__label">Timezone</span>
+                <input
+                  type="text"
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  placeholder="UTC"
+                  spellCheck={false}
+                />
+              </label>
+            )}
 
             <div className="reg-form__field">
               <span className="reg-form__label">Task body (the routine&apos;s steps)</span>
@@ -194,7 +220,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
               <button
                 type="submit"
                 className="reg-button reg-button--primary"
-                disabled={!expression.trim() || create.isPending}
+                disabled={problem !== null || create.isPending}
               >
                 Continue to confirmation
               </button>
@@ -206,7 +232,11 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
       <ConfirmSurface
         open={routine !== null && confirming !== null}
         action="Create daemon schedule"
-        target={routine ? `${routine.name} — ${confirming?.kind ?? ""} ${confirming?.expression ?? ""} (${confirming?.timezone ?? ""})` : ""}
+        target={
+          routine && confirming
+            ? `${routine.name} — ${confirming.kind} ${confirming.expression}${confirming.kind === "cron" ? ` (${confirming.timezone})` : ""}`
+            : ""
+        }
         blastRadius="The daemon will run this routine's steps on the schedule above, unattended, until the schedule is disabled or deleted from the Automation view."
         confirmLabel={create.isPending ? "Creating…" : "Create schedule"}
         onCancel={() => setConfirming(null)}

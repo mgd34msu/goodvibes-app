@@ -22,7 +22,7 @@ import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock } from "../../components/feedback.tsx";
 import { compareModelOptionsFrom, type CompareModelOption } from "./compare-models.ts";
-import { createNote, docKeys, listNotes } from "./documents-data.ts";
+import { createNote, docKeys, firstTimestamp, listNotes } from "./documents-data.ts";
 
 // ─── Wire helpers (local, defensive) ─────────────────────────────────────────
 
@@ -245,7 +245,12 @@ export function CompareLab() {
     () =>
       (notesQuery.data ?? [])
         .filter((note) => Array.isArray(note["tags"]) && note["tags"].includes("model-compare"))
-        .sort((x, y) => (Number(asRecord(y)["createdAt"]) || 0) - (Number(asRecord(x)["createdAt"]) || 0))
+        // The registry stamps ISO-string createdAt — parse tolerant of both shapes.
+        .sort(
+          (x, y) =>
+            (firstTimestamp(asRecord(y), ["createdAt", "judgedAt"]) ?? 0) -
+            (firstTimestamp(asRecord(x), ["createdAt", "judgedAt"]) ?? 0),
+        )
         .slice(0, 10),
     [notesQuery.data],
   );
@@ -414,7 +419,9 @@ export function CompareLab() {
             {judgments.map((note, index) => (
               <li key={firstString(note, ["id"]) || index}>
                 <span>{firstString(note, ["text"])}</span>
-                <span className="compare-lab__history-time">{formatRelative(note["createdAt"])}</span>
+                <span className="compare-lab__history-time">
+                  {formatRelative(firstTimestamp(note, ["createdAt", "judgedAt"]))}
+                </span>
               </li>
             ))}
           </ul>

@@ -24,6 +24,22 @@ export const docKeys = {
   compareNotes: ["documents-registry", "compare-notes"] as const,
 };
 
+/** Epoch millis from a numeric or ISO-string timestamp field — the app-local
+ * registry store writes ISO strings (src/bun/registries/store.ts nowIso), so
+ * lib/wire.ts firstNumber alone would drop every createdAt/updatedAt. */
+export function firstTimestamp(value: unknown, keys: string[]): number | undefined {
+  const record = asRecord(value);
+  for (const key of keys) {
+    const item = record[key];
+    if (typeof item === "number" && Number.isFinite(item)) return item;
+    if (typeof item === "string" && item.trim()) {
+      const parsed = Date.parse(item);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
 const DOCS_BASE = "/app/registries/documents";
 const NOTES_BASE = "/app/registries/notes";
 const JSON_HEADERS = { "content-type": "application/json" } as const;
@@ -110,7 +126,7 @@ export function commentFrom(value: unknown): DocComment {
   return {
     id: firstString(raw, ["id"]),
     text: firstString(raw, ["text", "body", "comment"]),
-    createdAt: firstNumber(raw, ["createdAt"]),
+    createdAt: firstTimestamp(raw, ["createdAt"]),
     resolved: raw["resolved"] === true,
     raw,
   };
@@ -123,7 +139,7 @@ export function documentFrom(value: unknown): DocRecord {
     id: firstString(raw, ["id"]),
     title: firstString(raw, ["title", "name"]) || "(untitled)",
     headVersion: firstNumber(raw, ["headVersion", "head", "version"]) ?? 0,
-    updatedAt: firstNumber(raw, ["updatedAt", "createdAt"]),
+    updatedAt: firstTimestamp(raw, ["updatedAt", "createdAt"]),
     comments,
     raw,
   };
@@ -141,7 +157,7 @@ export function versionFrom(value: unknown): DocVersion {
   const raw = asRecord(value);
   return {
     v: firstNumber(raw, ["v", "version"]) ?? 0,
-    createdAt: firstNumber(raw, ["createdAt"]),
+    createdAt: firstTimestamp(raw, ["createdAt"]),
     label: firstString(raw, ["label", "name"]),
     content: typeof raw["content"] === "string" ? raw["content"] : "",
     raw,

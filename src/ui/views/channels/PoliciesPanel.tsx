@@ -4,7 +4,9 @@
 // admin-scoped channels.policies.update only fires after ConfirmSurface —
 // confirm + explicitUserRequest ride the body (the method takes
 // additionalProperties). The audit sub-tab renders channels.policies.audit
-// decisions verbatim (allowed/denied + reason).
+// decisions verbatim (allowed/denied + reason). The access sub-tab
+// (AccessToolsPanel.tsx) covers the allowlist edit/resolve, authorize, and
+// target-resolve row.
 
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,9 +19,16 @@ import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { channelsKeys } from "./keys.ts";
 import { QueryPanel } from "./QueryPanel.tsx";
+import { AccessToolsPanel } from "./AccessToolsPanel.tsx";
 import { readPolicies, readPolicyAudit, type SurfacePolicy } from "./channels-wire.ts";
 
-type PoliciesSection = "policies" | "audit";
+type PoliciesSection = "policies" | "audit" | "access";
+
+const POLICIES_SECTION_LABELS: Record<PoliciesSection, string> = {
+  policies: "Policies",
+  audit: "Audit log",
+  access: "Access tools",
+};
 
 export function PoliciesPanel() {
   const [section, setSection] = useState<PoliciesSection>("policies");
@@ -28,7 +37,7 @@ export function PoliciesPanel() {
   return (
     <div className="channels-policies">
       <div className="channels-subtabs" role="tablist" aria-label="Policies section">
-        {(["policies", "audit"] as const).map((id) => (
+        {(Object.keys(POLICIES_SECTION_LABELS) as PoliciesSection[]).map((id) => (
           <button
             key={id}
             type="button"
@@ -37,13 +46,14 @@ export function PoliciesPanel() {
             className={section === id ? "channels-subtab channels-subtab--active" : "channels-subtab"}
             onClick={() => setSection(id)}
           >
-            {id === "policies" ? "Policies" : "Audit log"}
+            {POLICIES_SECTION_LABELS[id]}
           </button>
         ))}
       </div>
 
       {section === "policies" && <PoliciesList onEdit={setEditing} />}
       {section === "audit" && <AuditList />}
+      {section === "access" && <AccessToolsPanel />}
 
       <PolicyEditModal
         key={editing?.surface ?? "none"}

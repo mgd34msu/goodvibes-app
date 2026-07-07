@@ -1,1 +1,391 @@
-/* Styles for views/home — owned by that view's wave agent. */
+/*
+ * Home view (src/ui/views/home/*) — the assistant cockpit.
+ * Two-column layout: main column (daily briefing card + away digest) and a
+ * right rail (coming up, quick actions, daemon status). Single column below
+ * 1100px. Briefing chips come from styles/views/personal-ops.css (the
+ * component is shared); feedback states ride components.css.
+ */
+
+.home-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .home-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-view__main,
+.home-view__rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ── Card scaffold ───────────────────────────────────────────── */
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.home-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.home-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-card__hint {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.home-card__footnote {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+/* ── Daily briefing card ─────────────────────────────────────── */
+
+.home-briefing__columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .home-briefing__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-briefing__column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.home-briefing__subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-briefing__quiet {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* Per-source degradation note — visually distinct from a quiet empty. */
+.home-briefing__degraded {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+  overflow-wrap: anywhere;
+}
+
+.home-briefing__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.home-briefing__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.home-briefing__row:hover {
+  background: var(--accent-muted);
+}
+
+.home-briefing__row-time {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.home-briefing__row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── While you were away ─────────────────────────────────────── */
+
+.home-away__caught-up {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.home-away__caught-up:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.home-away__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.home-away__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.home-away__group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-away__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.home-away__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.home-away__row:hover {
+  background: var(--accent-muted);
+}
+
+.home-away__row-label {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.home-away__row-when {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* ── Coming up rail ──────────────────────────────────────────── */
+
+.home-coming-up__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.home-coming-up__row {
+  display: grid;
+  grid-template-columns: auto 110px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.home-coming-up__row:hover {
+  background: var(--accent-muted);
+}
+
+.home-coming-up__row svg {
+  color: var(--text-tertiary);
+}
+
+.home-coming-up__when {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.home-coming-up__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.home-coming-up__detail {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .home-coming-up__row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .home-coming-up__when,
+  .home-coming-up__detail {
+    display: none;
+  }
+}
+
+/* ── Quick actions ───────────────────────────────────────────── */
+
+.home-quick__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.home-quick__action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.home-quick__action:hover {
+  border-color: var(--border-strong);
+  background: var(--accent-muted);
+}
+
+.home-quick__action svg {
+  color: var(--text-accent);
+}
+
+.home-quick__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-quick__kbd {
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* ── Daemon status card ──────────────────────────────────────── */
+
+.home-daemon__facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.home-daemon__facts dt {
+  color: var(--text-tertiary);
+}
+
+.home-daemon__facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

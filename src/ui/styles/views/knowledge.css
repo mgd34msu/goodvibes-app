@@ -1168,6 +1168,12 @@
   border-color: var(--border-strong);
 }
 
+.knowledge-projection__viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .knowledge-projection__markdown {
   max-height: 60vh;
   overflow-y: auto;
