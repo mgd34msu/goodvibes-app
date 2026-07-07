@@ -18,7 +18,7 @@
 // module owns different files, so the idiom is duplicated rather than imported.
 
 import { homedir } from "node:os";
-import { join, dirname, basename } from "node:path";
+import { join, dirname, basename, isAbsolute } from "node:path";
 import { mkdir, readFile, writeFile, rename, unlink, stat, readdir } from "node:fs/promises";
 import type { AppRouteHandler } from "./app-routes.ts";
 
@@ -121,7 +121,7 @@ const WELL_KNOWN_BASENAMES = new Set(WELL_KNOWN_CONTEXT.map((rel) => basename(re
 
 async function handleContextList(url: URL): Promise<Response> {
   const dir = url.searchParams.get("dir") ?? "";
-  if (!dir || !dir.startsWith("/")) {
+  if (!dir || !isAbsolute(dir)) {
     return json({ error: "Query requires an absolute `dir`.", code: "LOCAL_CONTEXT_BAD_DIR" }, 400);
   }
   const files = await Promise.all(
@@ -138,7 +138,7 @@ const CONTEXT_READ_CAP = 256 * 1024;
 
 async function handleContextFile(url: URL): Promise<Response> {
   const path = url.searchParams.get("path") ?? "";
-  if (!path || !path.startsWith("/")) {
+  if (!path || !isAbsolute(path)) {
     return json({ error: "Query requires an absolute `path`.", code: "LOCAL_CONTEXT_BAD_PATH" }, 400);
   }
   // The allowlist IS the traversal guard: only files whose basename is a

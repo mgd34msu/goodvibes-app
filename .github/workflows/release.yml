@@ -40,8 +40,26 @@ jobs:
       - name: Package
         shell: bash
         run: scripts/package-release.sh "${{ github.event.inputs.tag || github.ref_name }}"
-      - name: Upload artifacts to release
-        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  # Artifacts attach to the release ONLY when every platform built green.
+  # A single red leg means nothing is published.
+  publish:
+    name: attach artifacts (all-green gate)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.inputs.tag || github.ref_name }}" dist/* --clobber
+        run: |
+          ls -la dist/
+          gh release upload "${{ github.event.inputs.tag || github.ref_name }}" dist/* --clobber --repo "${{ github.repository }}"
