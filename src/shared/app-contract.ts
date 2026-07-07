@@ -21,6 +21,16 @@ export interface AppHealth {
   startedAt: number;
   /** True only in dev runs (GOODVIBES_APP_DEV=1): the webview eval driver is live. */
   devDriver?: boolean;
+  display?: {
+    /**
+     * GDK integer scale the app process inherited (X11/XWayland only; 1 when
+     * unset). When >1 the webview's devicePixelRatio is multiplied by it even
+     * on a 1.0-scale monitor, so the UI applies a compensating zoom at boot
+     * (src/ui/main.tsx). Unsetting the variable instead crashes WebKitGTK on
+     * this stack — do not "fix" it that way again.
+     */
+    gdkScale: number;
+  };
 }
 
 /** Header the UI stamps on every /api and /app request (defense in depth). */

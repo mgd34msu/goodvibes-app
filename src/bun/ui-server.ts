@@ -5,6 +5,7 @@
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import type { DaemonHandle } from "./daemon-manager.ts";
+import { inheritedGdkScale } from "./env.ts";
 import type { WsBridge, BridgeSocketData } from "./ws-bridge.ts";
 import {
   APP_HEADER,
@@ -166,6 +167,7 @@ export function startUiServer(opts: UiServerOptions): UiServerHandle {
     daemon: opts.daemon.info,
     startedAt,
     devDriver: opts.devDriver === true,
+    display: { gdkScale: inheritedGdkScale() },
   });
 
   const server = Bun.serve({

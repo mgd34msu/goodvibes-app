@@ -21,15 +21,26 @@ if (!launcher) {
 const logIdx = process.argv.indexOf("--log");
 const logPath = logIdx > -1 ? process.argv[logIdx + 1] : null;
 
+// App-process env only — the user's environment is untouched. GDK_SCALE is
+// stripped so the XWayland webview renders at the real monitor scale; an
+// inherited =2 doubles the whole UI (GTK4 Wayland apps ignore the variable,
+// which is why only this app was affected). NOTE: relaunches must wait for
+// electrobun's fixed internal port 50000 to free, or boot dies with GTK
+// pointer-cast errors — earlier "the strip crashes WebKitGTK" conclusions
+// were that relaunch race, not the env change.
+const childEnv: Record<string, string | undefined> = {
+  ...process.env,
+  // WebKitGTK paints a blank window without this on this hardware
+  // (verified 2026-07-07; docs/ARCHITECTURE.md §1).
+  WEBKIT_DISABLE_DMABUF_RENDERER: "1",
+  // scripts/launch.ts is the dev launcher — enable the webview eval driver.
+  GOODVIBES_APP_DEV: "1",
+};
+delete childEnv["GDK_SCALE"];
+delete childEnv["GDK_DPI_SCALE"];
+
 const proc = Bun.spawn([launcher], {
-  env: {
-    ...process.env,
-    // WebKitGTK paints a blank window without this on this hardware
-    // (verified 2026-07-07; docs/ARCHITECTURE.md §1).
-    WEBKIT_DISABLE_DMABUF_RENDERER: "1",
-    // scripts/launch.ts is the dev launcher — enable the webview eval driver.
-    GOODVIBES_APP_DEV: "1",
-  },
+  env: childEnv,
   stdin: "ignore",
   stdout: logPath ? Bun.file(logPath) : "inherit",
   stderr: logPath ? Bun.file(logPath) : "inherit",

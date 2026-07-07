@@ -3,9 +3,9 @@
 // happens concurrently and hydrates in (docs/UX.md §6 — never serialize window
 // creation behind network calls).
 
-// Linux WebKitGTK renders blank without this (verified on Arch — docs/ARCHITECTURE.md §1).
-process.env["WEBKIT_DISABLE_DMABUF_RENDERER"] ??= "1";
-
+// Env normalization MUST come first: imports execute in order, and electrobun's
+// import initializes GTK, which reads these variables (see env.ts).
+import "./env.ts";
 import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { join } from "node:path";
 import { ensureDaemon, type DaemonHandle } from "./daemon-manager.ts";
@@ -57,6 +57,15 @@ async function main(): Promise<void> {
     url: `${ui.url}/`,
     frame: { width: 1440, height: 940, x: 120, y: 80 },
   });
+
+  // XWayland GDK_SCALE display compensation lives in the UI (src/ui/main.tsx,
+  // transform-based, driven by /app/health display.gdkScale). Do NOT use
+  // win.setPageZoom here: on this electrobun/GTK version it either inverts
+  // (0.5 doubled the magnification) or hard-crashes the event loop seconds
+  // after dom-ready ("invalid unclassed pointer in cast to 'GtkWidget'") --
+  // both verified live 2026-07-07. Unsetting GDK_SCALE at spawn also crashes
+  // WebKitGTK (SIGILL). The transform approach is the only path that proved
+  // stable.
 
   // Prime the notification pause state so the tray menu label is correct on
   // first paint (best-effort; never blocks the window).

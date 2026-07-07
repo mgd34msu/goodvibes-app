@@ -33,6 +33,15 @@
     <link rel="stylesheet" href="styles/views/settings.css" />
   </head>
   <body>
+    <!-- Boot splash: covers the window until React mounts and the display
+         scale settles (src/ui/main.tsx removes it). Viewport units + no text
+         smaller than 2vh so it looks fine at any transient zoom. -->
+    <div id="boot-splash" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#07080f;z-index:9999;transition:opacity 160ms ease">
+      <div style="text-align:center;color:#7ef3ef;font-family:system-ui,sans-serif">
+        <div style="font-size:3vh;letter-spacing:0.3em;">GOODVIBES</div>
+        <div style="font-size:2vh;opacity:0.6;margin-top:1vh">starting…</div>
+      </div>
+    </div>
     <div id="root"></div>
     <script src="main.js"></script>
   </body>
