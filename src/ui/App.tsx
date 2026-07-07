@@ -5,10 +5,15 @@
 import type { ReactElement } from "react";
 import { ThemeProvider } from "./lib/theme.ts";
 import { ToastProvider } from "./lib/toast.ts";
+import { useNotifyBridge } from "./lib/notify-bridge.ts";
 import { ErrorBoundary } from "./components/feedback.tsx";
 import { AppShell } from "./components/shell/AppShell.tsx";
 
 export function App(): ReactElement {
+  // Desktop-notification bridge: watches the shared query cache (no 2nd SSE) and
+  // fires metadata-only native notifications when the window is backgrounded.
+  useNotifyBridge();
+
   return (
     <ThemeProvider>
       <ErrorBoundary>

@@ -26,6 +26,7 @@ import { queryKeys } from "../../lib/queries.ts";
 import { formatError } from "../../lib/errors.ts";
 import { bestId, bestTitle, firstString } from "../../lib/wire.ts";
 import { MicButton } from "./MicButton.tsx";
+import { VoiceSettingsButton } from "./voice-controls.tsx";
 import { readInputHistory } from "./chat-local.ts";
 import { SEND_BUDGET_PER_MINUTE, type AttachedArtifactRef, type SendBudget } from "./useChatSend.ts";
 import { modelOptionsFromProvider, type ModelOption, type ProviderOption } from "./provider-models.ts";
@@ -755,6 +756,7 @@ export function Composer({
             >
               {alwaysSpeak ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
             </button>
+            <VoiceSettingsButton />
             {reasoning && (
               <label className="composer-reasoning" title="Reasoning effort (provider.reasoningEffort, shared config)">
                 <Gauge size={13} aria-hidden="true" />

@@ -1,1 +1,266 @@
-/* Styles for views/terminal — owned by that view's wave agent. */
+/* Embedded terminal (docs/FEATURES.md §15) — tabbed PTY sessions with a
+   reduced ANSI renderer. Owned by views/terminal/. */
+
+.terminal-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-base);
+}
+
+/* ── tab bar ─────────────────────────────────────────────────────────────── */
+.terminal-tabbar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3) 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  max-width: 220px;
+  white-space: nowrap;
+}
+
+.terminal-tab--active {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.terminal-tab__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.terminal-tab__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 130px;
+}
+
+.terminal-tab__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex: 0 0 auto;
+}
+.terminal-tab__dot--alive {
+  background: var(--status-success);
+  box-shadow: 0 0 6px var(--status-success);
+}
+.terminal-tab__dot--dead {
+  background: var(--text-tertiary);
+}
+
+.terminal-tab__exit {
+  font-size: var(--text-xs);
+  color: var(--status-danger);
+  font-family: var(--font-mono);
+}
+
+.terminal-tab__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.terminal-tab__close:hover {
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+}
+
+.terminal-newtab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  margin-bottom: 2px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.terminal-newtab:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.terminal-newtab:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.terminal-newtab .spin {
+  animation: terminal-spin 0.8s linear infinite;
+}
+@keyframes terminal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── body / panes ────────────────────────────────────────────────────────── */
+.terminal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+}
+
+.terminal-createerror {
+  padding: var(--space-2) var(--space-3);
+}
+
+.terminal-loading {
+  margin: auto;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.terminal-pane {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── the rendered screen ─────────────────────────────────────────────────── */
+.terminal-screen {
+  --term-fg: var(--text-primary);
+  --term-bg: transparent;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  color: var(--term-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.32;
+  outline: none;
+  cursor: text;
+  scrollbar-width: thin;
+}
+
+.terminal-screen--focusable:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--border-focus);
+}
+
+.terminal-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.32;
+  pointer-events: none;
+}
+
+.terminal-grid {
+  white-space: pre;
+}
+
+.terminal-line {
+  min-height: 1.32em;
+  white-space: pre;
+}
+
+.terminal-cell {
+  white-space: pre;
+}
+
+/* Block cursor. Solid when the screen is focused, hollow otherwise. */
+.terminal-cursor {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: 1px;
+}
+.terminal-screen:not(:focus) .terminal-cursor {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* ── exit banner ─────────────────────────────────────────────────────────── */
+.terminal-exitbanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.terminal-exitbanner--error {
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+}
+
+.terminal-exitbanner__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.terminal-exitbanner__actions button {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+.terminal-exitbanner__actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── caption ─────────────────────────────────────────────────────────────── */
+.terminal-caption {
+  padding: var(--space-1) var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-newtab .spin {
+    animation: none;
+  }
+}

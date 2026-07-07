@@ -6,13 +6,14 @@
 // Linux WebKitGTK renders blank without this (verified on Arch — docs/ARCHITECTURE.md §1).
 process.env["WEBKIT_DISABLE_DMABUF_RENDERER"] ??= "1";
 
-import { BrowserWindow } from "electrobun/bun";
+import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { join } from "node:path";
 import { ensureDaemon, type DaemonHandle } from "./daemon-manager.ts";
 import { startUiServer } from "./ui-server.ts";
 import { createWsBridge } from "./ws-bridge.ts";
 import { createDevDriver } from "./dev-driver.ts";
 import { buildAppRoutes } from "./app-routes.ts";
+import { notifications } from "./notifications.ts";
 import type { DaemonInfo } from "../shared/app-contract.ts";
 
 const APP_VERSION = "0.1.0";
@@ -57,11 +58,30 @@ async function main(): Promise<void> {
     frame: { width: 1440, height: 940, x: 120, y: 80 },
   });
 
-  win.on("close", () => {
+  // Prime the notification pause state so the tray menu label is correct on
+  // first paint (best-effort; never blocks the window).
+  void notifications.prime();
+
+  const quitApp = (): void => {
     // Daemon-side work must survive app close (docs/UX.md §1). We only stop the
     // local UI server; the (possibly spawned) daemon stays up.
     ui.stop();
     process.exit(0);
+  };
+
+  // Status-tray icon + quick actions. Null when the platform/desktop has no
+  // system tray (electrobun's Tray creation fails gracefully — see setupTray).
+  const tray = setupTray(win, ui.url, quitApp);
+
+  win.on("close", () => {
+    if (tray) {
+      // Close-to-tray: with a live tray the window close button only hides the
+      // window; the app (and daemon-side work) keeps running. Quit is explicit
+      // via the tray menu (docs/FEATURES.md §24: window close ≠ app quit).
+      win.hide();
+      return;
+    }
+    quitApp();
   });
 
   const daemon = await daemonPromise;
@@ -74,6 +94,81 @@ async function main(): Promise<void> {
     `[goodvibes-app] daemon ${daemon.info.mode} at ${daemon.info.baseUrl}` +
       (daemon.info.version ? ` (v${daemon.info.version})` : ""),
   );
+}
+
+/**
+ * Create the status-tray icon + menu. Returns null when the platform has no
+ * usable system tray (electrobun's Tray swallows creation errors and leaves
+ * `ptr` null; many GNOME setups need the AppIndicator extension — see
+ * electrobun/dist/api/bun/proc/linux.md). Callers treat null as "no tray", which
+ * preserves the exit-on-close behavior.
+ */
+function setupTray(
+  win: BrowserWindow,
+  uiUrl: string,
+  onQuit: () => void,
+): Tray | null {
+  let tray: Tray;
+  try {
+    tray = new Tray({ title: "GoodVibes", template: true });
+  } catch (err) {
+    console.warn(`[goodvibes-app] tray unavailable: ${String(err)}`);
+    return null;
+  }
+  if (tray.ptr == null) {
+    // Native tray creation failed (no system tray on this desktop). Drop it.
+    tray.remove();
+    return null;
+  }
+
+  const rebuildMenu = (): void => {
+    const paused = notifications.isPausedSync();
+    tray.setMenu([
+      { type: "normal", label: "Show GoodVibes", action: "show" },
+      { type: "normal", label: "Hide GoodVibes", action: "hide" },
+      { type: "divider" },
+      { type: "normal", label: "New chat", action: "new-chat" },
+      {
+        type: "normal",
+        label: paused ? "Resume notifications" : "Pause notifications",
+        action: "toggle-pause",
+        checked: paused,
+      },
+      { type: "divider" },
+      { type: "normal", label: "Quit GoodVibes", action: "quit" },
+    ]);
+  };
+  rebuildMenu();
+
+  tray.on("tray-clicked", (event) => {
+    // The tray FFI callback emits an ElectrobunEvent whose `.data` is the
+    // { id, action, data } payload (electrobun/dist/api/bun/proc/native.ts).
+    const action = (event as { data?: { action?: string } }).data?.action ?? "";
+    switch (action) {
+      case "show":
+        win.show();
+        break;
+      case "hide":
+        win.hide();
+        break;
+      case "new-chat":
+        // Deep-link convention from src/ui/lib/router.ts (?view=…). `new=1` is a
+        // hint the chat view may honor to start a fresh session.
+        win.webview?.loadURL(`${uiUrl}/?view=chat&new=1`);
+        win.show();
+        break;
+      case "toggle-pause":
+        void notifications.togglePaused().then(rebuildMenu);
+        break;
+      case "quit":
+        onQuit();
+        break;
+      default:
+        break;
+    }
+  });
+
+  return tray;
 }
 
 main().catch((err) => {

@@ -1,15 +1,19 @@
 // Settings & Config workspace (docs/FEATURES.md §19 — forefront requirement).
-// Six sections behind a local tab rail, each URL-addressable via
+// Ten sections behind a local tab rail, each URL-addressable via
 // ?filter[section]=…: the schema-driven daemon config editor, app-shell
 // preferences (theme/density/motion + the live keybinding registry editor),
 // local-auth administration, the security-flag audit, the secret-free
-// credential status snapshot, and the settings-sync/storage posture. The
-// Doctor (onboarding checks, re-runnable) is one click away in the header —
-// it is owned by AppShell and reached through its registered command.
+// credential status snapshot, the settings-sync/storage posture, the
+// secrets manager + service registry, notification prefs, app-own
+// window/launch settings, and profile bundles + the tui/agent import bridge.
+// The Doctor (onboarding checks, re-runnable) is one click away in the
+// header — it is owned by AppShell and reached through its registered
+// command. A cross-section fuzzy search (settings-search.ts) sits next to
+// it: jump-to-section + a brief highlight flash, <2s to find any key.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Stethoscope } from "lucide-react";
+import { Search, Stethoscope } from "lucide-react";
 import { registerCommand, unregisterCommand, runCommand } from "../../lib/commands.ts";
 import { useUrlState } from "../../lib/router.ts";
 import { settingsKeys } from "./settings-queries.ts";
@@ -19,8 +23,14 @@ import { LocalAuthSection } from "./LocalAuthSection.tsx";
 import { SecuritySection } from "./SecuritySection.tsx";
 import { CredentialsSection } from "./CredentialsSection.tsx";
 import { SyncSection } from "./SyncSection.tsx";
+import { SecretsSection } from "./SecretsSection.tsx";
+import { ServicesSection } from "./ServicesSection.tsx";
+import { NotificationsSection } from "./NotificationsSection.tsx";
+import { AppLaunchSection } from "./AppLaunchSection.tsx";
+import { ProfilesSection } from "./ProfilesSection.tsx";
+import { flashSection, searchSettings, type SettingsSectionId } from "./settings-search.ts";
 
-type SettingsSection = "config" | "app" | "auth" | "security" | "credentials" | "sync";
+type SettingsSection = SettingsSectionId;
 
 const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string }> = [
   { id: "config", label: "Daemon config" },
@@ -29,6 +39,10 @@ const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string }> = [
   { id: "security", label: "Security" },
   { id: "credentials", label: "Credentials" },
   { id: "sync", label: "Sync & storage" },
+  { id: "secrets", label: "Secrets & Services" },
+  { id: "notifications", label: "Notifications" },
+  { id: "launch", label: "App & Launch" },
+  { id: "profiles", label: "Profiles & Import" },
 ];
 
 const SECTION_IDS = new Set<string>(SECTIONS.map((s) => s.id));
@@ -36,6 +50,8 @@ const SECTION_IDS = new Set<string>(SECTIONS.map((s) => s.id));
 export function SettingsView(): React.ReactElement {
   const queryClient = useQueryClient();
   const { filters, setFilters } = useUrlState();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const rawSection = filters["section"] ?? "";
   const section: SettingsSection = SECTION_IDS.has(rawSection) ? (rawSection as SettingsSection) : "config";
@@ -54,6 +70,15 @@ export function SettingsView(): React.ReactElement {
     };
   }, [queryClient]);
 
+  const searchResults = searchSettings(searchQuery);
+
+  function jumpTo(sectionId: SettingsSection, anchorSelector: string): void {
+    setFilters({ section: sectionId }, { replace: true });
+    flashSection(anchorSelector);
+    setSearchQuery("");
+    setSearchOpen(false);
+  }
+
   return (
     <div className="settings-view">
       <div className="settings-view__header">
@@ -71,14 +96,45 @@ export function SettingsView(): React.ReactElement {
             </button>
           ))}
         </nav>
-        <button
-          type="button"
-          className="settings-view__doctor"
-          onClick={() => runCommand("system.doctor")}
-          title="Re-run the onboarding checks (daemon, auth, provider)"
-        >
-          <Stethoscope size={14} aria-hidden="true" /> Run Doctor
-        </button>
+        <div className="settings-view__header-actions">
+          <div className="settings-view__search">
+            <label className="settings-search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)}
+                placeholder="Search all settings…"
+                aria-label="Search all settings sections"
+              />
+            </label>
+            {searchOpen && searchResults.length > 0 && (
+              <ul className="settings-view__search-results" role="listbox">
+                {searchResults.map((result, index) => (
+                  <li key={`${result.sectionId}-${result.label}-${index}`}>
+                    <button type="button" onClick={() => jumpTo(result.sectionId, result.anchorSelector)}>
+                      <span className="settings-view__search-label">{result.label}</span>
+                      <span className="settings-view__search-section">{result.sectionLabel}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <button
+            type="button"
+            className="settings-view__doctor"
+            onClick={() => runCommand("system.doctor")}
+            title="Re-run the onboarding checks (daemon, auth, provider)"
+          >
+            <Stethoscope size={14} aria-hidden="true" /> Run Doctor
+          </button>
+        </div>
       </div>
 
       {section === "config" && <ConfigSettingsSection />}
@@ -87,6 +143,15 @@ export function SettingsView(): React.ReactElement {
       {section === "security" && <SecuritySection />}
       {section === "credentials" && <CredentialsSection />}
       {section === "sync" && <SyncSection />}
+      {section === "secrets" && (
+        <>
+          <SecretsSection />
+          <ServicesSection />
+        </>
+      )}
+      {section === "notifications" && <NotificationsSection />}
+      {section === "launch" && <AppLaunchSection />}
+      {section === "profiles" && <ProfilesSection />}
     </div>
   );
 }

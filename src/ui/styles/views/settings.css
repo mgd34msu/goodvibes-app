@@ -924,3 +924,337 @@
   font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * Secrets & Services / Notifications / App & Launch / Profiles & Import
+ * (Wave D settings completion). Shares .settings-row/.settings-rows,
+ * .settings-pref*, .settings-editor*, .badge, .section-toolbar from above —
+ * only the classes unique to these sections live below.
+ * ---------------------------------------------------------------------------
+ */
+
+.settings-secrets,
+.settings-services,
+.settings-notify,
+.settings-launch,
+.settings-profiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-secrets__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-secrets__add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.settings-secrets__add:hover {
+  border-color: var(--border-strong);
+}
+
+.settings-secrets__add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-secrets__note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.settings-secrets__policy {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+
+.settings-secrets__policy dt {
+  color: var(--text-tertiary);
+}
+
+.settings-secrets__policy dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.settings-secrets__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.settings-secrets__form-row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.settings-secrets__form label,
+.settings-secrets__value-field,
+.settings-secrets__link-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  flex: 1 1 200px;
+}
+
+.settings-secrets__form input,
+.settings-secrets__form select,
+.settings-secrets__value-field input,
+.settings-secrets__link-fields input,
+.settings-secrets__link-fields select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.settings-secrets__mode {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-secrets__link-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.settings-row__reset--danger {
+  color: var(--status-danger);
+  border-color: var(--status-danger-soft);
+}
+
+.settings-row__reset--danger:hover {
+  border-color: var(--status-danger);
+}
+
+.settings-services__doctor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.settings-services__flags {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  margin-top: var(--space-1);
+}
+
+.settings-notify__subhead {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.settings-notify__domains {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-notify__domain-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.settings-notify__domain-options {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.settings-notify__actions,
+.settings-notify__test {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.settings-notify__test input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  flex: 1 1 auto;
+  max-width: 320px;
+}
+
+.settings-launch__block {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-launch__block legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-2);
+}
+
+.settings-profiles__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-profiles__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.settings-profiles__file-input {
+  display: none;
+}
+
+.settings-profiles__source {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* Cross-section search (view header) */
+
+.settings-view__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.settings-view__search {
+  position: relative;
+}
+
+.settings-view__search .settings-search {
+  min-width: 220px;
+}
+
+.settings-view__search-results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-overlay);
+  box-shadow: var(--elevation-3);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.settings-view__search-results li button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-view__search-results li button:hover {
+  background: var(--accent-muted);
+}
+
+.settings-view__search-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-view__search-section {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+@keyframes settings-search-flash {
+  0%, 100% { box-shadow: none; }
+  20%, 60% { box-shadow: 0 0 0 2px var(--accent), var(--elevation-2); }
+}
+
+.settings-search-flash {
+  animation: settings-search-flash 1.6s var(--ease-standard);
+  border-radius: var(--radius-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-search-flash {
+    animation: none;
+    outline: 2px solid var(--accent);
+  }
+}

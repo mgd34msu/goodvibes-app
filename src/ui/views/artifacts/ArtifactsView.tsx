@@ -11,8 +11,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Download, RefreshCw, Upload } from "lucide-react";
+import { Archive, Download, FlaskConical, RefreshCw, Upload } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
+import { MediaLab } from "./MediaLab.tsx";
 import { appFetch, HttpError } from "../../lib/http.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
@@ -51,6 +52,7 @@ export function ArtifactsView() {
   const [kindFilter, setKindFilter] = useState<ArtifactKind | "">("");
   const [nameFilter, setNameFilter] = useState("");
   const [selectedId, setSelectedId] = useState(() => filters["artifact"] ?? "");
+  const [tab, setTab] = useState<"artifacts" | "media-lab">("artifacts");
   const uploadRef = useRef<HTMLInputElement>(null);
 
   // artifacts.* has no wire event — poll every 30s (docs rule: comment it).
@@ -147,7 +149,32 @@ export function ArtifactsView() {
   const canLoadMore = total !== undefined ? records.length < total : records.length >= limit;
 
   return (
-    <div className="artifacts-view">
+    <div className="artifacts-view-root">
+      <div className="artifacts-tabs" role="tablist" aria-label="Artifacts sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "artifacts"}
+          className={tab === "artifacts" ? "artifacts-tab artifacts-tab--active" : "artifacts-tab"}
+          onClick={() => setTab("artifacts")}
+        >
+          <Archive size={14} aria-hidden="true" /> Artifacts
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "media-lab"}
+          className={tab === "media-lab" ? "artifacts-tab artifacts-tab--active" : "artifacts-tab"}
+          onClick={() => setTab("media-lab")}
+        >
+          <FlaskConical size={14} aria-hidden="true" /> Media Lab
+        </button>
+      </div>
+
+      {tab === "media-lab" ? (
+        <MediaLab />
+      ) : (
+        <div className="artifacts-view">
       <section className="artifacts-list-pane" aria-label="Artifacts">
         <div className="section-toolbar">
           <span className="section-toolbar__summary">
@@ -283,6 +310,8 @@ export function ArtifactsView() {
           />
         )}
       </section>
+        </div>
+      )}
     </div>
   );
 }
