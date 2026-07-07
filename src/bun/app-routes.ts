@@ -10,6 +10,9 @@ import type { DaemonHandle } from "./daemon-manager.ts";
 import { createRegistriesRoutes } from "./registries/index.ts";
 import { createGitRoutes } from "./git.ts";
 import { createPairingRoutes } from "./pairing.ts";
+import { createPtyRoutes } from "./pty.ts";
+import { createNotificationsRoutes } from "./notifications.ts";
+import { createSecretsRoutes } from "./secrets.ts";
 
 export type AppRouteHandler = (req: Request, url: URL) => Response | Promise<Response>;
 
@@ -23,6 +26,8 @@ export function buildAppRoutes(services: AppServices): Record<string, AppRouteHa
     "/app/registries": createRegistriesRoutes(),
     "/app/git": createGitRoutes(),
     "/app/pairing": createPairingRoutes(services),
-    // "/app/pty": createPtyRoutes(...)                — Wave D (terminal)
+    "/app/pty": createPtyRoutes(),
+    "/app/notifications": createNotificationsRoutes(),
+    "/app/secrets": createSecretsRoutes(),
   };
 }
