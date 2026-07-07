@@ -15,7 +15,7 @@ export interface LocalCompanionMessage {
   role: "user" | "assistant";
   content: string;
   createdAt: number;
-  deliveryState?: "sent" | "failed" | "local";
+  deliveryState?: "sent" | "failed" | "local" | "cancelled" | "queued";
   attachments?: readonly {
     artifactId: string;
     label?: string;

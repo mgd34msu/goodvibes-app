@@ -10,6 +10,7 @@ import { useReducedMotion } from "../../components/motion.tsx";
 import { MessageItem } from "./MessageItem.tsx";
 import { ToolCallBlocks, ThinkingStrip, ContextMeter } from "./TurnActivity.tsx";
 import { lineageNodeKey, type LineageNode } from "./lineage.ts";
+import { messageInReplyTo, messageText, messageTone } from "./message-utils.ts";
 import type { ChatMessage, ToolCallBlock, TurnMetrics } from "./types.ts";
 
 interface MessageListProps {
@@ -67,6 +68,18 @@ export function MessageList({
       <div className="messages chat-conversation" ref={scrollRef} onScroll={onScroll}>
         {nodes.map((node, index) => {
           const nodeId = node.message.id ?? node.message.messageId ?? "";
+          // Queue-when-busy sends and steer both break simple positional
+          // pairing (the message right above this one in the transcript is
+          // not necessarily what it answers) — when the daemon's inReplyTo
+          // disagrees with the plain preceding message, surface a snippet of
+          // what it actually answers instead of leaving the mismatch mute.
+          const inReplyTo = messageInReplyTo(node.message);
+          const precedingId = index > 0 ? (nodes[index - 1]!.message.id ?? nodes[index - 1]!.message.messageId ?? "") : "";
+          const repliesOutOfOrder = messageTone(node.message) === "assistant" && Boolean(inReplyTo) && inReplyTo !== precedingId;
+          const replyToMessage = repliesOutOfOrder
+            ? nodes.find((n) => (n.message.id ?? n.message.messageId ?? "") === inReplyTo)?.message
+            : undefined;
+          const replyToSnippet = replyToMessage ? messageText(replyToMessage).slice(0, 80) : "";
           return (
             <MessageItem
               key={lineageNodeKey(node, index)}
@@ -80,6 +93,7 @@ export function MessageList({
               priorMessages={node.priorMessages}
               {...(node.reason ? { reason: node.reason } : {})}
               {...(node.revisionOf ? { revisionOf: node.revisionOf } : {})}
+              {...(replyToSnippet ? { replyToSnippet } : {})}
               onCopyMessage={onCopyMessage}
               onResendMessage={onResendMessage}
               onRegenerateFrom={onRegenerateFrom}

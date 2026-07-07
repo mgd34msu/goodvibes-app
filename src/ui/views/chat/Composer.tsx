@@ -37,6 +37,7 @@ import {
 import { gv, listFrom } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError } from "../../lib/errors.ts";
+import { formatCombo } from "../../lib/keybindings.ts";
 import { bestId, bestTitle, firstString } from "../../lib/wire.ts";
 import { MicButton } from "./MicButton.tsx";
 import { VoiceSettingsButton } from "./voice-controls.tsx";
@@ -79,6 +80,14 @@ export interface ComposerProps {
   onDraftChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
+  /** True while a turn is actively in flight — shows the "Steer" button next
+   * to Send (docs/GAPS.md §1 row 39). Ctrl+Enter triggers the same action
+   * from the textarea regardless of this flag: with no turn running, steer
+   * degrades to an ordinary send (companion.chat.messages.steer, Q3). */
+  isTurnActive: boolean;
+  /** Interrupt the in-flight turn and send the current draft now
+   * (companion.chat.messages.steer). */
+  onSteerSubmit: () => void;
   onFilesAdded: (files: File[]) => void;
   onRemoveAttachedFile: (index: number) => void;
   onAddArtifactRef: (ref: AttachedArtifactRef) => void;
@@ -298,6 +307,10 @@ function SlashMenu({
 
 const BIG_PASTE_LINES = 8;
 
+// Platform-aware hint (Ctrl on Linux/Windows, ⌘ on macOS) for the steer
+// shortcut — same combo MessageItem.tsx uses for edit-and-branch submit.
+const SUBMIT_HINT = formatCombo("mod+Enter");
+
 export function Composer({
   draft,
   attachedFiles,
@@ -317,6 +330,8 @@ export function Composer({
   reasoning,
   alwaysSpeak,
   onToggleAlwaysSpeak,
+  isTurnActive,
+  onSteerSubmit,
   onDraftChange,
   onSubmit,
   onComposerKeyDown,
@@ -497,6 +512,15 @@ export function Composer({
         return;
       }
 
+      // Ctrl+Enter / Cmd+Enter: steer (interrupt the in-flight turn and send
+      // now). Takes priority over mention/slash Enter-to-select below —
+      // this is a distinct, deliberate action, not a fancier "select item".
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+        event.preventDefault();
+        onSteerSubmit();
+        return;
+      }
+
       if (mentionQuery !== null && mentionItems.length > 0) {
         if (event.key === "ArrowDown") {
           event.preventDefault();
@@ -577,6 +601,7 @@ export function Composer({
       onCheckpointDraft,
       onComposerKeyDown,
       onDraftChange,
+      onSteerSubmit,
       recallHistory,
       showSlashMenu,
       slashActiveIndex,
@@ -753,7 +778,7 @@ export function Composer({
           onChange={handleDraftChange}
           onKeyDown={handleTextareaKeyDown}
           onPaste={handlePaste}
-          placeholder="Message GoodVibes — Enter to send, Shift+Enter for a newline, / for commands, @ to attach an artifact"
+          placeholder={`Message GoodVibes — Enter to send, Shift+Enter for a newline, ${SUBMIT_HINT} to interrupt & send, / for commands, @ to attach an artifact`}
           aria-label="Message GoodVibes"
           aria-autocomplete={showSlashMenu || mentionQuery !== null ? "list" : undefined}
           aria-controls={
@@ -864,6 +889,18 @@ export function Composer({
                   ? `${sendBudget.remaining}/${SEND_BUDGET_PER_MINUTE} sends left this minute`
                   : ""}
             </span>
+            {isTurnActive && (
+              <button
+                type="button"
+                className="composer-steer-btn"
+                title={`Steer: interrupt the current reply and send this message now (${SUBMIT_HINT})`}
+                aria-label="Steer: interrupt the current reply and send this message now"
+                disabled={isSendPending || sendBudget.blocked || (!draft.trim() && !attachedFiles.length && !artifactRefs.length)}
+                onClick={onSteerSubmit}
+              >
+                Steer (interrupt &amp; send)
+              </button>
+            )}
             <button
               type="submit"
               className="send-button"

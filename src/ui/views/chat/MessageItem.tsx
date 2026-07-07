@@ -3,7 +3,7 @@
 // row (copy · save · edit-and-branch · resend/regenerate · bookmark · speak ·
 // artifacts). Ported from goodvibes-webui src/views/chat/MessageItem.tsx.
 
-import { Bookmark, Check, Copy, Download, Layers, Paperclip, Pencil, RotateCcw, X } from "lucide-react";
+import { Bookmark, Check, Clock, Copy, Download, Layers, Pencil, Paperclip, RotateCcw, Square, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
 import { useArtifactsPanel } from "./ArtifactsPanel.tsx";
@@ -40,6 +40,11 @@ interface MessageItemProps {
   priorMessages?: readonly ChatMessage[];
   reason?: SupersededReason;
   revisionOf?: string;
+  /** Snippet of the user message this assistant reply answers, shown only
+   * when that pairing is NOT the plain preceding message in the transcript
+   * (a queued send or a steer jumping the queue broke positional pairing —
+   * see message-utils.ts `messageInReplyTo`). */
+  replyToSnippet?: string;
   onCopyMessage: (message: ChatMessage) => void;
   onResendMessage: (message: ChatMessage) => void;
   onRegenerateFrom: (messageId: string) => void;
@@ -58,6 +63,7 @@ export function MessageItem({
   priorMessages,
   reason,
   revisionOf,
+  replyToSnippet,
   onCopyMessage,
   onResendMessage,
   onRegenerateFrom,
@@ -127,6 +133,11 @@ export function MessageItem({
       />
 
       <div className="message-bubble">
+        {replyToSnippet && (
+          <div className="message-reply-context">
+            <span aria-hidden="true">↩</span> Replying to: “{replyToSnippet}”
+          </div>
+        )}
         {timestamp !== "unknown" && (
           <div className="message-meta">
             <span>{timestamp}</span>
@@ -196,9 +207,33 @@ export function MessageItem({
           {state && (
             <span
               className={`delivery-indicator ${state}`}
-              title={state === "failed" ? "Not sent" : state === "local" ? "Pending" : "Sent"}
+              title={
+                state === "failed"
+                  ? "Not sent"
+                  : state === "local"
+                    ? "Pending"
+                    : state === "queued"
+                      ? "Queued — will run once the current turn finishes"
+                      : state === "cancelled"
+                        ? "Stopped — this reply was interrupted before it finished"
+                        : "Sent"
+              }
             >
-              {state === "failed" ? <X size={12} aria-hidden="true" /> : <Check size={12} aria-hidden="true" />}
+              {state === "failed" ? (
+                <X size={12} aria-hidden="true" />
+              ) : state === "queued" ? (
+                <>
+                  <Clock size={11} aria-hidden="true" />
+                  <span className="delivery-indicator-label">queued</span>
+                </>
+              ) : state === "cancelled" ? (
+                <>
+                  <Square size={10} aria-hidden="true" />
+                  <span className="delivery-indicator-label">stopped</span>
+                </>
+              ) : (
+                <Check size={12} aria-hidden="true" />
+              )}
             </span>
           )}
 

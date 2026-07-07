@@ -107,3 +107,6 @@ the stream OPEN to await `turn.cancelled` (today it disconnects and marks locall
 `useChatStream.ts:93-105`). `isMethodUnavailableError` on older daemons falls back to
 the current honest local-render stop. GAPS §1 row 39 flips to SHIPPED with the daemon
 version noted.
+
+Landed: daemon 1.11.0 serves companion.chat.turns.cancel + companion.chat.messages.steer
+to this spec (2026-07-07).

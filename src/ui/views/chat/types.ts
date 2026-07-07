@@ -39,6 +39,10 @@ export interface ChatMessage {
   supersededAt?: number | string;
   supersededReason?: string;
   revisionOf?: string;
+  /** The user message id an assistant message answers (daemon >= 1.11) — the
+   * honest pairing signal queue-when-busy sends and steer need (position
+   * alone no longer tells you which reply answers which message). */
+  inReplyTo?: string;
   [key: string]: unknown;
 }
 

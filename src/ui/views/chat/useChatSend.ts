@@ -13,6 +13,7 @@ import { bestId } from "../../lib/wire.ts";
 import {
   formatError,
   isAuthExpiredError,
+  isMethodUnavailableError,
   isSessionClosedError,
   isSessionNotFoundError,
 } from "../../lib/errors.ts";
@@ -88,6 +89,13 @@ export interface SendVars {
   files: File[];
   /** Existing artifacts referenced via @-mention — no upload needed. */
   artifactRefs?: AttachedArtifactRef[];
+  /** Interrupt-and-send (companion.chat.messages.steer, daemon >= 1.11):
+   * cancels the in-flight turn through the same finalization path as
+   * turns.cancel, then runs this message immediately — queued sends keep
+   * their places behind it. With no turn running this is an ordinary send
+   * (Q3). Falls back to a plain create() with an honest note on a daemon
+   * that has never heard of the verb. */
+  steer?: boolean;
 }
 
 interface UseChatSendOptions {
@@ -105,6 +113,11 @@ interface UseChatSendOptions {
   streamHealthy: boolean;
   /** Session defaults applied when a send has to create the session first. */
   createDefaults?: { provider?: string; model?: string };
+  /** Fired once when a steer send falls back to a plain send because the
+   * daemon has never heard of companion.chat.messages.steer — a transient
+   * user-facing nudge on top of the honest setTurnError note this hook
+   * already sets (which renders in the composer's error rows either way). */
+  notifySteerFallback?: (message: string) => void;
 }
 
 export interface UseChatSendReturn {
@@ -137,9 +150,10 @@ export function useChatSend({
   turnState,
   streamHealthy,
   createDefaults,
+  notifySteerFallback,
 }: UseChatSendOptions): UseChatSendReturn {
   const sendMutation = useMutation<undefined, Error, SendVars>({
-    mutationFn: async ({ body, files, artifactRefs = [] }: SendVars) => {
+    mutationFn: async ({ body, files, artifactRefs = [], steer = false }: SendVars) => {
       if (!body && !files.length && !artifactRefs.length) return;
       pruneBudget();
       if (budgetSnapshot.blocked) {
@@ -241,12 +255,26 @@ export function useChatSend({
       }
 
       const attachments = [...uploaded, ...artifactRefs.map((ref) => ({ artifactId: ref.artifactId, label: ref.label }))];
+      const payload = { content: body, ...(attachments.length ? { attachments } : {}) };
       let result: unknown;
       try {
-        result = await gv.chat.messages.create(sessionId, {
-          content: body,
-          ...(attachments.length ? { attachments } : {}),
-        });
+        if (steer) {
+          try {
+            result = await gv.chat.messages.steer(sessionId, payload);
+          } catch (steerError) {
+            if (!isMethodUnavailableError(steerError)) throw steerError;
+            // Pre-1.11 daemon: no steer verb — fall back to an ordinary send
+            // and SAY so, never silently pretend the interruption happened.
+            result = await gv.chat.messages.create(sessionId, payload);
+            const fallbackMessage =
+              "Sent as a normal message — this daemon does not support steering (needs daemon 1.11+), " +
+              "so the current reply was not interrupted.";
+            setTurnError(fallbackMessage);
+            notifySteerFallback?.(fallbackMessage);
+          }
+        } else {
+          result = await gv.chat.messages.create(sessionId, payload);
+        }
         recordSend();
       } catch (error) {
         markFailed();

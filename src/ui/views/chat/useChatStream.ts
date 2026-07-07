@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState, type Dispatch, type RefObject
 import { gv } from "../../lib/gv.ts";
 import { openSse, type SseDispose } from "../../lib/sse.ts";
 import { firstString } from "../../lib/wire.ts";
-import { isSessionNotFoundError } from "../../lib/errors.ts";
+import { errorCode, formatError, isMethodUnavailableError, isSessionNotFoundError } from "../../lib/errors.ts";
 import type { LocalCompanionMessage } from "./companion-chat.ts";
 import type { ToolCallBlock, TurnMetrics } from "./types.ts";
 import {
@@ -46,21 +46,20 @@ export interface UseChatStreamResult {
   toolCalls: ToolCallBlock[];
   /** Live metrics for the thinking strip; null when no turn has run. */
   turnMetrics: TurnMetrics | null;
-  /** Stop rendering the in-flight turn: closes the stream and marks the turn
-   * cancelled. Honest note: probed live against daemon 1.3.3 (docs/GAPS.md
-   * §1 row 39) — a companion-chat session IS visible through the operator
-   * sessions union (`sessions.get` on its id returns `kind: "companion-chat"`
-   * successfully), so `sessions.inputs.list`/`sessions.inputs.cancel` are
-   * reachable for it. But driving a real send through
-   * `companion.chat.messages.create` and polling `sessions.inputs.list` on
-   * the same session id every 400ms for the full duration of the turn never
-   * surfaced an entry — `inputs` stayed `[]` and `pendingInputCount` stayed 0
-   * throughout, even though the message round-tripped and the assistant
-   * reply landed. The operator "inputs" read model simply never observes
-   * companion-chat turns, so there is no input id to hand to
-   * `sessions.inputs.cancel` — the wire has no cancel handle for this turn
-   * type. Closes the stream and marks the turn cancelled locally; the daemon
-   * may still finish the turn, and the refetched list shows it if it does. */
+  /** True server-side stop (daemon >= 1.11, docs/GAPS.md §1 row 39 —
+   * previously wire-blocked, see docs/turn-cancel-request.md): calls
+   * `gv.chat.turns.cancel(sessionId, {turnId})` (the current turn's id when
+   * known from `turnMetrics`, omitted for a very-early stop before
+   * `turn.started` has delivered one — the daemon finds the active turn by
+   * sessionId alone) and leaves the stream OPEN. Nothing else happens here on
+   * success: the terminal `turn.cancelled` SSE event (handled in `onEvent`
+   * below) is the authoritative signal that converges every subscriber to
+   * this session, including this client — closing the stream here would
+   * race that convergence. A benign 404 `NO_ACTIVE_TURN` (the turn finished
+   * naturally before the stop landed) is a quiet no-op. `isMethodUnavailableError`
+   * (a pre-1.11 daemon that has never heard of this verb) falls back to the
+   * old local-only behavior — stop rendering, mark cancelled locally, say
+   * plainly that the daemon may still finish the turn server-side. */
   stop: () => void;
   /** Re-open the stream after a stop (or to force a fresh connection). */
   retryStream: () => void;
@@ -88,18 +87,48 @@ export function useChatStream({
   const onTurnCompletedRef = useRef(onTurnCompleted);
   onTurnCompletedRef.current = onTurnCompleted;
 
-  const stop = useCallback(() => {
+  // The pre-1.11 behavior, kept as the honest fallback for a daemon that has
+  // never heard of companion.chat.turns.cancel: stops RENDERING only.
+  const stopLocally = useCallback(() => {
     stoppedRef.current = true;
     disposeRef.current?.();
     disposeRef.current = null;
     liveTextRef.current = "";
     setLiveText("");
     setStreamHealth("idle");
-    setTurnState("cancelled");
-    setTurnError(
-      "Stopped rendering. Probed live: the operator sessions union never reports an input for a companion-chat turn (sessions.inputs.list stayed empty for the whole turn), so there is no id to cancel on the wire — the daemon may still finish this turn; it will appear in the history if it does.",
-    );
-  }, [liveTextRef, setLiveText, setTurnError, setTurnState]);
+  }, [liveTextRef, setLiveText]);
+
+  const stop = useCallback(() => {
+    if (!activeSessionId) return;
+    const turnId = turnMetrics?.turnId;
+    setTurnState("stopping");
+    setTurnError("");
+    void gv.chat.turns.cancel(activeSessionId, turnId ? { turnId } : undefined).catch((error: unknown) => {
+      if (isMethodUnavailableError(error)) {
+        stopLocally();
+        setTurnState("stopped locally");
+        setTurnError(
+          "Stopped rendering only — this daemon does not support stopping a turn server-side " +
+            "(needs daemon 1.11+). The reply may still finish and will appear in the history.",
+        );
+        return;
+      }
+      if (errorCode(error) === "NO_ACTIVE_TURN") {
+        // Benign: the turn finished naturally before the stop landed. The
+        // terminal turn.completed/turn.error already settled (or is about
+        // to settle) the turn state; only reset from 'stopping' if nothing
+        // else has moved it on since the click.
+        setTurnState((current) => (current === "stopping" ? "idle" : current));
+        void invalidateChatState(activeSessionId);
+        return;
+      }
+      setTurnState("error");
+      setTurnError(formatError(error));
+    });
+    // On success nothing else happens here: the terminal turn.cancelled
+    // event on the open stream (below) is the authoritative signal, for this
+    // client AND every other subscriber to this session.
+  }, [activeSessionId, invalidateChatState, setTurnError, setTurnState, stopLocally, turnMetrics]);
 
   const retryStream = useCallback(() => {
     setRetryNonce((n) => n + 1);
@@ -218,6 +247,50 @@ export function useChatStream({
           } else {
             setTurnState("syncing");
           }
+          setLiveText("");
+          liveTextRef.current = "";
+          void invalidateChatState(activeSessionId);
+          return;
+        }
+
+        if (type === "turn.cancelled") {
+          // Terminal, exactly like turn.completed/turn.error — the daemon has
+          // already persisted the honest partial (deliveryState "cancelled")
+          // when partialPersisted is true, closed any dangling tool calls with
+          // a synthetic error turn.tool_result BEFORE this event (handled by
+          // the turn.tool_result branch above), and this is the ONE signal
+          // that ends 'stopping' for every subscriber, not just the client
+          // that clicked Stop.
+          const assistantContent = assistantContentFromCompletedTurn(payload, liveTextRef.current);
+          const usage = usageFromPayload(payload);
+          setTurnMetrics((current) => {
+            const base = current ?? { turnId, startedAt: Date.now(), deltaChars: 0 };
+            return usage ? { ...base, usage } : base;
+          });
+          if (assistantContent) {
+            setLocalMessages((current) => [
+              ...current,
+              {
+                id:
+                  firstString(payload, ["assistantMessageId", "messageId"]) ||
+                  `assistant-${turnId || Date.now()}`,
+                sessionId: activeSessionId,
+                role: "assistant" as const,
+                content: assistantContent,
+                createdAt: Date.now(),
+                deliveryState: "cancelled" as const,
+              },
+            ]);
+          }
+          // Safety net: the daemon's tool_result events for dangling calls
+          // should already have flipped every open block above, but a stale
+          // one (e.g. this client missed the tool_result frame) never stays
+          // "running" forever once the turn is definitively over.
+          setToolCalls((current) =>
+            current.map((block) => (block.status === "running" ? { ...block, status: "error" as const } : block)),
+          );
+          setPendingUserMessageId("");
+          setTurnState("cancelled");
           setLiveText("");
           liveTextRef.current = "";
           void invalidateChatState(activeSessionId);

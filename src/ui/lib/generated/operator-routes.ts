@@ -1,7 +1,7 @@
 // GENERATED FILE — DO NOT EDIT BY HAND.
 // Produced by scripts/generate-operator-routes.ts from the installed
 // @pellux/goodvibes-sdk contracts/operator-contract.json artifact
-// (contract v1, goodvibes operator 1.3.3, 327 methods).
+// (contract v1, goodvibes operator 1.4.0, 329 methods).
 // `path` keeps {param} placeholders; `ws: true` = WS-only method (no HTTP
 // route — call it over the /app/ws bridge). Regenerate: `bun run generate:routes`.
 
@@ -95,12 +95,14 @@ export const OPERATOR_ROUTES: Readonly<Record<string, OperatorRoute>> = {
   "companion.chat.messages.edit": { id: "companion.chat.messages.edit", httpMethod: "POST", path: "/api/companion/chat/sessions/{sessionId}/messages/edit", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.messages.list": { id: "companion.chat.messages.list", httpMethod: "GET", path: "/api/companion/chat/sessions/{sessionId}/messages", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.messages.retry": { id: "companion.chat.messages.retry", httpMethod: "POST", path: "/api/companion/chat/sessions/{sessionId}/messages/retry", ws: false, dangerous: false, access: "authenticated" },
+  "companion.chat.messages.steer": { id: "companion.chat.messages.steer", httpMethod: "POST", path: "/api/companion/chat/sessions/{sessionId}/messages/steer", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.close": { id: "companion.chat.sessions.close", httpMethod: "POST", path: "/api/companion/chat/sessions/{sessionId}/close", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.create": { id: "companion.chat.sessions.create", httpMethod: "POST", path: "/api/companion/chat/sessions", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.delete": { id: "companion.chat.sessions.delete", httpMethod: "DELETE", path: "/api/companion/chat/sessions/{sessionId}", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.get": { id: "companion.chat.sessions.get", httpMethod: "GET", path: "/api/companion/chat/sessions/{sessionId}", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.list": { id: "companion.chat.sessions.list", httpMethod: "GET", path: "/api/companion/chat/sessions", ws: false, dangerous: false, access: "authenticated" },
   "companion.chat.sessions.update": { id: "companion.chat.sessions.update", httpMethod: "PATCH", path: "/api/companion/chat/sessions/{sessionId}", ws: false, dangerous: false, access: "authenticated" },
+  "companion.chat.turns.cancel": { id: "companion.chat.turns.cancel", httpMethod: "POST", path: "/api/companion/chat/sessions/{sessionId}/turns/cancel", ws: false, dangerous: false, access: "authenticated" },
   "config.get": { id: "config.get", httpMethod: "GET", path: "/config", ws: false, dangerous: false, access: "admin" },
   "config.set": { id: "config.set", httpMethod: "POST", path: "/config", ws: false, dangerous: false, access: "admin" },
   "continuity.snapshot": { id: "continuity.snapshot", httpMethod: "GET", path: "/api/continuity", ws: false, dangerous: false, access: "authenticated" },

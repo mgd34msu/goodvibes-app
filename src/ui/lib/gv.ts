@@ -182,6 +182,20 @@ export const gv = {
         invoke("companion.chat.messages.retry", { params: { sessionId }, body }),
       edit: (sessionId: string, body: unknown) =>
         invoke("companion.chat.messages.edit", { params: { sessionId }, body }),
+      /** Interrupt-and-send (daemon >= 1.11): cancels the in-flight turn through
+       * the same finalization path as turns.cancel, then runs this message
+       * immediately; plain sends during a turn queue behind it instead. */
+      steer: (sessionId: string, body: unknown) =>
+        invoke("companion.chat.messages.steer", { params: { sessionId }, body }),
+    },
+    turns: {
+      /** True server-side stop (daemon >= 1.11): aborts the provider stream,
+       * persists any partial with deliveryState "cancelled", closes dangling
+       * tool calls, and publishes terminal turn.cancelled to every subscriber.
+       * Benign 404 NO_ACTIVE_TURN when the turn already finished; optional
+       * turnId guard 409s (TURN_MISMATCH) instead of cancelling a newer turn. */
+      cancel: (sessionId: string, body?: { turnId?: string }) =>
+        invoke("companion.chat.turns.cancel", { params: { sessionId }, body }),
     },
     events: {
       /** Per-session SSE stream path — open with lib/sse.ts (token streaming

@@ -98,6 +98,16 @@ export function companionEventType(eventName: string, payload: unknown): string 
   return firstString(payload, ["type"]) || eventName.replace(/^companion-chat\./, "");
 }
 
+/** The user message id an assistant message answers (daemon >= 1.11: every
+ * assistant message — completed or the honest cancelled partial — carries
+ * `inReplyTo`). Queue-when-busy sends and steer jumping the queue both break
+ * simple positional (adjacent-in-list) pairing, so this is the preferred
+ * association wherever it is present; callers fall back to position/timestamp
+ * heuristics when it is absent (an older daemon, or a non-assistant message). */
+export function messageInReplyTo(message: unknown): string {
+  return firstString(message, ["inReplyTo"]);
+}
+
 /** Wire-reported token usage on a completed turn, when the daemon sends any.
  * Read from every plausible location; undefined when nothing is reported —
  * the context meter then stays honest-hidden instead of showing estimates. */
@@ -142,6 +152,9 @@ export const ACTIVE_TURN_STATES = [
   "tooling",
   "reconnecting",
   "sending while reconnecting",
+  // A server-side stop has been requested (companion.chat.turns.cancel);
+  // the stream stays open awaiting the terminal turn.cancelled event.
+  "stopping",
 ];
 
 /**
@@ -159,8 +172,17 @@ export function deriveChatTitle(text: string, maxLength = 52): string {
   return `${onWordBoundary.replace(/[\s.,;:!?-]+$/, "")}…`;
 }
 
-export function deliveryState(message: unknown): "sent" | "failed" | "local" | "" {
+export function deliveryState(message: unknown): "sent" | "failed" | "local" | "cancelled" | "queued" | "" {
   const state = firstString(message, ["deliveryState"]).toLowerCase();
+  // Exact daemon markers first — "cancelled" (an assistant partial whose turn
+  // was stopped) and "queued" (a user message whose turn has not started yet)
+  // must never fall through to a substring/default match: "cancelled" itself
+  // contains no "fail"/"error"/"local"/"pending"/"sent" substring, but a
+  // careless ordering (e.g. checking messageTone before these) would still
+  // badge a queued user message "sent" (masquerading as delivered) or a
+  // cancelled assistant partial "" (masquerading as a normal complete reply).
+  if (state === "cancelled") return "cancelled";
+  if (state === "queued") return "queued";
   if (state.includes("fail") || state.includes("error")) return "failed";
   if (state.includes("local") || state.includes("pending")) return "local";
   if (state.includes("sent")) return "sent";

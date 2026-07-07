@@ -48,6 +48,7 @@ import {
   ACTIVE_TURN_STATES,
   deriveChatTitle,
   messageCreatedAt,
+  messageInReplyTo,
   messageText,
   messageTone,
 } from "./message-utils.ts";
@@ -252,6 +253,7 @@ export function ChatView() {
     // 'idle'/'connecting' are not drops — only a lost stream demotes the send.
     streamHealthy: streamHealth !== "reconnecting",
     createDefaults,
+    notifySteerFallback: (message) => toast({ title: "Steer unavailable", description: message, tone: "warning" }),
   });
 
   // --- extra slash commands: /note /keep /imagine ---------------------------
@@ -386,9 +388,18 @@ export function ChatView() {
     if (!pendingUserMessageId || turnError) return;
     const pendingUser = renderedMessageItems.find((message) => bestId(message) === pendingUserMessageId);
     const pendingCreatedAt = messageCreatedAt(pendingUser);
-    const hasAssistantReply = renderedMessageItems.some(
-      (message) => messageTone(message) === "assistant" && messageCreatedAt(message) >= pendingCreatedAt,
-    );
+    const hasAssistantReply = renderedMessageItems.some((message) => {
+      if (messageTone(message) !== "assistant") return false;
+      const inReplyTo = messageInReplyTo(message);
+      // Prefer the daemon's explicit pairing when it carries one: queue-
+      // when-busy sends and steer jumping the queue both break the "any
+      // LATER assistant message is this one's reply" positional heuristic
+      // below (a queued send's own reply can land after — or a steer's
+      // reply can land before — an unrelated turn's). Fall back to the
+      // timestamp heuristic only when the daemon sends no inReplyTo at all.
+      if (inReplyTo) return inReplyTo === pendingUserMessageId;
+      return messageCreatedAt(message) >= pendingCreatedAt;
+    });
     if (hasAssistantReply) {
       setPendingUserMessageId("");
       setTurnState("completed");
@@ -499,6 +510,23 @@ export function ChatView() {
     [draftHistory, send, slashCommands, startDraft],
   );
 
+  // --- steer: interrupt the in-flight turn and send now (Ctrl+Enter / the
+  // composer's "Steer" button, docs/GAPS.md §1 row 39) -----------------------
+  const steerText = useCallback(
+    (text: string, files: File[] = [], refs: AttachedArtifactRef[] = []) => {
+      const body = text.trim();
+      if (send.isPending || (!body && !files.length && !refs.length)) return;
+      draftHistory.checkpoint(draftRef.current);
+      if (body) pushInputHistory(body);
+      setDraft("");
+      setAttachedFiles([]);
+      setArtifactRefs([]);
+      composerRef.current?.focus();
+      send.mutate({ body, files: [...files], artifactRefs: refs, steer: true });
+    },
+    [draftHistory, send],
+  );
+
   // --- prompt undo/redo (docs/GAPS.md §1 row 29) ----------------------------
   const undoDraft = useCallback(() => {
     const restored = draftHistory.undo(draftRef.current);
@@ -536,6 +564,17 @@ export function ChatView() {
     },
     [submitDraft],
   );
+
+  const submitSteer = useCallback(() => {
+    // Slash commands are app-local (never a real turn to interrupt) — a
+    // steer of "/help" makes no sense, so those still go through the plain
+    // send path, which already special-cases them.
+    if (draft.trim().startsWith("/")) {
+      submitDraft();
+      return;
+    }
+    steerText(draft, attachedFiles, artifactRefs);
+  }, [artifactRefs, attachedFiles, draft, steerText, submitDraft]);
 
   // --- message actions --------------------------------------------------------
   const copyMessage = useCallback(async (message: ChatMessage) => {
@@ -587,6 +626,10 @@ export function ChatView() {
   undoDraftRef.current = undoDraft;
   const redoDraftRef = useRef(redoDraft);
   redoDraftRef.current = redoDraft;
+  const submitSteerRef = useRef(submitSteer);
+  submitSteerRef.current = submitSteer;
+  const isStreamingRef = useRef(isStreaming);
+  isStreamingRef.current = isStreaming;
 
   useEffect(() => {
     registerCommand({
@@ -605,9 +648,18 @@ export function ChatView() {
       when: () => draftHistoryRef.current.canRedo,
       run: () => redoDraftRef.current(),
     });
+    registerCommand({
+      id: "chat.steerSend",
+      title: "Chat: Steer (Interrupt & Send)",
+      group: "work",
+      keywords: ["steer", "interrupt", "stop", "cancel", "send", "turn"],
+      when: () => isStreamingRef.current && Boolean(draftRef.current.trim()),
+      run: () => submitSteerRef.current(),
+    });
     return () => {
       unregisterCommand("chat.undoDraft");
       unregisterCommand("chat.redoDraft");
+      unregisterCommand("chat.steerSend");
     };
   }, []);
 
@@ -964,6 +1016,8 @@ export function ChatView() {
               return !on;
             })
           }
+          isTurnActive={isStreaming}
+          onSteerSubmit={submitSteer}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
           onComposerKeyDown={handleComposerKeyDown}
