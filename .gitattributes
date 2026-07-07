@@ -1,0 +1,6 @@
+# Force LF everywhere: generated-code drift checks compare byte-for-byte, and
+# CRLF checkouts on Windows made src/ui/lib/generated/* falsely read as drifted.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+*.ttf binary
