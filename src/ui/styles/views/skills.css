@@ -1,1 +1,15 @@
-/* Styles for views/skills — owned by that view's wave agent. */
+/*
+ * Skills view — flat card list; nearly everything rides the shared `reg-*`
+ * kit defined in views/routines.css (all view stylesheets load globally).
+ * Tokens only.
+ */
+
+.skills-view .reg-row__requirements .badge {
+  font-family: var(--font-mono);
+}
+
+/* The skill body editor/preview inside the modal wants a taller minimum than
+   the generic textarea. */
+.reg-form__textarea--body {
+  min-height: 220px;
+}

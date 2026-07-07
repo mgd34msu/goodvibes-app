@@ -7,6 +7,9 @@
 // exact-or-slash (ui-server); handlers own everything below their prefix.
 
 import type { DaemonHandle } from "./daemon-manager.ts";
+import { createRegistriesRoutes } from "./registries/index.ts";
+import { createGitRoutes } from "./git.ts";
+import { createPairingRoutes } from "./pairing.ts";
 
 export type AppRouteHandler = (req: Request, url: URL) => Response | Promise<Response>;
 
@@ -15,10 +18,11 @@ export interface AppServices {
 }
 
 /** Build the /app route map. Wave agents add their `"/app/<area>": handler` line here. */
-export function buildAppRoutes(_services: AppServices): Record<string, AppRouteHandler> {
+export function buildAppRoutes(services: AppServices): Record<string, AppRouteHandler> {
   return {
-    // "/app/registries": createRegistriesRoutes(...)  — Wave C (agent brain)
-    // "/app/git": createGitRoutes(...)                — Wave B (code views)
+    "/app/registries": createRegistriesRoutes(),
+    "/app/git": createGitRoutes(),
+    "/app/pairing": createPairingRoutes(services),
     // "/app/pty": createPtyRoutes(...)                — Wave D (terminal)
   };
 }
