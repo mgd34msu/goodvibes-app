@@ -394,8 +394,10 @@ export function McpView(): React.ReactElement {
 
         {config.isSuccess && locations.length > 0 && (
           <ul className="mcp-locations">
-            {locations.map((location) => (
-              <li key={`${location.scope}:${location.path}`} className="mcp-location">
+            {locations.map((location, i) => (
+              // Index-qualified: the daemon can report the same location twice
+              // (observed live: external:~/.mcp/mcp.json duplicated).
+              <li key={`${location.scope}:${location.path}:${i}`} className="mcp-location">
                 <span className="badge neutral">{location.scope}</span>
                 <code>{location.path}</code>
                 <span className="mcp-location__kind">{location.kind}</span>

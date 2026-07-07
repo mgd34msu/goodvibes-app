@@ -5,7 +5,7 @@
 // ErrorBoundary. Ported from goodvibes-webui src/components/feedback/*.
 
 import { Component, type CSSProperties, type ErrorInfo, type FC, type ReactNode } from "react";
-import { formatError } from "../lib/errors.ts";
+import { formatError, isMethodUnavailableError } from "../lib/errors.ts";
 
 // ─── EmptyState ──────────────────────────────────────────────────────────────
 
@@ -49,6 +49,21 @@ export interface ErrorStateProps {
 }
 
 export const ErrorState: FC<ErrorStateProps> = ({ error, onRetry, title = "Failed to load", className }) => {
+  // Systemic capability honesty (docs/UX.md §4): a daemon 404 meaning "this
+  // route/method does not exist on this daemon build" is not a failure to
+  // retry — render the UnavailableState instead, wherever the view forgot to
+  // triage it (verified live: memory search on daemon v1.0.0). Views that
+  // classify refusals themselves branch before ever reaching ErrorState.
+  if (isMethodUnavailableError(error)) {
+    const route = formatError(error).match(/\/api\/[a-z0-9/._-]+/i)?.[0];
+    return (
+      <UnavailableState
+        capability={route ?? "this capability"}
+        description="The connected daemon build does not provide this route. Everything else keeps working."
+        className={className}
+      />
+    );
+  }
   const message = formatError(error);
   return (
     <div className={["feedback-error-state", className].filter(Boolean).join(" ")} role="alert" aria-live="polite">

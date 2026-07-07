@@ -138,7 +138,9 @@ function exitFrame(s: PtySession): Uint8Array {
 // ─── spawn ───────────────────────────────────────────────────────────────────
 
 function resolveWorkspaceDir(): string {
-  return process.env["GOODVIBES_WORKING_DIR"]?.trim() || process.cwd();
+  // Same rule as git.ts: never process.cwd() — in the bundled app that is the
+  // launcher's bin directory (verified live). Home is the honest default.
+  return process.env["GOODVIBES_WORKING_DIR"]?.trim() || homedir();
 }
 
 interface CreateOpts {

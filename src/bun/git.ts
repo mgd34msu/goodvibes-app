@@ -11,6 +11,7 @@
 // validated (no option injection via "-…", no traversal) and passed after a
 // literal "--" separator.
 
+import { homedir } from "node:os";
 import type { AppRouteHandler } from "./app-routes.ts";
 
 const GIT_TIMEOUT_MS = 15_000;
@@ -233,7 +234,7 @@ async function handleWorkspace(workspaceDir: string): Promise<Response> {
     workspaceDir,
     isRepo: inside.code === 0 && inside.stdout.trim() === "true",
     gitVersion: version.code === 0 ? version.stdout.trim() : "",
-    source: process.env["GOODVIBES_WORKING_DIR"]?.trim() ? "GOODVIBES_WORKING_DIR" : "app cwd",
+    source: process.env["GOODVIBES_WORKING_DIR"]?.trim() ? "GOODVIBES_WORKING_DIR" : "home (default)",
   });
 }
 
@@ -563,7 +564,11 @@ async function handleWorktrees(workspaceDir: string): Promise<Response> {
 // ─── router ──────────────────────────────────────────────────────────────────
 
 export function createGitRoutes(): AppRouteHandler {
-  const workspaceDir = process.env["GOODVIBES_WORKING_DIR"]?.trim() || process.cwd();
+  // NEVER default to process.cwd(): in the bundled app that is the launcher's
+  // bin directory, so the Git view silently showed the app's own install repo
+  // (verified live). Home is the honest fallback — the view then reports
+  // "not a git repository" instead of lying about which repo it's showing.
+  const workspaceDir = process.env["GOODVIBES_WORKING_DIR"]?.trim() || homedir();
 
   return async (req: Request, url: URL): Promise<Response> => {
     const sub = url.pathname.slice("/app/git".length) || "/";
