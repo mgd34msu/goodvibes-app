@@ -38,6 +38,7 @@ export type ViewId =
   | "observability"
   | "providers"
   | "mcp"
+  | "peers"
   | "settings";
 
 export const ALL_VIEW_IDS: readonly ViewId[] = [
@@ -66,6 +67,7 @@ export const ALL_VIEW_IDS: readonly ViewId[] = [
   "observability",
   "providers",
   "mcp",
+  "peers",
   "settings",
 ];
 

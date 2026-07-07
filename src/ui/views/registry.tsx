@@ -53,7 +53,7 @@ export const VIEW_GROUPS: readonly ViewGroupDef[] = [
   { id: "know", label: "Know", views: ["knowledge", "memory", "artifacts", "research", "documents"] },
   { id: "assistant", label: "Assistant", views: ["home", "routines", "personas", "skills", "personal-ops"] },
   { id: "code", label: "Code", views: ["git", "diff", "worktrees", "checkpoints", "terminal"] },
-  { id: "system", label: "System", views: ["observability", "providers", "mcp", "settings"] },
+  { id: "system", label: "System", views: ["observability", "providers", "mcp", "peers", "settings"] },
 ];
 
 export interface ViewDef {
@@ -230,6 +230,12 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     icon: Wrench,
     keepAlive: false,
     Component: lazy(() => import("./mcp/McpView.tsx").then((m) => ({ default: m.McpView }))),
+  },
+  peers: {
+    title: "Remote & Peers",
+    icon: Waypoints,
+    keepAlive: false,
+    Component: lazy(() => import("./peers/PeersView.tsx").then((m) => ({ default: m.PeersView }))),
   },
   settings: {
     title: "Settings",
