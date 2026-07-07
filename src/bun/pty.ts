@@ -20,6 +20,7 @@
 // to be a terminal.
 
 import { dlopen, FFIType, ptr } from "bun:ffi";
+import { homedir } from "node:os";
 import { read as fsRead, write as fsWrite, closeSync } from "node:fs";
 import { basename } from "node:path";
 import type { AppRouteHandler } from "./app-routes.ts";
