@@ -633,3 +633,154 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
+
+/* ── Task-backed runs (docs/GAPS.md §10 row 3) ──────────────────────── */
+/* Appended — see file-header append-only rule. Supersedes
+   .research-run-detail__status visually (now unused, left in place). */
+
+.research-runs__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.research-run-detail__task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.research-run-detail__task-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.research-run-detail__task-linking {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.research-run-detail__task-linking p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.research-run-detail__task-linking button {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent-muted);
+  color: var(--text-accent);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.research-run-detail__task-live {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.research-run-detail__task-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.research-run-detail__task-title {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.research-run-detail__task-error {
+  font-size: var(--text-xs);
+  color: var(--status-danger);
+  overflow-wrap: anywhere;
+}
+
+.research-run-detail__task-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.research-run-detail__task-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.research-run-detail__task-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.research-run-detail__task-note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* ── Legacy runs (pre-task era) — read-only migration section ──────── */
+
+.research-legacy-runs {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.research-legacy-runs__caption {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  max-width: 60ch;
+}
+
+.research-legacy-run-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.research-run-card--legacy {
+  opacity: 0.85;
+}
+
+.research-run-detail--readonly {
+  border-style: solid;
+}
+
+.research-findings--readonly .research-finding {
+  background: var(--surface-sunken);
+}
+
+.research-finding__note-readonly {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -10,26 +10,21 @@
 // capability-missing).
 //
 // Per-node actions are capability-gated on fleet.ts's wireBackedActions —
-// steer / detach / stop-watcher are the ONLY wire-backed controls today;
-// kill/pause/interrupt render as honest notes (no wire method — see
-// unbackedCapabilityNote). Inline approval cards ride approvalsForNode.
+// steer / detach / start-stop-run-watcher are gated there; any node with a
+// live sessionRef.sessionId ALSO gets the full session-level Agent Control
+// surface (FleetAgentControl.tsx — steer/follow-up, interrupt via
+// sessions.inputs.cancel, stop via sessions.close/detach, resume via
+// sessions.reopen; this is what closed out docs/GAPS.md §3 row 7, formerly
+// "EXCLUDED: interrupt/kill/pause/resume"). True freeze-and-thaw pause still
+// has no wire verb anywhere — see unbackedCapabilityNote and the panel's own
+// on-screen note. Inline approval cards ride approvalsForNode.
 // The Workstream sub-filter scopes the same snapshot to
 // workstream/phase/work-item kinds (no dedicated contract exists).
 // Ported from goodvibes-webui src/views/fleet/FleetView.tsx + WorkstreamView.tsx.
 
-import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Boxes,
-  ChevronLeft,
-  GitBranch,
-  OctagonX,
-  Play,
-  RefreshCw,
-  SendHorizontal,
-  Unlink,
-  Workflow,
-} from "lucide-react";
+import { Boxes, ChevronLeft, GitBranch, OctagonX, Play, RefreshCw, Workflow } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError, isMethodUnavailableError, isWsBridgeUnavailableError } from "../../lib/errors.ts";
@@ -62,9 +57,9 @@ import {
   wrfcConstraintTally,
   type FleetNode,
 } from "./fleet.ts";
+import { FleetAgentControl, type FleetAgentControlHandle } from "./FleetAgentControl.tsx";
 import { FleetApprovalInline } from "./FleetApprovalInline.tsx";
 import { FleetTaskInline } from "./FleetTaskInline.tsx";
-import { APP_SURFACE_ID, APP_SURFACE_KIND } from "../sessions/sessions-union.ts";
 
 /** No wire event exists for fleet.* — poll while visible (docs/UX.md §6). */
 const FLEET_POLL_INTERVAL_MS = 5_000;
@@ -318,54 +313,6 @@ export function FleetView() {
   );
 }
 
-/** Compact steer input for an agent node with a live session — same wire verb
- * as the Sessions view's SteerComposer, stamped with this app's surface. */
-function FleetSteerBox({ sessionId }: { sessionId: string }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const [text, setText] = useState("");
-
-  const steer = useMutation({
-    mutationFn: (body: string) =>
-      gv.sessions.steer(sessionId, { body, surfaceKind: APP_SURFACE_KIND, surfaceId: APP_SURFACE_ID }),
-    onSuccess: async () => {
-      setText("");
-      toast({ title: "Steer sent", tone: "success" });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
-    },
-    onError: (error: unknown) => toast({ title: "Steer failed", description: formatError(error), tone: "danger" }),
-  });
-
-  function submit(event: SyntheticEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const body = text.trim();
-    if (!body || steer.isPending) return;
-    steer.mutate(body);
-  }
-
-  return (
-    <form className="fleet-steer" onSubmit={submit}>
-      <input
-        type="text"
-        className="fleet-steer__input"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Steer this agent…"
-        aria-label="Steer message"
-        disabled={steer.isPending}
-      />
-      <button
-        type="submit"
-        className="fleet-action fleet-action--primary"
-        disabled={!text.trim() || steer.isPending}
-        aria-label="Send steer"
-      >
-        <SendHorizontal size={14} aria-hidden="true" /> {steer.isPending ? "Sending…" : "Steer"}
-      </button>
-    </form>
-  );
-}
-
 function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -374,6 +321,45 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
   const [confirmRun, setConfirmRun] = useState(false);
   const backed = useMemo(() => wireBackedActions(node), [node]);
   const unbackedNote = useMemo(() => unbackedCapabilityNote(node), [node]);
+  const agentControlRef = useRef<FleetAgentControlHandle>(null);
+
+  // Palette commands for the Agent Control surface (docs/GAPS.md §3 row 7) —
+  // re-registered whenever the selection changes to a different session, so
+  // `when` always guards against the CURRENTLY selected node. The `run`/
+  // `when` closures read agentControlRef on every palette query, so they stay
+  // live across the view's 5s poll without re-registering on every refetch.
+  useEffect(() => {
+    if (!node.sessionId) return undefined;
+    registerCommand({
+      id: "fleet.control.steer",
+      title: "Fleet: Steer Selected Agent",
+      group: "work",
+      keywords: ["fleet", "steer", "agent", "control", "follow-up"],
+      when: () => agentControlRef.current !== null,
+      run: () => agentControlRef.current?.focusDispatch(),
+    });
+    registerCommand({
+      id: "fleet.control.stop",
+      title: "Fleet: Stop Selected Session",
+      group: "work",
+      keywords: ["fleet", "stop", "close", "session", "control"],
+      when: () => agentControlRef.current?.canStop ?? false,
+      run: () => agentControlRef.current?.requestStop(),
+    });
+    registerCommand({
+      id: "fleet.control.resume",
+      title: "Fleet: Resume Selected Session",
+      group: "work",
+      keywords: ["fleet", "resume", "reopen", "session", "control"],
+      when: () => agentControlRef.current?.canResume ?? false,
+      run: () => agentControlRef.current?.resume(),
+    });
+    return () => {
+      unregisterCommand("fleet.control.steer");
+      unregisterCommand("fleet.control.stop");
+      unregisterCommand("fleet.control.resume");
+    };
+  }, [node.id, node.sessionId]);
 
   const invalidateWatchers = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
@@ -407,17 +393,6 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
       await invalidateWatchers();
     },
     onError: (error: unknown) => toast({ title: "Run failed", description: formatError(error), tone: "danger" }),
-  });
-
-  const detach = useMutation({
-    mutationFn: (sessionId: string) =>
-      invoke("sessions.detach", { params: { sessionId }, body: { sessionId, surfaceId: APP_SURFACE_ID } }),
-    onSuccess: async () => {
-      toast({ title: "Detached — this app stops following the session; the process keeps running", tone: "info" });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
-    },
-    onError: (error: unknown) => toast({ title: "Detach failed", description: formatError(error), tone: "danger" }),
   });
 
   return (
@@ -455,20 +430,10 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
 
       <FleetApprovalInline node={node} />
 
-      {(backed.has("steer") || backed.has("detach") || backed.has("stop") || backed.has("start") || backed.has("run")) && (
+      {node.sessionId && <FleetAgentControl ref={agentControlRef} node={node} />}
+
+      {(backed.has("start") || backed.has("stop") || backed.has("run")) && (
         <div className="fleet-detail__actions">
-          {backed.has("steer") && node.sessionId && <FleetSteerBox sessionId={node.sessionId} />}
-          {backed.has("detach") && node.sessionId && (
-            <button
-              type="button"
-              className="fleet-action"
-              disabled={detach.isPending}
-              title="Stop this app from following this session — never stops the process; other surfaces are unaffected"
-              onClick={() => detach.mutate(node.sessionId)}
-            >
-              <Unlink size={13} aria-hidden="true" /> {detach.isPending ? "Detaching…" : "Detach"}
-            </button>
-          )}
           {backed.has("start") && (
             <button
               type="button"

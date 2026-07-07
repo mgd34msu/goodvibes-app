@@ -1,163 +1,232 @@
-// GitHub integration model (docs/FEATURES.md §15 row 11, docs/GAPS.md §15 row
-// 11): device-flow auth + PR/issue list/create.
+// GitHub panel model (docs/FEATURES.md §15 rows 5-7; docs/GAPS.md §15 rows
+// 5-7): typed client for the app-local /app/github/* routes the app itself
+// now serves (src/bun/github.ts, built in parallel — this file is coded
+// against its contract verbatim, not against that module's source).
 //
-// GROUNDING: a full-text search of src/ui/lib/generated/operator-routes.ts
-// (the pinned ground truth gv.invoke() reads) turns up ZERO "github.*"
-// entries — the daemon's operator contract does not declare this surface at
-// all, on either the HTTP or WS side. There is also no GitHub REST client
-// anywhere under src/bun/. This is a genuine "nothing exists yet" gap, not a
-// case of an existing route the UI forgot to wire (contrast intelligence /
-// review snapshots, §15 rows 8 & 12, where the route IS declared).
-//
-// This module still defines the method-id namespace the daemon would need
-// (matching FEATURES.md's own description: "app-bun GitHub REST, bundled
-// device-flow client id") so GitHubPanel.tsx is ready to light up the moment
-// a future daemon build adds these routes — but every call is gated by
-// isKnownMethod(), which reads the SAME generated table, client-side, with no
-// network round-trip. Today that gate is always false, so the panel renders
-// one honest UnavailableState and invokes nothing. If a future SDK bump adds
-// these ids to operator-routes.ts, the gated sections light up with no code
-// change here.
+// Two shape families live behind this one client:
+//  - auth/* responses are app-normalized camelCase JSON the Bun module
+//    produces itself (authenticated, tokenSource, clientIdConfigured, …).
+//  - user / repos / pulls / issues / rate-limit / pr-comment / pr-review /
+//    issue-comment are STRAIGHT PROXIES of GitHub's REST API — the raw
+//    snake_case shapes GitHub returns (html_url, created_at, user.login, …).
+// Same idiom as git-api.ts: this is a fixed app-local contract, not a
+// variable-shape daemon wire route, so plain typed fetches are used rather
+// than the defensive lib/wire.ts readers.
 
-import { isKnownMethod, gv } from "../../lib/gv.ts";
-import { asRecord, firstNumber, firstString, firstArray } from "../../lib/wire.ts";
+import { appFetch, appJson, HttpError } from "../../lib/http.ts";
+import { errorStatus } from "../../lib/errors.ts";
+import type { GitRemote } from "./git-api.ts";
 
-// ─── candidate method-id namespace (see grounding note above) ───────────────
+// ─── query keys (own "githubApp" prefix — never codeKeys.git) ───────────────
 
-export const GITHUB_METHOD_IDS = {
-  status: "github.status",
-  deviceStart: "github.auth.deviceStart",
-  devicePoll: "github.auth.devicePoll",
-  pullsList: "github.pulls.list",
-  pullsCreate: "github.pulls.create",
-  issuesList: "github.issues.list",
-  issuesCreate: "github.issues.create",
+export const githubAppKeys = {
+  root: ["githubApp"] as const,
+  authStatus: ["githubApp", "authStatus"] as const,
+  rateLimit: ["githubApp", "rateLimit"] as const,
+  pulls: (owner: string, repo: string, state: GitHubStateFilter) =>
+    ["githubApp", "pulls", owner, repo, state] as const,
+  issues: (owner: string, repo: string, state: GitHubStateFilter) =>
+    ["githubApp", "issues", owner, repo, state] as const,
 } as const;
 
-export type GitHubMethodKey = keyof typeof GITHUB_METHOD_IDS;
+export type GitHubStateFilter = "open" | "closed" | "all";
 
-/** Which of the candidate ids this connected client's pinned contract knows about. */
-export function knownGitHubMethods(): Partial<Record<GitHubMethodKey, boolean>> {
-  const out: Partial<Record<GitHubMethodKey, boolean>> = {};
-  for (const key of Object.keys(GITHUB_METHOD_IDS) as GitHubMethodKey[]) {
-    out[key] = isKnownMethod(GITHUB_METHOD_IDS[key]);
-  }
-  return out;
+// ─── auth shapes (app-normalized) ────────────────────────────────────────────
+
+export type GitHubTokenSource = "device" | "pat";
+
+export interface GitHubAuthStatus {
+  authenticated: boolean;
+  login?: string;
+  scopes?: string[];
+  tokenSource?: GitHubTokenSource;
+  clientIdConfigured: boolean;
 }
 
-export function anyGitHubMethodKnown(): boolean {
-  return Object.values(knownGitHubMethods()).some(Boolean);
+export interface GitHubDeviceStart {
+  flowId: string;
+  userCode: string;
+  verificationUri: string;
+  expiresAt: number;
+  intervalMs: number;
 }
 
-// ─── shapes ──────────────────────────────────────────────────────────────────
+export type GitHubDevicePollStatus = "pending" | "complete" | "expired" | "denied" | "error";
 
-export interface GitHubConnectionStatus {
-  linked: boolean;
+export interface GitHubDevicePoll {
+  status: GitHubDevicePollStatus;
+  login?: string;
+  error?: string;
+}
+
+export interface GitHubTokenSaveResult {
   login: string;
   scopes: string[];
 }
 
-export function connectionStatusFromResponse(value: unknown): GitHubConnectionStatus {
-  const record = asRecord(value);
-  return {
-    linked: record["linked"] === true,
-    login: firstString(record, ["login", "user", "username"]),
-    scopes: firstArray(record, ["scopes"]).filter((s): s is string => typeof s === "string"),
-  };
-}
+// ─── proxied GitHub REST shapes (raw snake_case, minimal fields used here) ──
 
-export type DeviceFlowStatus = "pending" | "authorized" | "expired" | "denied" | "slow_down" | "unknown";
-
-export interface DeviceStartResult {
-  deviceCode: string;
-  userCode: string;
-  verificationUri: string;
-  verificationUriComplete: string;
-  expiresInSeconds: number;
-  intervalSeconds: number;
-}
-
-export function deviceStartFromResponse(value: unknown): DeviceStartResult {
-  const record = asRecord(value);
-  return {
-    deviceCode: firstString(record, ["deviceCode", "device_code"]),
-    userCode: firstString(record, ["userCode", "user_code"]),
-    verificationUri: firstString(record, ["verificationUri", "verification_uri"]),
-    verificationUriComplete: firstString(record, ["verificationUriComplete", "verification_uri_complete"]),
-    expiresInSeconds: firstNumber(record, ["expiresInSeconds", "expires_in"]) ?? 900,
-    intervalSeconds: firstNumber(record, ["intervalSeconds", "interval"]) ?? 5,
-  };
-}
-
-export interface DevicePollResult {
-  status: DeviceFlowStatus;
+export interface GitHubUserRef {
   login: string;
+  avatar_url?: string;
+  html_url?: string;
 }
 
-const KNOWN_POLL_STATUSES: readonly DeviceFlowStatus[] = ["pending", "authorized", "expired", "denied", "slow_down"];
-
-export function devicePollFromResponse(value: unknown): DevicePollResult {
-  const record = asRecord(value);
-  const raw = firstString(record, ["status", "state"]);
-  const status = (KNOWN_POLL_STATUSES as readonly string[]).includes(raw) ? (raw as DeviceFlowStatus) : "unknown";
-  return { status, login: firstString(record, ["login", "user", "username"]) };
-}
-
-export interface GitHubIssueLike {
-  id: string;
+export interface GitHubPull {
+  id: number;
   number: number;
   title: string;
   state: string;
-  url: string;
-  author: string;
-  createdAt: string;
-  body: string;
-  isPullRequest: boolean;
+  html_url: string;
+  body: string | null;
+  user: GitHubUserRef | null;
+  draft?: boolean;
+  merged_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  head: { ref: string; sha: string };
+  base: { ref: string };
 }
 
-function issueLikeFromRecord(record: unknown, isPullRequest: boolean): GitHubIssueLike {
-  const r = asRecord(record);
-  return {
-    id: firstString(r, ["id", "nodeId"]) || String(firstNumber(r, ["number"]) ?? ""),
-    number: firstNumber(r, ["number"]) ?? 0,
-    title: firstString(r, ["title"]) || "(untitled)",
-    state: firstString(r, ["state"]) || "unknown",
-    url: firstString(r, ["url", "htmlUrl", "html_url"]),
-    author: firstString(r, ["author", "user", "login"]),
-    createdAt: firstString(r, ["createdAt", "created_at"]),
-    body: firstString(r, ["body"]),
-    isPullRequest,
-  };
+export interface GitHubIssue {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  html_url: string;
+  body: string | null;
+  user: GitHubUserRef | null;
+  created_at: string;
+  updated_at: string;
+  comments: number;
+  /** Present when the issues endpoint is echoing back a PR — filter these out. */
+  pull_request?: unknown;
 }
 
-export function pullsFromResponse(value: unknown): GitHubIssueLike[] {
-  const record = asRecord(value);
-  const rows = firstArray(record, ["pulls", "items", "data"]);
-  return rows.map((r) => issueLikeFromRecord(r, true));
+export interface GitHubRateResource {
+  limit: number;
+  remaining: number;
+  reset: number;
+  used: number;
 }
 
-export function issuesFromResponse(value: unknown): GitHubIssueLike[] {
-  const record = asRecord(value);
-  const rows = firstArray(record, ["issues", "items", "data"]);
-  return rows.map((r) => issueLikeFromRecord(r, false));
+export interface GitHubRateLimit {
+  resources: Record<string, GitHubRateResource | undefined>;
+  rate?: GitHubRateResource;
 }
 
-// ─── calls (each only ever reached from behind an isKnownMethod gate) ────────
+// The three write endpoints wrap SDK GitHubIntegration.post* methods, which
+// return void — the app-local routes answer with a plain {ok:true} rather than
+// the created comment/review object, so callers key off resolution only.
+export interface GitHubWriteAck {
+  ok: true;
+}
+
+// ─── fetchers ────────────────────────────────────────────────────────────────
+
+function put<T>(path: string, body: unknown): Promise<T> {
+  return appJson<T>(path, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function post<T>(path: string, body: unknown): Promise<T> {
+  return appJson<T>(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+async function del(path: string): Promise<{ ok: true }> {
+  const res = await appFetch(path, { method: "DELETE" });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new HttpError(res.status, path, body);
+  }
+  return { ok: true };
+}
 
 export const githubApi = {
-  status: () => gv.invoke<unknown>(GITHUB_METHOD_IDS.status),
-  deviceStart: () => gv.invoke<unknown>(GITHUB_METHOD_IDS.deviceStart, { body: {} }),
-  devicePoll: (deviceCode: string) =>
-    gv.invoke<unknown>(GITHUB_METHOD_IDS.devicePoll, { body: { deviceCode } }),
-  pullsList: () => gv.invoke<unknown>(GITHUB_METHOD_IDS.pullsList),
-  pullsCreate: (body: { title: string; head: string; base: string; body?: string }, meta: ConfirmMeta) =>
-    gv.invoke<unknown>(GITHUB_METHOD_IDS.pullsCreate, { body: { ...body, ...meta } }),
-  issuesList: () => gv.invoke<unknown>(GITHUB_METHOD_IDS.issuesList),
-  issuesCreate: (body: { title: string; body?: string }, meta: ConfirmMeta) =>
-    gv.invoke<unknown>(GITHUB_METHOD_IDS.issuesCreate, { body: { ...body, ...meta } }),
-};
+  authStatus: () => appJson<GitHubAuthStatus>("/app/github/auth/status"),
+  saveClientId: (clientId: string) => put<{ ok: true }>("/app/github/auth/client-id", { clientId }),
+  deviceStart: () => post<GitHubDeviceStart>("/app/github/auth/device/start", {}),
+  devicePoll: (flowId: string) =>
+    appJson<GitHubDevicePoll>(`/app/github/auth/device/poll?flowId=${encodeURIComponent(flowId)}`),
+  saveToken: (token: string) => put<GitHubTokenSaveResult>("/app/github/auth/token", { token }),
+  signOut: () => del("/app/github/auth/token"),
 
-interface ConfirmMeta {
-  confirm: true;
-  explicitUserRequest: true;
+  rateLimit: () => appJson<GitHubRateLimit>("/app/github/rate-limit"),
+
+  pulls: (owner: string, repo: string, state: GitHubStateFilter) =>
+    appJson<GitHubPull[]>(
+      `/app/github/pulls?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&state=${state}`,
+    ),
+  issues: (owner: string, repo: string, state: GitHubStateFilter) =>
+    appJson<GitHubIssue[]>(
+      `/app/github/issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&state=${state}`,
+    ),
+
+  prComment: (owner: string, repo: string, prNumber: number, body: string) =>
+    post<GitHubWriteAck>("/app/github/pr-comment", { owner, repo, prNumber, body }),
+  prReview: (owner: string, repo: string, prNumber: number, body: string, event: GitHubReviewEvent) =>
+    post<GitHubWriteAck>("/app/github/pr-review", { owner, repo, prNumber, body, event }),
+  issueComment: (owner: string, repo: string, issueNumber: number, body: string) =>
+    post<GitHubWriteAck>("/app/github/issue-comment", { owner, repo, issueNumber, body }),
+} as const;
+
+export type GitHubReviewEvent = "APPROVE" | "REQUEST_CHANGES" | "COMMENT";
+
+// ─── error helpers ───────────────────────────────────────────────────────────
+
+/** POST /auth/device/start refuses with 409 when no client id is saved yet. */
+export function isClientNotConfiguredError(error: unknown): boolean {
+  return errorStatus(error) === 409;
+}
+
+/** PUT /auth/token refuses a bad/unreachable token with 401. */
+export function isTokenRejectedError(error: unknown): boolean {
+  return errorStatus(error) === 401;
+}
+
+// ─── display helpers ─────────────────────────────────────────────────────────
+
+/** Issues endpoints echo PRs back too — real issue rows never carry this key. */
+export function isRealIssue(issue: GitHubIssue): boolean {
+  return issue.pull_request === undefined;
+}
+
+export function formatRateReset(unixSeconds: number): string {
+  if (!Number.isFinite(unixSeconds) || unixSeconds <= 0) return "unknown";
+  return new Date(unixSeconds * 1000).toLocaleTimeString();
+}
+
+// ─── owner/repo derivation from the existing git remotes list ───────────────
+
+const GITHUB_REMOTE_RE = /github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?\/?$/i;
+
+function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
+  const m = GITHUB_REMOTE_RE.exec(url.trim());
+  if (!m) return null;
+  const [, owner, repo] = m;
+  return owner && repo ? { owner, repo } : null;
+}
+
+/**
+ * Picks the "origin" remote first (falling back to any other configured
+ * remote) and parses owner/repo out of its fetch or push URL. Returns null
+ * when there are no remotes, or none of them point at github.com — an honest
+ * "no repo context" state the panel renders as a placeholder, not an error.
+ */
+export function githubRepoFromRemotes(remotes: GitRemote[]): { owner: string; repo: string } | null {
+  if (remotes.length === 0) return null;
+  const origin = remotes.find((r) => r.name === "origin");
+  const ordered = origin ? [origin, ...remotes.filter((r) => r.name !== "origin")] : remotes;
+  for (const remote of ordered) {
+    const parsed = parseGitHubUrl(remote.fetchUrl) ?? (remote.pushUrl ? parseGitHubUrl(remote.pushUrl) : null);
+    if (parsed) return parsed;
+  }
+  return null;
 }

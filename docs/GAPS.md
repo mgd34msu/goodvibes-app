@@ -1,10 +1,11 @@
 # goodvibes-app — Parity Gap Audit
 
 Row-by-row audit of `docs/FEATURES.md` against the code. Original audit at commit
-`b2ca124`; refreshed after the Wave E gap-closure pass, then **refreshed again after the
-Wave F pass** (seven agents F0–F6 + integration gate) — Wave F closures are marked
-`(Wave F)` in their evidence cell and the counts below reflect the post-Wave-F working
-tree, verified against the tree by the integration gate (not trusted from agent reports).
+`b2ca124`; refreshed after the Wave E gap-closure pass, after the Wave F pass, then
+**refreshed again after the Wave G pass** (five agents + integration gate) — Wave G
+closures are marked `(Wave G)` in their evidence cell and the counts below reflect the
+post-Wave-G working tree (SDK upgraded to `@pellux/goodvibes-sdk@1.3.3`), verified against
+the tree by the integration gate (not trusted from agent reports).
 Wave F also fixed two arithmetic errors in the prior summary table (§14 was listed 8/1/4
 but its rows count 9/1/3; §15 was listed 6/3/3 but its rows count 7/3/2 — the section-text
 tallies were right, the summary table was not). Method: for each row, the Backing method id was checked against
@@ -99,14 +100,14 @@ evidence found; stated plainly, no inference.
 | 4 | Detach (never kills) | SHIPPED | `FleetView.tsx:332` → `invoke("sessions.detach", ...)` |
 | 5 | Watcher start/stop/run from fleet | SHIPPED | `watchers.stop` (`FleetView.tsx:321`) plus `watchers.start` (`:393`) and `watchers.run` (`:403`) now wired from the Fleet view (Wave F) |
 | 6 | Task cancel/retry from fleet | SHIPPED | `FleetTaskInline.tsx` (rendered `FleetView.tsx:505`) → `gv.tasks.list`/`.cancel`/`.retry` for task-mapped nodes (Wave F) |
-| 7 | Interrupt / kill / pause / resume of agents | EXCLUDED (confirmed accurate) | matches §25 exclusion — no such wire method exists; not attempted, correctly a documented gap rather than a silent omission |
+| 7 | Interrupt / kill / pause / resume of agents | SHIPPED (composed; no hard-pause verb) | `FleetAgentControl.tsx` (rendered `FleetView.tsx:433` whenever a node carries a `sessionId`, driven by FleetView palette commands via an imperative handle) composes the real agent-control surface out of session verbs: steer/follow-up (`sessions.steer`/`.followUp` `:133-135`), interrupt = cancel a queued/delivered input (`sessions.inputs.list`/`.cancel` `:124,180`), stop = `sessions.close` (`:153`) or the gentler `sessions.detach` (`:162`, never kills the process), and resume = `sessions.reopen` (`:171`). There is still **no** single freeze-and-thaw *pause* verb on the operator wire — the panel says so outright (`FleetAgentControl.tsx:283`, "Nothing in this panel is ever labeled 'Pause'") rather than faking one (Wave G) |
 | 8 | Inline approval cards on correlated nodes | SHIPPED | `FleetApprovalInline.tsx:33,43,117` → `gv.approvals.{approve,deny,list}` |
 | 9 | Workstream view (phases / work-items) | SHIPPED | `FleetView.tsx:57,115,137-141,171-176` — dedicated "Workstreams" scope filter + palette command |
 | 10 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | SHIPPED | derived in `fleet.ts:424-452` (`chainProgress` `c:N/M`, `reviewTally` SAT/UNS/UNV from the node's own `constraintFindings`); rendered as badges in `FleetView.tsx:95-122` (Wave E) |
 | 11 | Worktree detail per agent | SHIPPED | `fleet.ts:386-392` `agentWorkingDirectory`/`worktreeLabel` off the node's reported worktree path; rendered on rows and in detail at `FleetView.tsx:287-289,411-413` (Wave E) |
 | 12 | Deep links into fleet nodes | SHIPPED | `FleetView.tsx:92-103` `writeNodeToUrl`/`selectedId` round-trips through `router.ts` URL filters |
 
-**Section 3 tally: 11 shipped, 0 partial, 0 missing, 1 correctly-excluded.** Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Row 7 remains the one documented exclusion (no interrupt/kill/pause/resume wire method).
+**Section 3 tally: 12 shipped, 0 partial, 0 missing.** Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
 
 ## 4. Approvals & Tasks (9 rows)
 
@@ -161,9 +162,9 @@ evidence found; stated plainly, no inference.
 | 12 | Issues list / review | SHIPPED | `BrowsePanel.tsx:149` (`issues.list`), `ItemPeek.tsx:77` (`issue.review`) |
 | 13 | Reports / usage | SHIPPED | `ReportsPanel.tsx:121,126` → `knowledge.reports.list`/`knowledge.usage.list` |
 | 14 | Jobs: list/get/run + job-runs | SHIPPED | `JobsPanel.tsx:32,39,121,143` |
-| 15 | Schedules: list/get/save/enable/delete | PARTIAL | list/save/enable/delete shipped (`JobsPanel.tsx:212,222,243,254`); no dedicated `knowledge.schedule.get` (single-item fetch) call found — editing works off the list-query cache |
+| 15 | Schedules: list/get/save/enable/delete | SHIPPED | list/save/enable/delete (`JobsPanel.tsx:212,222,243,254`) plus a dedicated single-item `knowledge.schedule.get` peek — `ScheduleDetailPeek` (`JobsPanel.tsx:151`, opened from each schedule row `:402`) seeds from the schedules-list cache as instant placeholder, then refetches; on a refresh error (that isn't method-unavailable) it falls back to the cached values behind an honest "may be stale" note (Wave G) |
 | 16 | Projections: list/render/materialize | SHIPPED | `ProjectionsPanel.tsx:93,106,111` |
-| 17 | Refinement: run + tasks list/get/cancel | PARTIAL | run/list/cancel shipped (`RefinePanel.tsx:33,41,61`); no dedicated `knowledge.refinement.task.get` (single-task fetch) call found |
+| 17 | Refinement: run + tasks list/get/cancel | SHIPPED | run/list/cancel (`RefinePanel.tsx:33,41,61`) plus a dedicated single-task `knowledge.refinement.task.get` peek — `RefinementTaskDetailPeek` (`RefinePanel.tsx:177`, opened from each task row `:139`) which polls every 4s while the fetched task is still active (pending/queued/running/in-progress) and stops once it settles (Wave G) |
 | 18 | Connectors: list/get/doctor | SHIPPED | `IngestPanel.tsx:355,454,458` → `.connectors.list`, `.connector.doctor`, `.connector.get` |
 | 19 | GraphQL console (query + schema) | SHIPPED | `GraphqlPanel.tsx:29,36` → `knowledge.graphql.schema`/`.execute` |
 | 20 | Agent-scoped knowledge (isolated store) | SHIPPED | `scope.ts` `agentKnowledgePath`; runtime probe pattern in `KnowledgeView.tsx:16,89`, `AskPanel.tsx:5,42,92` — routes to `/api/goodvibes-agent/knowledge/*` when `scope==="agent"` |
@@ -173,7 +174,7 @@ evidence found; stated plainly, no inference.
 | 24 | Work plan: snapshot + tasks CRUD/status/reorder/clearCompleted | SHIPPED | `PlanningPanel.tsx` `WorkPlanSection` → `projectPlanning.workPlan.snapshot` (`:601`), `.tasks.list` (`:604`), `.task.create/.get/.update/.status/.delete` (`:609,476,492,623,633`), `.tasks.reorder` (`:643`), `.clearCompleted` (`:651`) (Wave E) |
 | 25 | Knowledge realtime updates | SHIPPED | `realtime.ts:24` `knowledge: [queryKeys.knowledgeStatus, queryKeys.knowledgeSources, queryKeys.knowledgeIssues]` |
 
-**Section 6 tally: 23 shipped, 2 partial, 0 missing.** Wave E closed rows 21-24 — the home-graph (`HomeGraphPanel.tsx`) and project-planning (`PlanningPanel.tsx`) sub-surfaces are now full, capability-probed panels, eliminating what was the single largest concentration of missing surface. The only remaining partials are rows 15/17 (no single-item `schedule.get`/`refinement.task.get` fetch — both edit off list-query cache).
+**Section 6 tally: 25 shipped, 0 partial, 0 missing.** Wave E closed rows 21-24 — the home-graph (`HomeGraphPanel.tsx`) and project-planning (`PlanningPanel.tsx`) sub-surfaces are now full, capability-probed panels, eliminating what was the single largest concentration of missing surface. Wave G closed the last two partials: rows 15 and 17 now each have a dedicated single-item fetch (`knowledge.schedule.get` peek with cache-seed + honest stale fallback, and `knowledge.refinement.task.get` peek that polls while the task is active), no longer editing purely off the list-query cache.
 
 ## 7. Memory (9 rows)
 
@@ -206,11 +207,11 @@ evidence found; stated plainly, no inference.
 | 9 | Project context file inspection (CLAUDE.md, AGENTS.md, .cursorrules, …) | SHIPPED | `ProjectContextPanel.tsx` (Personal Ops `context` tab, `PersonalOpsView.tsx:158`) lists well-known context files with existence flags via new Bun route `GET /app/local/context` and reads an allowlisted file via `GET /app/local/context/file` (allowlist + traversal guard tested in `test/local-tools.test.ts`) (Wave F, F0 backing) |
 | 10 | Import registries/settings from `~/.goodvibes/agent` + `~/.goodvibes/tui` | SHIPPED | registries (agent-only, correctly — tui has no routines/personas/skills to import): `ImportBridgeModal.tsx` → `previewImport`/`applyImport` → `src/bun/registries/import-bridge.ts:223-253` reads `agentRoot`; settings (both surfaces): `ProfilesSection.tsx:206-213` lets the user pick `tui`/`agent` as the read-only settings-import source |
 | 11 | Scratchpad notes + promote flows | SHIPPED | `ScratchpadPanel.tsx` (Routines `scratchpad` tab, `RoutinesView.tsx:107`) over the `"notes"` registry (`listRegistryItems`/`createRegistryItem("notes",…)`), with promote flows to `gv.memory.records.add`, `gv.artifacts.create`, and `knowledge.ingest.artifact`; `HomeView.tsx:211` `QuickCapture` writes a note and deep-links here (Wave F) |
-| 12 | Learning review (stale/low-confidence/duplicates) | PARTIAL | the underlying wire surfaces exist and are wired — `memory.review-queue` (Memory view, §7 row 3) and `knowledge.candidates.*` (Knowledge RefinePanel, §6 row 11) — but there is no distinct Agent-Brain-side "curator" UI that combines them as this row describes; a user has to know to visit Memory and Knowledge separately |
+| 12 | Learning review (stale/low-confidence/duplicates) | SHIPPED | `MemoryView.tsx` now renders a single combined "Learning review" curator (`:585`) that puts the memory review queue (its own triage buckets over `memory.review-queue`, §7 row 3) side by side with the knowledge consolidation-candidates queue — reusing `RefinePanel.tsx`'s exported `CandidatesSection` (`knowledge.candidates.list`/`candidate.decide`) rather than re-fetching or duplicating that wiring, each half degrading independently. One stop for what the agent learned instead of two separate views (Wave G) |
 | 13 | Away digest ("while you were away") | SHIPPED | `AwayDigest.tsx:88,97,183` → `automation.runs.list` + `deliveries.list` + `tasks.list`, filtered against `last-seen.ts:6` (`localStorage` "goodvibes.app.home.lastSeen") |
 | 14 | Coming-up rail (next runs + calendar) | SHIPPED | `ComingUpRail.tsx:46,79` — schedules `nextRunAt` merged with `calendar.events.list`, silent per-source degradation via `calendarRefusal` |
 
-**Section 8 tally: 13 shipped, 1 partial, 0 missing.** Wave F closed row 7 (profiles panel, honest scope), row 9 (project-context file viewer over `/app/local/context`), and row 11 (scratchpad/notes panel + promote flows). The lone remaining partial is row 12 (learning review): Wave F added the memory-side triage bucket in `MemoryView.tsx`, but there is still no single combined curator surface merging the memory and knowledge-candidate queues.
+**Section 8 tally: 14 shipped, 0 partial, 0 missing.** Wave F closed row 7 (profiles panel, honest scope), row 9 (project-context file viewer over `/app/local/context`), and row 11 (scratchpad/notes panel + promote flows). Wave G closed the last partial, row 12 (learning review): `MemoryView.tsx` now hosts a single combined curator that puts the memory review queue side by side with the knowledge consolidation-candidates queue (reusing `RefinePanel`'s exported `CandidatesSection`), so it is one surface rather than two.
 
 ## 9. Personal Ops (9 rows)
 
@@ -234,13 +235,13 @@ evidence found; stated plainly, no inference.
 |---|---|---|---|
 | 1 | Web search (ranked, source-labeled) | SHIPPED | `ResearchView.tsx:160` → `web_search.query` |
 | 2 | Search provider list/status | SHIPPED | `ResearchView.tsx:151` → `web_search.providers.list` |
-| 3 | Research runs (visible, checkpointable, log tails) | PARTIAL | run tracking is fully shipped via the app-local `research-runs` registry (`research-data.ts:42-134`, `ResearchView.tsx:546-579`), but the row's Backing calls for `tasks.create`-backed runs with wire status/cancel routes — no `tasks.create`/`tasks.cancel` call exists anywhere in `ResearchView.tsx`; status is a purely local registry field, not a real cancellable task |
+| 3 | Research runs (visible, checkpointable, log tails) | SHIPPED | Rebuilt on daemon tasks: `ResearchView.tsx:710` (`RunsSection`'s composer) and `:494` (`CollectModal`'s "New run…") both call `gv.tasks.create` (`research-data.ts:189` `researchTaskCreateBody`) and resolve the RuntimeTask id via `gv.tasks.list` + `research-data.ts:149` `findRuntimeTaskIdForAgent` (owner===agentId, the same link `fleet.ts`'s `taskForNode` uses) — that becomes the run's `taskId` (`research-data.ts:103-127` `ResearchRun`). Live status/cancel/retry ride `gv.tasks.get`/`.cancel`/`.retry` in `ResearchView.tsx:1261,956,970` (`RunTaskStatus`, ConfirmSurface-gated), sharing `queryKeys.tasks`/`taskDetail` so the `tasks` SSE domain (`lib/realtime.ts`) keeps them live. The app-local `research-runs` registry (`research-data.ts:58-87`) is now annotation-only (question/findings/log/checkpoints) on top of that. Pre-task-era rows with no `taskId`/`agentId` (`research-data.ts:136-144` `runLinkState`/`isLegacyRun`) render read-only in a separate "Legacy runs (pre-task era)" section (`ResearchView.tsx:1318` `LegacyRunsSection`) — viewable and deletable, never resumable, never auto-converted |
 | 4 | Source triage + credibility scoring | SHIPPED | `research-data.ts:84,100`, `ResearchView.tsx:319-427,696-721` `credibilityFrom` UI |
 | 5 | Sourced report artifacts (citation coverage, source maps) | SHIPPED | `ResearchView.tsx:671` → `gv.artifacts.create`; markdown report built from findings (`research-data.ts:220-230`) |
 | 6 | Promote research → Knowledge | SHIPPED | `ResearchView.tsx:462` → `knowledge.ingest.url`, capability-probed at `:73` |
 | 7 | URL inspection (read-only fetch preview) | SHIPPED | new Bun route `POST /app/local/fetch-preview` (`src/bun/local-tools.ts`) does a read-only fetch with a private-address/non-http-scheme refusal guard (tested in `test/local-tools.test.ts`); consumed by a `usePeek`-backed drawer in `ResearchView.tsx:129` via `research-data.ts:266` (Wave F, F0 backing) |
 
-**Section 10 tally: 6 shipped, 1 partial, 0 missing.** Wave F closed row 7 (URL inspection over new `/app/local/fetch-preview` Bun route). Row 3 remains partial (research runs tracked in the app-local `research-runs` registry, not `tasks.create`-backed cancellable wire tasks).
+**Section 10 tally: 7 shipped, 0 partial, 0 missing.** Wave F closed row 7 (URL inspection over new `/app/local/fetch-preview` Bun route). Row 3 is now closed too: research runs are rebuilt on `tasks.create`-backed daemon tasks with real cancel/retry, and pre-task-era rows migrate into a read-only legacy section rather than being dropped or faked as task-backed.
 
 ## 11. Documents & Compare (9 rows)
 
@@ -328,10 +329,10 @@ evidence found; stated plainly, no inference.
 | 8 | Intelligence snapshot (LSP/tree-sitter posture) | SHIPPED | `DevSnapshotsPanel.tsx` (rendered `GitView.tsx:174`) → `gv.invoke("intelligence.snapshot")` as a read-only posture tile, capability-honest when the daemon lacks the route (Wave F; v1.3.3 now serves the method) |
 | 9 | Repo file browser + preview | SHIPPED (Wave E follow-up) | `src/bun/git.ts` `/app/git/files` (git ls-files, 20k cap) + `/app/git/file` (tracked-only bounded 512KB read — tracked-only is the traversal guard); `GitView.tsx` `RepoFilesPanel` (filter, 500-row render cap, text preview with binary/truncation honesty) |
 | 10 | Per-repo session table (sessions in this project) | SHIPPED | `RepoSessionsPanel.tsx` (mounted `GitView.tsx:166`) → `gv.sessions.list()` (`:75`) filtered to the current `workspaceDir` (Wave E) |
-| 11 | GitHub: device-flow auth + PR/issue list/create | PARTIAL | `GitHubPanel.tsx` (mounted `GitView.tsx:163`) is a complete, capability-honest UI — it probes `control.methods.get` for `github.auth.deviceStart`/`.devicePoll`/`github.pulls.*`/`github.issues.*` and renders `UnavailableState` when absent. But **no `github.*` method exists in `operator-routes.ts` (0 matches)**, so on every known daemon the panel renders Unavailable — the UI is built and wired but has no live wire to talk to (Wave E, honest degrade) |
+| 11 | GitHub: device-flow auth + PR/issue list/create | SHIPPED (app-local surface) | Closed by serving GitHub from the app process itself instead of waiting on a daemon wire: `src/bun/github.ts` (registered `app-routes.ts:35` `"/app/github"`) implements device-flow + PAT auth, proxied reads (user/repos/pulls/issues/rate-limit), and three SDK-backed writes. It reuses the SDK rather than hand-rolling: `beginDeviceCodeFlow`/`pollDeviceCodeFlow` from `@pellux/goodvibes-sdk/platform/calendar` (RFC 8628 machinery) drive the device flow, and `GitHubIntegration.postPRComment`/`postPRReview`/`postIssueComment` from `@pellux/goodvibes-sdk/platform/integrations` do the writes; the token is stored via the shared `SecretsManager` and never echoed back. `GitHubPanel.tsx` (mounted `GitView.tsx:181`) is now wired to that surface through `github-model.ts`'s typed `githubApi` client (`authStatus`/`deviceStart`/`devicePoll`/`saveToken`/`pulls`/`issues`/`prComment`/`prReview`/`issueComment`), all confirm-gated for writes. Unit-covered in `test/github.test.ts` (device-flow quirk adapter, 409 client-not-configured, token never leaked). The write endpoints answer `{ok:true}` because the SDK methods return `void`; the UI keys off resolution, not a returned object (Wave G) |
 | 12 | Review snapshot | SHIPPED | same `DevSnapshotsPanel.tsx` (`GitView.tsx:174`) → `gv.invoke("review.snapshot")` as a read-only tile, capability-honest (Wave F; v1.3.3 now serves the method) |
 
-**Section 15 tally: 10 shipped, 2 partial, 0 missing.** Wave E closed row 10 and built the GitHub UI; the Wave E follow-up closed row 9. Wave F closed both read-only snapshot tiles — row 8 (`intelligence.snapshot`) and row 12 (`review.snapshot`) via `DevSnapshotsPanel` (v1.3.3 now serves both methods) — and closed row 2 (dirty-guarded branch checkout + create, no force flag). Remaining partials: row 3 (tags/remotes/reflog shipped read-only; destructive local-git mutations deliberately not wired — design choice) and row 11 (GitHub UI capability-honest but no `github.*` wire methods exist — wire-blocked).
+**Section 15 tally: 11 shipped, 1 partial, 0 missing.** Wave E closed row 10 and built the GitHub UI; the Wave E follow-up closed row 9. Wave F closed both read-only snapshot tiles — row 8 (`intelligence.snapshot`) and row 12 (`review.snapshot`) via `DevSnapshotsPanel` (v1.3.3 now serves both methods) — and closed row 2 (dirty-guarded branch checkout + create, no force flag). Wave G closed row 11: rather than wait on a daemon `github.*` wire, GitHub is served from the app process itself (`src/bun/github.ts` at `/app/github`, on the SDK's device-flow + `GitHubIntegration` machinery), and `GitHubPanel` is wired live to it through `github-model.ts`. The one remaining partial is row 3 (tags/remotes/reflog shipped read-only; destructive local-git mutations deliberately not wired — design choice).
 
 ## 16. MCP (7 rows)
 
@@ -376,7 +377,7 @@ evidence found; stated plainly, no inference.
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
-| 1 | TTS speak (one-shot) | PARTIAL | `gv.voice.tts` wraps `voice.tts` (`gv.ts:294`) but is never called anywhere in `src/ui` — every speak action goes through `ttsStreamPath`/`voice.tts.stream` (row 2) instead; the one-shot method is declared but dead |
+| 1 | TTS speak (one-shot) | SHIPPED | `gv.voice.tts` (`gv.ts:294`) is now the live fallback inside the real speak path: `synthSegment` (`voice.ts:527`, used by `useTts`) tries the streaming route first and, on any non-ok response — e.g. a provider like Microsoft Edge that reports `["tts"]` with no `tts-stream` and returns 409 rather than a clean 404 — falls back to `synthSegmentOneShot` (`voice.ts:517`) which calls `voice.tts` and decodes the base64 audio into the same ArrayBuffer the WebAudio sink already plays. No longer dead code (Wave G) |
 | 2 | Streaming TTS (sentence-chunked live speech) | SHIPPED | `voice.ts:497` → `gv.voice.ttsStreamPath()`, consumed via Web Audio in `SpeakButton.tsx` |
 | 3 | TTS speed / voice / provider settings | SHIPPED | `voice-settings.ts:169,180` → `voice.providers.list`/`voice.voices.list`; `config.set` for `tts.*` (`:72`) |
 | 4 | STT dictation | SHIPPED | `voice.ts:214` → `gv.voice.stt` |
@@ -386,7 +387,7 @@ evidence found; stated plainly, no inference.
 | 8 | Media analyze / generate / transform | SHIPPED | `media-data.ts:131,139,154` |
 | 9 | Multimodal: status/providers/analyze/packet/writeback | SHIPPED | `media-data.ts:72,82,164,173,181` |
 
-**Section 18 tally: 8 shipped, 1 partial, 0 missing.**
+**Section 18 tally: 9 shipped, 0 partial, 0 missing.** Wave G closed row 1 (one-shot `voice.tts`): it is now the live fallback in `synthSegment`'s real speak path (`voice.ts`) when the streaming route is unavailable for the active provider, decoded into the same WebAudio playback pipeline — no longer declared-but-dead.
 
 ## 19. Settings & Config (12 rows)
 
@@ -489,7 +490,7 @@ Spot-checked every falsifiable claim in this section against the actual route ta
 | Plugin runtime hosting | "v1 shows `plugins` domain events read-only" | **INACCURATE.** There is no `plugins` domain anywhere — not in `realtime.ts`'s `DOMAIN_INVALIDATIONS` map, not in `operator-routes.ts`. Nothing shows plugin events, read-only or otherwise; the claim describes a feature that was never built |
 | LSP/tree-sitter intelligence control room | "only `intelligence.snapshot` exists on the wire. Read-only tile ships" | **NOW ACCURATE (Wave F).** Was inaccurate through Wave E (method declared but no tile); Wave F added the read-only tile in `DevSnapshotsPanel.tsx` (`GitView.tsx:174`) invoking `intelligence.snapshot`, so the claim now holds |
 | Companion-chat compaction | "App manages long chats via history windowing + 'start fresh with summary' (app-local), labeled as such" | **INACCURATE.** No history-windowing or "start fresh with summary" feature exists anywhere in `src/ui/views/chat/` — the only "compact" hit in the codebase is `compactJson()` (`lib/wire.ts`), an unrelated JSON-formatting helper. Long chats are handled by ordinary pagination/scroll only |
-| Fleet interrupt/kill/pause/resume | "no wire method (only steer/detach/watcher-stop/task-cancel are wire-backed)" | **CONFIRMED.** No `interrupt`/`kill`/`pause`/`resume` method exists in the 327-method route table |
+| Fleet interrupt/kill/pause/resume | "no wire method (only steer/detach/watcher-stop/task-cancel are wire-backed)" | **STILL TRUE, NOW COMPOSED (Wave G).** No single `interrupt`/`kill`/`pause`/`resume` verb exists in the route table — but `FleetAgentControl` (§3 row 7) now builds an interrupt/stop/resume surface out of `sessions.inputs.cancel`/`sessions.close`/`sessions.reopen`, and states outright that no freeze-and-thaw *pause* verb exists (the panel never labels anything "Pause") |
 | ACP delegate management | "Engine-internal delegation plumbing; invisible to end users" | **CONFIRMED** (no `acp.*` methods exist in the route table, consistent with "invisible") |
 | Cloudflare batch/tunnel/teleport bundles | "Config keys shown in Settings" | **CONFIRMED.** `cloudflare.enabled`/`.freeTierMode`/`.accountId` etc. are present in `config-schema.generated.ts:1441-1498` |
 | `goodvibes://` deep links on Linux | "Electrobun `urlSchemes` is macOS-only today" | Not independently checkable from this repo (upstream Electrobun claim); internal use of the `goodvibes://` string in `src/bun/secrets.ts:73` is an unrelated secret-reference URI scheme, not the OS deep-link claim, so it doesn't contradict this row |
@@ -506,49 +507,47 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 |---|---|---|---|---|---|---|
 | 1 | Chat | 40 | 1 | 0 | — | 41 |
 | 2 | Sessions | 12 | 0 | 0 | — | 12 |
-| 3 | Fleet | 11 | 0 | 0 | 1 | 12 |
+| 3 | Fleet | 12 | 0 | 0 | — | 12 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | — | 9 |
 | 5 | Automation | 12 | 0 | 0 | — | 12 |
-| 6 | Knowledge | 23 | 2 | 0 | — | 25 |
+| 6 | Knowledge | 25 | 0 | 0 | — | 25 |
 | 7 | Memory | 9 | 0 | 0 | — | 9 |
-| 8 | Agent Brain | 13 | 1 | 0 | — | 14 |
+| 8 | Agent Brain | 14 | 0 | 0 | — | 14 |
 | 9 | Personal Ops | 9 | 0 | 0 | — | 9 |
-| 10 | Research | 6 | 1 | 0 | — | 7 |
+| 10 | Research | 7 | 0 | 0 | — | 7 |
 | 11 | Documents & Compare | 9 | 0 | 0 | — | 9 |
 | 12 | Artifacts | 7 | 0 | 0 | — | 7 |
 | 13 | Channels | 15 | 0 | 0 | — | 15 |
 | 14 | Providers & Models | 12 | 1 | 0 | — | 13 |
-| 15 | Coding / Dev | 10 | 2 | 0 | — | 12 |
+| 15 | Coding / Dev | 11 | 1 | 0 | — | 12 |
 | 16 | MCP | 7 | 0 | 0 | — | 7 |
 | 17 | Observability | 18 | 0 | 0 | — | 18 |
-| 18 | Voice & Media | 8 | 1 | 0 | — | 9 |
+| 18 | Voice & Media | 9 | 0 | 0 | — | 9 |
 | 19 | Settings & Config | 12 | 0 | 0 | — | 12 |
 | 20 | Security & Auth | 8 | 1 | 0 | — | 9 |
 | 21 | Remote / Peers | 6 | 0 | 0 | — | 6 |
 | 22 | Onboarding | 9 | 0 | 0 | — | 9 |
 | 23 | Palette & Keyboard | 8 | 0 | 0 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **277** | **10** | **0** | **1** | **288** |
+| — | **Total** | **284** | **4** | **0** | **0** | **288** |
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave F gap-closure, **96.2% shipped, 3.5% partial, 0% missing** of audited rows (was 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave F closed 28 previously-missing/partial rows verified against the tree by the integration gate: §1 (undo/redo, honest chat fork, `/image` slash command), §3 (fleet watcher start/run + task cancel/retry), §5 (delivery picker, hooks editor), §8 (profiles, project-context viewer, scratchpad), §9 (briefing deliveries, unified inbox), §10 (URL inspection), §11 (AI-suggestion accept/reject, artifact upload), §13 (notification-target test), §14 (failover posture, custom-provider JSON, local-LLM scan), §15 (`intelligence.snapshot` + `review.snapshot` tiles — v1.3.3 now serves them — plus dirty-guarded branch checkout/create), §20 (OS service lifecycle via `OsServiceSection`), §21 (web-push subscriptions — v1.3.3 now serves `push.*`), §22 (reasoning-effort step, gtk/webkit deps check), and §23 (cheatsheet, quick switcher). A new Bun local-tools surface (`src/bun/local-tools.ts`, F0, with `test/local-tools.test.ts` — 58/58 tests pass) backs `/app/local/{hooks,context,providers,llm-scan,deps,fetch-preview}`; the Wave F2 gate additionally added local `/app/git/{tags,remotes,reflog,checkout,branch-create}` endpoints in `src/bun/git.ts`. **No MISSING rows remain** — the last one (§20 row 8, OS service lifecycle) is now wired. The 10 remaining partials are each either wire-blocked (the daemon lacks the method — proof cited on the row) or a named deliberate design choice. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave G gap-closure, **98.6% shipped, 1.4% partial, 0% missing** of audited rows (was 96.5% / 3.1% / 0% post-Wave-F, 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave G closed six rows, verified against the tree by the integration gate (not trusted from agent reports): §15 row 11 (GitHub — device-flow + PAT auth, proxied reads, and SDK-backed PR/issue writes served app-locally from `src/bun/github.ts` on the SDK's `beginDeviceCodeFlow`/`pollDeviceCodeFlow` + `GitHubIntegration`, with `GitHubPanel` wired live to it), §3 row 7 (agent interrupt/stop/resume composed from `sessions.*` verbs in `FleetAgentControl`, with an honest note that no freeze-and-thaw *pause* verb exists — flipping the section's last EXCLUDED entry to shipped), §6 rows 15 and 17 (dedicated single-item `knowledge.schedule.get` / `knowledge.refinement.task.get` fetches), §8 row 12 (single combined "Learning review" curator in `MemoryView`), and §18 row 1 (one-shot `voice.tts` wired as the live streaming-TTS fallback). A new Bun surface `src/bun/github.ts` (registered `/app/github`, unit-covered by `test/github.test.ts`) backs the GitHub panel. **No MISSING rows remain, and no EXCLUDED rows remain.** The 4 remaining partials are each either wire-blocked (the daemon lacks the method — proof cited on the row: §1 row 39 companion-turn cancel) or a named deliberate design choice (§14 row 11 no external-browser OAuth flow; §15 row 3 read-only tags/remotes/reflog; §20 row 2 no in-chrome login form). §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
 
-## Remaining gaps by user impact (post-Wave-F)
+## Remaining gaps by user impact (post-Wave-G)
 
-Wave F closed 28 rows, including every entry on the prior top-ten list — OS-service lifecycle,
-the last MISSING row, is now wired. **Nothing app-side remains MISSING.** What is left is a
-short tail of partials, each either honestly **wire-blocked** (the app surface is built but the
-daemon lacks the method) or a named **deliberate design choice**. Ranked by how much a real user
-would notice:
+Wave G closed six more rows — GitHub is now a live app-local surface, agent interrupt/stop/resume
+is composed from `sessions.*` verbs, the two knowledge single-item fetches and the combined
+learning-review curator landed, and the one-shot TTS method is now a real fallback. **Nothing
+app-side remains MISSING, and no row is EXCLUDED any longer.** What is left is a short tail of four
+partials, each either honestly **wire-blocked** (the app surface is built but the daemon lacks the
+method) or a named **deliberate design choice**. Ranked by how much a real user would notice:
 
-1. **GitHub integration is UI-only / wire-blocked (§15 row 11).** The capability-honest `GitHubPanel` is complete, but **no `github.*` method exists in the route table**, so it renders Unavailable on every known daemon. Nothing app-side to fix until the wire ships the methods.
-2. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is now shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations (tag create/delete, remote add/remove, reflog reset-to-restore) are deliberately not wired to keep the panel non-destructive — a design choice, not a gap.
-3. **Research runs are app-local, not `tasks.create`-backed (§10 row 3).** Run status/cancel is a local `research-runs` registry field, not a real cancellable wire task.
-4. **Learning-review has no single combined curator (§8 row 12).** Wave F added the memory-side triage bucket, but the memory and knowledge-candidate queues are still two separate surfaces rather than one curator.
-5. **Subscriptions show posture but no external-browser OAuth flow (§14 row 11).** No RPC opens a browser for OAuth-backed subscription sign-in; posture is derived from `accounts.snapshot`/`providers.list` only.
-6. **Knowledge has no single-item `schedule.get`/`refinement.task.get` fetch (§6 rows 15, 17).** Both edit off the list-query cache; a narrow convenience gap.
-7. **Companion-turn Stop is local-render-only (§1 row 39).** The wire has no companion-turn cancel (`useChatStream.ts:87`), so the Stop button halts local rendering rather than the turn — wire-blocked. (Row 35, the `/image` slash command, shipped in Wave F.)
-8. **Redundant one-shot TTS method is dead (§18 row 1).** `voice.tts` is superseded by streaming TTS everywhere; cosmetic.
-9. **No in-chrome interactive login form (§20 row 2).** The app relies on zero-friction companion-token bootstrap; `control.auth.login` is unused. Only matters if a daemon ever demands interactive login.
+1. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations (tag create/delete, remote add/remove, reflog reset-to-restore) are deliberately not wired to keep the panel non-destructive — a design choice, not a gap.
+2. **Subscriptions show posture but no external-browser OAuth flow (§14 row 11).** No RPC opens a browser for OAuth-backed subscription sign-in; posture is derived from `accounts.snapshot`/`providers.list` only.
+3. **Companion-turn Stop is local-render-only (§1 row 39).** The wire has no companion-turn cancel (`useChatStream.ts:87`), so the Stop button halts local rendering rather than the turn — wire-blocked.
+4. **No in-chrome interactive login form (§20 row 2).** The app relies on zero-friction companion-token bootstrap; `control.auth.login` is unused. Only matters if a daemon ever demands interactive login.
+
+GitHub integration (§15 row 11) closed in Wave G: rather than wait on a `github.*` daemon wire, GitHub is served from the app process itself (`src/bun/github.ts` on the SDK's device-flow + `GitHubIntegration` machinery), so `GitHubPanel` now talks to a live surface on every daemon — it no longer appears above. Learning-review (§8 row 12), the two knowledge single-item fetches (§6 rows 15/17), agent interrupt/stop/resume (§3 row 7), and one-shot TTS (§18 row 1) likewise closed in Wave G.
 
 
 

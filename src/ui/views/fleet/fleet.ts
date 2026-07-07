@@ -281,7 +281,7 @@ export function activeCount(nodes: readonly FleetNode[]): number {
 //
 // fleet.snapshot's per-node `capabilities` describe what the underlying
 // process CAN do — but the daemon performs interrupt/kill/pause/resume with
-// direct in-process calls; none of that is an operator wire verb today except:
+// direct in-process calls; only PART of that is an operator wire verb today:
 //   - steer: sessions.steer, for an 'agent' node with a live sessionRef.sessionId.
 //   - detach: sessions.detach — a session-level action, any node with a sessionId.
 //   - stop/start/run: watchers.{stop,start,run}, for a 'watcher' node only
@@ -290,9 +290,35 @@ export function activeCount(nodes: readonly FleetNode[]): number {
 //     as the Watchers view itself (adaptWatcher's `killable` flag only says
 //     "currently alive", not "may be started/run" — the daemon is the one
 //     that accepts or rejects an invalid transition).
-// Every other true capability flag is real but UNBACKED — the honest note
-// below says so instead of a button that would no-op or 404.
+//   - AGENT CONTROL (GAPS.md §3 row 7, was EXCLUDED): any node with a live
+//     sessionRef.sessionId also gets a real, session-level control surface,
+//     rendered by FleetAgentControl.tsx —
+//       * steer / follow-up: sessions.steer / sessions.followUp (mid-turn
+//         guidance vs. queuing the next instruction on a busy agent).
+//       * interrupt: sessions.inputs.list + sessions.inputs.cancel — cancels
+//         a still-queued instruction before it is ever delivered.
+//       * stop: sessions.close (ends the session) or the gentler
+//         sessions.detach (keeps it running unattended).
+//       * resume: sessions.reopen, once the session's own status is 'closed'.
+//     None of this is driven by the capability flags below — closing/
+//     reopening/queuing an input isn't described by any FleetNodeCapabilities
+//     field, it is a plain fact of whether the node carries a sessionId.
+//     There is still NO wire verb for a true freeze-and-thaw PAUSE anywhere —
+//     never render a control labeled "Pause".
+// Every other true capability flag (kill on a non-session process, pause
+// anywhere) is real but UNBACKED — the honest note below says so instead of
+// a button that would no-op or 404.
 export type FleetWireAction = "steer" | "detach" | "stop" | "start" | "run";
+
+// Local query-key namespace for the session-level Agent Control surface
+// (FleetAgentControl.tsx) — deliberately NOT in lib/queries.ts's shared
+// registry; these mirror queryKeys.sessionInputs/sessionDetail in shape but
+// stay fleet-local so this view can invalidate/refetch them without reaching
+// into another view's key space.
+export const fleetControlKeys = {
+  session: (sessionId: string) => ["fleet-control", "session", sessionId] as const,
+  inputs: (sessionId: string) => ["fleet-control", "inputs", sessionId] as const,
+} as const;
 
 export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction> {
   const actions = new Set<FleetWireAction>();
@@ -311,17 +337,26 @@ export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction>
  * The honest note for capabilities the daemon reports but this app cannot act
  * on over the wire — null when every true flag is wire-backed. Never silently
  * drops the gap; never fabricates a button.
+ *
+ * Stop/interrupt/resume are now genuinely wire-backed for any node with a
+ * live sessionId (FleetAgentControl.tsx: sessions.close/detach,
+ * sessions.inputs.cancel, sessions.reopen) — so those flags only surface here
+ * for a session-less node (e.g. a bare background-process). Pause has NO
+ * wire verb anywhere, session or not — it always surfaces here when true.
  */
 export function unbackedCapabilityNote(node: FleetNode): string | null {
   const backed = wireBackedActions(node);
-  const hasUnbackedStop = node.capabilities.killable && !(node.kind === "watcher" && backed.has("stop"));
-  const hasUnbackedInterrupt = node.capabilities.interruptible;
-  const hasUnbackedPauseResume = node.capabilities.pausable || node.capabilities.resumable;
-  if (!hasUnbackedStop && !hasUnbackedInterrupt && !hasUnbackedPauseResume) return null;
+  const hasSession = node.sessionId.length > 0;
+  const hasUnbackedKill = node.capabilities.killable && !hasSession && !(node.kind === "watcher" && backed.has("stop"));
+  const hasUnbackedInterrupt = node.capabilities.interruptible && !hasSession;
+  const hasUnbackedResume = node.capabilities.resumable && !hasSession;
+  const hasUnbackedPause = node.capabilities.pausable; // no freeze/thaw verb exists on the wire at all
+  if (!hasUnbackedKill && !hasUnbackedInterrupt && !hasUnbackedResume && !hasUnbackedPause) return null;
   const verbs = [
-    hasUnbackedStop && "stop/kill",
+    hasUnbackedKill && "stop/kill",
     hasUnbackedInterrupt && "interrupt",
-    hasUnbackedPauseResume && "pause/resume",
+    hasUnbackedPause && "pause",
+    hasUnbackedResume && "resume",
   ].filter((v): v is string => Boolean(v));
   return (
     `The daemon reports this ${kindLabel(node.kind)} process as ${verbs.join("/")}-able, ` +

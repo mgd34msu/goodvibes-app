@@ -14,6 +14,14 @@
 // Realtime: memory.* has NO wire event domain (docs/FEATURES.md §16 pin) —
 // the review queue polls every 30s and every mutation invalidates the
 // ["memory"] prefix, which refetches list + open peeks + queue + admin.
+//
+// "Learning review" (docs/GAPS.md §8 row 12) is the single combined curator
+// surface for what the agent learned: the memory review queue (this view's
+// own triage buckets) sits alongside the knowledge consolidation candidates
+// queue, reusing knowledge/RefinePanel.tsx's exported `CandidatesSection`
+// rather than re-fetching/re-deciding candidates here. Each half degrades
+// honestly on its own — one method family being absent never hides the
+// other.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +39,11 @@ import { MemoryRecordRow } from "./MemoryRecordRow.tsx";
 import { MemorySearchHonestyNote } from "./MemorySearchHonestyNote.tsx";
 import { ReviewQueuePanel, type MemoryReviewDraft } from "./ReviewQueuePanel.tsx";
 import { MemoryAdminPanel } from "./MemoryAdminPanel.tsx";
+// Reused, not duplicated: the knowledge-candidates query/mutation logic
+// lives in one place (knowledge/RefinePanel.tsx) and is embedded here so
+// "Learning review" is a single combined curator surface over BOTH queues
+// (docs/GAPS.md §8 row 12) instead of two separate stops.
+import { CandidatesSection } from "../knowledge/RefinePanel.tsx";
 import {
   MEMORY_CLASSES,
   MEMORY_SCOPES,
@@ -515,37 +528,62 @@ function MemoryViewInner() {
         <aside className="memory-rail">
           <AddMemoryForm isPending={add.isPending} error={add.error} onSubmit={(input) => add.mutate(input)} />
 
-          <section className="memory-panel" aria-label="Review queue">
+          <section className="memory-panel memory-panel--learning-review" aria-label="Learning review">
             <div className="memory-panel__title">
-              <h2>Review queue</h2>
-              {reviewQueue.isSuccess && <span className="badge neutral">{reviewQueue.data.length}</span>}
+              <h2>Learning review</h2>
             </div>
-            {reviewQueue.isSuccess && reviewQueue.data.length > 0 && (
-              <div className="memory-triage" role="group" aria-label="Review queue triage filter">
-                {REVIEW_TRIAGE_LABELS.map(([bucket, label]) => (
-                  <button
-                    key={bucket}
-                    type="button"
-                    className={
-                      triageBucket === bucket ? "memory-chip-button memory-chip-button--active" : "memory-chip-button"
-                    }
-                    aria-pressed={triageBucket === bucket}
-                    onClick={() => setTriageBucket(bucket)}
-                  >
-                    {label} ({triageCounts[bucket]})
-                  </button>
-                ))}
+            <p className="memory-learning-review__note">
+              What the agent learned, in one stop: memory records flagged for review, and knowledge candidates
+              awaiting a keep/drop decision.
+            </p>
+
+            <div className="memory-learning-review__half" aria-label="Memory records review queue">
+              <div className="memory-panel__subtitle">
+                <h3>Memory records</h3>
+                {reviewQueue.isSuccess && <span className="badge neutral">{reviewQueue.data.length}</span>}
               </div>
-            )}
-            <ReviewQueuePanel
-              records={filteredReviewRecords}
-              isPending={reviewQueue.isPending}
-              error={reviewQueue.error}
-              onRetry={() => void reviewQueue.refetch()}
-              savingId={updateReview.isPending ? (updateReview.variables?.id ?? null) : null}
-              onSave={(id, input) => updateReview.mutate({ id, input })}
-              onOpen={openDetail}
-            />
+              {reviewQueue.isSuccess && reviewQueue.data.length > 0 && (
+                <div className="memory-triage" role="group" aria-label="Review queue triage filter">
+                  {REVIEW_TRIAGE_LABELS.map(([bucket, label]) => (
+                    <button
+                      key={bucket}
+                      type="button"
+                      className={
+                        triageBucket === bucket
+                          ? "memory-chip-button memory-chip-button--active"
+                          : "memory-chip-button"
+                      }
+                      aria-pressed={triageBucket === bucket}
+                      onClick={() => setTriageBucket(bucket)}
+                    >
+                      {label} ({triageCounts[bucket]})
+                    </button>
+                  ))}
+                </div>
+              )}
+              <ReviewQueuePanel
+                records={filteredReviewRecords}
+                isPending={reviewQueue.isPending}
+                error={reviewQueue.error}
+                onRetry={() => void reviewQueue.refetch()}
+                savingId={updateReview.isPending ? (updateReview.variables?.id ?? null) : null}
+                onSave={(id, input) => updateReview.mutate({ id, input })}
+                onOpen={openDetail}
+              />
+            </div>
+
+            <div className="memory-learning-review__half" aria-label="Knowledge consolidation candidates">
+              <div className="memory-panel__subtitle">
+                <h3>Knowledge candidates</h3>
+              </div>
+              {/* Same query/mutation logic as the Knowledge → Refine tab's
+                  Candidates section — imported, not reimplemented, so the two
+                  surfaces can never drift (docs/GAPS.md §8 row 12). Always
+                  "active" here: this view only mounts while the operator is
+                  looking at Memory, same polling contract as the review queue
+                  above. */}
+              <CandidatesSection active />
+            </div>
           </section>
 
           <MemoryAdminPanel />

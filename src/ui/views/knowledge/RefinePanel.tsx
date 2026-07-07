@@ -1,10 +1,12 @@
 // Refine tab: gap-refinement runs (knowledge.refinement.run — admin, kicks
 // off daemon-side search + ingest, so it is confirm-gated), the refinement
-// task list with per-task cancel PLUS a single-task detail peek
+// task list with per-task cancel PLUS a single-task detail peek that polls
+// every 4s while the fetched task is still active
 // (knowledge.refinement.task.get — docs/GAPS.md §6 row 17), and the
 // consolidation candidates review surface (knowledge.candidates.list /
 // candidate.decide) — accept / reject / supersede are explicit per-row
-// decisions, never auto-applied.
+// decisions, never auto-applied. `CandidatesSection` is exported for reuse
+// by the Memory view's combined "Learning review" curator (§8 row 12).
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -168,10 +170,19 @@ function RefinementSection({ active }: { active: boolean }) {
   );
 }
 
+const REFINEMENT_TASK_ACTIVE_STATES = ["pending", "queued", "running", "in-progress"];
+
 function RefinementTaskDetailPeek({ taskId }: { taskId: string }) {
   const task = useQuery({
     queryKey: kKeys.refinementTaskDetail(taskId),
     queryFn: () => invoke("knowledge.refinement.task.get", { params: { id: taskId } }),
+    // Refreshable while the task is in flight — poll every 4s as long as the
+    // fetched state is still active, stop once it settles (docs/GAPS.md §6
+    // row 17: "refreshable while a task runs").
+    refetchInterval: (query) => {
+      const state = firstString(query.state.data, ["state", "status"]).toLowerCase();
+      return REFINEMENT_TASK_ACTIVE_STATES.includes(state) ? 4_000 : false;
+    },
   });
   return (
     <div className="knowledge-peek-body">
@@ -190,7 +201,10 @@ function RefinementTaskDetailPeek({ taskId }: { taskId: string }) {
 
 // ─── Candidates ──────────────────────────────────────────────────────────────
 
-function CandidatesSection({ active }: { active: boolean }) {
+// Exported so the Memory view can embed this same query/mutation logic in
+// its combined "Learning review" curator surface (docs/GAPS.md §8 row 12)
+// without duplicating the candidates.list/candidate.decide wiring.
+export function CandidatesSection({ active }: { active: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [pendingKey, setPendingKey] = useState("");

@@ -1518,3 +1518,140 @@
 .dev-snapshot-tile__routes code {
   color: var(--text-secondary);
 }
+
+/* ── GitHub panel rebuild — auth tabs, repo context, write actions
+   (docs/FEATURES.md §15 rows 5-7; append-only additions to the block above) ── */
+
+.github-auth-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.github-auth-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.github-auth-tab:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.github-auth-tab--active {
+  color: var(--text-accent);
+  border-color: var(--border-focus);
+  background: var(--accent-muted);
+}
+
+.github-client-id-form,
+.github-token-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.github-account-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+}
+
+.github-account-facts dt {
+  color: var(--text-tertiary);
+}
+
+.github-account-facts dd {
+  margin: 0;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.github-rate {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.github-repo-context {
+  margin: 0;
+}
+
+.github-repo-context__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.github-state-select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.github-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.github-item__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.github-item__body {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.github-item__meta-line {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.github-comment-box,
+.github-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-2);
+}
+
+.github-review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

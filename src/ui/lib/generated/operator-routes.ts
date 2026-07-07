@@ -1,7 +1,7 @@
 // GENERATED FILE — DO NOT EDIT BY HAND.
 // Produced by scripts/generate-operator-routes.ts from the installed
 // @pellux/goodvibes-sdk contracts/operator-contract.json artifact
-// (contract v1, goodvibes operator 1.3.1, 327 methods).
+// (contract v1, goodvibes operator 1.3.3, 327 methods).
 // `path` keeps {param} placeholders; `ws: true` = WS-only method (no HTTP
 // route — call it over the /app/ws bridge). Regenerate: `bun run generate:routes`.
 

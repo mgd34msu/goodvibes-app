@@ -478,3 +478,83 @@
   gap: 4px;
   font-family: var(--font-mono);
 }
+
+/* ── Agent Control (GAPS.md §3 row 7 — was EXCLUDED) ────────────
+   steer/follow-up, interrupt (cancel a queued input), stop
+   (close/detach), resume (reopen). See FleetAgentControl.tsx. */
+
+.fleet-agent-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.fleet-agent-control__mode {
+  display: flex;
+}
+
+.fleet-agent-control__interrupt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.fleet-agent-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fleet-agent-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.fleet-agent-input__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.fleet-agent-input__text {
+  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.fleet-agent-input__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.fleet-agent-control__note {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--text-secondary);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}

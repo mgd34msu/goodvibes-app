@@ -1,7 +1,9 @@
 // Jobs tab: job definitions (knowledge.jobs.list / job.get / job.run),
 // recent job runs (knowledge.job-runs.list), schedules CRUD
 // (knowledge.schedules.* PLUS the single-item knowledge.schedule.get detail
-// peek — docs/GAPS.md §6 row 15), and index maintenance (knowledge.lint /
+// peek — docs/GAPS.md §6 row 15 — seeded from the schedules-list cache as a
+// placeholder while the fresh fetch is in flight, with an honest stale-cache
+// note if the refresh itself errors), and index maintenance (knowledge.lint /
 // knowledge.reindex). Admin actions that kick off daemon-side work or
 // destroy state (run job, reindex, delete schedule) go through the shared
 // ConfirmSurface and forward confirm:true + explicitUserRequest.
@@ -11,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, CalendarClock, Hammer, Play, Trash2 } from "lucide-react";
 import { invoke } from "../../lib/gv.ts";
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
-import { formatError } from "../../lib/errors.ts";
+import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
 import { usePeek } from "../../components/PeekPanel.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
@@ -137,10 +139,33 @@ function JobDetailPeek({ jobId }: { jobId: string }) {
 }
 
 function ScheduleDetailPeek({ scheduleId }: { scheduleId: string }) {
+  const queryClient = useQueryClient();
+  // Seed from the schedules-list cache so the peek shows something instantly
+  // instead of a blank skeleton, and so a failed refresh still has a row to
+  // fall back to (docs/GAPS.md §6 row 15 — "cache as placeholder while
+  // loading" / honest stale fallback on error).
+  const cached = knowledgeList(queryClient.getQueryData(kKeys.schedules), "schedules").find(
+    (row) => knowledgeId(row) === scheduleId,
+  );
   const schedule = useQuery({
     queryKey: kKeys.scheduleDetail(scheduleId),
     queryFn: () => invoke("knowledge.schedule.get", { params: { id: scheduleId } }),
+    placeholderData: cached,
   });
+  const staleFallback = schedule.isError && !isMethodUnavailableError(schedule.error) && cached !== undefined;
+
+  if (staleFallback) {
+    return (
+      <div className="knowledge-peek-body">
+        <p className="knowledge-peek-stale">
+          Could not refresh this schedule from the daemon ({formatError(schedule.error)}) — showing the last known
+          values from the schedules list instead.
+        </p>
+        <DataBlock title="Schedule (cached, may be stale)" value={cached} open />
+      </div>
+    );
+  }
+
   return (
     <div className="knowledge-peek-body">
       <QueryStates

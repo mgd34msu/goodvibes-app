@@ -1409,3 +1409,15 @@
   border-color: var(--border-focus);
   outline: none;
 }
+
+/* ── Stale-cache fallback note (schedule/refinement detail peeks) ───────── */
+
+.knowledge-peek-stale {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--status-warning);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}

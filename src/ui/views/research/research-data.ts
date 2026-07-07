@@ -1,11 +1,17 @@
-// Research view data layer (docs/FEATURES.md §10) — two backends:
+// Research view data layer (docs/FEATURES.md §10) — three backends:
 //  1. Daemon web search: web_search.providers.list + web_search.query via gv.invoke.
-//  2. App-local research-runs registry: /app/registries/research-runs (the Bun
-//     side implements the collection contract; this module codes to it).
+//  2. Daemon runtime tasks: tasks.create/.get/.status/.list/.cancel/.retry via
+//     gv.tasks.* (docs/GAPS.md §10 row 3) — a run's live status/cancel/retry
+//     ride the same RuntimeTask registry Approvals & Tasks and Fleet use.
+//  3. App-local research-runs registry: /app/registries/research-runs (the Bun
+//     side implements the collection contract; this module codes to it) — now
+//     ANNOTATION ONLY (question, notes, findings, log, checkpoints) for
+//     task-backed runs. The daemon task is the source of truth for run state.
 // Records are superset-tolerant: parse defensively, mutate copies of the raw
 // record so unknown fields survive the PUT round-trip.
 
 import { appJson } from "../../lib/http.ts";
+import type { TaskSummary } from "../../lib/approvals.ts";
 import {
   asRecord,
   firstArrayAtPath,
@@ -39,6 +45,13 @@ export const researchKeys = {
   capability: (methodId: string) => ["research", "capability", methodId] as const,
   inspect: (url: string) => ["research", "inspect", url] as const,
 };
+
+// ─── Runtime-task backing (docs/GAPS.md §10 row 3) ───────────────────────────
+// Note: task-detail/task-list reads deliberately use lib/queries.ts's shared
+// `queryKeys.tasks` / `queryKeys.taskDetail` (NOT a local "research" key) so
+// this view rides the same `tasks` SSE-domain invalidation as Approvals &
+// Tasks / Fleet (lib/realtime.ts DOMAIN_INVALIDATIONS) instead of a second,
+// disconnected cache entry for the same wire record.
 
 // ─── research-runs registry client ───────────────────────────────────────────
 
@@ -100,8 +113,106 @@ export interface ResearchRun {
   log: RunLogEntry[];
   /** Named findings snapshots taken by the "Checkpoint" action. */
   checkpoints: RunCheckpoint[];
+  /** The RuntimeTask id backing this run (docs/GAPS.md §10 row 3) — the
+   * daemon is the source of truth for status/cancel/retry once this is set.
+   * Absent on runs created before this shipped ("legacy" — see isLegacyRun). */
+  taskId: string | undefined;
+  /** The agentId `tasks.create` (POST /task) acknowledged with, kept until
+   * `taskId` resolves (owner === agentId in tasks.list — the same link
+   * AgentTaskAdapter/fleet.ts's taskForNode use). Present without taskId
+   * means "submitted, not yet linked" — see runLinkState. */
+  agentId: string | undefined;
   /** Raw item record — the PUT payload is built from this. */
   raw: AnyRecord;
+}
+
+/** "legacy" = pre-task-era row (neither field — status/cancel is local-only,
+ * never resumable, render read-only). "linking" = tasks.create acknowledged
+ * but the RuntimeTask registry hasn't been observed to carry the link yet
+ * (should self-resolve within a beat; offer a manual retry). "linked" = a
+ * real cancellable/retryable RuntimeTask backs this run. */
+export type RunLinkState = "legacy" | "linking" | "linked";
+
+export function runLinkState(run: ResearchRun): RunLinkState {
+  if (run.taskId) return "linked";
+  if (run.agentId) return "linking";
+  return "legacy";
+}
+
+export function isLegacyRun(run: ResearchRun): boolean {
+  return runLinkState(run) === "legacy";
+}
+
+/** The RuntimeTask id owned by this agentId, per tasks.list — the link
+ * AgentTaskAdapter establishes server-side (owner: agentId) and fleet.ts's
+ * taskForNode reads client-side for the Fleet view's agent nodes. */
+export function findRuntimeTaskIdForAgent(tasks: readonly TaskSummary[], agentId: string): string | undefined {
+  return tasks.find((task) => task.kind === "agent" && task.owner === agentId)?.id;
+}
+
+/** Same transition guard the daemon enforces (TasksSection.tsx / fleet.ts
+ * canRetryTask parity): retry only from a terminal failure/cancellation. */
+export function canRetryResearchTask(status: string): boolean {
+  return status === "failed" || status === "cancelled";
+}
+
+/** tasks.create (POST /task) ack — only `agentId` is load-bearing here; the
+ * rest is display-only. */
+export interface TaskCreateAck {
+  acknowledged: boolean;
+  agentId: string;
+  sessionId: string;
+  status: string;
+}
+
+export function taskCreateAckFrom(value: unknown): TaskCreateAck {
+  const raw = asRecord(value);
+  return {
+    acknowledged: raw["acknowledged"] === true,
+    agentId: firstString(raw, ["agentId"]),
+    sessionId: firstString(raw, ["sessionId"]),
+    status: firstString(raw, ["status"]),
+  };
+}
+
+/** The research prompt/spec carried by tasks.create — a real daemon agent
+ * task, not just a label; its lifecycle is what backs this run's status. */
+export function composeResearchTaskPrompt(question: string): string {
+  return (
+    `Research task: investigate "${question}". Use the tools available to you ` +
+    `(web search, page fetch, etc.) to find credible sources, evaluate them, and ` +
+    `summarize what you learn.`
+  );
+}
+
+/** tasks.create body for a new research run (docs/GAPS.md §10 row 3). */
+export function researchTaskCreateBody(question: string): AnyRecord {
+  const title = question.trim();
+  return {
+    task: composeResearchTaskPrompt(question),
+    title: title.length > 120 ? `${title.slice(0, 117)}...` : title || "Research run",
+  };
+}
+
+/** Raw record for a freshly created task-backed run — annotation fields only;
+ * the daemon task (agentId, and taskId once linked) is the state source. */
+export function rawForNewTaskRun(question: string, ack: TaskCreateAck, taskId: string | undefined): AnyRecord {
+  return {
+    question,
+    status: "open",
+    findings: [],
+    log: [
+      makeLogEntry(
+        "status",
+        taskId
+          ? "Run created — backed by daemon task"
+          : `Run created — submitted to the daemon (agent ${ack.agentId}); linking task id…`,
+      ),
+    ],
+    agentId: ack.agentId,
+    sessionId: ack.sessionId,
+    ...(taskId ? { taskId } : {}),
+  };
 }
 
 export function credibilityFrom(value: unknown): Credibility {
@@ -134,6 +245,8 @@ export function runFrom(value: unknown): ResearchRun {
     createdAt: firstTimestamp(raw, ["createdAt"]),
     log,
     checkpoints,
+    taskId: firstString(raw, ["taskId"]) || undefined,
+    agentId: firstString(raw, ["agentId"]) || undefined,
     raw,
   };
 }
@@ -150,11 +263,16 @@ export function rawWithFindings(run: ResearchRun, findings: ResearchFinding[], l
 }
 
 // ─── Findings log + checkpoints (docs/GAPS.md §10 row 3 — resumable runs) ────
-// A run is "resumable" when its status transitions and finding edits are
-// recorded as a timestamped, append-only log on the item itself (no wire
-// task backs this — the app-local registry item IS the source of truth),
-// and a "checkpoint" snapshots the findings-at-the-time into a versions
-// array so a run can be rolled back to what it looked like at that point.
+// The findings/notes/checkpoint history is always app-local annotation, on
+// top of the registry item, regardless of task backing: finding edits and
+// checkpoint snapshots are recorded as a timestamped, append-only log on the
+// item itself. For a task-backed run the daemon RuntimeTask is the source of
+// truth for run STATUS (queued/running/.../cancelled — see runLinkState);
+// this log additionally records status transitions the app observes (created,
+// linked, cancelled, retried) so the run's own history stays readable even
+// though the live value lives on the daemon task. A "checkpoint" snapshots
+// the findings-at-the-time into a versions array so a run can be rolled back
+// to what it looked like at that point.
 
 export interface RunLogEntry {
   at: number | undefined;
@@ -229,11 +347,6 @@ export function rawWithCheckpoint(run: ResearchRun, label: string): AnyRecord {
     ],
   };
 }
-
-/** Status transitions offered in the run-detail status selector — an open
- * vocabulary (the raw field accepts any string; these are just the offered
- * choices so a transition always has a readable log message). */
-export const RUN_STATUSES = ["open", "in-progress", "blocked", "done", "reported"] as const;
 
 // ─── URL inspection (docs/GAPS.md §10 row 7) ─────────────────────────────────
 // POST /app/local/fetch-preview (src/bun/local-tools.ts) — a read-only,
