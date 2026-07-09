@@ -29,6 +29,10 @@ describe("generate-operator-routes", () => {
     const approve = rows.find((r) => r.id === "approvals.approve");
     expect(approve?.path).toBe("/api/approvals/{approvalId}/approve");
     expect(rows.find((r) => r.id === "fleet.snapshot")?.ws).toBe(true);
+    // Fleet archive verbs (contract 1.6, sdk 1.6.1) — ws-only like the rest of fleet.*.
+    for (const id of ["fleet.archive", "fleet.unarchive", "fleet.archiveFinished", "fleet.archived.list"]) {
+      expect(rows.find((r) => r.id === id)?.ws).toBe(true);
+    }
   });
 
   test("checked-in output matches a fresh render (no drift)", async () => {

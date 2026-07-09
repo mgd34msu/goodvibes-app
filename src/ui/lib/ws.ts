@@ -7,13 +7,15 @@
 //           {type:'event', event, payload}
 //           {type:'auth', ok} (informational)
 // WebSocket upgrades cannot carry the x-gv-app header, so we first fetch a
-// one-shot ticket from /app/ws/ticket (a normal appFetch request that CAN
-// carry it) and pass it as ?ticket=. A bridge without the ticket endpoint
-// (404) gets a bare connect attempt so older bun-side builds still work.
+// one-shot ticket from WS_TICKET_PATH (GET /app/ws-ticket — a normal appFetch
+// request that CAN carry it) and pass it as ?ticket=. The bun side REQUIRES
+// the ticket (ws-bridge.ts handleUpgrade 403s without one), so a failed
+// ticket fetch is a failed connect — surfaced as bridge-unavailable.
 
 import { appFetch } from "./http.ts";
 import { HttpError } from "./http.ts";
 import { asRecord, firstString } from "./wire.ts";
+import { WS_TICKET_PATH } from "../../shared/app-contract.ts";
 
 const CALL_TIMEOUT_MS = 30_000;
 const RECONNECT_BASE_MS = 1_000;
@@ -49,7 +51,7 @@ function bridgeUnavailable(detail: string): HttpError {
 
 async function fetchTicket(): Promise<string | null> {
   try {
-    const res = await appFetch("/app/ws/ticket", { method: "POST" });
+    const res = await appFetch(WS_TICKET_PATH);
     if (!res.ok) return null;
     const body = (await res.json().catch(() => null)) as unknown;
     const ticket = firstString(body, ["ticket", "token"]);

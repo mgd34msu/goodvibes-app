@@ -21,13 +21,35 @@
 // The Workstream sub-filter scopes the same snapshot to
 // workstream/phase/work-item kinds (no dedicated contract exists).
 // Ported from goodvibes-webui src/views/fleet/FleetView.tsx + WorkstreamView.tsx.
+//
+// Fleet archive (contract 1.6, ws-only): finished subtrees move to a
+// session-scoped archive (fleet.archive / fleet.archiveFinished) and come
+// back via fleet.unarchive; the Archived scope renders fleet.archived.list
+// with the same node shape. Terminality of the WHOLE subtree is judged by
+// the daemon — the app only gates on the selected node's own state and
+// surfaces the daemon's honest refusal reason otherwise.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, ChevronLeft, GitBranch, OctagonX, Play, RefreshCw, Workflow } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Boxes,
+  ChevronLeft,
+  GitBranch,
+  OctagonX,
+  Play,
+  RefreshCw,
+  Workflow,
+} from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
-import { formatError, isMethodUnavailableError, isWsBridgeUnavailableError } from "../../lib/errors.ts";
+import {
+  formatError,
+  isMethodNotInvokableError,
+  isMethodUnavailableError,
+  isWsBridgeUnavailableError,
+} from "../../lib/errors.ts";
 import { compactJson, formatRelative } from "../../lib/wire.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { getCurrentUrlState, replaceState } from "../../lib/router.ts";
@@ -64,7 +86,17 @@ import { FleetTaskInline } from "./FleetTaskInline.tsx";
 /** No wire event exists for fleet.* — poll while visible (docs/UX.md §6). */
 const FLEET_POLL_INTERVAL_MS = 5_000;
 
-type FleetScope = "all" | "workstreams";
+type FleetScope = "all" | "workstreams" | "archived";
+
+/** fleet.archive wire result — {archived, count, reason?} per the contract. */
+function readArchiveResult(value: unknown): { archived: boolean; count: number; reason: string } {
+  const record = (value ?? {}) as Record<string, unknown>;
+  return {
+    archived: record["archived"] === true,
+    count: typeof record["count"] === "number" ? record["count"] : 0,
+    reason: typeof record["reason"] === "string" ? record["reason"] : "",
+  };
+}
 
 function KindBadge({ kind }: { kind: string }) {
   const known = isKnownProcessKind(kind);
@@ -144,14 +176,45 @@ function writeNodeToUrl(nodeId: string): void {
 
 export function FleetView() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [selectedId, setSelectedId] = useState(() => getCurrentUrlState().filters["node"] ?? "");
   const [scope, setScope] = useState<FleetScope>("all");
+  const archivedScope = scope === "archived";
 
-  const snapshot = useQuery({
+  const live = useQuery({
     queryKey: queryKeys.fleet,
     queryFn: async () => normalizeFleetSnapshot(await gv.fleet.snapshot()),
     refetchInterval: FLEET_POLL_INTERVAL_MS,
     retry: 1,
+    enabled: !archivedScope,
+  });
+  // Archived nodes are still live-derived daemon-side (usage/cost stay
+  // current), so the same poll cadence applies while the scope is visible.
+  const archivedList = useQuery({
+    queryKey: queryKeys.fleetArchived,
+    queryFn: async () => normalizeFleetSnapshot(await gv.fleet.archived.list()),
+    refetchInterval: FLEET_POLL_INTERVAL_MS,
+    retry: 1,
+    enabled: archivedScope,
+  });
+  const snapshot = archivedScope ? archivedList : live;
+
+  const archiveFinished = useMutation({
+    mutationFn: async () => (await gv.fleet.archiveFinished()) as { archivedCount?: number },
+    onSuccess: async (result) => {
+      const count = typeof result?.archivedCount === "number" ? result.archivedCount : 0;
+      toast({
+        title: count > 0 ? `Archived ${count} node${count === 1 ? "" : "s"}` : "Nothing finished to archive",
+        tone: count > 0 ? "success" : "info",
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
+    },
+    onError: (error: unknown) =>
+      toast({
+        title: isMethodUnavailableError(error) ? "This daemon has no fleet archive" : "Archive failed",
+        description: isMethodUnavailableError(error) ? undefined : formatError(error),
+        tone: "danger",
+      }),
   });
 
   const allNodes = useMemo(() => snapshot.data?.nodes ?? [], [snapshot.data]);
@@ -191,7 +254,8 @@ export function FleetView() {
   }, [queryClient]);
 
   const bridgeDown = snapshot.isError && isWsBridgeUnavailableError(snapshot.error);
-  const methodMissing = snapshot.isError && isMethodUnavailableError(snapshot.error);
+  const methodMissing =
+    snapshot.isError && (isMethodUnavailableError(snapshot.error) || isMethodNotInvokableError(snapshot.error));
 
   return (
     <div className={selected ? "fleet-view has-selection" : "fleet-view"}>
@@ -219,7 +283,28 @@ export function FleetView() {
             >
               <Workflow size={13} aria-hidden="true" /> Workstreams
             </button>
+            <button
+              type="button"
+              className={`fleet-scope__option${archivedScope ? " active" : ""}`}
+              aria-pressed={archivedScope}
+              title="Finished subtrees archived out of the live view this session"
+              onClick={() => setScope("archived")}
+            >
+              <Archive size={13} aria-hidden="true" /> Archived
+            </button>
           </div>
+          {!archivedScope && (
+            <button
+              className="fleet-icon-button"
+              type="button"
+              title="Archive all finished subtrees"
+              aria-label="Archive all finished subtrees"
+              disabled={archiveFinished.isPending}
+              onClick={() => archiveFinished.mutate()}
+            >
+              <Archive size={15} />
+            </button>
+          )}
           <button
             className="fleet-icon-button"
             type="button"
@@ -245,8 +330,14 @@ export function FleetView() {
         )}
         {methodMissing && (
           <UnavailableState
-            capability="fleet.snapshot"
-            description="this daemon cannot report a live process tree"
+            capability={archivedScope ? "fleet.archived.list" : "fleet.snapshot"}
+            description={
+              isMethodNotInvokableError(snapshot.error)
+                ? "this daemon build catalogs the method but has no live handler wired for it"
+                : archivedScope
+                  ? "this daemon has no fleet archive (needs operator contract ≥ 1.6)"
+                  : "this daemon cannot report a live process tree"
+            }
           />
         )}
         {snapshot.isError && !bridgeDown && !methodMissing && (
@@ -263,12 +354,22 @@ export function FleetView() {
 
         {snapshot.isSuccess && nodes.length === 0 && (
           <EmptyState
-            icon={scope === "workstreams" ? <Workflow size={28} /> : <Boxes size={28} />}
-            title={scope === "workstreams" ? "No active workstreams" : "No active processes"}
+            icon={
+              archivedScope ? <Archive size={28} /> : scope === "workstreams" ? <Workflow size={28} /> : <Boxes size={28} />
+            }
+            title={
+              archivedScope
+                ? "No archived processes"
+                : scope === "workstreams"
+                  ? "No active workstreams"
+                  : "No active processes"
+            }
             description={
-              scope === "workstreams"
-                ? "Multi-phase orchestration runs (workstreams, phases, work items) appear here while they run."
-                : "Agents, WRFC chains, workflows, watchers, and background processes appear here while they run."
+              archivedScope
+                ? "Finished subtrees you archive from the live view land here for the rest of the session."
+                : scope === "workstreams"
+                  ? "Multi-phase orchestration runs (workstreams, phases, work items) appear here while they run."
+                  : "Agents, WRFC chains, workflows, watchers, and background processes appear here while they run."
             }
           />
         )}
@@ -304,7 +405,7 @@ export function FleetView() {
 
       <div className="fleet-detail-pane">
         {selected ? (
-          <FleetDetail node={selected} onBack={() => selectNode("")} />
+          <FleetDetail node={selected} archived={archivedScope} onBack={() => selectNode("")} />
         ) : (
           <div className="fleet-detail-empty">Select a process to view its detail.</div>
         )}
@@ -313,7 +414,15 @@ export function FleetView() {
   );
 }
 
-function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) {
+function FleetDetail({
+  node,
+  archived,
+  onBack,
+}: {
+  node: FleetNode;
+  archived: boolean;
+  onBack: () => void;
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [confirmStop, setConfirmStop] = useState(false);
@@ -395,6 +504,44 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
     onError: (error: unknown) => toast({ title: "Run failed", description: formatError(error), tone: "danger" }),
   });
 
+  // Only the daemon knows whether the WHOLE subtree is terminal — the button
+  // gates on this node's own state and the refusal reason covers the rest.
+  const archiveNode = useMutation({
+    mutationFn: async () => readArchiveResult(await gv.fleet.archive(node.id)),
+    onSuccess: async (result) => {
+      if (result.archived) {
+        toast({ title: `Archived ${result.count} node${result.count === 1 ? "" : "s"}`, tone: "success" });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
+        onBack();
+      } else {
+        toast({ title: "Not archived", description: result.reason || "The daemon refused.", tone: "info" });
+      }
+    },
+    onError: (error: unknown) =>
+      toast({
+        title: isMethodUnavailableError(error) ? "This daemon has no fleet archive" : "Archive failed",
+        description: isMethodUnavailableError(error) ? undefined : formatError(error),
+        tone: "danger",
+      }),
+  });
+
+  const unarchiveNode = useMutation({
+    mutationFn: async () => (await gv.fleet.unarchive(node.id)) as { restored?: number },
+    onSuccess: async (result) => {
+      const restored = typeof result?.restored === "number" ? result.restored : 0;
+      toast({
+        title: restored > 0 ? `Restored ${restored} node${restored === 1 ? "" : "s"} to the live view` : "Nothing restored",
+        tone: restored > 0 ? "success" : "info",
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
+      onBack();
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Unarchive failed", description: formatError(error), tone: "danger" }),
+  });
+
+  const canArchive = !archived && isTerminalState(node.state);
+
   return (
     <div className="fleet-detail">
       <button type="button" className="fleet-detail__back" onClick={onBack}>
@@ -432,7 +579,7 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
 
       {node.sessionId && <FleetAgentControl ref={agentControlRef} node={node} />}
 
-      {(backed.has("start") || backed.has("stop") || backed.has("run")) && (
+      {(backed.has("start") || backed.has("stop") || backed.has("run") || canArchive || archived) && (
         <div className="fleet-detail__actions">
           {backed.has("start") && (
             <button
@@ -462,6 +609,28 @@ function FleetDetail({ node, onBack }: { node: FleetNode; onBack: () => void }) 
               onClick={() => setConfirmRun(true)}
             >
               <Play size={13} aria-hidden="true" /> {runWatcher.isPending ? "Triggering…" : "Run once"}
+            </button>
+          )}
+          {canArchive && (
+            <button
+              type="button"
+              className="fleet-action"
+              title="Move this finished subtree to the session archive (still inspectable under Archived)"
+              disabled={archiveNode.isPending}
+              onClick={() => archiveNode.mutate()}
+            >
+              <Archive size={13} aria-hidden="true" /> {archiveNode.isPending ? "Archiving…" : "Archive"}
+            </button>
+          )}
+          {archived && (
+            <button
+              type="button"
+              className="fleet-action"
+              title="Return this subtree to the live fleet view"
+              disabled={unarchiveNode.isPending}
+              onClick={() => unarchiveNode.mutate()}
+            >
+              <ArchiveRestore size={13} aria-hidden="true" /> {unarchiveNode.isPending ? "Restoring…" : "Unarchive"}
             </button>
           )}
         </div>

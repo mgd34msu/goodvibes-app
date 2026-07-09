@@ -39,6 +39,7 @@ export const queryKeys = {
   // fleet.*/checkpoints.* have no wire events (pinned upstream) — views poll
   // and refetch on mutation; these keys are NOT in DOMAIN_INVALIDATIONS.
   fleet: ["fleet"] as const,
+  fleetArchived: ["fleet", "archived"] as const,
   checkpoints: ["checkpoints"] as const,
   workstream: ["workstream"] as const,
   knowledgeStatus: ["knowledge", "status"] as const,

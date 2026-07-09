@@ -134,7 +134,18 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
     open(ws) {
       const target = new URL(DAEMON_WS_PATH, daemon.info.baseUrl);
       target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
-      const daemonWs = new WebSocket(target.toString());
+      // Daemons ≥ operator contract 1.6 authenticate the UPGRADE itself
+      // (401 before the 101 without a Bearer header). Bun's WebSocket client
+      // accepts handshake headers (a Bun extension the lib.dom constructor
+      // type doesn't know about); the post-open auth frame below still
+      // covers older daemons that only check the frame.
+      const BunWebSocket = WebSocket as unknown as new (
+        url: string,
+        options: { headers: Record<string, string> },
+      ) => WebSocket;
+      const daemonWs = new BunWebSocket(target.toString(), {
+        headers: { authorization: `Bearer ${daemon.token}` },
+      });
       const conn: BridgeConnection = { daemonWs, pending: [], pendingBytes: 0, webviewClosed: false };
       ws.data.conn = conn;
 

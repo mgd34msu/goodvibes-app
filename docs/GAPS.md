@@ -90,7 +90,7 @@ evidence found; stated plainly, no inference.
 
 **Section 2 tally: 12 shipped, 0 partial, 0 missing.**
 
-## 3. Fleet (12 rows)
+## 3. Fleet (13 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -106,8 +106,22 @@ evidence found; stated plainly, no inference.
 | 10 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | SHIPPED | derived in `fleet.ts:424-452` (`chainProgress` `c:N/M`, `reviewTally` SAT/UNS/UNV from the node's own `constraintFindings`); rendered as badges in `FleetView.tsx:95-122` (Wave E) |
 | 11 | Worktree detail per agent | SHIPPED | `fleet.ts:386-392` `agentWorkingDirectory`/`worktreeLabel` off the node's reported worktree path; rendered on rows and in detail at `FleetView.tsx:287-289,411-413` (Wave E) |
 | 12 | Deep links into fleet nodes | SHIPPED | `FleetView.tsx:92-103` `writeNodeToUrl`/`selectedId` round-trips through `router.ts` URL filters |
+| 13 | Fleet archive (archive finished subtrees, browse archived, restore) | SHIPPED | SDK 1.6.1 / operator contract 1.6 adds `fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` `[ws]` (contract went 329 → 333 methods; wrappers `gv.ts` `fleet.*`). `FleetView.tsx`: "Archived" scope renders `fleet.archived.list` through the same row/detail machinery (`queryKeys.fleetArchived`), toolbar "Archive all finished" → `fleet.archiveFinished`, detail-pane Archive (gated on the node's own terminal state; the daemon judges whole-subtree terminality and its `{archived:false, reason}` refusal is surfaced verbatim) and Unarchive. Older daemons degrade honestly: `isMethodUnavailableError` → `UnavailableState` in the Archived scope / toast on mutations; `normalizeFleetSnapshot` renders an unknown-verb empty-object answer as an empty archive |
 
-**Section 3 tally: 12 shipped, 0 partial, 0 missing.** Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
+**Section 3 tally: 13 shipped, 0 partial, 0 missing.** Honest operational note (2026-07-09):
+adopting row 13 exposed two latent transport defects, both fixed the same day — the webview
+ws client fetched its one-shot ticket from the wrong path/method (`POST /app/ws/ticket` vs the
+bun server's `GET /app/ws-ticket`, so the in-app bridge had NEVER actually connected and every
+ws-only view was showing its degradation state), and daemons ≥ contract 1.6 authenticate the
+websocket UPGRADE itself (the bridge now sends `Authorization: Bearer` at handshake, keeping the
+post-open auth frame for older daemons). Separately, the currently-vendored daemon build
+(goodvibes-tui 1.13.0, reports v1.6.1) catalogs but attaches NO handler for any ws-only method —
+`fleet.*`, `checkpoints.*`, `sessions.search` all answer 501 "Gateway method is not invokable"
+over both ws and HTTP invoke (verified with direct daemon calls; `sessions.list` answers 200 over
+the same socket, so transport and auth are fine). That is a daemon-side regression to report
+upstream; the app surfaces it truthfully (501 now classifies as method-unavailable →
+`UnavailableState` naming the capability) and lights up with no further change once the daemon
+attaches handlers. Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
 
 ## 4. Approvals & Tasks (9 rows)
 
@@ -507,7 +521,7 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 |---|---|---|---|---|---|---|
 | 1 | Chat | 41 | 0 | 0 | — | 41 |
 | 2 | Sessions | 12 | 0 | 0 | — | 12 |
-| 3 | Fleet | 12 | 0 | 0 | — | 12 |
+| 3 | Fleet | 13 | 0 | 0 | — | 13 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | — | 9 |
 | 5 | Automation | 12 | 0 | 0 | — | 12 |
 | 6 | Knowledge | 25 | 0 | 0 | — | 25 |
@@ -529,7 +543,11 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 | 22 | Onboarding | 9 | 0 | 0 | — | 9 |
 | 23 | Palette & Keyboard | 8 | 0 | 0 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **286** | **2** | **0** | **0** | **288** |
+| — | **Total** | **287** | **2** | **0** | **0** | **289** |
+
+Section 3 gained row 13 (fleet archive) when SDK 1.6.1 / operator contract 1.6 added the
+`fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` verbs (2026-07-09) —
+adopted same-day, so the total moved 288 → 289 with the row born SHIPPED.
 
 288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave G, its subscriptions follow-up, and the companion-turn-cancel/steer close-out, **99.3% shipped, 0.7% partial, 0% missing** of audited rows (was 99.0% / 1.0% post-Wave-G-and-subscriptions, 98.6% / 1.4% post-Wave-G-proper, 96.5% / 3.1% / 0% post-Wave-F, 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave G closed six rows, verified against the tree by the integration gate (not trusted from agent reports): §15 row 11 (GitHub — device-flow + PAT auth, proxied reads, and SDK-backed PR/issue writes served app-locally from `src/bun/github.ts` on the SDK's `beginDeviceCodeFlow`/`pollDeviceCodeFlow` + `GitHubIntegration`, with `GitHubPanel` wired live to it), §3 row 7 (agent interrupt/stop/resume composed from `sessions.*` verbs in `FleetAgentControl`, with an honest note that no freeze-and-thaw *pause* verb exists — flipping the section's last EXCLUDED entry to shipped), §6 rows 15 and 17 (dedicated single-item `knowledge.schedule.get` / `knowledge.refinement.task.get` fetches), §8 row 12 (single combined "Learning review" curator in `MemoryView`), and §18 row 1 (one-shot `voice.tts` wired as the live streaming-TTS fallback). A new Bun surface `src/bun/github.ts` (registered `/app/github`, unit-covered by `test/github.test.ts`) backs the GitHub panel. **No MISSING rows remain, and no EXCLUDED rows remain.** A same-day follow-up closed §14 row 11 the same app-side way (subscription OAuth via `src/bun/subscriptions.ts` on the SDK's `SubscriptionManager`, sharing the TUI's `subscriptions.json`; `test/subscriptions.test.ts`). A further same-day close-out flipped §1 row 39 (companion-turn cancel) once daemon 1.11.0 served the app's own spec (`docs/turn-cancel-request.md`) for `companion.chat.turns.cancel` + `companion.chat.messages.steer`. The 2 remaining partials are each a named deliberate design choice, owner-confirmed 2026-07-07 (§15 row 3 read-only tags/remotes/reflog; §20 row 2 no in-chrome login form) — no partial remains wire-blocked. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
 

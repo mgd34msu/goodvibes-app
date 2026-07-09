@@ -1,7 +1,7 @@
 // GENERATED FILE — DO NOT EDIT BY HAND.
 // Produced by scripts/generate-operator-routes.ts from the installed
 // @pellux/goodvibes-sdk contracts/operator-contract.json artifact
-// (contract v1, goodvibes operator 1.4.1, 329 methods).
+// (contract v1, goodvibes operator 1.6.1, 333 methods).
 // `path` keeps {param} placeholders; `ws: true` = WS-only method (no HTTP
 // route — call it over the /app/ws bridge). Regenerate: `bun run generate:routes`.
 
@@ -125,8 +125,12 @@ export const OPERATOR_ROUTES: Readonly<Record<string, OperatorRoute>> = {
   "email.inbox.list": { id: "email.inbox.list", httpMethod: "GET", path: "/api/email/inbox", ws: false, dangerous: false, access: "authenticated" },
   "email.inbox.read": { id: "email.inbox.read", httpMethod: "GET", path: "/api/email/inbox/{uid}", ws: false, dangerous: false, access: "authenticated" },
   "email.send": { id: "email.send", httpMethod: "POST", path: "/api/email/send", ws: false, dangerous: true, access: "admin" },
+  "fleet.archive": { id: "fleet.archive", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
+  "fleet.archiveFinished": { id: "fleet.archiveFinished", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
+  "fleet.archived.list": { id: "fleet.archived.list", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
   "fleet.list": { id: "fleet.list", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
   "fleet.snapshot": { id: "fleet.snapshot", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
+  "fleet.unarchive": { id: "fleet.unarchive", httpMethod: null, path: null, ws: true, dangerous: false, access: "authenticated" },
   "health.snapshot": { id: "health.snapshot", httpMethod: "GET", path: "/api/health", ws: false, dangerous: false, access: "authenticated" },
   "homeassistant.homeGraph.askHomeGraph": { id: "homeassistant.homeGraph.askHomeGraph", httpMethod: "POST", path: "/api/homeassistant/home-graph/ask", ws: false, dangerous: false, access: "authenticated" },
   "homeassistant.homeGraph.browse": { id: "homeassistant.homeGraph.browse", httpMethod: "GET", path: "/api/homeassistant/home-graph/browse", ws: false, dangerous: false, access: "authenticated" },

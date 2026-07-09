@@ -230,6 +230,16 @@ export const gv = {
   fleet: {
     snapshot: (body?: unknown) => invoke("fleet.snapshot", { body }), // [ws]
     list: (body?: unknown) => invoke("fleet.list", { body }), // [ws]
+    // Fleet archive (daemon ≥ operator contract 1.6): session-scoped — archived
+    // subtrees leave the live snapshot but stay fully inspectable via archived.list.
+    // archive() refuses honestly ({archived:false, reason}) unless the whole
+    // subtree is terminal (done/failed/killed/interrupted).
+    archive: (id: string) => invoke("fleet.archive", { body: { id } }), // [ws]
+    unarchive: (id: string) => invoke("fleet.unarchive", { body: { id } }), // [ws]
+    archiveFinished: () => invoke("fleet.archiveFinished", { body: {} }), // [ws]
+    archived: {
+      list: () => invoke("fleet.archived.list", { body: {} }), // [ws]
+    },
   },
 
   checkpoints: {

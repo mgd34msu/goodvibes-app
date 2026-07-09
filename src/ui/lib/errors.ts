@@ -132,6 +132,10 @@ export function isSessionActiveError(error: unknown): boolean {
  * Message-sniff fallback for pre-1.0 daemons that omit the code entirely.
  */
 export function isMethodUnavailableError(error: unknown): boolean {
+  // 501 "cataloged but not invokable" gets the same user-facing treatment:
+  // this daemon cannot serve the method. Callers that care about the
+  // distinction (wording) can additionally check isMethodNotInvokableError.
+  if (isMethodNotInvokableError(error)) return true;
   if (errorStatus(error) !== 404) return false;
   const code = errorCode(error);
   if (code === "METHOD_NOT_FOUND" || code === "NOT_FOUND") return true;
