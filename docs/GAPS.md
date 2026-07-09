@@ -118,10 +118,15 @@ post-open auth frame for older daemons). Separately, the currently-vendored daem
 (goodvibes-tui 1.13.0, reports v1.6.1) catalogs but attaches NO handler for any ws-only method —
 `fleet.*`, `checkpoints.*`, `sessions.search` all answer 501 "Gateway method is not invokable"
 over both ws and HTTP invoke (verified with direct daemon calls; `sessions.list` answers 200 over
-the same socket, so transport and auth are fine). That is a daemon-side regression to report
-upstream; the app surfaces it truthfully (501 now classifies as method-unavailable →
-`UnavailableState` naming the capability) and lights up with no further change once the daemon
-attaches handlers. Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
+the same socket, so transport and auth are fine). The app surfaces it truthfully (501 now
+classifies as method-unavailable → `UnavailableState` naming the capability).
+**Resolved upstream the same day**: the TUI's and agent's forked `createRuntimeServices` built the
+gateway catalog but never called the SDK's `registerGatewayVerbGroups` — latent on every daemon
+build ever vendored, not a 1.13.0 regression. TUI 1.13.1 / agent 1.8.1 attach the verb groups and
+gate on it (`gateway-ws-only-invokable.test.ts`). After the daemon restart the app lit up with
+zero app-side changes, as designed — live-verified 2026-07-09: `fleet.snapshot` renders real
+nodes, `fleet.archiveFinished` answers with an honest zero-count toast, the Archived scope renders
+the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
 
 ## 4. Approvals & Tasks (9 rows)
 
