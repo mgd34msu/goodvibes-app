@@ -1,10 +1,13 @@
 import type { ElectrobunConfig } from "electrobun/bun";
+import pkg from "./package.json";
 
 const config: ElectrobunConfig = {
   app: {
     name: "GoodVibes",
     identifier: "dev.pellux.goodvibes-app",
-    version: "0.1.0",
+    // Single source of truth: package.json — a hardcoded string here shipped
+    // v0.1.1/v0.2.0 binaries that self-reported 0.1.0 in /app/health.
+    version: pkg.version,
     description: "GoodVibes desktop — the unified GUI for the GoodVibes ecosystem.",
   },
   build: {
