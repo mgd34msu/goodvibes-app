@@ -13,3 +13,64 @@
 .reg-form__textarea--body {
   min-height: 220px;
 }
+
+/* Section switcher between the app-local registry catalog and the
+   daemon-canonical store. */
+.skills-view__sections {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+/* Reused across skills/memory/checkin for an inline field-level error under
+   a form control — distinct from a toast: the operator is still looking at
+   the form that caused it (e.g. skills.create's 409 name conflict). */
+.reg-form__error {
+  color: var(--status-danger);
+  font-size: var(--text-xs);
+}
+
+/* Daemon skills — index rows are cheap (name/description/metadata only);
+   expanding fetches the full markdown body. */
+.daemon-skills-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.daemon-skills-panel__note {
+  margin: 0;
+}
+
+.daemon-skill-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.daemon-skill-row__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--text-sm);
+}
+
+.daemon-skill-row__updated {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.daemon-skill-row__body {
+  padding-left: var(--space-5);
+}
+
+.daemon-skill-row__markdown {
+  max-height: 420px;
+}

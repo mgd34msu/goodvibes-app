@@ -133,6 +133,9 @@ interface ReviewQueuePanelProps {
   savingId: string | null;
   onSave: (id: string, input: MemoryReviewDraft) => void;
   onOpen: (record: MemoryRecord) => void;
+  /** Ids to visually highlight — the consolidation "Review" jump lands here
+   * via scroll + highlight, never a filter. */
+  highlightedIds?: ReadonlySet<string>;
 }
 
 export function ReviewQueuePanel({
@@ -143,6 +146,7 @@ export function ReviewQueuePanel({
   savingId,
   onSave,
   onOpen,
+  highlightedIds,
 }: ReviewQueuePanelProps) {
   if (isPending) {
     return (
@@ -177,24 +181,31 @@ export function ReviewQueuePanel({
 
   return (
     <ul className="memory-review-queue">
-      {records.map((record) => (
-        <li key={record.id} className="memory-review-row">
-          <button type="button" className="memory-review-row__summary" onClick={() => onOpen(record)}>
-            <strong>{record.summary}</strong>
-            <span className="memory-review-row__meta">
-              <span className="badge neutral">{record.cls}</span>
-              <span className="badge neutral">{record.scope}</span>
-              <span className={`badge ${reviewStateTone(record.reviewState)}`}>current: {record.reviewState}</span>
-              <span className="badge neutral">{formatConfidence(record.confidence)}</span>
-            </span>
-          </button>
-          <MemoryReviewForm
-            record={record}
-            saving={savingId === record.id}
-            onSave={(input) => onSave(record.id, input)}
-          />
-        </li>
-      ))}
+      {records.map((record) => {
+        const highlighted = highlightedIds?.has(record.id) ?? false;
+        return (
+          <li
+            key={record.id}
+            id={`memory-review-row-${record.id}`}
+            className={highlighted ? "memory-review-row memory-review-row--highlighted" : "memory-review-row"}
+          >
+            <button type="button" className="memory-review-row__summary" onClick={() => onOpen(record)}>
+              <strong>{record.summary}</strong>
+              <span className="memory-review-row__meta">
+                <span className="badge neutral">{record.cls}</span>
+                <span className="badge neutral">{record.scope}</span>
+                <span className={`badge ${reviewStateTone(record.reviewState)}`}>current: {record.reviewState}</span>
+                <span className="badge neutral">{formatConfidence(record.confidence)}</span>
+              </span>
+            </button>
+            <MemoryReviewForm
+              record={record}
+              saving={savingId === record.id}
+              onSave={(input) => onSave(record.id, input)}
+            />
+          </li>
+        );
+      })}
     </ul>
   );
 }

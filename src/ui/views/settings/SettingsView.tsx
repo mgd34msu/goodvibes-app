@@ -18,6 +18,7 @@ import { registerCommand, unregisterCommand, runCommand } from "../../lib/comman
 import { useUrlState } from "../../lib/router.ts";
 import { settingsKeys } from "./settings-queries.ts";
 import { ConfigSettingsSection } from "./ConfigSettingsSection.tsx";
+import { FeatureSettingsSection } from "./FeatureSettingsSection.tsx";
 import { ShellPrefsSection } from "./ShellPrefsSection.tsx";
 import { LocalAuthSection } from "./LocalAuthSection.tsx";
 import { SecuritySection } from "./SecuritySection.tsx";
@@ -36,6 +37,7 @@ type SettingsSection = SettingsSectionId;
 
 const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string }> = [
   { id: "config", label: "Daemon config" },
+  { id: "features", label: "Feature settings" },
   { id: "app", label: "App shell" },
   { id: "auth", label: "Local auth" },
   { id: "security", label: "Security" },
@@ -140,6 +142,7 @@ export function SettingsView(): React.ReactElement {
       </div>
 
       {section === "config" && <ConfigSettingsSection />}
+      {section === "features" && <FeatureSettingsSection />}
       {section === "app" && <ShellPrefsSection />}
       {section === "auth" && <LocalAuthSection />}
       {section === "security" && (

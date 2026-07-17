@@ -35,6 +35,7 @@ import { Modal } from "../../components/Modal.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { ApprovalCard } from "./ApprovalCard.tsx";
 import { TasksSection } from "./TasksSection.tsx";
+import { PermissionRulesSection } from "./PermissionRulesSection.tsx";
 
 function friendlyError(error: unknown): string {
   if (isSessionClosedError(error)) {
@@ -55,7 +56,10 @@ export function ApprovalsTasksView() {
   return (
     <div className="approvals-tasks-view">
       <ApprovalsSection />
-      <TasksSection />
+      <div className="tasks-rail">
+        <TasksSection />
+        <PermissionRulesSection />
+      </div>
     </div>
   );
 }

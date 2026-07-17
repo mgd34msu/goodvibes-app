@@ -58,19 +58,24 @@ import { contractStateForBadgeTone, type BadgeTone } from "../../lib/presentatio
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import {
+  FLEET_POLL_INTERVAL_MS,
   WORKSTREAM_KINDS,
   activeCount,
   agentWorkingDirectory,
+  attentionReasonLabel,
   buildFleetRows,
   costLabel,
   formatDurationMs,
   isAwaitingApprovalState,
   isKnownProcessKind,
   isKnownProcessState,
+  isObservedKind,
   isStalledState,
   isTerminalState,
   kindLabel,
   normalizeFleetSnapshot,
+  observedNodeCount,
+  ownNodeCount,
   stateLabel,
   unbackedCapabilityNote,
   wireBackedActions,
@@ -82,9 +87,11 @@ import {
 import { FleetAgentControl, type FleetAgentControlHandle } from "./FleetAgentControl.tsx";
 import { FleetApprovalInline } from "./FleetApprovalInline.tsx";
 import { FleetTaskInline } from "./FleetTaskInline.tsx";
-
-/** No wire event exists for fleet.* — poll while visible (docs/UX.md §6). */
-const FLEET_POLL_INTERVAL_MS = 5_000;
+import { AttemptComparisonModal, FleetAttemptsSection, useFleetAttemptGroups } from "./FleetAttempts.tsx";
+import { FleetConflictsSection, useFleetConflicts } from "./FleetConflicts.tsx";
+import { FleetHostAgentButton } from "./FleetHostAgent.tsx";
+import { FleetObservedDetail, ObservedBadge } from "./FleetObservedDetail.tsx";
+import { FleetTaskGraph } from "./FleetTaskGraph.tsx";
 
 type FleetScope = "all" | "workstreams" | "archived";
 
@@ -96,6 +103,16 @@ function readArchiveResult(value: unknown): { archived: boolean; count: number; 
     count: typeof record["count"] === "number" ? record["count"] : 0,
     reason: typeof record["reason"] === "string" ? record["reason"] : "",
   };
+}
+
+/** A node the daemon flagged as blocked on a human (approval/input/pick/conflict) — contract 1.11's needsAttention marker. */
+function AttentionBadge({ reason, detail }: { reason: string; detail: string }) {
+  const label = attentionReasonLabel(reason);
+  return (
+    <span className="badge warning" data-attention-reason={reason} title={detail ? `${label}: ${detail}` : label}>
+      {label}
+    </span>
+  );
 }
 
 function KindBadge({ kind }: { kind: string }) {
@@ -199,6 +216,17 @@ export function FleetView() {
   });
   const snapshot = archivedScope ? archivedList : live;
 
+  // Best-of-N attempt groups + merge conflicts (contract 1.11) — polled
+  // alongside the snapshot, degrading to an empty list SILENTLY on an older
+  // daemon (isMethodUnavailableError), never a scary error state.
+  const attempts = useFleetAttemptGroups(!archivedScope);
+  const conflicts = useFleetConflicts(!archivedScope);
+  const [comparingGroupId, setComparingGroupId] = useState("");
+  const comparingGroup = useMemo(
+    () => attempts.groups.find((g) => g.groupId === comparingGroupId) ?? null,
+    [attempts.groups, comparingGroupId],
+  );
+
   const archiveFinished = useMutation({
     mutationFn: async () => (await gv.fleet.archiveFinished()) as { archivedCount?: number },
     onSuccess: async (result) => {
@@ -218,14 +246,28 @@ export function FleetView() {
   });
 
   const allNodes = useMemo(() => snapshot.data?.nodes ?? [], [snapshot.data]);
-  const nodes = useMemo(
-    () => (scope === "workstreams" ? allNodes.filter((n) => WORKSTREAM_KINDS.has(n.kind)) : allNodes),
-    [allNodes, scope],
-  );
+  // Best-of-N sibling nodes collapse into the FleetAttemptsSection above the
+  // tree instead of appearing as N loose rows — only for groups fleet.
+  // attempts.list is actually tracking (a stale/unknown groupId marker never
+  // hides a node with nothing collapsing it).
+  const attemptGroupIdSet = useMemo(() => new Set(attempts.groups.map((g) => g.groupId)), [attempts.groups]);
+  const nodes = useMemo(() => {
+    const scoped = scope === "workstreams" ? allNodes.filter((n) => WORKSTREAM_KINDS.has(n.kind)) : allNodes;
+    if (archivedScope || attemptGroupIdSet.size === 0) return scoped;
+    return scoped.filter((n) => !(n.attemptGroup && attemptGroupIdSet.has(n.attemptGroup.groupId)));
+  }, [allNodes, scope, archivedScope, attemptGroupIdSet]);
   const rows = useMemo(() => buildFleetRows(nodes), [nodes]);
   const selected = useMemo(() => allNodes.find((n) => n.id === selectedId) ?? null, [allNodes, selectedId]);
   const running = useMemo(() => activeCount(nodes), [nodes]);
   const stalled = useMemo(() => nodes.filter((n) => isStalledState(n.state)).length, [nodes]);
+  const ownCount = useMemo(() => ownNodeCount(nodes), [nodes]);
+  const observedCount = useMemo(() => observedNodeCount(nodes), [nodes]);
+
+  const invalidateAttemptsAndConflicts = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.fleetAttempts });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.fleetConflicts });
+  };
 
   const selectNode = (id: string) => {
     setSelectedId(id);
@@ -262,8 +304,9 @@ export function FleetView() {
       <div className="fleet-list-pane">
         <div className="fleet-toolbar">
           <span className="fleet-toolbar__summary">
-            <Boxes size={14} aria-hidden="true" /> {nodes.length} node{nodes.length === 1 ? "" : "s"} · {running}{" "}
-            active{stalled > 0 ? ` · ${stalled} stalled` : ""}
+            <Boxes size={14} aria-hidden="true" /> {ownCount} node{ownCount === 1 ? "" : "s"} · {running} active
+            {stalled > 0 ? ` · ${stalled} stalled` : ""}
+            {observedCount > 0 ? ` · ${observedCount} observed (external)` : ""}
           </span>
           <div className="fleet-scope" role="group" aria-label="Fleet scope">
             <button
@@ -293,6 +336,7 @@ export function FleetView() {
               <Archive size={13} aria-hidden="true" /> Archived
             </button>
           </div>
+          {!archivedScope && <FleetHostAgentButton />}
           {!archivedScope && (
             <button
               className="fleet-icon-button"
@@ -315,6 +359,13 @@ export function FleetView() {
             <RefreshCw size={15} className={snapshot.isFetching ? "spinning" : undefined} />
           </button>
         </div>
+
+        {!archivedScope && (
+          <FleetAttemptsSection groups={attempts.groups} onOpenGroup={(groupId) => setComparingGroupId(groupId)} />
+        )}
+        {!archivedScope && (
+          <FleetConflictsSection conflicts={conflicts.conflicts} onResolved={() => void invalidateAttemptsAndConflicts()} />
+        )}
 
         {snapshot.isPending && <SkeletonBlock variant="text" lines={6} />}
 
@@ -385,9 +436,14 @@ export function FleetView() {
                 >
                   <span className="fleet-row__title">{node.label}</span>
                   <span className="fleet-row__badges">
+                    {node.attention && <AttentionBadge reason={node.attention.reason} detail={node.attention.detail} />}
                     <KindBadge kind={node.kind} />
                     <StateBadge state={node.state} />
-                    {node.kind !== "phase" && <span className="badge neutral">{costLabel(node)}</span>}
+                    {node.observed && <ObservedBadge observed={node.observed} />}
+                    {/* Observed foreign agents never report usage/cost — an honest absence, never a fabricated $0.00. */}
+                    {node.kind !== "phase" && !isObservedKind(node.kind) && (
+                      <span className="badge neutral">{costLabel(node)}</span>
+                    )}
                     <ChainProgressBadge node={node} />
                     <ConstraintVerdictBadges node={node} />
                   </span>
@@ -410,6 +466,15 @@ export function FleetView() {
           <div className="fleet-detail-empty">Select a process to view its detail.</div>
         )}
       </div>
+
+      {comparingGroup && (
+        <AttemptComparisonModal
+          open
+          group={comparingGroup}
+          onClose={() => setComparingGroupId("")}
+          onPicked={() => void invalidateAttemptsAndConflicts()}
+        />
+      )}
     </div>
   );
 }
@@ -551,9 +616,12 @@ function FleetDetail({
       <header className="fleet-detail__header">
         <h2>{node.label}</h2>
         <div className="fleet-detail__badges">
+          {node.attention && <AttentionBadge reason={node.attention.reason} detail={node.attention.detail} />}
           <KindBadge kind={node.kind} />
           <StateBadge state={node.state} />
-          {node.kind !== "phase" && <span className="badge neutral">{costLabel(node)}</span>}
+          {node.observed && <ObservedBadge observed={node.observed} />}
+          {/* Observed foreign agents never report usage/cost — honest absence, no $0.00. */}
+          {node.kind !== "phase" && !isObservedKind(node.kind) && <span className="badge neutral">{costLabel(node)}</span>}
           <ChainProgressBadge node={node} />
           <ConstraintVerdictBadges node={node} />
         </div>
@@ -575,9 +643,13 @@ function FleetDetail({
         </div>
       </header>
 
+      {node.observed && <FleetObservedDetail node={node} observed={node.observed} />}
+
       <FleetApprovalInline node={node} />
 
       {node.sessionId && <FleetAgentControl ref={agentControlRef} node={node} />}
+
+      {node.kind === "workstream" && <FleetTaskGraph workstreamId={node.id} />}
 
       {(backed.has("start") || backed.has("stop") || backed.has("run") || canArchive || archived) && (
         <div className="fleet-detail__actions">

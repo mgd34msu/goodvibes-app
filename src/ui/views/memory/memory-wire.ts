@@ -52,6 +52,11 @@ export const memoryKeys = {
   reviewQueue: ["memory", "review-queue"] as const,
   vector: ["memory", "vector"] as const,
   doctor: ["memory", "doctor"] as const,
+  // Matches lib/queries.ts's queryKeys.memoryConsolidation/memoryProjections
+  // tuples so both stay under the ["memory"] invalidation prefix.
+  consolidation: ["memory", "consolidation"] as const,
+  projections: ["memory", "projections"] as const,
+  projection: (id: string) => ["memory", "projections", id] as const,
 } as const;
 
 // ─── Wire types ───────────────────────────────────────────────────────────────
@@ -467,6 +472,176 @@ export function extractBundle(
   const links = asArray(bundle["links"]);
   if (!Array.isArray(bundle["records"])) return null;
   return { bundle, recordCount: records.length, linkCount: links.length };
+}
+
+// ─── Consolidation receipts (memory.consolidation.receipts) ───────────────────
+//
+// Idle/scheduled consolidation performs only REVERSIBLE operations on its own
+// (merge exact duplicates, decay never-referenced aged records); anything
+// needing a human call (contradiction, cross-scope duplicate, stale-delete)
+// is emitted as a PROPOSAL instead. The records a proposal references are
+// already marked into the review queue by the consolidation pass itself —
+// this is purely a legibility layer (what kind, which records, why) with a
+// jump to the review queue below, never a second resolution path.
+
+export type ConsolidationProposalKind = "contradiction" | "cross-scope-duplicate" | "stale-delete";
+
+export interface ConsolidationProposal {
+  kind: ConsolidationProposalKind | string;
+  ids: string[];
+  /** An internal agent-tool invocation string on the wire — never a link. */
+  route: string;
+  reason: string;
+}
+
+export interface ConsolidationRunReceipt {
+  runId: string;
+  ranAt: string;
+  trigger: string;
+  idle: boolean;
+  scanned: number;
+  merged: unknown[];
+  archived: unknown[];
+  decayed: unknown[];
+  proposed: ConsolidationProposal[];
+  usageSignalAvailable: boolean;
+  note: string;
+}
+
+export interface ConsolidationReceiptsResult {
+  receipts: ConsolidationRunReceipt[];
+  pendingProposals: ConsolidationProposal[];
+}
+
+export const CONSOLIDATION_PROPOSAL_KIND_LABEL: Record<string, string> = {
+  contradiction: "Contradiction",
+  "cross-scope-duplicate": "Cross-scope duplicate",
+  "stale-delete": "Stale — propose delete",
+};
+
+function parseConsolidationProposal(value: unknown): ConsolidationProposal | null {
+  const record = asRecord(value);
+  const reason = firstString(record, ["reason"]);
+  const ids = parseStrings(record["ids"]);
+  if (!reason && ids.length === 0) return null;
+  return {
+    kind: firstString(record, ["kind"]) || "unknown",
+    ids,
+    route: firstString(record, ["route"]),
+    reason,
+  };
+}
+
+function parseConsolidationRunReceipt(value: unknown): ConsolidationRunReceipt | null {
+  const record = asRecord(value);
+  const runId = firstString(record, ["runId"]);
+  if (!runId) return null;
+  return {
+    runId,
+    ranAt: firstString(record, ["ranAt"]),
+    trigger: firstString(record, ["trigger"]) || "unknown",
+    idle: record["idle"] === true,
+    scanned: firstNumber(record, ["scanned"]) ?? 0,
+    merged: asArray(record["merged"]),
+    archived: asArray(record["archived"]),
+    decayed: asArray(record["decayed"]),
+    proposed: asArray(record["proposed"]).flatMap((item) => {
+      const parsed = parseConsolidationProposal(item);
+      return parsed ? [parsed] : [];
+    }),
+    usageSignalAvailable: record["usageSignalAvailable"] === true,
+    note: firstString(record, ["note"]),
+  };
+}
+
+export function parseConsolidationReceipts(value: unknown): ConsolidationReceiptsResult {
+  const record = asRecord(value);
+  return {
+    receipts: asArray(record["receipts"]).flatMap((item) => {
+      const parsed = parseConsolidationRunReceipt(item);
+      return parsed ? [parsed] : [];
+    }),
+    pendingProposals: asArray(record["pendingProposals"]).flatMap((item) => {
+      const parsed = parseConsolidationProposal(item);
+      return parsed ? [parsed] : [];
+    }),
+  };
+}
+
+export function formatConsolidationRunAt(value: string): string {
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms).toLocaleString() : value || "—";
+}
+
+// ─── Standing-memory projections (memory.projections.list/get) ────────────────
+//
+// The live markdown projection of standing (project/team-scope) memory
+// records — computed from the store on EVERY call, never read from disk or
+// cached. A projection entry is present even when expired (status:"expired"),
+// never silently dropped.
+
+export const MEMORY_PROJECTION_STATUSES = ["active", "pending", "expired"] as const;
+export type MemoryProjectionStatus = (typeof MEMORY_PROJECTION_STATUSES)[number];
+
+export interface MemoryProjectionMeta {
+  id: string;
+  filename: string;
+  scope: string;
+  cls: string;
+  summary: string;
+  tags: string[];
+  confidence: number;
+  reviewState: string;
+  validFrom?: number;
+  validUntil?: number;
+  status: string;
+}
+
+export interface MemoryProjectionDetail {
+  projection: MemoryProjectionMeta;
+  markdown: string;
+}
+
+function parseProjectionMeta(value: unknown): MemoryProjectionMeta | null {
+  const record = asRecord(value);
+  const id = firstString(record, ["id"]);
+  if (!id) return null;
+  const validFrom = firstNumber(record, ["validFrom"]);
+  const validUntil = firstNumber(record, ["validUntil"]);
+  return {
+    id,
+    filename: firstString(record, ["filename"]),
+    scope: firstString(record, ["scope"]) || "unknown",
+    cls: firstString(record, ["cls"]) || "unknown",
+    summary: firstString(record, ["summary"]) || "(no summary)",
+    tags: parseStrings(record["tags"]),
+    confidence: firstNumber(record, ["confidence"]) ?? 0,
+    reviewState: firstString(record, ["reviewState"]) || "unknown",
+    ...(validFrom !== undefined ? { validFrom } : {}),
+    ...(validUntil !== undefined ? { validUntil } : {}),
+    status: firstString(record, ["status"]) || "unknown",
+  };
+}
+
+export function parseMemoryProjections(value: unknown): MemoryProjectionMeta[] {
+  const record = asRecord(value);
+  return asArray(record["projections"] ?? value).flatMap((item) => {
+    const parsed = parseProjectionMeta(item);
+    return parsed ? [parsed] : [];
+  });
+}
+
+export function parseMemoryProjectionDetail(value: unknown): MemoryProjectionDetail | null {
+  const outer = asRecord(value);
+  const projection = parseProjectionMeta(outer["projection"]);
+  if (!projection) return null;
+  return { projection, markdown: firstString(outer, ["markdown"]) };
+}
+
+export function projectionStatusTone(status: string): "ok" | "warning" | "neutral" {
+  if (status === "active") return "ok";
+  if (status === "expired") return "warning";
+  return "neutral";
 }
 
 /** JSON file download via a Blob object URL (no daemon file writes). */

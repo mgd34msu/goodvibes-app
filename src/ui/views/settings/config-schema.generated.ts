@@ -1,5 +1,5 @@
 // GENERATED FILE — pinned snapshot of CONFIG_SCHEMA from
-// @pellux/goodvibes-sdk@1.3.3 (platform/config, Bun-only subpath the
+// @pellux/goodvibes-sdk@1.11.2 (platform/config, Bun-only subpath the
 // webview must not import — docs/ARCHITECTURE.md §5). Pure data: key, type,
 // default, description, enum values, validation hint. The runtime `validate`
 // functions cannot cross the boundary and are intentionally dropped; the
@@ -11,14 +11,15 @@
 
 export interface ConfigSettingMeta {
   readonly key: string;
-  readonly type: "boolean" | "number" | "string" | "enum";
+  readonly type: "boolean" | "number" | "string" | "enum" | "object";
   readonly default: unknown;
   readonly description: string;
   readonly enumValues?: readonly string[];
   readonly validationHint?: string;
 }
 
-export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
+export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
+[
   {
     "key": "display.stream",
     "type": "boolean",
@@ -104,6 +105,24 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "description": "Path to a file containing the system prompt (empty = none)"
   },
   {
+    "key": "provider.optimizerMode",
+    "type": "enum",
+    "default": "off",
+    "description": "Provider routing optimizer: off (optimizer inactive, default), manual (optimizer active but never auto-routes), auto (selects the best capable provider per request via capability contracts), or pinned (force one model — see provider.optimizerPinnedModel). Runtime /provider commands and pin/unpin still override for the session.",
+    "enumValues": [
+      "off",
+      "manual",
+      "auto",
+      "pinned"
+    ]
+  },
+  {
+    "key": "provider.optimizerPinnedModel",
+    "type": "string",
+    "default": "",
+    "description": "Provider-qualified model id (e.g. anthropic:claude-sonnet-4) pinned by the provider optimizer at startup when provider.optimizerMode is \"pinned\". Empty leaves the optimizer unpinned (falls back to manual)."
+  },
+  {
     "key": "behavior.autoApprove",
     "type": "boolean",
     "default": false,
@@ -115,6 +134,17 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "default": 80,
     "description": "Compact conversation when context usage exceeds this percentage",
     "validationHint": "number in [10, 100]"
+  },
+  {
+    "key": "behavior.compactionStrategy",
+    "type": "enum",
+    "default": "structured",
+    "description": "Session compaction: off (sessions run uncompacted), structured (in-place summarization with semantic chunking and relevance scoring, default), or distiller (fresh model call producing a continuation brief; falls back to structured below the quality floor and the receipt names any fallback). behavior.autoCompactThreshold sets when compaction triggers.",
+    "enumValues": [
+      "off",
+      "structured",
+      "distiller"
+    ]
   },
   {
     "key": "behavior.staleContextWarnings",
@@ -178,11 +208,47 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "key": "permissions.mode",
     "type": "enum",
     "default": "prompt",
-    "description": "Permission approval mode: prompt (default), allow-all, or custom",
+    "description": "Session permission mode. prompt (default/\"normal\"): auto-approve reads, ask for the rest. plan: read-only tools allowed, every mutating/exec tool is refused with a structured plan-mode denial. accept-edits: file write/edit tools auto-approve, exec and other risky classes still ask. allow-all (\"auto\"): every tool auto-approved. custom: per-tool config actions apply.",
     "enumValues": [
       "prompt",
       "allow-all",
-      "custom"
+      "custom",
+      "plan",
+      "accept-edits"
+    ]
+  },
+  {
+    "key": "permissions.backgroundAgents",
+    "type": "enum",
+    "default": "inherit",
+    "description": "How background/subagent tool calls consult the permission layer. inherit (default): background tool execution runs through the same session permission mode as the foreground turn loop (allow-all changes nothing; prompt/plan/accept-edits/custom apply their matrices; asks broker through the same blocked-on-user machinery with subagent attribution). allow-all: background agents are exempt — their tool calls auto-approve regardless of the session mode.",
+    "enumValues": [
+      "inherit",
+      "allow-all"
+    ]
+  },
+  {
+    "key": "permissions.divergenceThreshold",
+    "type": "number",
+    "default": 0.05,
+    "description": "Maximum permission-evaluator divergence rate (0.0–1.0) the permission-divergence-dashboard enforce gate tolerates before blocking a transition from simulation to enforce mode. Default 0.05 = 5%. A per-simulator divergenceThreshold override still wins.",
+    "validationHint": "number in [0, 1]"
+  },
+  {
+    "key": "permissions.maxDivergenceRecords",
+    "type": "number",
+    "default": 500,
+    "description": "Maximum divergence records the permissions simulator retains for the divergence dashboard/trend history. A per-simulator maxDivergenceRecords override still wins.",
+    "validationHint": "integer in [1, 1000000]"
+  },
+  {
+    "key": "diagnostics.postEdit",
+    "type": "enum",
+    "default": "on",
+    "description": "Post-edit diagnostics: after a successful file write/edit, append cheap, in-process syntax diagnostics (errors only) for the touched file to the tool result so the model sees a broken edit immediately. on (default): run the tree-sitter syntax provider when a TS/JS project context is detectable (no process spawn, no type checking). off: never append diagnostics.",
+    "enumValues": [
+      "on",
+      "off"
     ]
   },
   {
@@ -346,13 +412,6 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "description": "Allow recursive agent orchestration under bounded policy controls"
   },
   {
-    "key": "orchestration.maxActiveAgents",
-    "type": "number",
-    "default": 8,
-    "description": "Total active agents allowed across the orchestration tree",
-    "validationHint": "number in [1, 20]"
-  },
-  {
     "key": "orchestration.maxDepth",
     "type": "number",
     "default": 0,
@@ -389,6 +448,23 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "default": 120000,
     "description": "Wall-clock timeout (ms) for the planning-decomposition agent; exceeding it cancels the agent and falls back to the heuristic path",
     "validationHint": "number in [1000, 600000]"
+  },
+  {
+    "key": "sandbox.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Master switch for the per-command exec sandbox (bubblewrap on Linux): the workspace is writable, the rest of the filesystem is read-only, /tmp is isolated, and network is disabled unless a command is on sandbox.egressAllowlist. Default ON where the host probe passes; honestly reported unavailable when bubblewrap is not present, leaving the exec path unchanged."
+  },
+  {
+    "key": "sandbox.judgment",
+    "type": "enum",
+    "default": "annotate",
+    "description": "Model-judgment pass on sandbox escalation asks: off (plain asks), annotate (default — a proposed verdict with stated reasons annotates the ask, the human still decides), or auto-approve (additionally auto-approves looks-safe verdicts; explicit opt-in). Never auto-denies and never touches the frozen catastrophic block; every judgment leaves a receipt.",
+    "enumValues": [
+      "off",
+      "annotate",
+      "auto-approve"
+    ]
   },
   {
     "key": "sandbox.replIsolation",
@@ -574,8 +650,8 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
   {
     "key": "automation.enabled",
     "type": "boolean",
-    "default": false,
-    "description": "Enable the automation subsystem"
+    "default": true,
+    "description": "Enable the automation subsystem (durable routines, schedule evaluation, run history). Default on: with no routines defined it idles and surfaces a how-to-create-your-first-routine empty state."
   },
   {
     "key": "automation.maxConcurrentRuns",
@@ -619,10 +695,40 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "description": "Delete one-shot automation jobs after their first successful run"
   },
   {
+    "key": "checkin.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the proactive check-in: on a cadence, a briefing is judged and the user is contacted only when something warrants it"
+  },
+  {
+    "key": "checkin.cadence",
+    "type": "string",
+    "default": "0 */4 * * *",
+    "description": "Proactive check-in cadence as a cron expression (default: every 4 hours)"
+  },
+  {
+    "key": "checkin.deliveryChannel",
+    "type": "string",
+    "default": "",
+    "description": "Where a proactive check-in message is delivered: \"surfaceKind\" or \"surfaceKind:address\" (e.g. \"slack:C123\")"
+  },
+  {
+    "key": "checkin.quietHours",
+    "type": "string",
+    "default": "",
+    "description": "Proactive check-in quiet hours as \"HH:MM-HH:MM\" local time (empty disables); no message is sent during this window"
+  },
+  {
     "key": "controlPlane.enabled",
     "type": "boolean",
     "default": false,
-    "description": "Enable the shared gateway/control-plane service"
+    "description": "Enable the standalone control-plane HTTP server"
+  },
+  {
+    "key": "controlPlane.gateway",
+    "type": "boolean",
+    "default": true,
+    "description": "The shared gateway/control-plane host serving state snapshots, live streams (SSE/WS), and authenticated control APIs to terminal hosts and remote clients. Default on so a stock daemon can stream companion chat; every streaming endpoint stays auth-gated and the default bind stays loopback. Turn off for a request/response-only daemon."
   },
   {
     "key": "controlPlane.hostMode",
@@ -792,8 +898,8 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
   {
     "key": "web.enabled",
     "type": "boolean",
-    "default": false,
-    "description": "Enable the browser-based operator surface"
+    "default": true,
+    "description": "Enable the browser-based operator surface. Default on, bound to loopback (web.hostMode local): served on this machine only until deliberately widened via web.hostMode. The URL is announced once at daemon start."
   },
   {
     "key": "web.hostMode",
@@ -830,6 +936,209 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "type": "string",
     "default": "dist/web",
     "description": "Static asset directory for the embedded web surface"
+  },
+  {
+    "key": "atRest.redactionEnabled",
+    "type": "boolean",
+    "default": true,
+    "description": "When true (default), secret/credential patterns (API keys, bearer tokens, GitHub/GitLab/Slack/AWS credentials, home paths) are redacted at WRITE time from the on-disk transcript journal (per-agent <agentId>.jsonl) and the local execution ledger (spans + ledger jsonl), reusing the same pattern set as the telemetry egress. A redacted value shows a [REDACTED_*] marker — a record never pretends the content was absent. Set false ONLY for local debugging where plaintext secrets on disk are acceptable."
+  },
+  {
+    "key": "atRest.retentionMaxAgeDays",
+    "type": "number",
+    "default": 30,
+    "description": "Age cap (days) for the on-disk transcript journal and execution-ledger files. Files older than this are pruned at the retention enforcement point (the journal prunes on each new agent session; the ledger prunes on each export). Generous by default; bounded so the files cannot grow without limit.",
+    "validationHint": "integer in [1, 365]"
+  },
+  {
+    "key": "atRest.retentionMaxTotalMb",
+    "type": "number",
+    "default": 512,
+    "description": "Total-size cap (MB) across the on-disk transcript journal / execution-ledger file set. When exceeded, the retention enforcement point deletes oldest-first (rotated backups before freshly-written active files) until under budget.",
+    "validationHint": "integer in [1, 1048576]"
+  },
+  {
+    "key": "learning.consolidation.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Master switch for the idle-time memory consolidation pass (dedupe merges, confidence decay of never-referenced records, and review proposals). On by default — the daemon runs it at idle and on a slow schedule; every outcome is reversible or proposal-gated, and false turns the pass off."
+  },
+  {
+    "key": "learning.consolidation.intervalMs",
+    "type": "number",
+    "default": 21600000,
+    "description": "Minimum time between consolidation runs, in milliseconds. Doubles as the schedule cadence (default: 6 hours).",
+    "validationHint": "integer in [1, 2592000000]"
+  },
+  {
+    "key": "learning.consolidation.minIdleMs",
+    "type": "number",
+    "default": 0,
+    "description": "Minimum continuous idle time required before a consolidation run may start, in milliseconds (default: 0 = no idle requirement).",
+    "validationHint": "integer in [0, 86400000]"
+  },
+  {
+    "key": "learning.consolidation.maxMergesPerRun",
+    "type": "number",
+    "default": 10,
+    "description": "Maximum duplicate groups merged in a single consolidation run.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "learning.consolidation.maxDecaysPerRun",
+    "type": "number",
+    "default": 20,
+    "description": "Maximum records decayed or archived in a single consolidation run.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "learning.consolidation.maxProposalsPerRun",
+    "type": "number",
+    "default": 20,
+    "description": "Maximum review proposals emitted in a single consolidation run.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "learning.consolidation.decayAgeDays",
+    "type": "number",
+    "default": 45,
+    "description": "Active records older than this (by updatedAt) become decay candidates, in days.",
+    "validationHint": "integer in [1, 3650]"
+  },
+  {
+    "key": "learning.consolidation.decayConfidenceStep",
+    "type": "number",
+    "default": 10,
+    "description": "Confidence points removed from a never-referenced decaying record per run.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "learning.consolidation.archiveConfidenceFloor",
+    "type": "number",
+    "default": 40,
+    "description": "A decaying record whose confidence would fall to or below this is archived (marked stale).",
+    "validationHint": "integer in [0, 100]"
+  },
+  {
+    "key": "power.keepAwake",
+    "type": "boolean",
+    "default": false,
+    "description": "The owner keep-awake toggle: the daemon holds a sleep inhibitor INDEPENDENT of work state, so the host stays reachable after work finishes and after surfaces close. Covers idle + sleep + lid-switch inhibitor classes where the OS grants them; the served state names any refused class honestly. Every attached surface shows an always-visible \"sleep disabled\" chip while this is on — the chip, not a timer, is the safety mechanism."
+  },
+  {
+    "key": "power.inhibitWhileWorking",
+    "type": "boolean",
+    "default": true,
+    "description": "Hold an idle/sleep inhibitor automatically while real work runs (a running turn, an active agent, a schedule about to fire), released when work drains. On by default so the host cannot sleep mid-work."
+  },
+  {
+    "key": "power.workInhibitMaxMinutes",
+    "type": "number",
+    "default": 180,
+    "description": "Hard cap in minutes on the automatic WORK inhibitor (never the keep-awake toggle): a wedged hold releases at the cap and the state reports the expiry honestly.",
+    "validationHint": "integer in [1, 1440]"
+  },
+  {
+    "key": "memory.budgetMb",
+    "type": "number",
+    "default": 0,
+    "description": "MemoryGovernor budget in MB. The governor sheds caches and pauses background jobs as RSS approaches this budget. 0 means auto: min(25% of system RAM, 4096 MB), resolved at daemon start.",
+    "validationHint": "integer in [0, 1048576]"
+  },
+  {
+    "key": "memory.tier.elevatedPct",
+    "type": "number",
+    "default": 60,
+    "description": "Elevated tier threshold, as a percent of the budget: at/above this the governor trims registered caches to their floor and runs a gc.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "memory.tier.highPct",
+    "type": "number",
+    "default": 80,
+    "description": "High tier threshold, as a percent of the budget: at/above this the governor flushes all registered caches and pauses deferrable background jobs.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "memory.tier.criticalPct",
+    "type": "number",
+    "default": 95,
+    "description": "Critical tier threshold, as a percent of the budget: at/above this the governor refuses new expensive work with an honest structured outcome and emits an ops attention event.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "memory.tripwire.rateMbPerSec",
+    "type": "number",
+    "default": 25,
+    "description": "Leak tripwire rate in MB/s: if RSS keeps growing faster than this AFTER a full cache flush, the flush did not help and a leak is suspected.",
+    "validationHint": "number in [1, 100000]"
+  },
+  {
+    "key": "memory.tripwire.sustainSec",
+    "type": "number",
+    "default": 60,
+    "description": "Leak tripwire sustain window in seconds: the post-flush growth rate must exceed memory.tripwire.rateMbPerSec continuously for this long before the governor writes a receipt and exits for a clean supervisor restart.",
+    "validationHint": "integer in [1, 86400]"
+  },
+  {
+    "key": "memory.hardLimitPct",
+    "type": "number",
+    "default": 90,
+    "description": "Absolute-memory backstop as a percent of the EFFECTIVE KILL CEILING — the daemon's own cgroup memory limit where one applies, else physical RAM. If RSS holds at/above this percent of that ceiling for memory.tripwire.sustainSec, the governor writes a hard-limit receipt and exits so a supervisor restarts clean — catching a leak too slow for memory.tripwire.rateMbPerSec just before the kernel/cgroup OOM killer would strike. Default 90: fire at 90% of the real kill line, leaving a safety margin for the exit itself. Deliberately anchored to the kill ceiling and NOT to memory.budgetMb: the budget caps small by design (25% of RAM, max 4096 MB), and a large-but-stable working set above the budget on a big-RAM host is handled by the critical tier (refuse new expensive work, stay alive) — anchoring the exit to the budget would put such a healthy daemon in a permanent restart loop.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "voice.local.sttEngine",
+    "type": "enum",
+    "default": "",
+    "description": "Local speech-to-text engine: whisper-cpp (blessed default — CPU-first, realtime-capable) or faster-whisper (NVIDIA-GPU alternative via a wrapper script). Empty = not configured (honest unconfigured status; nothing auto-downloads).",
+    "enumValues": [
+      "",
+      "whisper-cpp",
+      "faster-whisper"
+    ]
+  },
+  {
+    "key": "voice.local.sttBinary",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the local STT engine binary (e.g. whisper.cpp's whisper-cli)."
+  },
+  {
+    "key": "voice.local.sttModelPath",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the local STT model file (e.g. ggml-tiny.en.bin). The user downloads this explicitly — nothing auto-downloads."
+  },
+  {
+    "key": "voice.local.ttsEngine",
+    "type": "enum",
+    "default": "",
+    "description": "Local text-to-speech engine: piper (blessed default — sub-50ms first-audio class, MIT) or kokoro (quality alternative, Apache 2.0, via a wrapper script). Empty = not configured.",
+    "enumValues": [
+      "",
+      "piper",
+      "kokoro"
+    ]
+  },
+  {
+    "key": "voice.local.ttsBinary",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the local TTS engine binary (e.g. piper)."
+  },
+  {
+    "key": "voice.local.ttsModelPath",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the local TTS voice model (e.g. en_US-lessac-low.onnx with its .json beside it). The user downloads this explicitly — nothing auto-downloads."
+  },
+  {
+    "key": "fleet.maxSize",
+    "type": "number",
+    "default": 8,
+    "description": "Maximum fleet size — the one ceiling on agents this daemon is responsible for: native spawned agents, ACP-hosted agents, and elastic fix-task agents all count against it. Externally-launched agents merely observed on the host never count. Renamed from orchestration.maxActiveAgents.",
+    "validationHint": "number in [1, 20]"
   },
   {
     "key": "surfaces.slack.enabled",
@@ -1290,10 +1599,148 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "description": "Default iMessage chat id for routing"
   },
   {
-    "key": "watchers.enabled",
+    "key": "surfaces.msteams.enabled",
     "type": "boolean",
     "default": false,
-    "description": "Enable managed watcher/listener services"
+    "description": "Enable the Microsoft Teams surface contract"
+  },
+  {
+    "key": "surfaces.msteams.appId",
+    "type": "string",
+    "default": "",
+    "description": "Microsoft Teams bot application (client) id"
+  },
+  {
+    "key": "surfaces.msteams.appPassword",
+    "type": "string",
+    "default": "",
+    "description": "Microsoft Teams bot application password (client secret)"
+  },
+  {
+    "key": "surfaces.msteams.tenantId",
+    "type": "string",
+    "default": "",
+    "description": "Microsoft Entra tenant id the Teams bot authenticates against"
+  },
+  {
+    "key": "surfaces.msteams.serviceUrl",
+    "type": "string",
+    "default": "",
+    "description": "Bot Framework service URL for proactive Teams delivery"
+  },
+  {
+    "key": "surfaces.msteams.botId",
+    "type": "string",
+    "default": "",
+    "description": "Microsoft Teams bot id used in conversation references"
+  },
+  {
+    "key": "surfaces.msteams.defaultConversationId",
+    "type": "string",
+    "default": "",
+    "description": "Default Teams conversation id for routing"
+  },
+  {
+    "key": "surfaces.msteams.defaultChannelId",
+    "type": "string",
+    "default": "",
+    "description": "Default Teams channel id for routing"
+  },
+  {
+    "key": "surfaces.bluebubbles.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the BlueBubbles (iMessage server) surface contract"
+  },
+  {
+    "key": "surfaces.bluebubbles.serverUrl",
+    "type": "string",
+    "default": "",
+    "description": "BlueBubbles server base URL used for health checks and delivery"
+  },
+  {
+    "key": "surfaces.bluebubbles.password",
+    "type": "string",
+    "default": "",
+    "description": "BlueBubbles server password"
+  },
+  {
+    "key": "surfaces.bluebubbles.account",
+    "type": "string",
+    "default": "",
+    "description": "BlueBubbles account identifier"
+  },
+  {
+    "key": "surfaces.bluebubbles.defaultChatGuid",
+    "type": "string",
+    "default": "",
+    "description": "Default BlueBubbles chat GUID for routing"
+  },
+  {
+    "key": "surfaces.mattermost.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the Mattermost surface contract"
+  },
+  {
+    "key": "surfaces.mattermost.baseUrl",
+    "type": "string",
+    "default": "",
+    "description": "Mattermost server base URL"
+  },
+  {
+    "key": "surfaces.mattermost.botToken",
+    "type": "string",
+    "default": "",
+    "description": "Mattermost bot access token"
+  },
+  {
+    "key": "surfaces.mattermost.teamId",
+    "type": "string",
+    "default": "",
+    "description": "Mattermost team id the bot operates in"
+  },
+  {
+    "key": "surfaces.mattermost.defaultChannelId",
+    "type": "string",
+    "default": "",
+    "description": "Default Mattermost channel id for routing"
+  },
+  {
+    "key": "surfaces.matrix.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the Matrix surface contract"
+  },
+  {
+    "key": "surfaces.matrix.homeserverUrl",
+    "type": "string",
+    "default": "",
+    "description": "Matrix homeserver base URL"
+  },
+  {
+    "key": "surfaces.matrix.accessToken",
+    "type": "string",
+    "default": "",
+    "description": "Matrix account access token"
+  },
+  {
+    "key": "surfaces.matrix.userId",
+    "type": "string",
+    "default": "",
+    "description": "Matrix user id (@user:server) the adapter acts as"
+  },
+  {
+    "key": "surfaces.matrix.defaultRoomId",
+    "type": "string",
+    "default": "",
+    "description": "Default Matrix room id for routing"
+  },
+  {
+    "key": "watchers.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Enable managed watcher/listener services (checkpointing and recovery for long-running external sources). Default on: with no watchers configured the framework idles."
   },
   {
     "key": "watchers.pollIntervalMs",
@@ -1310,6 +1757,13 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "validationHint": "integer in [1000, 3600000]"
   },
   {
+    "key": "watchers.ciPollIntervalMs",
+    "type": "number",
+    "default": 60000,
+    "description": "Cadence (ms) for the daemon's recurring CI-watch poll; the poller enforces a 15s floor to respect the status source's rate limits",
+    "validationHint": "integer in [1000, 86400000]"
+  },
+  {
     "key": "watchers.recoveryWindowMinutes",
     "type": "number",
     "default": 10,
@@ -1319,8 +1773,8 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
   {
     "key": "service.enabled",
     "type": "boolean",
-    "default": false,
-    "description": "Enable service-install and daemon-management features"
+    "default": true,
+    "description": "Enable service-install and daemon-management features (install/start/stop/status/autostart verbs), including the standalone daemon's boot-time self-promotion to a supervised service at its first idle moment. Set false to keep spawned daemons session-only (nothing installed or promoted)."
   },
   {
     "key": "service.autostart",
@@ -1395,6 +1849,36 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "description": "Allow explicit admin-approved remote fetches from private, localhost, or metadata hosts for artifacts and ingest flows"
   },
   {
+    "key": "relay.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Connect the daemon OUTBOUND to a zero-knowledge relay for reachability from outside the LAN. Default on, but no connection is ever made without an explicitly configured relay.url — leave the URL empty to keep the daemon LAN-only."
+  },
+  {
+    "key": "relay.url",
+    "type": "string",
+    "default": "",
+    "description": "Relay URL to dial (wss://…); empty disables the outbound relay connection"
+  },
+  {
+    "key": "relay.rendezvousId",
+    "type": "string",
+    "default": "",
+    "description": "Stable unguessable rendezvous id the daemon registers under; generated on first enable when empty"
+  },
+  {
+    "key": "relay.label",
+    "type": "string",
+    "default": "",
+    "description": "Human-facing daemon label carried in relay pairing payloads"
+  },
+  {
+    "key": "relay.requireStepUpForMutations",
+    "type": "boolean",
+    "default": false,
+    "description": "Require a recent WebAuthn step-up assertion on mutating operator calls arriving via relay (fails closed until a verifier is wired)"
+  },
+  {
     "key": "runtime.companionChatLimiter.perSessionLimit",
     "type": "number",
     "default": 10,
@@ -1412,6 +1896,29 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "type": "boolean",
     "default": false,
     "description": "When false (default), turn emitters emit a redacted prompt summary {length, sha256, first100chars} instead of raw prompt/response content. Set to true ONLY for debugging in non-production environments — raw prompts may contain PII, secrets, or proprietary data. When true at startup, a WARN log is emitted to make the configuration visible to ops."
+  },
+  {
+    "key": "telemetry.decisionOtlpEnabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Export permission/policy decision-log records to an OTLP endpoint (export-only, no ingestion). Requires telemetry.decisionOtlpEndpoint"
+  },
+  {
+    "key": "telemetry.decisionOtlpEndpoint",
+    "type": "string",
+    "default": "",
+    "description": "OTLP/HTTP JSON endpoint base for decision-log export (empty = disabled). Spans POST to <base>/v1/traces, logs to <base>/v1/logs"
+  },
+  {
+    "key": "telemetry.decisionOtlpSignal",
+    "type": "enum",
+    "default": "span",
+    "description": "Which OTLP record shape each decision is emitted as: span, log, or both",
+    "enumValues": [
+      "span",
+      "log",
+      "both"
+    ]
   },
   {
     "key": "batch.mode",
@@ -1667,6 +2174,25 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "validationHint": "integer in [0, 10000000]"
   },
   {
+    "key": "update.auto",
+    "type": "boolean",
+    "default": true,
+    "description": "Daemon self-update: check for a new release hourly, download and checksum-verify it, swap at a no-active-work moment, and restart (owner-directed default; the previous binary is kept for one-command rollback)"
+  },
+  {
+    "key": "update.intervalMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "Minutes between daemon update checks",
+    "validationHint": "integer in [5, 1440]"
+  },
+  {
+    "key": "update.releasesUrl",
+    "type": "string",
+    "default": "https://github.com/mgd34msu/goodvibes-tui/releases/latest",
+    "description": "GitHub releases/latest URL the daemon resolves update tags and artifacts from"
+  },
+  {
     "key": "daemon.enabled",
     "type": "boolean",
     "default": true,
@@ -1720,6 +2246,17 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "type": "string",
     "default": "hooks.json",
     "description": "Hook configuration file name (relative to the host .goodvibes data directory)"
+  },
+  {
+    "key": "tools.overflowSpillBackend",
+    "type": "enum",
+    "default": "file",
+    "description": "Where large tool-output overflow content spills: file (on-disk .overflow, default), ledger (execution ledger), or diagnostics. An injected custom backend still takes precedence.",
+    "enumValues": [
+      "file",
+      "ledger",
+      "diagnostics"
+    ]
   },
   {
     "key": "wrfc.scoreThreshold",
@@ -1829,11 +2366,396 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] = [
     "key": "behavior.hitlMode",
     "type": "enum",
     "default": "balanced",
-    "description": "HITL UX mode: controls notification verbosity and burst batching (quiet/balanced/operator)",
+    "description": "Notification verbosity mode applied to the notification router at startup and on change: off (baseline delivery policy, mode changes rejected), quiet (minimal verbosity, long batch windows), balanced (default), or operator (verbose, short batch windows)",
     "enumValues": [
+      "off",
       "quiet",
       "balanced",
       "operator"
     ]
+  },
+  {
+    "key": "fetch.sanitizeMode",
+    "type": "enum",
+    "default": "safe-text",
+    "description": "Default response sanitization mode applied by the fetch tool when the per-call sanitize_mode is omitted: none (no content sanitization), safe-text (strip active/script content, default), or strict (aggressive text-only reduction). A per-call sanitize_mode always overrides this default. Private-IP and cloud-metadata host blocking applies regardless of mode.",
+    "enumValues": [
+      "none",
+      "safe-text",
+      "strict"
+    ]
+  },
+  {
+    "key": "fetch.allowLocalhost",
+    "type": "boolean",
+    "default": false,
+    "description": "Allow the fetch tool to reach localhost/loopback dev servers for this project (e.g. http://localhost:3000). Set by the one-tap \"allow for this project\" answer to the localhost fetch ask and persisted in the project settings, so it never re-asks. Private-IP and cloud-metadata endpoint blocking is unaffected and absolute."
+  },
+  {
+    "key": "fetch.trustedHosts",
+    "type": "string",
+    "default": "",
+    "description": "Comma-separated default trusted hosts for fetch sanitization/trust-tier classification (e.g. docs.example.com, api.internal). Trusted hosts relax sanitization. Per-call trusted_hosts are added on top of this default; empty means no host is trusted by default."
+  },
+  {
+    "key": "fetch.blockedHosts",
+    "type": "string",
+    "default": "",
+    "description": "Comma-separated default blocked hosts for fetch trust-tier classification. Blocked hosts are always refused regardless of sanitize mode. Per-call blocked_hosts are added on top of this default. The built-in SSRF-risk block (private IPs, metadata endpoints, localhost variants) applies independently of this list."
+  },
+  {
+    "key": "security.tokenAudit.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Audit API tokens for minimum-scope violations and overdue rotation, surfacing age, scope, and rotation warnings in diagnostics with typed security events. Default on in advisory mode: tokens are reported, never blocked, unless security.tokenAudit.managed is also true."
+  },
+  {
+    "key": "security.tokenAudit.rotationCadenceDays",
+    "type": "number",
+    "default": 90,
+    "description": "Default rotation cadence (days) for the token audit: a token older than this is reported overdue. Per-policy rotationCadenceMs overrides this default. Only enforced (blocking) when security.tokenAudit.managed is also true.",
+    "validationHint": "integer in [1, 3650]"
+  },
+  {
+    "key": "security.tokenAudit.rotationWarningDays",
+    "type": "number",
+    "default": 14,
+    "description": "Default lead time (days) before the rotation-cadence due date at which a token is reported as a rotation warning. Per-policy rotationWarningThresholdMs overrides this default.",
+    "validationHint": "integer in [0, 3650]"
+  },
+  {
+    "key": "security.tokenAudit.managed",
+    "type": "boolean",
+    "default": false,
+    "description": "When true (and security.tokenAudit.enabled is on), tokens with excess scopes or overdue rotation are BLOCKED from use rather than only reported. Default false = advisory reporting only."
+  },
+  {
+    "key": "integrations.routeBinding",
+    "type": "boolean",
+    "default": true,
+    "description": "Durably bind and resolve external conversation routes, thread contexts, and reply targets across channel surfaces. Default on; it is inert until a channel surface is configured."
+  },
+  {
+    "key": "integrations.deliveryTracking",
+    "type": "boolean",
+    "default": true,
+    "description": "Track integration deliveries first-class: retries, dead letters, and per-surface delivery outcomes. Default on; it is inert until a channel surface is configured."
+  },
+  {
+    "key": "integrations.delivery.maxRetries",
+    "type": "number",
+    "default": 3,
+    "description": "Maximum retry attempts for a retryable integration delivery (Slack/Discord/webhook) before it moves to the dead-letter queue. A per-queue maxRetries option overrides this default.",
+    "validationHint": "integer in [0, 100]"
+  },
+  {
+    "key": "integrations.delivery.initialDelayMs",
+    "type": "number",
+    "default": 1000,
+    "description": "Initial exponential-backoff delay (ms) between integration delivery retries. Delay grows as initialDelayMs * 2^(attempt-1) with jitter, capped at integrations.delivery.maxDelayMs.",
+    "validationHint": "integer in [0, 3600000]"
+  },
+  {
+    "key": "integrations.delivery.maxDelayMs",
+    "type": "number",
+    "default": 30000,
+    "description": "Upper cap (ms) on the exponential-backoff delay between integration delivery retries.",
+    "validationHint": "integer in [0, 86400000]"
+  },
+  {
+    "key": "integrations.delivery.maxDlqSize",
+    "type": "number",
+    "default": 500,
+    "description": "Maximum entries retained in the integration delivery dead-letter queue; oldest entries are evicted first past this size.",
+    "validationHint": "integer in [1, 100000]"
+  },
+  {
+    "key": "integrations.delivery.sloEnforced",
+    "type": "boolean",
+    "default": true,
+    "description": "Enforce delivery service-level objectives for channel integrations: failures are classified retryable/terminal, retried with exponential backoff, and dead-letter events are logged at error level and surfaced in integration diagnostics (replayable via /notify replay). When false, dead letters are warn-level only. An explicit per-queue sloEnforced option still overrides this default."
+  },
+  {
+    "key": "policy.registryEnabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the versioned policy bundle registry with promote/rollback semantics and the /policy load, simulate, diff, promote, and rollback commands. Enforcement requires passing divergence-gate evidence first; default off until that evidence exists."
+  },
+  {
+    "key": "policy.requireSignedBundles",
+    "type": "boolean",
+    "default": false,
+    "description": "Validate HMAC-SHA256 signatures when policy bundles load: managed mode rejects bundles with invalid or missing signatures; non-managed mode permits unsigned bundles with a warning. Restart to apply. Default off until divergence evidence clears the governance gate."
+  },
+  {
+    "key": "policy.bundleSource",
+    "type": "enum",
+    "default": "none",
+    "description": "Where the policy bundle registry loads its initial bundle from at startup: none (no bundle loaded; bundles supplied programmatically or via commands), or file (load policy.bundlePath). Only consulted when policy.registryEnabled is true.",
+    "enumValues": [
+      "none",
+      "file"
+    ]
+  },
+  {
+    "key": "policy.bundlePath",
+    "type": "string",
+    "default": "",
+    "description": "Filesystem path to the policy bundle JSON loaded at startup when policy.bundleSource is \"file\" and policy.registryEnabled is true. Empty disables file loading. The loaded bundle enters the registry as a candidate (subject to the divergence gate before promotion)."
+  },
+  {
+    "key": "agents.passiveInjection.knowledge",
+    "type": "boolean",
+    "default": true,
+    "description": "Re-retrieve project-memory knowledge each turn against the evolving conversation (steers, new sub-topics), under the hard token budget with a visible per-turn injection record on the agent record and session transcript. Default on: the block is hard-budgeted and every turn is honestly recorded. Turn off to revert to spawn-time-only injection."
+  },
+  {
+    "key": "agents.passiveInjection.code",
+    "type": "boolean",
+    "default": false,
+    "description": "Additionally inject similarity-ranked chunks from the repo source-code index each turn as untrusted reference pointers, sharing the knowledge-injection budget and relevance floor, each with an honest match label on the turn record. Default off: code chunks carry no review provenance, so this is deliberately opt-in. Also respects storage.codeIndexEnabled."
+  },
+  {
+    "key": "agents.passiveInjection.budgetTokens",
+    "type": "number",
+    "default": 800,
+    "description": "Default hard token budget for per-turn passive knowledge/code injection. The effective budget is min(this value, 3% of the model context window). Set 0 to disable injection. A per-run passiveKnowledgeInjectionBudgetTokens override still wins.",
+    "validationHint": "integer in [0, 1000000]"
+  },
+  {
+    "key": "agents.passiveInjection.relevanceFloor",
+    "type": "number",
+    "default": 95,
+    "description": "Minimum relevance score (higher = stricter) a knowledge/code candidate must clear to be eligible for per-turn passive injection. Filters filler before the token budget is applied. A per-run passiveKnowledgeInjectionRelevanceFloor override still wins.",
+    "validationHint": "integer in [0, 1000]"
+  },
+  {
+    "key": "agents.passiveInjection.codeLimit",
+    "type": "number",
+    "default": 3,
+    "description": "Maximum number of source-code chunks injected per turn by passive code injection (chunks share the passive-injection token budget and relevance floor).",
+    "validationHint": "integer in [0, 100]"
+  },
+  {
+    "key": "agents.contextWindowGuard",
+    "type": "boolean",
+    "default": true,
+    "description": "Before each sub-agent provider call, estimate total token count (system prompt + messages + tool definitions) and compact the conversation past agents.contextCompactThreshold, with layered system-prompt assembly for small windows and a single compaction retry on context-size errors. Turn off to revert to unchecked provider calls."
+  },
+  {
+    "key": "agents.contextCompactThreshold",
+    "type": "number",
+    "default": 0.85,
+    "description": "Fraction of the model context window at which the agent context-window guard triggers sub-agent conversation compaction (estimated system + messages + tool tokens above this fraction compacts). Distinct from behavior.autoCompactThreshold, which governs main-session conversation compaction.",
+    "validationHint": "number in [0.1, 0.99]"
+  },
+  {
+    "key": "agents.maxTurns",
+    "type": "number",
+    "default": 50,
+    "description": "Default per-agent turn budget: the hard cap on how many turns one agent run may take before it terminates as a max-turns failure (a machine-readable turn-budget-exhausted outcome, distinct from an infrastructure error). A per-spawn override may lower or raise this, but never past agents.maxTurnsCap. Prevents an unbounded agent loop.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "agents.maxTurnsCap",
+    "type": "number",
+    "default": 200,
+    "description": "The upper bound a per-spawn maxTurns override cannot exceed. When a spawn requests more turns than this, the cap wins and the applied budget is reported as policy-bound. Keeps a caller from lifting the turn ceiling without limit.",
+    "validationHint": "integer in [1, 100000]"
+  },
+  {
+    "key": "permissions.engine",
+    "type": "enum",
+    "default": "baseline",
+    "description": "Permission evaluator: baseline (default) or policy-engine (the redesigned layered model with granular tool-level, path-level, and parameter-level rules). Restart to apply. Default baseline until divergence evidence from the shadow simulation clears the gate.",
+    "enumValues": [
+      "baseline",
+      "policy-engine"
+    ]
+  },
+  {
+    "key": "permissions.simulation",
+    "type": "boolean",
+    "default": true,
+    "description": "Run the candidate permission evaluator beside the active one, recording divergence without changing enforcement. Default on so divergence evidence accumulates before stricter enforcement is considered; it never blocks tool execution by itself. Restart to apply."
+  },
+  {
+    "key": "permissions.divergenceDashboard",
+    "type": "boolean",
+    "default": true,
+    "description": "Aggregate permission-evaluator divergence by tool/prefix/mode, expose trend history in diagnostics, and block enforce-mode transitions while the divergence rate exceeds permissions.divergenceThreshold. Turn off to fall back to warn mode (no gate enforcement)."
+  },
+  {
+    "key": "permissions.commandParser",
+    "type": "enum",
+    "default": "ast",
+    "description": "Compound shell command evaluation: ast (default — per-segment safe/unsafe verdicts with specific denial explanations, automatic fallback to flat on any parser failure) or flat (baseline segmentation). The frozen catastrophic command block is enforced identically in both modes.",
+    "enumValues": [
+      "ast",
+      "flat"
+    ]
+  },
+  {
+    "key": "behavior.toolResultReconciliation",
+    "type": "enum",
+    "default": "reconcile",
+    "description": "What happens to dangling tool-call state at turn end: reconcile (default — synthetic error results are injected and a reconciliation event emitted, preventing silent conversation corruption) or warn-only (log a warning without injecting results).",
+    "enumValues": [
+      "reconcile",
+      "warn-only"
+    ]
+  },
+  {
+    "key": "provider.localContextIngestion",
+    "type": "boolean",
+    "default": true,
+    "description": "Ingest max_context_length from local/custom provider /v1/models endpoints so local models use the provider-reported context window for token budgeting and compaction thresholds. Turn off to use only explicitly configured or static limits."
+  },
+  {
+    "key": "planner.adaptive",
+    "type": "boolean",
+    "default": false,
+    "description": "Score execution-strategy candidates (single/cohort/background/remote) on risk, latency, and capability inputs each turn and select the best one, with /plan mode, explain, and override commands. Default off until the routing-visibility UX lands; off means implicit single-call execution."
+  },
+  {
+    "key": "tools.contractVerification",
+    "type": "boolean",
+    "default": true,
+    "description": "Run registration-time contract checks on every registered tool: schema validity, timeout/cancellation semantics, permission-class mapping, output-policy alignment, and idempotency declarations. Invalid tools fail closed with actionable diagnostics. Turn off to let tools register unchecked."
+  },
+  {
+    "key": "tools.outputSchemaFingerprints",
+    "type": "boolean",
+    "default": false,
+    "description": "Append _meta.outputSchemaFingerprint (SHA-256 of sorted result key names) and _meta.schemaShapeId to results from the find, analyze, and inspect tools, enabling schema drift detection. Default off."
+  },
+  {
+    "key": "telemetry.otelMode",
+    "type": "enum",
+    "default": "off",
+    "description": "OpenTelemetry instrumentation: off (default — no OTel SDK initialization), in-process (span creation and in-process export only), or remote-export (additionally export spans over OTLP/gRPC to the configured collector). Switching away from off requires a restart; in-process <-> remote-export applies live.",
+    "enumValues": [
+      "off",
+      "in-process",
+      "remote-export"
+    ]
+  },
+  {
+    "key": "runtime.unifiedTasks",
+    "type": "boolean",
+    "default": false,
+    "description": "Replace ad-hoc task tracking with the unified RuntimeTask interface across all subsystems. Restart to apply. Default off."
+  },
+  {
+    "key": "runtime.pluginLifecycle",
+    "type": "boolean",
+    "default": false,
+    "description": "Structured plugin lifecycle with init/teardown phases and health integration. Restart to apply. Default off until the plugin catalog work lands."
+  },
+  {
+    "key": "runtime.mcpLifecycle",
+    "type": "boolean",
+    "default": false,
+    "description": "Structured MCP server lifecycle with connect/disconnect phases and health integration. Restart to apply. Default off until the plugin catalog work lands."
+  },
+  {
+    "key": "runtime.toolBudget.enforced",
+    "type": "boolean",
+    "default": false,
+    "description": "Enforce per-phase runtime budgets on tool execution: wall-clock, token, and cost limits (runtime.toolBudget.maxMs/maxTokens/maxCostUsd) checked at phase entry and exit, terminating the pipeline on a hard breach with a typed diagnostic event. Default off until budget attribution wiring lands."
+  },
+  {
+    "key": "runtime.toolBudget.maxMs",
+    "type": "number",
+    "default": 0,
+    "description": "Default per-phase wall-clock budget (ms) for tool execution when runtime.toolBudget.enforced is true. 0 = unlimited. A per-call ToolRuntimeContext.budget.maxMs overrides this default.",
+    "validationHint": "integer in [0, 86400000]"
+  },
+  {
+    "key": "runtime.toolBudget.maxTokens",
+    "type": "number",
+    "default": 0,
+    "description": "Default token budget for a single tool execution when runtime.toolBudget.enforced is true (checked against a tool result tokenCount annotation at phase exit). 0 = unlimited. A per-call ToolRuntimeContext.budget.maxTokens overrides.",
+    "validationHint": "integer in [0, 100000000]"
+  },
+  {
+    "key": "runtime.toolBudget.maxCostUsd",
+    "type": "number",
+    "default": 0,
+    "description": "Default cost budget (USD) for a single tool execution when runtime.toolBudget.enforced is true (checked against a tool result costUsd annotation at phase exit). 0 = unlimited. A per-call ToolRuntimeContext.budget.maxCostUsd overrides.",
+    "validationHint": "number in [0, 1000000]"
+  },
+  {
+    "key": "notifications.adaptiveSuppression",
+    "type": "boolean",
+    "default": true,
+    "description": "Adaptive notification suppression: in quiet/minimal mode, operational churn is filtered before reaching the conversation or status bar, and rapid domain:level floods collapse into panel-only groups with a burst_collapsed reason code rendered by the notifications panel. Critical, milestone, and alert notifications are always exempt. Turn off to keep only the base delivery policies."
+  },
+  {
+    "key": "notifications.burstWindowMs",
+    "type": "number",
+    "default": 1000,
+    "description": "Observation window (ms) for the adaptive-suppression burst detector: rapid domain:level notifications arriving within this window count toward the burst threshold. Applied at NotificationRouter construction.",
+    "validationHint": "integer in [1, 3600000]"
+  },
+  {
+    "key": "notifications.burstThreshold",
+    "type": "number",
+    "default": 3,
+    "description": "Number of notifications for one domain:level group within the burst window that trips adaptive suppression, collapsing further ones to panel_only with a burst_collapsed reason. Critical/milestone/alert notifications are always exempt.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "notifications.burstCooldownMs",
+    "type": "number",
+    "default": 3000,
+    "description": "Cooldown (ms) after a domain:level group trips the burst detector before it can trip again. Applied at NotificationRouter construction.",
+    "validationHint": "integer in [0, 3600000]"
+  },
+  {
+    "key": "notifications.pushApproval",
+    "type": "boolean",
+    "default": true,
+    "description": "Device-push fan-out for the approval class: a pending approval pushes to every paired push target. On by default — the toggle exists to silence the class, never as a prerequisite for it to work. Read live per event."
+  },
+  {
+    "key": "notifications.pushNeedsInput",
+    "type": "boolean",
+    "default": true,
+    "description": "Device-push fan-out for the needs-input class: a fleet node blocked on the operator pushes to every paired push target (presence-suppressed when a surface is attached). On by default; the toggle only silences. Read live per event."
+  },
+  {
+    "key": "notifications.pushCompletion",
+    "type": "boolean",
+    "default": true,
+    "description": "Device-push fan-out for the completion class: a tracked run reaching a terminal state (done/failed/killed) pushes to every paired push target. On by default with zero setup; the toggle only silences. Read live per event."
+  },
+  {
+    "key": "notifications.blockedEscalationGraceMs",
+    "type": "number",
+    "default": 300000,
+    "description": "How long a fleet node blocked on the operator may wait for a HUMAN response before a device push is sent REGARDLESS of an attached surface. Presence (an open TUI, a heartbeat) suppresses only the immediate push, never this escalation — a process being attended is not a human answer. A real interaction that clears the block cancels the escalation. Read live when a block is first tracked.",
+    "validationHint": "integer in [0, 86400000]"
+  },
+  {
+    "key": "notifications.blockedEscalationFollowUpMs",
+    "type": "number",
+    "default": 300000,
+    "description": "Interval between the bounded follow-up reminders that fire after the first blocked-too-long escalation, while the block remains unanswered. Read live per reminder.",
+    "validationHint": "integer in [0, 86400000]"
+  },
+  {
+    "key": "notifications.blockedEscalationMaxFollowUps",
+    "type": "number",
+    "default": 2,
+    "description": "Upper bound on follow-up reminders after the first blocked-too-long escalation (0 = escalate exactly once, no reminders). Keeps a long-unanswered block from becoming an unbounded stream of pushes.",
+    "validationHint": "integer in [0, 100]"
+  },
+  {
+    "key": "pricing.modelPrices",
+    "type": "object",
+    "default": {},
+    "description": "Manual model prices, keyed provider:model (e.g. \"openrouter:deepseek/deepseek-chat\"). Each entry: { input, output, cacheRead?, cacheWrite? } in USD per 1M tokens. A manual price always wins over provider-served and catalog pricing and applies live (no restart). Set one when registering a custom provider/model, or to pin a negotiated rate for any model.",
+    "validationHint": "record keyed \"provider:model\" of { input, output, cacheRead?, cacheWrite? } — finite numbers >= 0, USD per 1M tokens"
   }
 ];

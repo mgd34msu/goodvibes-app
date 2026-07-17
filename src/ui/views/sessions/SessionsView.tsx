@@ -58,6 +58,8 @@ import {
   unionSessionsTotal,
 } from "./sessions-union.ts";
 import { SteerComposer } from "./SteerComposer.tsx";
+import { SessionChanges } from "./SessionChanges.tsx";
+import { SessionRewind } from "./SessionRewind.tsx";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -814,6 +816,9 @@ function SessionDetail({
       </div>
 
       <SteerComposer sessionId={record.id} canSteer={canSteer(record)} closed={closed} streamPaused={streamPaused} />
+
+      <SessionChanges sessionId={record.id} />
+      <SessionRewind sessionId={record.id} rawMessages={items.map((m) => m.raw)} />
 
       <ConfirmSurface
         open={confirmDelete}

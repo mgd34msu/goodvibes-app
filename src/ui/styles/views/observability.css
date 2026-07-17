@@ -704,10 +704,213 @@
   height: 100%;
 }
 
+/* ── Ops: Power ───────────────────────────────────────────────── */
+
+.obs-power__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.obs-power__toggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.obs-power__note {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.obs-power__inhibitor-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--status-danger);
+  border-radius: var(--radius-md);
+  background: var(--status-danger-soft);
+}
+
+.obs-power__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.obs-power__facts dt {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.obs-power__facts dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* ── Ops: Memory governor ─────────────────────────────────────── */
+
+.obs-memory__tier-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.obs-memory__bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.obs-memory__bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.obs-memory__bar-track {
+  height: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.obs-memory__bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width var(--motion-base) var(--ease-standard);
+}
+
+.obs-memory__bar-fill--normal   { background: var(--status-success); }
+.obs-memory__bar-fill--elevated { background: var(--status-info); }
+.obs-memory__bar-fill--high     { background: var(--status-warning); }
+.obs-memory__bar-fill--critical { background: var(--status-danger); }
+
+.obs-memory__tripwire {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.obs-memory__tripwire--armed {
+  color: var(--status-danger);
+  font-weight: var(--weight-medium);
+}
+
+/* ── Ops: Quota ───────────────────────────────────────────────── */
+
+.obs-quota__fanout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.obs-quota__fanout h3 {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.obs-quota__verdict {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.obs-quota__verdict p {
+  margin: 0;
+  flex-basis: 100%;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.obs-quota__advisory-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ── Ops: Cost attribution ────────────────────────────────────── */
+
+.obs-cost-attr__provenance {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* ── Ops: Flags graduation ────────────────────────────────────── */
+
+.obs-flags__blockers {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--status-danger);
+  border-radius: var(--radius-md);
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+  font-size: var(--text-sm);
+}
+
+.obs-flags__blockers ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.obs-flags__group h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.obs-flags__entry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.obs-flags__entry-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Status strip: sleep-inhibitor chip ───────────────────────── */
+
+.status-strip__segment--power-held .status-strip__icon,
+.status-strip__segment--power-held .status-strip__label {
+  color: var(--status-danger);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .obs-tab,
   .obs-subtab,
-  .obs-btn {
+  .obs-btn,
+  .obs-memory__bar-fill {
     transition: none;
   }
 }

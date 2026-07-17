@@ -32,6 +32,8 @@ import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { MessageList } from "./MessageList.tsx";
 import { Composer, type SlashCommandHint } from "./Composer.tsx";
 import { ChatSearch } from "./ChatSearch.tsx";
+import { ContextUsageChip } from "./ContextUsageChip.tsx";
+import { QueuedMessagesPanel } from "./QueuedMessagesPanel.tsx";
 import { useChatSessions } from "./useChatSessions.ts";
 import { useChatStream } from "./useChatStream.ts";
 import { useChatSend, useSendBudget, type AttachedArtifactRef } from "./useChatSend.ts";
@@ -167,6 +169,11 @@ export function ChatView() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.chatMessages(sessionId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.chatSessions }),
+        // ContextUsageChip's fetch-once cache — this is every place a turn
+        // settles (completed/cancelled/error) or the stream resyncs after a
+        // drop, so the chip refreshes "after each completed turn", never on
+        // an interval (A2 brief).
+        queryClient.invalidateQueries({ queryKey: queryKeys.sessionContextUsage(sessionId) }),
       ]);
     },
     [queryClient],
@@ -223,7 +230,17 @@ export function ChatView() {
   }, []);
 
   // --- live stream ----------------------------------------------------------
-  const { isStreaming, streamHealth, toolCalls, turnMetrics, stop, retryStream } = useChatStream({
+  const {
+    isStreaming,
+    streamHealth,
+    toolCalls,
+    cancellingToolCallIds,
+    cancelToolCall,
+    toolCancelUnavailable,
+    turnMetrics,
+    stop,
+    retryStream,
+  } = useChatStream({
     activeSessionId,
     liveTextRef,
     onSessionMissing,
@@ -235,6 +252,7 @@ export function ChatView() {
     invalidateChatState,
     onTurnCompleted,
     turnState,
+    notifyToolCancelError: (message) => toast({ title: "Couldn't cancel tool call", description: message, tone: "danger" }),
   });
 
   // --- send ----------------------------------------------------------------
@@ -863,6 +881,7 @@ export function ChatView() {
         <header className="chat-header">
           <div className="chat-header-title">
             <h2 title={activeSessionTitle}>{activeSessionTitle}</h2>
+            {activeSessionId && <ContextUsageChip sessionId={activeSessionId} />}
             {(visibleTurnState || streamHealth === "reconnecting") && (
               <span className="chat-turn-state" role="status">
                 {streamHealth === "reconnecting" && !visibleTurnState ? "stream reconnecting" : turnState}
@@ -973,6 +992,8 @@ export function ChatView() {
             turnState={turnState}
             toolCalls={toolCalls}
             turnMetrics={turnMetrics}
+            {...(toolCancelUnavailable ? {} : { onCancelToolCall: cancelToolCall })}
+            cancellingToolCallIds={cancellingToolCallIds}
             showJumpToBottom={showJumpToBottom}
             isSendPending={send.isPending}
             isStreaming={isStreaming}
@@ -992,7 +1013,10 @@ export function ChatView() {
           />
         )}
 
+        {activeSessionId && <QueuedMessagesPanel sessionId={activeSessionId} active={isStreaming} />}
+
         <Composer
+          sessionId={activeSessionId}
           draft={draft}
           attachedFiles={attachedFiles}
           artifactRefs={artifactRefs}

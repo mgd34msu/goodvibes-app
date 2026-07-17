@@ -9,7 +9,11 @@
 import { asArray, asRecord, firstString, readPath } from "../../lib/wire.ts";
 import type { TaskSummary } from "../../lib/approvals.ts";
 
-/** PROCESS_KIND_SCHEMA at the time of writing (contract v1, operator 1.3.1). */
+/** PROCESS_KIND_SCHEMA at the time of writing (contract v1, operator 1.3.1).
+ * 'acp-agent' (a third-party coding agent hosted via acp.sessions.create) and
+ * 'observed-external' (a foreign coding-agent session goodvibes did not spawn
+ * — visibility only, see isObservedKind below) arrived in operator contract
+ * 1.11. */
 export const KNOWN_PROCESS_KINDS = [
   "agent",
   "wrfc-chain",
@@ -22,8 +26,15 @@ export const KNOWN_PROCESS_KINDS = [
   "workstream",
   "phase",
   "work-item",
+  "acp-agent",
+  "observed-external",
   "code-index",
 ] as const;
+
+/** No wire event exists for fleet.* — poll while visible (docs/UX.md §6).
+ * Shared by every fleet-domain query (snapshot, attempts, conflicts) so they
+ * stay on the same cadence. */
+export const FLEET_POLL_INTERVAL_MS = 5_000;
 
 /** PROCESS_STATE_SCHEMA at the time of writing. */
 export const KNOWN_PROCESS_STATES = [
@@ -72,6 +83,59 @@ export interface FleetNodeCapabilities {
   steerable: boolean;
 }
 
+/** ProcessAttention (contract 1.11) — every way a node can be waiting on a
+ * human is a first-class reason here: 'approval' | 'input' | 'pick' |
+ * 'conflict'. Read as an open string (see attentionReasonLabel). */
+export interface FleetAttentionMarker {
+  reason: string;
+  detail: string;
+}
+
+/** ProcessAttemptGroup (contract 1.11) — present only on a work-item node
+ * that is one sibling of a best-of-N group; lets FleetView collapse the N
+ * siblings into one group entry driven by fleet.attempts.list. */
+export interface FleetAttemptGroupRef {
+  groupId: string;
+  index: number;
+  total: number;
+  held: boolean;
+  /** True once the WHOLE group is ready for a winner pick. */
+  ready: boolean;
+}
+
+export interface FleetObservedLiveness {
+  /** 'active' | 'quiet' (open string) — 'quiet' is NOT proof of idleness,
+   * only that no CPU was burned in the interval; `detail` says so verbatim. */
+  state: string;
+  cpuSeconds: number;
+  detail: string;
+}
+
+/** ObservedSteerChannel (contract 1.11) — a genuine channel carries what a
+ * surface needs to dispatch through it (kind 'tmux'); kind 'none' carries
+ * the plain reason there is no channel. Read tolerantly: an unrecognized/
+ * absent shape reads as kind "" (render as "no channel", never a dead
+ * button standing in for a missing field). */
+export interface FleetObservedSteerChannel {
+  kind: string;
+  paneId: string;
+  tty: string;
+  reason: string;
+}
+
+/** ProcessObserved (contract 1.11) — present only on an 'observed-external'
+ * node (a foreign coding-agent session goodvibes did not spawn). Visibility
+ * only: never killable/interruptible/pausable/resumable, steer only via the
+ * row's own drill-in detail and only over a genuine channel. */
+export interface FleetObserved {
+  externalKind: string;
+  pid: number;
+  cwd: string;
+  liveness: FleetObservedLiveness;
+  steer: FleetObservedSteerChannel;
+  steerDrillInOnly: boolean;
+}
+
 export interface FleetNode {
   id: string;
   kind: string;
@@ -91,6 +155,12 @@ export interface FleetNode {
   capabilities: FleetNodeCapabilities;
   sessionId: string;
   agentId: string;
+  /** Derived "blocked on a human" marker — null when the node needs nothing. */
+  attention: FleetAttentionMarker | null;
+  /** Best-of-N sibling grouping — null on every ordinary (single-attempt) node. */
+  attemptGroup: FleetAttemptGroupRef | null;
+  /** Foreign-agent facts — null on every node goodvibes owns/hosts. */
+  observed: FleetObserved | null;
   raw: unknown;
 }
 
@@ -115,6 +185,9 @@ function normalizeNode(value: unknown): FleetNode {
   const usageRecord = record["usage"] !== undefined ? asRecord(record["usage"]) : null;
   const activityRecord = record["currentActivity"] !== undefined ? asRecord(record["currentActivity"]) : null;
   const sessionRef = asRecord(record["sessionRef"]);
+  const attentionRecord = record["needsAttention"] !== undefined ? asRecord(record["needsAttention"]) : null;
+  const attemptGroupRecord = record["attemptGroup"] !== undefined ? asRecord(record["attemptGroup"]) : null;
+  const observedRecord = record["observed"] !== undefined ? asRecord(record["observed"]) : null;
   const id = firstString(record, ["id", "nodeId"]);
   return {
     id,
@@ -159,6 +232,46 @@ function normalizeNode(value: unknown): FleetNode {
     },
     sessionId: firstString(sessionRef, ["sessionId"]),
     agentId: firstString(sessionRef, ["agentId"]),
+    attention:
+      attentionRecord && firstString(attentionRecord, ["reason"])
+        ? { reason: firstString(attentionRecord, ["reason"]), detail: firstString(attentionRecord, ["detail"]) }
+        : null,
+    attemptGroup:
+      attemptGroupRecord && firstString(attemptGroupRecord, ["groupId"])
+        ? {
+            groupId: firstString(attemptGroupRecord, ["groupId"]),
+            index: optionalNumber(attemptGroupRecord["index"]) ?? 0,
+            total: optionalNumber(attemptGroupRecord["total"]) ?? 0,
+            held: attemptGroupRecord["held"] === true,
+            ready: attemptGroupRecord["ready"] === true,
+          }
+        : null,
+    observed:
+      observedRecord && Object.keys(observedRecord).length > 0
+        ? {
+            externalKind: firstString(observedRecord, ["externalKind"]),
+            pid: optionalNumber(observedRecord["pid"]) ?? 0,
+            cwd: firstString(observedRecord, ["cwd"]),
+            liveness: (() => {
+              const liveRecord = asRecord(observedRecord["liveness"]);
+              return {
+                state: firstString(liveRecord, ["state"]),
+                cpuSeconds: optionalNumber(liveRecord["cpuSeconds"]) ?? 0,
+                detail: firstString(liveRecord, ["detail"]),
+              };
+            })(),
+            steer: (() => {
+              const steerRecord = asRecord(observedRecord["steer"]);
+              return {
+                kind: firstString(steerRecord, ["kind"]),
+                paneId: firstString(steerRecord, ["paneId"]),
+                tty: firstString(steerRecord, ["tty"]),
+                reason: firstString(steerRecord, ["reason"]),
+              };
+            })(),
+            steerDrillInOnly: observedRecord["steerDrillInOnly"] !== false,
+          }
+        : null,
     raw: value,
   };
 }
@@ -175,6 +288,14 @@ export function normalizeFleetSnapshot(value: unknown): FleetSnapshot {
 
 export function isKnownProcessKind(kind: string): boolean {
   return (KNOWN_PROCESS_KINDS as readonly string[]).includes(kind);
+}
+
+/** The one fleet kind goodvibes did not spawn or host — a foreign coding-
+ * agent session detected read-only. Never counted in "own agent" totals,
+ * never killable/interruptible/pausable/resumable, steerable only via the
+ * row's own drill-in detail over a genuine channel. */
+export function isObservedKind(kind: string): boolean {
+  return kind === "observed-external";
 }
 
 export function isKnownProcessState(state: string): boolean {
@@ -249,9 +370,17 @@ export function buildFleetRows(nodes: readonly FleetNode[]): FleetRow[] {
     }
   }
 
-  const byRecency = (a: FleetNode, b: FleetNode) => (b.startedAt ?? 0) - (a.startedAt ?? 0);
-  roots.sort(byRecency);
-  for (const bucket of childrenByParent.values()) bucket.sort(byRecency);
+  // Attention-first, then newest-started-first: a node the daemon flagged as
+  // blocked on a human (attention) floats to the TOP of its sibling group so
+  // the operator sees what is waiting on them before anything else, without
+  // reordering across the tree (parent/child structure is preserved).
+  const byAttentionThenRecency = (a: FleetNode, b: FleetNode) => {
+    const attentionDelta = Number(Boolean(b.attention)) - Number(Boolean(a.attention));
+    if (attentionDelta !== 0) return attentionDelta;
+    return (b.startedAt ?? 0) - (a.startedAt ?? 0);
+  };
+  roots.sort(byAttentionThenRecency);
+  for (const bucket of childrenByParent.values()) bucket.sort(byAttentionThenRecency);
 
   const rows: FleetRow[] = [];
   const visited = new Set<string>();
@@ -273,8 +402,64 @@ export function buildFleetRows(nodes: readonly FleetNode[]): FleetRow[] {
   return rows;
 }
 
+/** "N active" — an OWN-agent count. Observed foreign agents are excluded
+ * outright: goodvibes did not spawn them, so counting them would overstate
+ * its own workload. Their liveness is a separate, honestly-rendered signal
+ * per row (ObservedBadge), never folded into this total. */
 export function activeCount(nodes: readonly FleetNode[]): number {
-  return nodes.filter((n) => !isTerminalState(n.state)).length;
+  return nodes.filter((n) => !isTerminalState(n.state) && !isObservedKind(n.kind)).length;
+}
+
+/** Total nodes goodvibes actually owns/hosts — observed rows excluded. */
+export function ownNodeCount(nodes: readonly FleetNode[]): number {
+  return nodes.filter((n) => !isObservedKind(n.kind)).length;
+}
+
+/** Count of observed (externally-launched) foreign-agent rows in this snapshot. */
+export function observedNodeCount(nodes: readonly FleetNode[]): number {
+  return nodes.filter((n) => isObservedKind(n.kind)).length;
+}
+
+// ─── Attention (needs-a-human) ────────────────────────────────────────────────
+//
+// fleet.snapshot nodes carry a DERIVED `needsAttention` marker (contract
+// 1.11) — a projection of the node's blocked-on-a-human state, recomputed on
+// every snapshot and never persisted. 'pick' (a ready best-of-N group) and
+// 'conflict' (a merge conflict) are the newest two reasons, alongside the
+// pre-existing 'approval'/'input' — ONE waiting-on-human class; only the
+// human-facing label is reason-specific.
+
+/** Human-facing label for the attention reason. Verbatim for an unknown future reason. */
+export function attentionReasonLabel(reason: string): string {
+  if (reason === "approval") return "Needs approval";
+  if (reason === "input") return "Needs input";
+  if (reason === "pick") return "Needs your pick";
+  if (reason === "conflict") return "Merge conflict waiting on you";
+  return reason.trim() || "Needs attention";
+}
+
+/** How many nodes in this snapshot are blocked on a human right now. */
+export function attentionCount(nodes: readonly FleetNode[]): number {
+  return nodes.reduce((total, node) => (node.attention ? total + 1 : total), 0);
+}
+
+// ─── Best-of-N attempt siblings ────────────────────────────────────────────────
+//
+// A fleet node that is one attempt of a best-of-N group carries an
+// `attemptGroup` marker. This only lets the view collapse the sibling nodes
+// into one group node and know which group they belong to — the
+// authoritative candidate/diff/judgment data lives in fleet.attempts.list.
+
+/** The set of best-of-N group ids present among these nodes as attempt-
+ * sibling markers — FleetView excludes these siblings from the main tree so
+ * a group renders as ONE collapsible entry (driven by fleet.attempts.list)
+ * rather than N loose rows. */
+export function attemptGroupIds(nodes: readonly FleetNode[]): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const node of nodes) {
+    if (node.attemptGroup) ids.add(node.attemptGroup.groupId);
+  }
+  return ids;
 }
 
 // ─── Actions this app can genuinely back over the wire ───────────────────────
@@ -322,6 +507,11 @@ export const fleetControlKeys = {
 
 export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction> {
   const actions = new Set<FleetWireAction>();
+  // Observed foreign agents are visibility-only — steer is a SEPARATE
+  // drill-in verb (fleet.observed.steer, gated on node.observed.steer.kind),
+  // never one of these session-level actions, even if a sessionId happened
+  // to ride the node.
+  if (isObservedKind(node.kind)) return actions;
   const hasSession = node.sessionId.length > 0;
   if (node.kind === "agent" && node.capabilities.steerable && hasSession) actions.add("steer");
   if (hasSession) actions.add("detach");

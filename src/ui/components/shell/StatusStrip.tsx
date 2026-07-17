@@ -1,15 +1,21 @@
 // Persistent bottom status strip — the ambient observability surface
 // (docs/UX.md §1.4). Three honest daemon-health axes (Reachable / Signed-in /
 // Working — they can disagree and the strip never collapses them), latency,
-// SSE state with a reconnect countdown, active work, pending approvals, and a
+// SSE state with a reconnect countdown, active work, pending approvals, a
+// sleep-inhibitor chip (visible only while actually held), and a
 // session-cost slot. Every chip is a real button that deep-links to the view
 // that explains it (router navigation supplied by AppShell — one router
 // instance owns URL state). Ported from goodvibes-webui
 // src/components/status/StatusStrip.tsx over this app's /app/health-backed
-// useDaemonHealth.
+// useDaemonHealth. The inhibitor chip reads power.status.get directly (its
+// own sparse poll, not routed through useDaemonHealth) — see
+// views/observability/PowerPanel.tsx and obs-wire.ts for the full snapshot.
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Activity, BadgeCheck, CircleDollarSign, KeyRound, Radio, ShieldCheck, Zap } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Activity, BadgeCheck, CircleDollarSign, KeyRound, Moon, Radio, ShieldCheck, Zap } from "lucide-react";
+import { gv } from "../../lib/gv.ts";
+import { queryKeys } from "../../lib/queries.ts";
 import {
   authLabel,
   connectionLabel,
@@ -27,6 +33,7 @@ import {
   contractGlyphForWorking,
 } from "../../lib/presentation-bridge.ts";
 import type { ViewId } from "../../lib/router.ts";
+import { powerHeldTooltip, readPowerStatus } from "../../views/observability/obs-wire.ts";
 
 export interface StatusStripProps {
   /** Router navigation from the shell's single useUrlState instance. */
@@ -88,6 +95,21 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
 
   const isBusy = activeTurns > 0 || queuedTasks > 0;
   const sseText = sseDetailLabel(sse, sseRetryAt, now);
+
+  // Power inhibitor — sparse poll (no wire-event subscription for the "ops"
+  // domain exists in lib/realtime.ts yet; see ObservabilityView.tsx's note).
+  // Silently absent (no chip, no error surface) when the daemon doesn't
+  // serve power.status.get — this is ambient state, not a capability the
+  // strip is responsible for explaining.
+  const power = useQuery({
+    queryKey: queryKeys.powerStatus,
+    queryFn: () => gv.power.status(),
+    refetchInterval: 45_000,
+    retry: false,
+  });
+  const powerSnapshot = power.isSuccess ? readPowerStatus(power.data) : undefined;
+  const inhibitorHeld = powerSnapshot?.workHeld ?? false;
+  const inhibitorTooltip = powerSnapshot ? powerHeldTooltip(powerSnapshot) : "";
 
   return (
     <footer className="status-strip">
@@ -182,6 +204,22 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
           {sseText}
         </span>
       </Chip>
+
+      {/* Sleep inhibitor — visible ONLY while the daemon actually holds it
+          (keep-awake or automatic work). Danger tone; tooltip is the
+          daemon's own verbatim note/reasons, never a guess. */}
+      {inhibitorHeld && (
+        <Chip
+          onClick={() => onNavigate("observability")}
+          ariaLabel={`Sleep inhibitor held: ${inhibitorTooltip}. Open Observability`}
+          className="status-strip__segment--power-held"
+        >
+          <Moon className="status-strip__icon" aria-hidden="true" size={11} />
+          <span className="status-strip__label" title={inhibitorTooltip}>
+            Awake
+          </span>
+        </Chip>
+      )}
 
       {/* Session cost — honest placeholder until the Wave D cost engine lands;
           shows the slot (and its destination) without inventing a number. */}

@@ -157,6 +157,7 @@
 }
 
 .channels-field input,
+.channels-field select,
 .channels-field textarea {
   padding: var(--space-2);
   border: 1px solid var(--border-subtle);
@@ -838,10 +839,54 @@
 .channels-routing,
 .channels-policies,
 .channels-directory,
-.channels-accounts {
+.channels-accounts,
+.channels-identities {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* ── Identities tab (principals / channel profiles / test send) ────── */
+
+.channels-identities {
+  gap: var(--space-6);
+}
+
+.channels-principals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.channels-test-result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: var(--text-sm);
+}
+
+.channels-test-result--ok {
+  border-color: var(--status-success-soft);
+}
+
+.channels-test-result--fail {
+  border-color: var(--status-danger-soft);
+}
+
+.channels-test-result code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.channels-test-result__error {
+  color: var(--status-danger);
+  overflow-wrap: anywhere;
 }
 
 .channels-drafts__error {

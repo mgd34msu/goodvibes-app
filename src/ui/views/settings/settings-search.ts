@@ -11,9 +11,11 @@
 
 import { fuzzyMatch } from "../../lib/commands.ts";
 import { CONFIG_SCHEMA_SNAPSHOT } from "./config-schema.generated.ts";
+import { FEATURE_SETTINGS_SNAPSHOT } from "./feature-settings.generated.ts";
 
 export type SettingsSectionId =
   | "config"
+  | "features"
   | "app"
   | "auth"
   | "security"
@@ -69,8 +71,19 @@ function buildIndex(): SettingsSearchEntry[] {
     keywords: `${meta.key} ${meta.description}`,
     anchorSelector: ".settings-config",
   }));
+  // Anchor is the whole section (like configEntries' ".settings-config"), not
+  // a per-feature selector: FeatureSettingsSection gates units behind its own
+  // domain-rail tabs, so a card outside the currently active domain would not
+  // be mounted yet for flashSection to find.
+  const featureEntries: SettingsSearchEntry[] = FEATURE_SETTINGS_SNAPSHOT.map((feature) => ({
+    sectionId: "features",
+    sectionLabel: "Feature settings",
+    label: feature.name,
+    keywords: `${feature.id} ${feature.name} ${feature.description} ${feature.enablement.key}`,
+    anchorSelector: ".settings-features",
+  }));
   const curatedEntries: SettingsSearchEntry[] = CURATED.map((entry) => ({ ...entry, keywords: `${entry.label} ${entry.sectionLabel}` }));
-  return [...configEntries, ...curatedEntries];
+  return [...configEntries, ...featureEntries, ...curatedEntries];
 }
 
 const INDEX = buildIndex();

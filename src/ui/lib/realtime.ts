@@ -14,8 +14,20 @@ import type { SseState } from "./daemon-health.ts";
 /**
  * Domain → query keys a frame on that domain revalidates. The daemon writes
  * `event: <domain>` per frame on GET /api/control-plane/events?domains=a,b,c.
- * fleet/checkpoints/memory/calendar have NO wire events (pinned upstream) —
- * their views poll; do not add their keys here without a real event.
+ * The daemon silently drops any domain it does not recognize
+ * (`normalizeRuntimeDomains` → `isRuntimeEventDomain` filter), so every key here
+ * MUST name a real domain from goodvibes-contracts' RUNTIME_EVENT_DOMAINS or it
+ * is inert. checkpoints/memory/calendar still have NO wire events (pinned
+ * upstream) — their views poll; do not add their keys here without a real event.
+ *
+ * `ops` and `workspace` are real 1.11 event domains (confirmed against
+ * RUNTIME_EVENT_DOMAINS): `ops` carries OPS_POWER_STATE_CHANGED / OPS_MEMORY_PRESSURE
+ * (integration gate wiring for the observability Ops/Power panels — Agent 5's
+ * flagged gap), `workspace` carries the rewind/hunk-revert receipts so a
+ * rewind/revert applied from another surface (TUI, webui) live-updates the
+ * Sessions "Changes"/"Rewind" panels here (Agent 1's flagged gap). Both were
+ * pre-authorized by the integration brief. Invalidating the `["sessions"]`
+ * prefix covers every session-scoped changes query by prefix match.
  */
 export const DOMAIN_INVALIDATIONS: Record<string, readonly (readonly unknown[])[]> = {
   tasks: [queryKeys.tasks],
@@ -28,6 +40,8 @@ export const DOMAIN_INVALIDATIONS: Record<string, readonly (readonly unknown[])[
   deliveries: [queryKeys.deliveries],
   communication: [queryKeys.channels],
   mcp: [queryKeys.mcp],
+  ops: [queryKeys.powerStatus, queryKeys.opsMemory],
+  workspace: [queryKeys.sessions, queryKeys.workspaceRegistrations],
 };
 
 const INVALIDATION_EVENTS_PATH = `/api/control-plane/events?domains=${Object.keys(DOMAIN_INVALIDATIONS).join(",")}`;

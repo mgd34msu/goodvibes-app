@@ -911,6 +911,298 @@
   color: var(--text-secondary);
 }
 
+.worktrees-row--setup-failed {
+  border-color: var(--status-danger);
+}
+
+.worktrees-row__actions {
+  display: inline-flex;
+  gap: var(--space-2);
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.git-mini-button--danger:hover:not(:disabled) {
+  color: var(--status-danger);
+  border-color: var(--status-danger);
+}
+
+.worktrees-row__setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.worktrees-row__setup-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.worktrees-row__setup-output {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2);
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Registered workspaces panel (WorkspacesPanel.tsx) ──────────── */
+
+.workspaces-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.workspaces-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.workspaces-row {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.workspaces-row__main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.workspaces-row__root {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.workspaces-row__badges {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.workspaces-row__remove {
+  margin-left: auto;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.workspaces-row__remove:hover {
+  color: var(--status-danger);
+  border-color: var(--status-danger);
+}
+
+.workspaces-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.workspaces-add-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.workspaces-add-form__root {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.workspaces-add-form__label {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.workspaces-add-form input[type="text"] {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+}
+
+.workspaces-add-form__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.workspaces-add-form button {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent-muted);
+  color: var(--text-accent);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.workspaces-add-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.workspaces-resolve {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.workspaces-resolve__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.workspaces-resolve__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.workspaces-resolve__row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+}
+
+.workspaces-resolve__row button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent-muted);
+  color: var(--text-accent);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.workspaces-resolve__row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.workspaces-resolve__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.workspaces-resolve__facts dt {
+  color: var(--text-tertiary);
+}
+
+.workspaces-resolve__facts dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* ── Local voice install (voice-controls.tsx — Local voice section) ── */
+/* This module owns code.css only; voice-controls.tsx reuses chat.css's
+   existing .voice-settings__section/__heading/__hint shell classes and adds
+   just these new ones for install-progress + receipt rendering. */
+
+.voice-local-progress {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.voice-local-progress li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.voice-local-progress__name {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.voice-local-progress__phase {
+  color: var(--text-secondary);
+}
+
+.voice-local-progress__error {
+  color: var(--status-danger);
+  flex: 1 1 100%;
+}
+
+.voice-local-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.voice-local-receipt p {
+  margin: 0;
+}
+
 /* ── Checkpoints view ────────────────────────────────────────── */
 
 .checkpoints-view {

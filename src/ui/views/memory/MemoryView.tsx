@@ -39,6 +39,8 @@ import { MemoryRecordRow } from "./MemoryRecordRow.tsx";
 import { MemorySearchHonestyNote } from "./MemorySearchHonestyNote.tsx";
 import { ReviewQueuePanel, type MemoryReviewDraft } from "./ReviewQueuePanel.tsx";
 import { MemoryAdminPanel } from "./MemoryAdminPanel.tsx";
+import { ConsolidationReceipts } from "./ConsolidationReceipts.tsx";
+import { ProjectionsPanel } from "./ProjectionsPanel.tsx";
 // Reused, not duplicated: the knowledge-candidates query/mutation logic
 // lives in one place (knowledge/RefinePanel.tsx) and is embedded here so
 // "Learning review" is a single combined curator surface over BOTH queues
@@ -111,6 +113,12 @@ function MemoryViewInner() {
   // Learning-review triage bucket (docs/GAPS.md §8 row 12, memory-side half):
   // a client-side lens over the SAME review-queue data, no new wire verb.
   const [triageBucket, setTriageBucket] = useState<ReviewTriageBucket>("all");
+
+  // Consolidation's "Review" jump lands here: scroll + highlight the
+  // referenced ids, never a filter that hides the rest of the queue.
+  const [highlightedReviewIds, setHighlightedReviewIds] = useState<ReadonlySet<string>>(new Set());
+  const reviewQueueSectionRef = useRef<HTMLDivElement>(null);
+  const highlightClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -289,6 +297,24 @@ function MemoryViewInner() {
       ...(recall ? { recall: true } : {}),
     });
   }
+
+  /** Consolidation proposal "Review" affordance: never filters the review
+   * queue, only scrolls to it and highlights the referenced ids for a
+   * moment. Resets the triage bucket to "all" first so a highlighted id
+   * that would otherwise be hidden by the current bucket is still visible. */
+  const jumpToReviewIds = useCallback((ids: readonly string[]) => {
+    setTriageBucket("all");
+    setHighlightedReviewIds(new Set(ids));
+    reviewQueueSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (highlightClearRef.current) clearTimeout(highlightClearRef.current);
+    highlightClearRef.current = setTimeout(() => setHighlightedReviewIds(new Set()), 5000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (highlightClearRef.current) clearTimeout(highlightClearRef.current);
+    };
+  }, []);
 
   function resetSearch(): void {
     setQueryText("");
@@ -528,6 +554,8 @@ function MemoryViewInner() {
         <aside className="memory-rail">
           <AddMemoryForm isPending={add.isPending} error={add.error} onSubmit={(input) => add.mutate(input)} />
 
+          <ConsolidationReceipts onReviewIds={jumpToReviewIds} />
+
           <section className="memory-panel memory-panel--learning-review" aria-label="Learning review">
             <div className="memory-panel__title">
               <h2>Learning review</h2>
@@ -537,7 +565,11 @@ function MemoryViewInner() {
               awaiting a keep/drop decision.
             </p>
 
-            <div className="memory-learning-review__half" aria-label="Memory records review queue">
+            <div
+              className="memory-learning-review__half"
+              aria-label="Memory records review queue"
+              ref={reviewQueueSectionRef}
+            >
               <div className="memory-panel__subtitle">
                 <h3>Memory records</h3>
                 {reviewQueue.isSuccess && <span className="badge neutral">{reviewQueue.data.length}</span>}
@@ -569,6 +601,7 @@ function MemoryViewInner() {
                 savingId={updateReview.isPending ? (updateReview.variables?.id ?? null) : null}
                 onSave={(id, input) => updateReview.mutate({ id, input })}
                 onOpen={openDetail}
+                highlightedIds={highlightedReviewIds}
               />
             </div>
 
@@ -585,6 +618,8 @@ function MemoryViewInner() {
               <CandidatesSection active />
             </div>
           </section>
+
+          <ProjectionsPanel />
 
           <MemoryAdminPanel />
         </aside>

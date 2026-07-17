@@ -7,17 +7,22 @@
 //                  (cost-engine.ts), budget alert, token/context console.
 //   System      — health cards, control snapshot/clients/messages, routes +
 //                  bindings CRUD, surfaces, continuity, scheduler, OTLP.
+//   Ops         — power/keep-awake, memory governor, runtime metrics, quota
+//                  + fan-out advisor, cost attribution, flags graduation.
 //   Diagnostics — shared SSE connector state + a local rolling latency probe.
 //   Contract    — searchable method/event catalog explorer.
 //   Panels      — remote-open TUI panels (panels.list/.open).
 //
 // None of telemetry/control-plane/health/routes/surfaces/continuity/
-// scheduler/panels carry a wire event (lib/realtime.ts DOMAIN_INVALIDATIONS
-// has no entry for any of them), so every read here polls or refetches on
-// demand; live freshness specifically comes from the dedicated pausable
-// telemetry tail, not from background invalidation. Top-level tab (and each
-// section's own subtab) is URL-addressable so palette jumps and deep links
-// compose (docs/UX.md §2).
+// scheduler/panels/ops carry a wire event lib/realtime.ts's
+// DOMAIN_INVALIDATIONS actually subscribes to (verified: power.keepAwake.set
+// emits OPS_POWER_STATE_CHANGED and ops.memory.get names OPS_MEMORY_PRESSURE
+// on the wire, but the app's own SSE subscription path has no "ops"/"power"
+// domain listed — noted for the integration gate), so every read here polls
+// or refetches on demand; live freshness specifically comes from the
+// dedicated pausable telemetry tail, not from background invalidation.
+// Top-level tab (and each section's own subtab) is URL-addressable so
+// palette jumps and deep links compose (docs/UX.md §2).
 
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,16 +34,18 @@ import { obsKeys } from "./keys.ts";
 import { TelemetrySection } from "./TelemetrySection.tsx";
 import { CostSection } from "./CostSection.tsx";
 import { SystemSection } from "./SystemSection.tsx";
+import { OpsSection } from "./OpsSection.tsx";
 import { DiagnosticsSection } from "./DiagnosticsSection.tsx";
 import { ContractSection } from "./ContractSection.tsx";
 import { PanelsSection } from "./PanelsSection.tsx";
 
-type ObsTab = "telemetry" | "cost" | "system" | "diagnostics" | "contract" | "panels";
+type ObsTab = "telemetry" | "cost" | "system" | "ops" | "diagnostics" | "contract" | "panels";
 
 const TAB_LABELS: Record<ObsTab, string> = {
   telemetry: "Telemetry",
   cost: "Cost & tokens",
   system: "System",
+  ops: "Ops",
   diagnostics: "Diagnostics",
   contract: "Contract explorer",
   panels: "Panels",
@@ -120,6 +127,7 @@ export function ObservabilityView(): React.ReactElement {
       {tab === "telemetry" && <TelemetrySection />}
       {tab === "cost" && <CostSection />}
       {tab === "system" && <SystemSection />}
+      {tab === "ops" && <OpsSection />}
       {tab === "diagnostics" && <DiagnosticsSection />}
       {tab === "contract" && <ContractSection />}
       {tab === "panels" && <PanelsSection />}

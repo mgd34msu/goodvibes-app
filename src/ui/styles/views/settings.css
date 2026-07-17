@@ -73,7 +73,8 @@
 .settings-auth,
 .settings-security,
 .settings-credentials,
-.settings-sync {
+.settings-sync,
+.settings-features {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -395,6 +396,109 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
   word-break: break-all;
+}
+
+/* ── Feature settings (dissolved-feature model) ─────────────────────────── */
+
+.settings-feature-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.settings-feature-group__label {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.settings-feature-unit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.settings-feature-unit__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.settings-feature-unit__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-feature-unit__name {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.settings-feature-unit__state {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-feature-unit__state--enabled {
+  color: var(--text-accent);
+}
+
+.settings-feature-unit__control {
+  flex-shrink: 0;
+}
+
+.settings-feature-unit__mode {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-feature-unit__mode-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-feature-unit__mode-desc {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-feature-unit__desc {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.settings-feature-unit__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-feature-unit__pending {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+.settings-feature-unit__fields {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border-subtle);
 }
 
 /* ── App shell prefs ─────────────────────────────────────────── */

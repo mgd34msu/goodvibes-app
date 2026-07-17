@@ -3,8 +3,11 @@
 // setup/lifecycle/repairs drill-in), Inbox, Accounts, Catalog (actions/
 // tools/agent tools/capabilities/directory), Policies (+ audit), Drafts,
 // Routing, Deliveries (row 12: deliveries.list/.get, read-only — no
-// deliveries.retry exists on this pin, see DeliveriesPanel.tsx) — every
-// mutating verb confirm-gated (see each panel's docblock).
+// deliveries.retry exists on this pin, see DeliveriesPanel.tsx), Identities
+// (contract 1.11: principals.* registry + channels.profiles.* intake
+// defaults + channels.test.send — the FIRST UI surface for all three, see
+// IdentitiesPanel.tsx) — every mutating verb confirm-gated (see each panel's
+// docblock).
 //
 // Freshness: the `communication` realtime domain invalidates the ["channels"]
 // key prefix (lib/realtime.ts) that every local key extends (keys.ts); the
@@ -34,9 +37,19 @@ import { PoliciesPanel } from "./PoliciesPanel.tsx";
 import { DraftsPanel } from "./DraftsPanel.tsx";
 import { RoutingPanel } from "./RoutingPanel.tsx";
 import { DeliveriesPanel } from "./DeliveriesPanel.tsx";
+import { IdentitiesPanel } from "./IdentitiesPanel.tsx";
 import { PairingModal } from "./PairingModal.tsx";
 
-type ChannelsTab = "status" | "inbox" | "accounts" | "catalog" | "policies" | "drafts" | "routing" | "deliveries";
+type ChannelsTab =
+  | "status"
+  | "inbox"
+  | "accounts"
+  | "catalog"
+  | "policies"
+  | "drafts"
+  | "routing"
+  | "deliveries"
+  | "identities";
 
 const TAB_LABELS: Record<ChannelsTab, string> = {
   status: "Status",
@@ -47,6 +60,7 @@ const TAB_LABELS: Record<ChannelsTab, string> = {
   drafts: "Drafts",
   routing: "Routing",
   deliveries: "Deliveries",
+  identities: "Identities",
 };
 
 const TAB_IDS = Object.keys(TAB_LABELS) as ChannelsTab[];
@@ -69,11 +83,15 @@ export function ChannelsView() {
     setFilters({ "channels-tab": next === "status" ? undefined : next }, { replace: true });
   }
 
-  // Both prefixes: channelsKeys.all (communication domain) plus the
-  // separately-invalidated deliveries domain the Deliveries tab now rides.
+  // channelsKeys.all (communication domain) covers channels.profiles too —
+  // queryKeys.channelProfiles is ["channels","profiles"], a prefix match — but
+  // queryKeys.principals is its own top-level key ["principals"], outside the
+  // "channels" prefix, so it needs its own invalidation here. Plus the
+  // separately-invalidated deliveries domain the Deliveries tab rides.
   function refreshAll(): void {
     void queryClient.invalidateQueries({ queryKey: channelsKeys.all });
     void queryClient.invalidateQueries({ queryKey: queryKeys.deliveries });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.principals });
   }
 
   // Topbar view-scoped actions (the view unmounts when hidden — keepAlive:false).
@@ -138,6 +156,7 @@ export function ChannelsView() {
       {tab === "drafts" && <DraftsPanel />}
       {tab === "routing" && <RoutingPanel />}
       {tab === "deliveries" && <DeliveriesPanel />}
+      {tab === "identities" && <IdentitiesPanel />}
 
       <PairingModal open={pairingOpen} onClose={() => setPairingOpen(false)} />
     </div>

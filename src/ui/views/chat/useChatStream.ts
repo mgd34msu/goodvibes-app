@@ -12,6 +12,7 @@ import { gv } from "../../lib/gv.ts";
 import { openSse, type SseDispose } from "../../lib/sse.ts";
 import { firstString } from "../../lib/wire.ts";
 import { errorCode, formatError, isMethodUnavailableError, isSessionNotFoundError } from "../../lib/errors.ts";
+import { isSessionNotLocalError, isToolCallNotRunningError } from "./session-runtime.ts";
 import type { LocalCompanionMessage } from "./companion-chat.ts";
 import type { ToolCallBlock, TurnMetrics } from "./types.ts";
 import {
@@ -37,6 +38,10 @@ interface UseChatStreamOptions {
    * notification + always-speak hooks live in the view). */
   onTurnCompleted?: (content: string, elapsedMs: number) => void;
   turnState: string;
+  /** Surfaces a non-benign sessions.toolCalls.cancel failure (anything past
+   * the quiet SESSION_NOT_LOCAL / TOOL_CALL_NOT_RUNNING / method-unavailable
+   * degrades below) — the view toasts it. */
+  notifyToolCancelError?: (message: string) => void;
 }
 
 export interface UseChatStreamResult {
@@ -44,6 +49,20 @@ export interface UseChatStreamResult {
   streamHealth: StreamHealth;
   /** Live tool-call blocks for the current (or just-finished) turn. */
   toolCalls: ToolCallBlock[];
+  /** callIds with a cancel request in flight (or awaiting their settling
+   * tool_result frame) — MessageList shows these as "cancelling…" instead of
+   * offering the cancel affordance again. Cleared the moment the matching
+   * turn.tool_result frame arrives, per the A2 brief: mark cancelled locally
+   * immediately, but only actually remove the affordance once that frame
+   * lands (never assume the wire settled just because the request returned). */
+  cancellingToolCallIds: ReadonlySet<string>;
+  /** Cancel ONE in-flight tool call (sessions.toolCalls.cancel) without
+   * touching the rest of the turn. */
+  cancelToolCall: (callId: string) => void;
+  /** True once a cancel attempt has come back isMethodUnavailableError — this
+   * daemon build has never heard of the verb, so MessageList stops offering
+   * the affordance instead of failing the same way on every call. */
+  toolCancelUnavailable: boolean;
   /** Live metrics for the thinking strip; null when no turn has run. */
   turnMetrics: TurnMetrics | null;
   /** True server-side stop (daemon >= 1.11, docs/GAPS.md §1 row 39 —
@@ -77,15 +96,56 @@ export function useChatStream({
   invalidateChatState,
   onTurnCompleted,
   turnState,
+  notifyToolCancelError,
 }: UseChatStreamOptions): UseChatStreamResult {
   const disposeRef = useRef<SseDispose | null>(null);
   const stoppedRef = useRef(false);
   const [retryNonce, setRetryNonce] = useState(0);
   const [streamHealth, setStreamHealth] = useState<StreamHealth>("idle");
   const [toolCalls, setToolCalls] = useState<ToolCallBlock[]>([]);
+  const [cancellingToolCallIds, setCancellingToolCallIds] = useState<Set<string>>(new Set());
+  const [toolCancelUnavailable, setToolCancelUnavailable] = useState(false);
   const [turnMetrics, setTurnMetrics] = useState<TurnMetrics | null>(null);
   const onTurnCompletedRef = useRef(onTurnCompleted);
   onTurnCompletedRef.current = onTurnCompleted;
+  const notifyToolCancelErrorRef = useRef(notifyToolCancelError);
+  notifyToolCancelErrorRef.current = notifyToolCancelError;
+
+  // sessions.toolCalls.cancel(sessionId, callId) — cancels ONE running tool
+  // call, leaving the turn and every other running call untouched. Marks the
+  // call "cancelling" immediately for feedback; the mark is cleared by the
+  // turn.tool_result handler below (the call truly ends when that frame
+  // arrives, not when this request returns) or, on failure, right away here.
+  const cancelToolCall = useCallback(
+    (callId: string) => {
+      if (!activeSessionId || !callId) return;
+      setCancellingToolCallIds((current) => {
+        if (current.has(callId)) return current;
+        const next = new Set(current);
+        next.add(callId);
+        return next;
+      });
+      void gv.sessions.toolCalls.cancel(activeSessionId, callId).catch((error: unknown) => {
+        setCancellingToolCallIds((current) => {
+          if (!current.has(callId)) return current;
+          const next = new Set(current);
+          next.delete(callId);
+          return next;
+        });
+        // Benign: SESSION_NOT_LOCAL (this isn't the daemon's own live
+        // session — see session-runtime.ts), or TOOL_CALL_NOT_RUNNING (the
+        // call already settled — its tool_result frame is on the way or
+        // already landed). Neither is worth alarming the operator over.
+        if (isSessionNotLocalError(error) || isToolCallNotRunningError(error)) return;
+        if (isMethodUnavailableError(error)) {
+          setToolCancelUnavailable(true);
+          return;
+        }
+        notifyToolCancelErrorRef.current?.(formatError(error));
+      });
+    },
+    [activeSessionId],
+  );
 
   // The pre-1.11 behavior, kept as the honest fallback for a daemon that has
   // never heard of companion.chat.turns.cancel: stops RENDERING only.
@@ -147,6 +207,7 @@ export function useChatStream({
     liveTextRef.current = "";
     setTurnError("");
     setToolCalls([]);
+    setCancellingToolCallIds(new Set());
     setStreamHealth("connecting");
 
     let hadDrop = false;
@@ -175,6 +236,7 @@ export function useChatStream({
         if (type === "turn.started") {
           setTurnState("running");
           setToolCalls([]);
+          setCancellingToolCallIds(new Set());
           setTurnMetrics({ turnId, startedAt: Date.now(), deltaChars: 0 });
           void invalidateChatState(activeSessionId);
           return;
@@ -215,6 +277,15 @@ export function useChatStream({
                 : block,
             ),
           );
+          // The call has now truly ended (per the A2 brief: only clear the
+          // "cancelling" mark once this frame arrives, not when the cancel
+          // request merely returned).
+          setCancellingToolCallIds((current) => {
+            if (!current.has(toolCallId)) return current;
+            const next = new Set(current);
+            next.delete(toolCallId);
+            return next;
+          });
           setTurnState("tooling");
           return;
         }
@@ -329,7 +400,17 @@ export function useChatStream({
 
   const isStreaming = ACTIVE_TURN_STATES.includes(turnState);
 
-  return { isStreaming, streamHealth, toolCalls, turnMetrics, stop, retryStream };
+  return {
+    isStreaming,
+    streamHealth,
+    toolCalls,
+    cancellingToolCallIds,
+    cancelToolCall,
+    toolCancelUnavailable,
+    turnMetrics,
+    stop,
+    retryStream,
+  };
 }
 
 /** lib/sse.ts throws plain Errors with { status, body } attached — wrap the

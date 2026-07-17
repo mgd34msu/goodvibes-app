@@ -19,6 +19,10 @@ interface MessageListProps {
   turnState: string;
   toolCalls: ToolCallBlock[];
   turnMetrics: TurnMetrics | null;
+  /** sessions.toolCalls.cancel plumbing (useChatStream) — undefined onCancel
+   * once that daemon build has proven it doesn't support the verb. */
+  onCancelToolCall?: (callId: string) => void;
+  cancellingToolCallIds?: ReadonlySet<string>;
   showJumpToBottom: boolean;
   isSendPending: boolean;
   isStreaming: boolean;
@@ -43,6 +47,8 @@ export function MessageList({
   turnState,
   toolCalls,
   turnMetrics,
+  onCancelToolCall,
+  cancellingToolCallIds,
   showJumpToBottom,
   isSendPending,
   isStreaming,
@@ -103,7 +109,13 @@ export function MessageList({
           );
         })}
 
-        {(isStreaming || toolCalls.length > 0) && <ToolCallBlocks blocks={toolCalls} />}
+        {(isStreaming || toolCalls.length > 0) && (
+          <ToolCallBlocks
+            blocks={toolCalls}
+            {...(onCancelToolCall ? { onCancel: onCancelToolCall } : {})}
+            {...(cancellingToolCallIds ? { cancellingIds: cancellingToolCallIds } : {})}
+          />
+        )}
 
         {liveText && (
           <div aria-live="polite" aria-atomic="false">

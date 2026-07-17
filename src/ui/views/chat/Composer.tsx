@@ -41,6 +41,7 @@ import { formatCombo } from "../../lib/keybindings.ts";
 import { bestId, bestTitle, firstString } from "../../lib/wire.ts";
 import { MicButton } from "./MicButton.tsx";
 import { VoiceSettingsButton } from "./voice-controls.tsx";
+import { PermissionModeControl } from "./PermissionModeControl.tsx";
 import { readInputHistory } from "./chat-local.ts";
 import { SEND_BUDGET_PER_MINUTE, type AttachedArtifactRef, type SendBudget } from "./useChatSend.ts";
 import { modelOptionsFromProvider, type ModelOption, type ProviderOption } from "./provider-models.ts";
@@ -57,6 +58,10 @@ export interface ReasoningControl {
 }
 
 export interface ComposerProps {
+  /** Active companion-chat session id — threaded down only so
+   * PermissionModeControl (sessions.permissionMode.get/set) can self-fetch.
+   * '' before a chat exists yet; the control hides itself in that case. */
+  sessionId: string;
   draft: string;
   attachedFiles: File[];
   artifactRefs: AttachedArtifactRef[];
@@ -312,6 +317,7 @@ const BIG_PASTE_LINES = 8;
 const SUBMIT_HINT = formatCombo("mod+Enter");
 
 export function Composer({
+  sessionId,
   draft,
   attachedFiles,
   artifactRefs,
@@ -850,6 +856,7 @@ export function Composer({
               {alwaysSpeak ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
             </button>
             <VoiceSettingsButton />
+            {sessionId && <PermissionModeControl sessionId={sessionId} />}
             {reasoning && (
               <label className="composer-reasoning" title="Reasoning effort (provider.reasoningEffort, shared config)">
                 <Gauge size={13} aria-hidden="true" />

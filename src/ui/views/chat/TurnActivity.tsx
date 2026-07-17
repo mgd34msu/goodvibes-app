@@ -3,7 +3,7 @@
 // usage supersedes it) and collapsible tool-call blocks with contract status
 // glyphs (docs/UX.md §4 streaming rules).
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Ban, ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
 import { compactJson } from "../../lib/wire.ts";
@@ -12,9 +12,18 @@ import type { ToolCallBlock, TurnMetrics } from "./types.ts";
 
 // ─── Tool-call blocks ────────────────────────────────────────────────────────
 
-function ToolCallItem({ block }: { block: ToolCallBlock }) {
+interface ToolCallItemProps {
+  block: ToolCallBlock;
+  /** sessions.toolCalls.cancel(sessionId, callId) — omitted entirely once
+   * useChatStream reports the daemon has never heard of the verb. */
+  onCancel?: (callId: string) => void;
+  cancelling: boolean;
+}
+
+function ToolCallItem({ block, onCancel, cancelling }: ToolCallItemProps) {
   const [open, setOpen] = useState(false);
   const statusLabel = block.status === "running" ? "running" : block.status === "error" ? "error" : "done";
+  const showCancel = block.status === "running" && Boolean(onCancel);
   return (
     <div className={`tool-call tool-call--${block.status}`}>
       <button
@@ -26,8 +35,24 @@ function ToolCallItem({ block }: { block: ToolCallBlock }) {
       >
         {open ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
         <span className="tool-call__name">{block.toolName}</span>
-        <StatusBadge value={statusLabel} />
+        <StatusBadge value={cancelling ? "cancelling" : statusLabel} />
       </button>
+      {showCancel && (
+        <button
+          type="button"
+          className="tool-call__cancel"
+          disabled={cancelling}
+          aria-label={`Cancel tool call ${block.toolName}`}
+          title="Cancel this tool call — the turn and any other running calls keep going"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCancel?.(block.toolCallId);
+          }}
+        >
+          <Ban size={12} aria-hidden="true" />
+          {cancelling ? "Cancelling…" : "Cancel"}
+        </button>
+      )}
       {open && (
         <div className="tool-call__detail">
           {block.input !== undefined && (
@@ -51,12 +76,25 @@ function ToolCallItem({ block }: { block: ToolCallBlock }) {
   );
 }
 
-export function ToolCallBlocks({ blocks }: { blocks: ToolCallBlock[] }) {
+export interface ToolCallBlocksProps {
+  blocks: ToolCallBlock[];
+  /** sessions.toolCalls.cancel — undefined once the daemon build has proven
+   * it doesn't support the verb, so no call ever offers a cancel button. */
+  onCancel?: (callId: string) => void;
+  cancellingIds?: ReadonlySet<string>;
+}
+
+export function ToolCallBlocks({ blocks, onCancel, cancellingIds }: ToolCallBlocksProps) {
   if (!blocks.length) return null;
   return (
     <div className="tool-calls" role="log" aria-label="Tool activity">
       {blocks.map((block) => (
-        <ToolCallItem key={block.toolCallId} block={block} />
+        <ToolCallItem
+          key={block.toolCallId}
+          block={block}
+          {...(onCancel ? { onCancel } : {})}
+          cancelling={cancellingIds?.has(block.toolCallId) ?? false}
+        />
       ))}
     </div>
   );

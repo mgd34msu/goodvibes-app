@@ -479,6 +479,475 @@
   font-family: var(--font-mono);
 }
 
+/* ── Best-of-N attempt groups (fleet.attempts.*) ────────────────── */
+/* .fleet-icon-button and .spinning already exist globally
+   (styles/views/sessions.css, styles/app.css) — reused verbatim, not
+   redefined here. */
+
+.fleet-attempts,
+.fleet-conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-md);
+}
+
+.fleet-attempts__head,
+.fleet-conflicts__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fleet-attempts__count {
+  padding: 0 6px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+}
+
+.fleet-attempts__list,
+.fleet-conflicts__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fleet-attempts__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.fleet-attempts__group.ready {
+  border-color: var(--status-warning);
+}
+
+.fleet-attempts__group-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-attempts__group-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── Attempt comparison modal ────────────────────────────────────── */
+
+.attempt-cmp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.attempt-cmp__intro {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.attempt-cmp__judge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.attempt-cmp__judge-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.attempt-cmp__judge-tag {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.attempt-cmp__note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.attempt-cmp__error {
+  margin: 0;
+  color: var(--status-danger);
+  font-size: var(--text-xs);
+}
+
+.attempt-cmp__judgment p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.attempt-cmp__reasons {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.attempt-cmp__candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.attempt-cmp__candidate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.attempt-cmp__candidate--proposed {
+  border-color: var(--status-warning);
+}
+
+.attempt-cmp__candidate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.attempt-cmp__pick-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.attempt-cmp__candidate-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.attempt-cmp__candidate-meta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.attempt-cmp__failure {
+  margin: 0;
+  color: var(--status-danger);
+  font-size: var(--text-xs);
+}
+
+.attempt-cmp__diff-stat,
+.attempt-cmp__diff-files {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.attempt-cmp__diff-raw summary {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.attempt-cmp__diff-raw pre {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2);
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre;
+}
+
+.attempt-cmp__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Merge conflicts (fleet.conflicts.*) ─────────────────────────── */
+
+.fleet-conflict {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.fleet-conflict__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fleet-conflict__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-conflict__files,
+.fleet-conflict__meta {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.fleet-conflict__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ── Task graph (fleet.graph.get) — deliberate vertical list ────── */
+
+.fleet-task-graph {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.fleet-task-graph__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fleet-task-graph__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.fleet-task-graph__pool,
+.fleet-task-graph__empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.fleet-graph-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fleet-graph-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.fleet-graph-node__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.fleet-graph-node__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.fleet-graph-node__blocked {
+  margin: 0;
+  color: var(--status-warning);
+  font-size: var(--text-xs);
+}
+
+.fleet-graph-node__deps,
+.fleet-graph-node__files {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.fleet-graph-node__orphaned {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+/* ── Observed foreign agents (kind observed-external) ────────────── */
+
+.fleet-detail__observed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.fleet-detail__observed-note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.fleet-detail__observed-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+}
+
+.fleet-detail__observed-facts dt {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.fleet-detail__observed-facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.fleet-detail__observed-steer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fleet-detail__observed-steer label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.fleet-detail__observed-steer textarea {
+  padding: var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--text-sm);
+  resize: vertical;
+}
+
+.fleet-detail__observed-no-channel {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* ── Host agent (ACP hosting) ────────────────────────────────────── */
+
+.fleet-host-agent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fleet-host-agent__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.fleet-host-agent__field legend {
+  padding: 0 4px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fleet-host-agent__option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.fleet-host-agent__option small {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.fleet-host-agent__note {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.fleet-host-agent__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* ── Agent Control (GAPS.md §3 row 7 — was EXCLUDED) ────────────
    steer/follow-up, interrupt (cancel a queued input), stop
    (close/detach), resume (reopen). See FleetAgentControl.tsx. */

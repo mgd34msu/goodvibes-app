@@ -704,3 +704,109 @@ export function readDeliveryDetail(data: unknown): DeliveryRecord {
   const record = asRecord(data);
   return readDelivery(record["delivery"] !== undefined ? record["delivery"] : record);
 }
+
+// ── principals.* (named-identity registry, contract 1.11) ───────────────────
+// Verified against operator-contract.json methods principals.list/get/create/
+// update/delete/resolve: identities is an array of {channel, value} pairs;
+// kind is a closed enum (user/bot/service/token) but read as an open string
+// here anyway (same posture as fleet.ts) so an unrecognized future kind still
+// renders verbatim instead of vanishing.
+
+export interface PrincipalIdentity {
+  channel: string;
+  value: string;
+}
+
+export interface PrincipalRecord {
+  id: string;
+  name: string;
+  kind: string;
+  identities: PrincipalIdentity[];
+  createdAt: number | undefined;
+  updatedAt: number | undefined;
+}
+
+function readIdentity(row: unknown): PrincipalIdentity {
+  return { channel: firstString(row, ["channel"]), value: firstString(row, ["value"]) };
+}
+
+export function readPrincipal(row: unknown): PrincipalRecord {
+  const record = asRecord(row);
+  return {
+    id: firstString(record, ["id"]),
+    name: firstString(record, ["name"]),
+    kind: firstString(record, ["kind"]) || "user",
+    identities: asArray(record["identities"]).map(readIdentity),
+    createdAt: firstNumber(record, ["createdAt"]),
+    updatedAt: firstNumber(record, ["updatedAt"]),
+  };
+}
+
+export function readPrincipals(data: unknown): PrincipalRecord[] {
+  return asArray(asRecord(data)["principals"]).map(readPrincipal);
+}
+
+/** principals.resolve's honest {principal, known} pair — `known:false` means
+ * no principal maps to this channel:value, never an error. */
+export function readPrincipalResolution(data: unknown): { principal: PrincipalRecord | null; known: boolean } {
+  const record = asRecord(data);
+  const known = record["known"] === true;
+  return { principal: known && record["principal"] !== undefined ? readPrincipal(record["principal"]) : null, known };
+}
+
+// ── channels.profiles.* (per-channel intake defaults, contract 1.11) ────────
+// set() is an upsert keyed on (surfaceKind, channelId?); permissionMode is a
+// closed enum on the wire (plan/normal/accept-edits/auto) but read as an open
+// string here for the same forward-compat reason as everywhere else in this
+// module.
+
+export interface ChannelProfileBinding {
+  id: string;
+  surfaceKind: string;
+  channelId: string;
+  model: string;
+  provider: string;
+  permissionMode: string;
+  updatedAt: number | undefined;
+}
+
+export function readChannelProfileBinding(row: unknown): ChannelProfileBinding {
+  const record = asRecord(row);
+  return {
+    id: firstString(record, ["id"]),
+    surfaceKind: firstString(record, ["surfaceKind"]),
+    channelId: firstString(record, ["channelId"]),
+    model: firstString(record, ["model"]),
+    provider: firstString(record, ["provider"]),
+    permissionMode: firstString(record, ["permissionMode"]),
+    updatedAt: firstNumber(record, ["updatedAt"]),
+  };
+}
+
+export function readChannelProfiles(data: unknown): ChannelProfileBinding[] {
+  return asArray(asRecord(data)["bindings"]).map(readChannelProfileBinding);
+}
+
+// ── channels.test.send (contract 1.11 — first UI surface for this method) ───
+// delivered:false with `error` set in an otherwise-200 response is the NORMAL
+// failure path (a real send attempt that the surface rejected/couldn't
+// place) — never treated as a thrown error here.
+
+export interface TestSendResult {
+  surface: string;
+  delivered: boolean;
+  responseId: string;
+  address: string;
+  error: string;
+}
+
+export function readTestSendResult(data: unknown): TestSendResult {
+  const record = asRecord(data);
+  return {
+    surface: firstString(record, ["surface"]),
+    delivered: readBool(record, "delivered"),
+    responseId: firstString(record, ["responseId"]),
+    address: firstString(record, ["address"]),
+    error: firstString(record, ["error"]),
+  };
+}
