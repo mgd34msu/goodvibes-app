@@ -60,6 +60,36 @@ export const queryKeys = {
   deliveries: ["deliveries"] as const,
   workflows: ["workflows"] as const,
   agents: ["agents"] as const,
+  // Contract 1.11 domains. Most have NO wire event (poll-while-relevant +
+  // mutation-invalidate); exceptions noted per key.
+  fleetAttempts: ["fleet", "attempts"] as const,
+  fleetConflicts: ["fleet", "conflicts"] as const,
+  fleetGraph: (workstreamId: string) => ["fleet", "graph", workstreamId] as const,
+  ciWatches: ["ci", "watches"] as const,
+  skills: ["skills"] as const,
+  principals: ["principals"] as const,
+  channelProfiles: ["channels", "profiles"] as const,
+  checkinConfig: ["checkin", "config"] as const,
+  checkinReceipts: ["checkin", "receipts"] as const,
+  pairingTokens: ["pairing", "tokens"] as const,
+  pairingPosture: ["pairing", "posture"] as const,
+  permissionRules: ["permissions", "rules"] as const,
+  powerStatus: ["power", "status"] as const, // invalidate on OPS_POWER_STATE_CHANGED
+  opsMemory: ["ops", "memory"] as const, // invalidate on OPS_MEMORY_PRESSURE
+  runtimeMetrics: ["runtime", "metrics"] as const,
+  costAttribution: (window: string, dimension: string) => ["cost", "attribution", window, dimension] as const,
+  quotaSnapshot: (provider: string) => ["quota", "snapshot", provider] as const,
+  flagsGraduation: ["flags", "graduation"] as const,
+  tailscale: ["tailscale"] as const,
+  workspaceRegistrations: ["workspaces", "registrations"] as const,
+  voiceLocal: ["voice", "local"] as const,
+  acpAgents: ["acp", "agents"] as const,
+  memoryProjections: ["memory", "projections"] as const,
+  memoryConsolidation: ["memory", "consolidation"] as const,
+  sessionChanges: (sessionId: string) => ["sessions", sessionId, "changes"] as const,
+  sessionContextUsage: (sessionId: string) => ["sessions", sessionId, "context-usage"] as const,
+  sessionPermissionMode: (sessionId: string) => ["sessions", sessionId, "permission-mode"] as const,
+  sessionQueuedMessages: (sessionId: string) => ["sessions", sessionId, "queued-messages"] as const,
 } as const;
 
 export async function fetchAppHealth(): Promise<AppHealth> {

@@ -23,8 +23,8 @@
     "verify": "bun run typecheck && bun run check:boundaries && bun run generate:check && bun test"
   },
   "dependencies": {
-    "@pellux/goodvibes-sdk": "1.6.1",
-    "@pellux/goodvibes-tui": "1.9.2",
+    "@pellux/goodvibes-sdk": "1.11.2",
+    "@pellux/goodvibes-tui": "1.19.3",
     "@tanstack/react-query": "^5.62.0",
     "electrobun": "1.18.1",
     "highlight.js": "^11.11.0",

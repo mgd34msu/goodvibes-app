@@ -8,10 +8,12 @@
 import { lazy, type ComponentType } from "react";
 import {
   Archive,
+  BellRing,
   BookOpen,
   Bot,
   Brain,
   CalendarClock,
+  CircleGauge,
   CheckCircle2,
   Eye,
   FileText,
@@ -51,8 +53,8 @@ export const VIEW_GROUPS: readonly ViewGroupDef[] = [
   { id: "work", label: "Work", views: ["chat", "sessions", "fleet", "approvals"] },
   { id: "automate", label: "Automate", views: ["automation", "watchers", "channels"] },
   { id: "know", label: "Know", views: ["knowledge", "memory", "artifacts", "research", "documents"] },
-  { id: "assistant", label: "Assistant", views: ["home", "routines", "personas", "skills", "personal-ops"] },
-  { id: "code", label: "Code", views: ["git", "diff", "worktrees", "checkpoints", "terminal"] },
+  { id: "assistant", label: "Assistant", views: ["home", "routines", "personas", "skills", "personal-ops", "checkin"] },
+  { id: "code", label: "Code", views: ["git", "diff", "worktrees", "checkpoints", "ci", "terminal"] },
   { id: "system", label: "System", views: ["observability", "providers", "mcp", "peers", "settings"] },
 ];
 
@@ -181,6 +183,12 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     keepAlive: false,
     Component: lazy(() => import("./personal-ops/PersonalOpsView.tsx").then((m) => ({ default: m.PersonalOpsView }))),
   },
+  checkin: {
+    title: "Check-in",
+    icon: BellRing,
+    keepAlive: false,
+    Component: lazy(() => import("./checkin/CheckInView.tsx").then((m) => ({ default: m.CheckInView }))),
+  },
   // Code — Wave B
   git: {
     title: "Git",
@@ -205,6 +213,12 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     icon: Waypoints,
     keepAlive: false,
     Component: lazy(() => import("./code/CheckpointsView.tsx").then((m) => ({ default: m.CheckpointsView }))),
+  },
+  ci: {
+    title: "CI Watches",
+    icon: CircleGauge,
+    keepAlive: false,
+    Component: lazy(() => import("./ci/CiWatchesView.tsx").then((m) => ({ default: m.CiWatchesView }))),
   },
   terminal: {
     title: "Terminal",

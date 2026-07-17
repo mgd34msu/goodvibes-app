@@ -225,6 +225,33 @@ export const gv = {
         invoke("sessions.inputs.cancel", { params: { sessionId, inputId } }),
     },
     integrationSnapshot: () => invoke("sessions.integration.snapshot"),
+    // Contract 1.11 granular session verbs. permissionMode/contextUsage answer
+    // ONLY for the daemon's live local runtime — any other sessionId is an
+    // honest 404 SESSION_NOT_LOCAL (surface as unavailable, never fall back
+    // daemon-wide). permissionMode speaks operator vocabulary
+    // (plan|normal|accept-edits|auto, read-only custom); the
+    // PERMISSION_MODE_CHANGED event carries CONFIG vocabulary instead.
+    changes: (body: unknown) => invoke("sessions.changes.get", { body }), // [ws]
+    contextUsage: (sessionId: string) =>
+      invoke("sessions.contextUsage.get", { params: { sessionId } }), // estimated:true always
+    permissionMode: {
+      get: (sessionId: string) => invoke("sessions.permissionMode.get", { params: { sessionId } }),
+      set: (sessionId: string, body: unknown) =>
+        invoke("sessions.permissionMode.set", { params: { sessionId }, body }),
+    },
+    queuedMessages: {
+      list: (sessionId: string) => invoke("sessions.queuedMessages.list", { params: { sessionId } }),
+      edit: (sessionId: string, messageId: string, body: unknown) =>
+        invoke("sessions.queuedMessages.edit", { params: { sessionId, messageId }, body }),
+      delete: (sessionId: string, messageId: string) =>
+        invoke("sessions.queuedMessages.delete", { params: { sessionId, messageId } }),
+    },
+    toolCalls: {
+      // Cancels ONE in-flight tool call without killing the turn; the call
+      // truly ends when its tool_result SSE frame arrives.
+      cancel: (sessionId: string, callId: string) =>
+        invoke("sessions.toolCalls.cancel", { params: { sessionId, callId } }),
+    },
   },
 
   fleet: {
@@ -240,13 +267,182 @@ export const gv = {
     archived: {
       list: () => invoke("fleet.archived.list", { body: {} }), // [ws]
     },
+    // Best-of-N attempts (contract 1.11): passing siblings park held-merge; a
+    // human (or autoAcceptWinner) picks. judge() is a PROPOSAL, never a decision.
+    attempts: {
+      list: (body?: unknown) => invoke("fleet.attempts.list", { body: body ?? {} }), // [ws]
+      judge: (body: unknown) => invoke("fleet.attempts.judge", { body }), // [ws]
+      pick: (body: unknown) => invoke("fleet.attempts.pick", { body }), // [ws] dangerous — check result.applied, not just HTTP ok
+    },
+    conflicts: {
+      list: (body?: unknown) => invoke("fleet.conflicts.list", { body: body ?? {} }), // [ws]
+      resolve: (body: unknown) => invoke("fleet.conflicts.resolve", { body }), // [ws] spawns a real resolution session
+    },
+    graph: {
+      get: (workstreamId: string) => invoke("fleet.graph.get", { params: { workstreamId } }),
+    },
+    observed: {
+      // Steer an externally-launched agent goodvibes did not spawn; honest
+      // refusal (reason verbatim) when it exposes no steer channel.
+      steer: (body: unknown) => invoke("fleet.observed.steer", { body }), // [ws]
+    },
   },
 
   checkpoints: {
     list: (body?: unknown) => invoke("checkpoints.list", { body }), // [ws]
     create: (body?: unknown) => invoke("checkpoints.create", { body }), // [ws]
     diff: (body?: unknown) => invoke("checkpoints.diff", { body }), // [ws]
+    // restore is confirm-gated server-side: pass confirm:true or a confirmToken
+    // minted by restorePreview. Refusal is a 200 {result:null, refused:true,
+    // refusal} — check `refused`, never truthiness of `result`.
     restore: (body?: unknown) => invoke("checkpoints.restore", { body }), // [ws] dangerous
+    restorePreview: (body: unknown) => invoke("checkpoints.restorePreview", { body }), // [ws]
+    // Single-hunk revert, same preview→token→apply idiom. Preview's
+    // applies:false + conflict text is an honest answer, not an error.
+    revertHunk: (body: unknown) => invoke("checkpoints.revertHunk", { body }), // [ws] dangerous
+    revertHunkPreview: (body: unknown) => invoke("checkpoints.revertHunkPreview", { body }), // [ws]
+  },
+
+  // Message-anchored rewind over checkpoints+conversation+file-undo (contract
+  // 1.11). plan() is read-only and mints the confirmToken apply() consumes;
+  // apply refusal is a 200 {receipt:null, refused:true, refusal}.
+  rewind: {
+    plan: (body: unknown) => invoke("rewind.plan", { body }), // [ws]
+    apply: (body: unknown) => invoke("rewind.apply", { body }), // [ws] dangerous
+  },
+
+  ci: {
+    status: (body: unknown) => invoke("ci.status", { body }),
+    watches: {
+      list: () => invoke("ci.watches.list"),
+      create: (body: unknown) => invoke("ci.watches.create", { body }),
+      delete: (watchId: string) => invoke("ci.watches.delete", { params: { watchId } }), // dangerous
+      run: (watchId: string) => invoke("ci.watches.run", { params: { watchId } }),
+    },
+  },
+
+  skills: {
+    // Daemon-canonical skills CRUD (progressive disclosure: list is cheap
+    // index lines without bodies; get returns the full markdown body).
+    list: () => invoke("skills.list"),
+    get: (name: string) => invoke("skills.get", { params: { name } }),
+    create: (body: unknown) => invoke("skills.create", { body }), // 409 on name conflict
+    update: (name: string, body: unknown) => invoke("skills.update", { params: { name }, body }),
+    delete: (name: string) => invoke("skills.delete", { params: { name } }), // {deleted:false} for phantom, not an error
+  },
+
+  principals: {
+    list: () => invoke("principals.list"),
+    get: (principalId: string) => invoke("principals.get", { params: { principalId } }),
+    create: (body: unknown) => invoke("principals.create", { body }),
+    update: (principalId: string, body: unknown) =>
+      invoke("principals.update", { params: { principalId }, body }),
+    delete: (principalId: string) => invoke("principals.delete", { params: { principalId } }), // dangerous
+    resolve: (body: unknown) => invoke("principals.resolve", { body }),
+  },
+
+  checkin: {
+    config: {
+      get: () => invoke("checkin.config.get"),
+      set: (body: unknown) => invoke("checkin.config.set", { body }), // admin
+    },
+    receipts: (query?: QueryParams) => invoke("checkin.receipts.list", { query }),
+    run: () => invoke("checkin.run", { body: {} }),
+  },
+
+  pairing: {
+    posture: () => invoke("pairing.posture.get", { body: {} }), // [ws]
+    tokens: {
+      list: () => invoke("pairing.tokens.list", { body: {} }), // [ws]
+      create: (body: unknown) => invoke("pairing.tokens.create", { body }), // [ws]
+      rename: (body: unknown) => invoke("pairing.tokens.rename", { body }), // [ws]
+      delete: (body: unknown) => invoke("pairing.tokens.delete", { body }), // [ws]
+      migrate: (body?: unknown) => invoke("pairing.tokens.migrate", { body: body ?? {} }), // [ws]
+      revokeShared: () => invoke("pairing.tokens.revokeShared", { body: {} }), // [ws]
+    },
+    handoff: {
+      create: (body: unknown) => invoke("pairing.handoff.create", { body }), // [ws]
+      complete: (body: unknown) => invoke("pairing.handoff.complete", { body }), // [ws]
+    },
+  },
+
+  permissions: {
+    rules: {
+      list: () => invoke("permissions.rules.list", { body: {} }), // [ws]
+      delete: (body: unknown) => invoke("permissions.rules.delete", { body }), // [ws] — {deleted:false} = already gone (info, not error)
+    },
+  },
+
+  power: {
+    status: () => invoke("power.status.get"),
+    keepAwake: (enabled: boolean) => invoke("power.keepAwake.set", { body: { enabled } }),
+  },
+
+  quota: {
+    snapshot: (body: unknown) => invoke("quota.snapshot.get", { body }), // [ws] — hasSignal:false is honest absence, never render 0
+    fanout: (body: unknown) => invoke("quota.fanout.get", { body }), // [ws] pre-flight advisory
+  },
+
+  cost: {
+    // costSource/pricingAsOf absent on pre-1.7 records — honest absence.
+    attribution: (body: unknown) => invoke("cost.attribution.get", { body }), // [ws]
+  },
+
+  flags: {
+    graduationReport: () => invoke("flags.graduation.report", { body: {} }), // [ws]
+  },
+
+  ops: {
+    memory: () => invoke("ops.memory.get"), // invalidate on OPS_MEMORY_PRESSURE event, don't poll
+  },
+
+  runtime: {
+    metrics: () => invoke("runtime.metrics.get"),
+  },
+
+  tailscale: {
+    get: () => invoke("tailscale.get", { body: {} }), // [ws] strictly read-only detection
+    serveRun: () => invoke("tailscale.serve.run", { body: {} }), // [ws] the ONE state-changing action; confirm-gate it
+  },
+
+  workspaces: {
+    registrations: {
+      list: () => invoke("workspaces.registrations.list"),
+      add: (body: unknown) => invoke("workspaces.registrations.add", { body }),
+      remove: (body: unknown) => invoke("workspaces.registrations.remove", { body }),
+    },
+    resolve: (body: unknown) => invoke("workspaces.resolve", { body }),
+  },
+
+  worktrees: {
+    // discard preserves work: dirty state committed onto the KEPT branch
+    // first — surface receipt.branch/preservedCommit, not a bare "discarded".
+    discard: (body: unknown) => invoke("worktrees.discard", { body }), // [ws] dangerous
+    setupRun: (body: unknown) => invoke("worktrees.setup.run", { body }), // [ws]
+  },
+
+  acp: {
+    // Daemon-as-ACP-client: host Claude Code / Codex / opencode as fleet rows.
+    agents: { list: () => invoke("acp.agents.list", { body: {} }) }, // [ws]
+    sessions: { create: (body: unknown) => invoke("acp.sessions.create", { body }) }, // [ws]
+  },
+
+  channelProfiles: {
+    // Per-channel intake defaults (model/provider/permission-mode) applied to
+    // sessions a channel originates. set() is an upsert on the composite
+    // (surfaceKind, channelId?) key.
+    list: () => invoke("channels.profiles.list"),
+    get: (surfaceKind: string, query?: QueryParams) =>
+      invoke("channels.profiles.get", { params: { surfaceKind }, query }),
+    set: (body: unknown) => invoke("channels.profiles.set", { body }), // admin
+    delete: (surfaceKind: string, query?: QueryParams) =>
+      invoke("channels.profiles.delete", { params: { surfaceKind }, query }), // admin, dangerous
+  },
+
+  channelTest: {
+    // Live probe through the REAL delivery router. delivered:false + error in
+    // a 200 body is the normal failure path — do NOT wrap expecting a throw.
+    send: (body: unknown) => invoke("channels.test.send", { body }), // [ws]
   },
 
   approvals: {
@@ -304,6 +500,15 @@ export const gv = {
     reviewQueue: (query?: QueryParams) => invoke("memory.review-queue", { query }),
     doctor: () => invoke("memory.doctor"),
     vectorStats: () => invoke("memory.vector.stats"),
+    // Consolidation runs leave receipts (merges/decay) + human-review proposals.
+    consolidationReceipts: (query?: QueryParams) =>
+      invoke("memory.consolidation.receipts", { query }),
+    // Live markdown projections of standing memory — computed from the store
+    // each call, never stale disk.
+    projections: {
+      list: () => invoke("memory.projections.list"),
+      get: (id: string) => invoke("memory.projections.get", { params: { id } }),
+    },
   },
 
   knowledge: {
@@ -319,6 +524,13 @@ export const gv = {
     ttsStreamPath: () => streamPath("voice.tts.stream"),
     voices: () => invoke("voice.voices.list"),
     providers: () => invoke("voice.providers.list"),
+    // One-act managed local TTS/STT install (download+checksum+atomic install,
+    // no manual paths). install() is single-flight server-side; there is NO
+    // progress stream — poll status() while installInProgress is present.
+    local: {
+      status: () => invoke("voice.local.status"),
+      install: () => invoke("voice.local.install", { body: {} }),
+    },
   },
 
   telemetry: {

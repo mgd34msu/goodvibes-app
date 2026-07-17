@@ -28,11 +28,13 @@ export type ViewId =
   | "personas"
   | "skills"
   | "personal-ops"
+  | "checkin"
   // Code
   | "git"
   | "diff"
   | "worktrees"
   | "checkpoints"
+  | "ci"
   | "terminal"
   // System
   | "observability"
@@ -59,10 +61,12 @@ export const ALL_VIEW_IDS: readonly ViewId[] = [
   "personas",
   "skills",
   "personal-ops",
+  "checkin",
   "git",
   "diff",
   "worktrees",
   "checkpoints",
+  "ci",
   "terminal",
   "observability",
   "providers",
