@@ -9,7 +9,9 @@ export interface WorkspaceCheckpoint {
   label: string;
   kind: string;
   retentionClass: string;
-  createdAt: number;
+  // undefined = not reported by the daemon — never a fabricated epoch date;
+  // formatRelative(undefined) renders an honest "unknown", never 1/1/1970.
+  createdAt: number | undefined;
   sizeBytes: number | undefined;
   commit: string;
   parentId: string;
@@ -22,7 +24,7 @@ export function parseCheckpoint(value: unknown): WorkspaceCheckpoint {
     label: firstString(record, ["label", "title", "name"]),
     kind: firstString(record, ["kind", "type"]),
     retentionClass: firstString(record, ["retentionClass", "retention"]),
-    createdAt: firstNumber(record, ["createdAt", "created", "timestamp"]) ?? 0,
+    createdAt: firstNumber(record, ["createdAt", "created", "timestamp"]),
     sizeBytes: firstNumber(record, ["sizeBytes", "size"]),
     commit: firstString(record, ["commit", "sha", "oid"]),
     parentId: firstString(record, ["parentId", "parent"]),
@@ -55,7 +57,10 @@ export function parseCheckpointDiff(value: unknown): CheckpointDiffPayload {
 }
 
 export function sortCheckpointsNewestFirst(checkpoints: readonly WorkspaceCheckpoint[]): WorkspaceCheckpoint[] {
-  return [...checkpoints].sort((a, b) => b.createdAt - a.createdAt);
+  // 0-fallback here is sort-order-only (an unreported timestamp sorts as
+  // oldest) — it is never rendered; display always goes through
+  // formatRelative(checkpoint.createdAt), which keeps the real undefined.
+  return [...checkpoints].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
 export function formatBytes(bytes: number | undefined): string {

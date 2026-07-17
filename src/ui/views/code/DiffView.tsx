@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileDiff, GitCompare, RefreshCw, Search } from "lucide-react";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { escapeHtml, highlightCode } from "../../lib/highlight.ts";
+import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { getCurrentUrlState } from "../../lib/router.ts";
 import { codeKeys, gitApi, isGitMissingError, isNotARepoError, type DiffMode } from "./git-api.ts";
 import {
@@ -84,6 +85,19 @@ export function DiffView() {
   const scrollToFile = (path: string) => {
     fileAnchors.current.get(path)?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
+
+  // Palette command — view-scoped, live only while mounted.
+  const refetchDiff = diff.refetch;
+  useEffect(() => {
+    registerCommand({
+      id: "diff.refresh",
+      title: "Refresh Diff",
+      group: "code",
+      keywords: ["diff", "refresh", "reload"],
+      run: () => void refetchDiff(),
+    });
+    return () => unregisterCommand("diff.refresh");
+  }, [refetchDiff]);
 
   return (
     <div className="diff-view">

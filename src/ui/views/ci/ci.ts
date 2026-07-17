@@ -29,7 +29,9 @@ export interface CiReport {
   overall: string;
   jobs: CiJob[];
   violations: string[];
-  checkedAt: number;
+  // undefined = not reported — never a fabricated epoch date; formatRelative
+  // renders an honest "unknown" for undefined, never 1/1/1970.
+  checkedAt: number | undefined;
 }
 
 export interface CiWatch {
@@ -41,8 +43,10 @@ export interface CiWatch {
   triggerFixSession: boolean;
   /** "" when the watch has never been checked yet — never fabricate a verdict. */
   lastOverall: string;
-  createdAt: number;
-  updatedAt: number;
+  // undefined = not reported — same "never a fabricated epoch date" rule as
+  // CiReport.checkedAt above.
+  createdAt: number | undefined;
+  updatedAt: number | undefined;
 }
 
 export interface CiWatchRunResult {
@@ -86,7 +90,7 @@ export function parseCiReport(value: unknown): CiReport {
     overall: firstString(record, ["overall"]) || "unknown",
     jobs: asArray(record["jobs"]).map(parseJob),
     violations: asArray(record["violations"]).filter((v): v is string => typeof v === "string"),
-    checkedAt: firstNumber(record, ["checkedAt"]) ?? 0,
+    checkedAt: firstNumber(record, ["checkedAt"]),
   };
 }
 
@@ -100,8 +104,8 @@ export function parseCiWatch(value: unknown): CiWatch {
     deliveryChannel: firstString(record, ["deliveryChannel"]),
     triggerFixSession: record["triggerFixSession"] === true,
     lastOverall: firstString(record, ["lastOverall"]),
-    createdAt: firstNumber(record, ["createdAt"]) ?? 0,
-    updatedAt: firstNumber(record, ["updatedAt"]) ?? 0,
+    createdAt: firstNumber(record, ["createdAt"]),
+    updatedAt: firstNumber(record, ["updatedAt"]),
   };
 }
 

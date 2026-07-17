@@ -235,7 +235,7 @@ export function KnowledgeView() {
         { id: "packet" as TabId, node: <PacketPanel /> },
         { id: "graphql" as TabId, node: <GraphqlPanel /> },
         { id: "reports" as TabId, node: <ReportsPanel active={tab === "reports"} /> },
-        { id: "homegraph" as TabId, node: <HomeGraphPanel /> },
+        { id: "homegraph" as TabId, node: <HomeGraphPanel active={tab === "homegraph"} /> },
         { id: "planning" as TabId, node: <PlanningPanel /> },
       ] as const,
     // eslint-disable-next-line react-hooks/exhaustive-deps

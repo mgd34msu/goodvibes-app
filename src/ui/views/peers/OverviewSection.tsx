@@ -163,7 +163,9 @@ export function OverviewSection() {
                       <li key={entry.id} className="peers-audit__row">
                         <span className="peers-audit__action">{actionLabel(entry.action)}</span>
                         <span className="peers-audit__actor">{entry.actor || "system"}</span>
-                        <span className="peers-audit__note">{entry.note}</span>
+                        <span className="peers-audit__note" title={entry.note || undefined}>
+                          {entry.note}
+                        </span>
                         <span className="peers-audit__time">{formatRelative(entry.createdAt)}</span>
                       </li>
                     ))}

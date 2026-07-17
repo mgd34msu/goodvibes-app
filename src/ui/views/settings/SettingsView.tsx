@@ -122,7 +122,12 @@ export function SettingsView(): React.ReactElement {
                 {searchResults.map((result, index) => (
                   <li key={`${result.sectionId}-${result.label}-${index}`}>
                     <button type="button" onClick={() => jumpTo(result.sectionId, result.anchorSelector)}>
-                      <span className="settings-view__search-label">{result.label}</span>
+                      {/* Config keys / feature names can run longer than the results
+                          panel — the label clips visually (settings.css), so the full
+                          text stays available via title rather than silently lost. */}
+                      <span className="settings-view__search-label" title={result.label}>
+                        {result.label}
+                      </span>
                       <span className="settings-view__search-section">{result.sectionLabel}</span>
                     </button>
                   </li>

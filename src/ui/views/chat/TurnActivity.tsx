@@ -106,17 +106,23 @@ interface ThinkingStripProps {
   turnState: string;
   metrics: TurnMetrics | null;
   streaming: boolean;
+  /** False while ChatView is the keep-alive view sitting behind another
+   * (display:none — see ChatView's own `viewVisible` MutationObserver). Chat
+   * never unmounts on a view switch, so without this the 500ms tick would
+   * keep ticking, invisibly, for as long as a turn runs in the background. */
+  viewVisible: boolean;
   onStop?: () => void;
 }
 
-export function ThinkingStrip({ turnState, metrics, streaming, onStop }: ThinkingStripProps) {
-  // 500ms tick keeps elapsed/tok-per-sec live while a turn runs.
+export function ThinkingStrip({ turnState, metrics, streaming, viewVisible, onStop }: ThinkingStripProps) {
+  // 500ms tick keeps elapsed/tok-per-sec live while a turn runs and this
+  // view is actually visible.
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (!streaming) return undefined;
+    if (!streaming || !viewVisible) return undefined;
     const timer = setInterval(() => setTick((t) => t + 1), 500);
     return () => clearInterval(timer);
-  }, [streaming]);
+  }, [streaming, viewVisible]);
 
   if (!streaming && turnState !== "syncing") return null;
 

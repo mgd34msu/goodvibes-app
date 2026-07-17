@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../../lib/toast.ts";
+import { clearDraft } from "../../lib/drafts.ts";
 import { gv } from "../../lib/gv.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
@@ -88,6 +89,8 @@ export function AutomationView() {
       gv.invoke(noun === "job" ? "automation.jobs.create" : "automation.schedules.create", { body }),
     onSuccess: async (_result, variables) => {
       setCreateNoun(null);
+      clearDraft(`automation.schedule-form.${variables.noun}.prompt`);
+      clearDraft(`automation.schedule-form.${variables.noun}.delivery-json`);
       await queryClient.invalidateQueries({ queryKey: automationKeys.all });
       toast({ title: `Created ${variables.noun}`, tone: "success" });
     },

@@ -252,6 +252,7 @@ function RepoFilesPanel() {
                   type="button"
                   className={`repo-files__item${selected === f ? " is-active" : ""}`}
                   onClick={() => setSelected(selected === f ? null : f)}
+                  title={f}
                 >
                   {f}
                 </button>

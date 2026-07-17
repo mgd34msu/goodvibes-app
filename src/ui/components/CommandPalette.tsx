@@ -12,6 +12,7 @@ import {
   type CommandDef,
 } from "../lib/commands.ts";
 import { displayShortcut, subscribeKeybindings } from "../lib/keybindings.ts";
+import { useFocusTrap } from "../lib/focus-trap.ts";
 
 function useRegisteredCommands(): CommandDef[] {
   const [allCommands, setAllCommands] = useState<CommandDef[]>(() => getCommands());
@@ -183,11 +184,10 @@ interface ShortcutCheatsheetProps {
 
 export function ShortcutCheatsheet({ open, onClose }: ShortcutCheatsheetProps) {
   const allCommands = useRegisteredCommands();
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (open) requestAnimationFrame(() => overlayRef.current?.focus());
-  }, [open]);
+  // Tab-cycling focus trap (identical contract to Modal/PeekPanel) — without
+  // it, a second Tab press from the lone close button escapes into the
+  // sidebar/topbar behind this "modal" overlay.
+  const overlayRef = useFocusTrap<HTMLDivElement>(open);
 
   const withShortcuts = useMemo(
     () => allCommands.filter((cmd) => Boolean(displayShortcut(cmd.id))),

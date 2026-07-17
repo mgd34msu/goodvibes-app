@@ -90,7 +90,8 @@ export function CustomProvidersPanel({
 
       <p className="providers-custom__note">
         Raw JSON files under <code>{list.data?.dir ?? "~/.goodvibes/tui/providers"}</code>, shared with the TUI.
-        Restart the daemon to apply changes — this app edits the files but does not reload the running daemon.
+        The daemon hot-reloads this store on its own schedule — this app edits the files but does not trigger that
+        reload itself, so a change may take a moment to take effect.
       </p>
 
       {list.isPending && <SkeletonBlock variant="block" height={80} />}
@@ -159,7 +160,7 @@ export function CustomProvidersPanel({
         open={pendingDelete !== null}
         action="Delete custom provider file"
         target={pendingDelete ?? ""}
-        blastRadius="Removes this JSON file from ~/.goodvibes/tui/providers — the daemon stops seeing this custom provider after its next restart."
+        blastRadius="Removes this JSON file from ~/.goodvibes/tui/providers — the daemon hot-reloads this store on its own schedule, so it stops seeing this custom provider without needing a restart."
         danger
         confirmLabel="Delete file"
         onCancel={() => setPendingDelete(null)}

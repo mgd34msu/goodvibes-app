@@ -141,21 +141,39 @@ export function PersonalOpsView(): ReactElement {
           ))}
         </div>
 
-        {tab === "inbox" && (
-          <EmailPanel composeSignal={composeSignal} onComposeSignalConsumed={() => setComposeSignal(0)} />
-        )}
-        {tab === "unified" && <UnifiedInboxPanel />}
-        {tab === "calendar" && (
-          <CalendarPanel createSignal={eventSignal} onCreateSignalConsumed={() => setEventSignal(0)} />
-        )}
-        {tab === "reminders" && (
+        {/* Every tab stays mounted (display toggling, not conditional render)
+            so an in-progress compose draft, a partly-filled event/reminder
+            form, or a browsed context directory survives switching tabs —
+            docs/UX.md §4. Each panel gates its own polling on `active` so a
+            hidden tab does not keep refetching underneath (item 18). */}
+        <div style={tab === "inbox" ? undefined : { display: "none" }}>
+          <EmailPanel
+            active={tab === "inbox"}
+            composeSignal={composeSignal}
+            onComposeSignalConsumed={() => setComposeSignal(0)}
+          />
+        </div>
+        <div style={tab === "unified" ? undefined : { display: "none" }}>
+          <UnifiedInboxPanel active={tab === "unified"} />
+        </div>
+        <div style={tab === "calendar" ? undefined : { display: "none" }}>
+          <CalendarPanel
+            active={tab === "calendar"}
+            createSignal={eventSignal}
+            onCreateSignalConsumed={() => setEventSignal(0)}
+          />
+        </div>
+        <div style={tab === "reminders" ? undefined : { display: "none" }}>
           <RemindersPanel
+            active={tab === "reminders"}
             createSignal={reminderSignal}
             onCreateSignalConsumed={() => setReminderSignal(0)}
             onOpenAutomation={() => setView("automation")}
           />
-        )}
-        {tab === "context" && <ProjectContextPanel />}
+        </div>
+        <div style={tab === "context" ? undefined : { display: "none" }}>
+          <ProjectContextPanel />
+        </div>
       </div>
     </ErrorBoundary>
   );

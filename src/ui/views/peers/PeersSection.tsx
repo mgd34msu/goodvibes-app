@@ -152,7 +152,9 @@ export function PeersSection() {
             <li key={peer.id}>
               <div className="peer-row">
                 <button type="button" className="peer-row__main" onClick={() => openDetail(peer)}>
-                  <span className="peer-row__label">{peer.label}</span>
+                  <span className="peer-row__label" title={peer.label}>
+                    {peer.label}
+                  </span>
                   <span className="badge neutral">{peer.kind}</span>
                   <StatusBadge value={peer.status} />
                   {peer.platform && <span className="peer-row__meta">{peer.platform}</span>}

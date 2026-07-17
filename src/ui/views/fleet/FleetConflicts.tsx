@@ -87,7 +87,9 @@ function ConflictRow({ conflict, onResolved }: { conflict: FleetConflict; onReso
     <li className="fleet-conflict">
       <div className="fleet-conflict__head">
         <AlertTriangle size={14} aria-hidden="true" />
-        <span className="fleet-conflict__title">{conflict.title || conflict.itemId}</span>
+        <span className="fleet-conflict__title" title={conflict.title || conflict.itemId}>
+          {conflict.title || conflict.itemId}
+        </span>
         <span className="badge warning">Merge conflict waiting on you</span>
       </div>
       <p className="fleet-conflict__files">{conflict.files.length} file{conflict.files.length === 1 ? "" : "s"}: {conflict.files.join(", ")}</p>

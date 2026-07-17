@@ -41,6 +41,9 @@ export function DaemonSkillEditorModal({
   const [body, setBody] = useState("");
   const [metadataText, setMetadataText] = useState("{}");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  // Closing a dirty form asks first instead of silently discarding it — item
+  // 1 (closing warns) from the friction checklist's registry-editor callout.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const targetName = skill?.name ?? "";
   useEffect(() => {
@@ -50,8 +53,15 @@ export function DaemonSkillEditorModal({
     setBody(skill?.body ?? "");
     setMetadataText(metadataToText(skill?.metadata));
     setMode("edit");
+    setConfirmDiscard(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, targetName]);
+
+  const dirty =
+    name !== (skill?.name ?? "") ||
+    description !== (skill?.description ?? "") ||
+    body !== (skill?.body ?? "") ||
+    metadataText !== metadataToText(skill?.metadata);
 
   const metadataResult = parseMetadataText(metadataText);
   const nameValid = name.trim().length > 0;
@@ -70,13 +80,38 @@ export function DaemonSkillEditorModal({
     });
   }
 
+  function requestClose(): void {
+    if (saving) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={requestClose}
       title={skill ? `Edit daemon skill: ${skill.name}` : "New daemon skill"}
       size="lg"
     >
+      {confirmDiscard ? (
+        <div className="reg-form__discard">
+          <p className="reg-form__discard-text">
+            Discard unsaved changes to {skill ? `"${skill.name}"` : "this new daemon skill"}? The edited
+            description, body, and metadata will be lost.
+          </p>
+          <div className="reg-form__actions">
+            <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+              Keep editing
+            </button>
+            <button type="button" className="reg-button reg-button--danger" onClick={onClose}>
+              Discard changes
+            </button>
+          </div>
+        </div>
+      ) : (
       <form className="reg-form" onSubmit={handleSubmit}>
         <label className="reg-form__field">
           <span className="reg-form__label">Name</span>
@@ -173,7 +208,7 @@ export function DaemonSkillEditorModal({
         </label>
 
         <div className="reg-form__actions">
-          <button type="button" className="reg-button" onClick={onClose} disabled={saving}>
+          <button type="button" className="reg-button" onClick={requestClose} disabled={saving}>
             Cancel
           </button>
           <button type="submit" className="reg-button reg-button--primary" disabled={!valid || saving}>
@@ -181,6 +216,7 @@ export function DaemonSkillEditorModal({
           </button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

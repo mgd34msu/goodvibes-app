@@ -289,11 +289,20 @@ export function FleetView() {
       keywords: ["workstream", "phase", "work item", "orchestration"],
       run: () => setScope((prev) => (prev === "all" ? "workstreams" : "all")),
     });
+    registerCommand({
+      id: "fleet.archiveFinished",
+      title: "Fleet: Archive All Finished Subtrees",
+      group: "work",
+      keywords: ["fleet", "archive", "cleanup", "finished"],
+      when: () => !archivedScope,
+      run: () => archiveFinished.mutate(),
+    });
     return () => {
       unregisterCommand("fleet.refresh");
       unregisterCommand("fleet.toggleWorkstreams");
+      unregisterCommand("fleet.archiveFinished");
     };
-  }, [queryClient]);
+  }, [queryClient, archivedScope, archiveFinished]);
 
   const bridgeDown = snapshot.isError && isWsBridgeUnavailableError(snapshot.error);
   const methodMissing =
@@ -434,7 +443,7 @@ export function FleetView() {
                   className={`fleet-row${node.id === selectedId ? " active" : ""}`}
                   onClick={() => selectNode(node.id)}
                 >
-                  <span className="fleet-row__title">{node.label}</span>
+                  <span className="fleet-row__title" title={node.label}>{node.label}</span>
                   <span className="fleet-row__badges">
                     {node.attention && <AttentionBadge reason={node.attention.reason} detail={node.attention.detail} />}
                     <KindBadge kind={node.kind} />

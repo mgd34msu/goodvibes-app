@@ -30,6 +30,7 @@ import {
 } from "../../lib/approvals.ts";
 import { formatError, isMethodUnavailableError, isSessionClosedError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { clearDraft, useDraftState } from "../../lib/drafts.ts";
 import { useUrlState } from "../../lib/router.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
@@ -168,8 +169,9 @@ function ApprovalsSection() {
 
   const deny = useMutation({
     mutationFn: ({ id, note }: { id: string; note: string }) => gv.approvals.deny(id, { note }),
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       setDenyTarget(null);
+      clearDraft(`approvals.deny-note.${variables.id}`);
       await invalidate();
       toast({ title: "Denied", tone: "info" });
     },
@@ -303,6 +305,7 @@ function ApprovalsSection() {
       )}
 
       <DenyModal
+        key={denyTarget?.id ?? "none"}
         record={denyTarget}
         denying={deny.isPending}
         onClose={() => setDenyTarget(null)}
@@ -313,8 +316,14 @@ function ApprovalsSection() {
 }
 
 // ─── Deny modal (a note is REQUIRED — docs/UX.md §4) ─────────────────────────
-
-function DenyModal({
+// Exported so other surfaces that render the shared ApprovalCard (e.g.
+// FleetApprovalInline) reuse this exact deny-with-note flow instead of a
+// second, crippled note prompt. Callers key this component by
+// `record?.id ?? "none"` so it remounts per target approval — that remount is
+// what makes the per-record draft key below safe (see useDraftState's
+// "stable per mount" contract in lib/drafts.ts). Callers must also call
+// clearDraft(`approvals.deny-note.${id}`) in their deny mutation's onSuccess.
+export function DenyModal({
   record,
   denying,
   onClose,
@@ -325,13 +334,7 @@ function DenyModal({
   onClose: () => void;
   onDeny: (id: string, note: string) => void;
 }) {
-  const [note, setNote] = useState("");
-
-  // Reset the draft whenever a new approval is targeted.
-  const recordId = record?.id ?? null;
-  useEffect(() => {
-    setNote("");
-  }, [recordId]);
+  const [note, setNote] = useDraftState(`approvals.deny-note.${record?.id ?? "none"}`, "");
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
@@ -406,7 +409,7 @@ function ApprovalClassMatrix({ rows }: { rows: readonly ApprovalRecord[] }) {
     <div className="approval-class-matrix" role="table" aria-label="Approvals by category and risk">
       {matrix.map(({ category, total, byRisk }) => (
         <div key={category} className="approval-class-matrix__row" role="row">
-          <span className="approval-class-matrix__category" role="cell">
+          <span className="approval-class-matrix__category" role="cell" title={category}>
             {category}
           </span>
           <span className="badge neutral" role="cell">

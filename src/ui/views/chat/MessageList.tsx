@@ -26,6 +26,10 @@ interface MessageListProps {
   showJumpToBottom: boolean;
   isSendPending: boolean;
   isStreaming: boolean;
+  /** ChatView's keep-alive visibility signal — see its own `viewVisible`
+   * MutationObserver comment for why this can't just be React Query's
+   * document-visibility check. */
+  viewVisible: boolean;
   copiedMessageId: string;
   lineNumbers: boolean;
   collapseThreshold: number;
@@ -52,6 +56,7 @@ export function MessageList({
   showJumpToBottom,
   isSendPending,
   isStreaming,
+  viewVisible,
   copiedMessageId,
   lineNumbers,
   collapseThreshold,
@@ -147,6 +152,7 @@ export function MessageList({
           turnState={turnState}
           metrics={turnMetrics}
           streaming={isStreaming}
+          viewVisible={viewVisible}
           {...(onStop && !liveText ? { onStop } : {})}
         />
         <ContextMeter metrics={turnMetrics} />

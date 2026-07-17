@@ -106,7 +106,11 @@ function InboxRow({ item }: { item: InboxItem }) {
           )}
         </div>
         {item.subject && <span className="channels-inbox-item__subject">{item.subject}</span>}
-        <span className="channels-inbox-item__preview">{item.bodyPreview}</span>
+        {/* CSS clamps this to 2 lines (unbounded daemon text) — title= gives
+            the full body on hover since there's no detail view to expand into. */}
+        <span className="channels-inbox-item__preview" title={item.bodyPreview || undefined}>
+          {item.bodyPreview}
+        </span>
         <div className="channels-inbox-item__meta">
           <span>{item.receivedAt !== undefined ? formatRelative(item.receivedAt) : "time unknown"}</span>
           {item.routeId && <code>route {item.routeId}</code>}

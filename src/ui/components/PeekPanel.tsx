@@ -123,7 +123,9 @@ function PeekPanelInner({ payload, isOpen, onClose }: PeekPanelProps) {
         className={`peek-panel${isOpen ? " peek-panel--open" : ""}`}
       >
         <div className="peek-header">
-          <h2 className="peek-title">{payload?.title}</h2>
+          <h2 className="peek-title" title={payload?.title}>
+            {payload?.title}
+          </h2>
           <button type="button" className="peek-close" aria-label="Close panel" onClick={onClose}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

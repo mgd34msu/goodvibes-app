@@ -63,10 +63,12 @@ import {
   readAlwaysSpeakPref,
   readBookmarks,
   readCollapseThreshold,
+  readDraft,
   readLineNumbersPref,
   shouldNotifyLongTurn,
   toggleBookmark,
   writeAlwaysSpeakPref,
+  writeDraft,
   writeLineNumbersPref,
   type ExportFormat,
 } from "./chat-local.ts";
@@ -103,6 +105,7 @@ function reasoningEffortFrom(config: unknown): string {
 export function ChatView() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const rootRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
@@ -111,11 +114,45 @@ export function ChatView() {
   const autoTitledSessionsRef = useRef<Set<string>>(new Set());
   const manuallyTitledSessionsRef = useRef<Set<string>>(new Set());
 
+  // This view is keep-alive (AppShell mounts it with display:none + inert
+  // while another view is active, never unmounts it) so its own polling
+  // needs its own visibility signal — React Query's refetchInterval only
+  // pauses on document/window visibility, not on an ancestor's display:none
+  // (checklist item 18: no polling loops while a view is hidden).
+  const [viewVisible, setViewVisible] = useState(true);
+  useEffect(() => {
+    const frame = rootRef.current?.closest<HTMLElement>(".view-frame");
+    if (!frame) return undefined;
+    const update = () => setViewVisible(frame.style.display !== "none");
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(frame, { attributes: true, attributeFilter: ["style", "inert"] });
+    return () => observer.disconnect();
+  }, []);
+
   const [activeSessionId, setActiveSessionIdState] = useState<string>(() => readStoredActiveSessionId());
-  const [draft, setDraft] = useState("");
+  const activeSessionIdRef = useRef(activeSessionId);
+  activeSessionIdRef.current = activeSessionId;
+  // Composer draft persists per session across an app restart, not just a
+  // view switch inside the keep-alive tree (checklist item 1) —
+  // chat-local.ts's readDraft/writeDraft key on the session id ("" for the
+  // not-yet-created new-chat draft) so switching sessions never leaks one
+  // session's unsent text into another's box either.
+  const [draft, setDraft] = useState(() => readDraft(activeSessionId));
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const draftHistory = useDraftHistory(draft);
+
+  // Debounced persistence while typing — the session id is captured at the
+  // time of the change (schedule time), not when the timer fires, so a
+  // session switch mid-debounce can never write a stale draft into the new
+  // session's slot.
+  useEffect(() => {
+    const sessionId = activeSessionIdRef.current;
+    const timer = window.setTimeout(() => writeDraft(sessionId, draft), 400);
+    return () => window.clearTimeout(timer);
+  }, [draft]);
+
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [artifactRefs, setArtifactRefs] = useState<AttachedArtifactRef[]>([]);
   const [liveText, setLiveText] = useState("");
@@ -136,11 +173,17 @@ export function ChatView() {
   const collapseThreshold = useMemo(() => readCollapseThreshold(), []);
 
   const setActiveSessionId = useCallback((sessionId: string) => {
+    // Flush the outgoing session's draft immediately (the debounce effect
+    // above would eventually do it too, but not before the incoming
+    // session's own saved draft below needs to load) and load the
+    // incoming session's own saved draft — never the outgoing session's.
+    writeDraft(activeSessionIdRef.current, draftRef.current);
     setActiveSessionIdState(sessionId);
     writeStoredActiveSessionId(sessionId);
+    setDraft(readDraft(sessionId));
   }, []);
 
-  const sessionsState = useChatSessions();
+  const sessionsState = useChatSessions({ pollingEnabled: viewVisible });
   const { sessionItems, addLocalSession, updateLocalSession, dropLocalSession } = sessionsState;
   const { availability: voiceAvailability } = useVoiceStatus();
   const sendBudget = useSendBudget();
@@ -186,9 +229,11 @@ export function ChatView() {
     queryFn: () => gv.chat.messages.list(activeSessionId),
     retry: (failureCount, error) => !isSessionNotFoundError(error) && failureCount < 2,
     // An active or syncing turn polls as the fallback for anything the live
-    // stream misses (this port's stream reconnects forever — no paused state).
+    // stream misses (this port's stream reconnects forever — no paused
+    // state) — but only while this keep-alive view is actually the one on
+    // screen (checklist item 18).
     refetchInterval:
-      ACTIVE_TURN_STATES.includes(turnState) || turnState === "syncing" ? 1000 : false,
+      (ACTIVE_TURN_STATES.includes(turnState) || turnState === "syncing") && viewVisible ? 1000 : false,
   });
 
   useEffect(() => {
@@ -681,8 +726,6 @@ export function ChatView() {
     };
   }, []);
 
-  const activeSessionIdRef = useRef(activeSessionId);
-  activeSessionIdRef.current = activeSessionId;
   const forkChatRef = useRef(forkChat);
   forkChatRef.current = forkChat;
 
@@ -866,7 +909,7 @@ export function ChatView() {
   }
 
   return (
-    <div className="chat-view">
+    <div className="chat-view" ref={rootRef}>
       <aside className="chat-rail" aria-label="Chat sessions">
         <div className="chat-rail-header">
           <span className="chat-rail-title">Chats</span>
@@ -997,6 +1040,7 @@ export function ChatView() {
             showJumpToBottom={showJumpToBottom}
             isSendPending={send.isPending}
             isStreaming={isStreaming}
+            viewVisible={viewVisible}
             copiedMessageId={copiedMessageId}
             lineNumbers={lineNumbers}
             collapseThreshold={collapseThreshold}
@@ -1013,7 +1057,7 @@ export function ChatView() {
           />
         )}
 
-        {activeSessionId && <QueuedMessagesPanel sessionId={activeSessionId} active={isStreaming} />}
+        {activeSessionId && <QueuedMessagesPanel sessionId={activeSessionId} active={isStreaming && viewVisible} />}
 
         <Composer
           sessionId={activeSessionId}

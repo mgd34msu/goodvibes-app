@@ -297,14 +297,18 @@ function TaskRow({
   return (
     <li className="task-row">
       <button type="button" className="task-row__main" onClick={onOpen} title="Open task detail">
-        <span className="task-row__title">{task.title || task.id}</span>
+        <span className="task-row__title" title={task.title || task.id}>{task.title || task.id}</span>
         <span className="task-row__badges">
           <span className="badge neutral">{task.kind}</span>
           <span className={`badge ${taskStatusTone(task.status)}`}>{task.status}</span>
         </span>
         <span className="task-row__meta">
           {task.owner && <small>owner {task.owner}</small>}
-          {task.error && <small className="task-row__error">· {task.error}</small>}
+          {task.error && (
+            <small className="task-row__error" title={task.error}>
+              · {task.error}
+            </small>
+          )}
         </span>
       </button>
       <span className="task-row__actions">

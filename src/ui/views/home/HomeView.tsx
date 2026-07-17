@@ -148,7 +148,9 @@ export function HomeView(): ReactElement {
                       <li key={event.id || index}>
                         <button type="button" className="home-briefing__row" onClick={() => openPersonalOps("calendar")}>
                           <span className="home-briefing__row-time">{formatTime(event.start)}</span>
-                          <span className="home-briefing__row-label">{event.title}</span>
+                          <span className="home-briefing__row-label" title={event.title}>
+                            {event.title}
+                          </span>
                         </button>
                       </li>
                     ))}
@@ -169,7 +171,9 @@ export function HomeView(): ReactElement {
                     {runningTasks.map((task) => (
                       <li key={task.id}>
                         <button type="button" className="home-briefing__row" onClick={() => setView("approvals")}>
-                          <span className="home-briefing__row-label">{task.title || task.kind}</span>
+                          <span className="home-briefing__row-label" title={task.title || task.kind}>
+                            {task.title || task.kind}
+                          </span>
                           <StatusBadge value={task.status} />
                         </button>
                       </li>

@@ -42,9 +42,14 @@ function looksLikeAddress(value: string): boolean {
 }
 
 export function EmailPanel({
+  active = true,
   composeSignal,
   onComposeSignalConsumed,
 }: {
+  /** False while this tab is hidden behind another Personal Ops tab (the
+   * panel stays mounted so a compose draft survives the switch — item 1 —
+   * but its poll pauses while hidden — item 18). */
+  active?: boolean;
   /** >0 = a pending palette "Compose email" intent; consumed on mount/change. */
   composeSignal: number;
   onComposeSignalConsumed: () => void;
@@ -53,7 +58,7 @@ export function EmailPanel({
   const { toast } = useToast();
   const peek = usePeek();
 
-  const inbox = useEmailInbox();
+  const inbox = useEmailInbox(true, active);
   const messages = inbox.isSuccess ? parseInboxMessages(inbox.data) : [];
   const refusal = inbox.isError ? emailRefusal(inbox.error, "email.inbox.list") : null;
 
@@ -63,15 +68,28 @@ export function EmailPanel({
   const [confirming, setConfirming] = useState<"draft" | "send" | null>(null);
 
   // Palette command "Compose email" bumps this counter from the view root;
-  // the intent survives a tab switch because the panel consumes it on mount.
+  // the intent survives a tab switch because the panel stays mounted (see
+  // PersonalOpsView) and this effect re-checks once `active` flips true.
   useEffect(() => {
-    if (composeSignal > 0) {
+    if (composeSignal > 0 && active) {
       setDraft(EMPTY_COMPOSE);
       setComposeOpen(true);
       onComposeSignalConsumed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [composeSignal]);
+  }, [composeSignal, active]);
+
+  // Auto-close any open overlay when this tab is hidden behind another
+  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Tab/Escape globally even though nothing is on screen. The draft text
+  // itself is untouched, so reopening after switching back restores exactly
+  // what was typed (item 1 — nothing expires on a tab switch).
+  useEffect(() => {
+    if (!active) {
+      setComposeOpen(false);
+      setConfirming(null);
+    }
+  }, [active]);
 
   const invalidateInbox = () => queryClient.invalidateQueries({ queryKey: poKeys.emailRoot });
 

@@ -165,7 +165,9 @@ export function RunsSection({ jobNames }: { jobNames: ReadonlyMap<string, string
               <button type="button" className="run-row__open" onClick={() => openDetail(run)}>
                 <span className="run-row__id">{run.id.slice(0, 8)}</span>
                 <StatusBadge value={run.status} />
-                <span className="run-row__job">{jobNames.get(run.jobId) ?? run.jobId.slice(0, 12) ?? "—"}</span>
+                <span className="run-row__job" title={jobNames.get(run.jobId) ?? run.jobId}>
+                  {jobNames.get(run.jobId) ?? run.jobId.slice(0, 12) ?? "—"}
+                </span>
                 {run.trigger && <span className="run-row__trigger">{run.trigger}</span>}
                 <span className="run-row__times">
                   {run.queuedAt !== undefined && (

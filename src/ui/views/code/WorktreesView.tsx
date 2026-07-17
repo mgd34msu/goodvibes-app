@@ -8,11 +8,12 @@
 // Rows are merged by normalized path; each row shows which source(s) know it.
 // Neither source has wire events — targeted 30s poll.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { GitBranch, RefreshCw, Trash2, Wrench } from "lucide-react";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
+import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { gv, listFrom } from "../../lib/gv.ts";
 import {
   isMethodUnavailableError,
@@ -106,6 +107,25 @@ export function WorktreesView() {
     refetchInterval: POLL_MS,
     retry: false,
   });
+
+  const refreshAll = () => {
+    void queryClient.invalidateQueries({ queryKey: codeKeys.daemonWorktrees });
+    void queryClient.invalidateQueries({ queryKey: codeKeys.localWorktrees });
+  };
+
+  // Palette command — view-scoped, live only while mounted (matches
+  // GitView's git.refresh / CheckpointsView's checkpoints.snapshot idiom).
+  useEffect(() => {
+    registerCommand({
+      id: "worktrees.refresh",
+      title: "Refresh Worktrees",
+      group: "code",
+      keywords: ["worktree", "refresh", "reload"],
+      run: refreshAll,
+    });
+    return () => unregisterCommand("worktrees.refresh");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryClient]);
 
   const daemonRows = useMemo(() => (daemon.isSuccess ? parseDaemonWorktrees(daemon.data) : []), [daemon.isSuccess, daemon.data]);
   const localRows = local.data?.worktrees ?? [];
@@ -208,10 +228,7 @@ export function WorktreesView() {
           type="button"
           className="section-toolbar__refresh"
           aria-label="Refresh worktrees"
-          onClick={() => {
-            void queryClient.invalidateQueries({ queryKey: codeKeys.daemonWorktrees });
-            void queryClient.invalidateQueries({ queryKey: codeKeys.localWorktrees });
-          }}
+          onClick={refreshAll}
         >
           <RefreshCw
             size={15}

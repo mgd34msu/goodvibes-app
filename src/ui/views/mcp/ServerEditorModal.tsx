@@ -4,7 +4,8 @@
 // confirmed call carries confirm:true + explicitUserRequest (the upsert input
 // schema is additionalProperties:true, so the metadata rides the wire).
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useDraftState } from "../../lib/drafts.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import {
@@ -53,20 +54,15 @@ function draftJsonFor(existing: McpConfiguredServer | null): string {
 }
 
 export function ServerEditorModal({ open, existing, saving, onClose, onSubmit }: ServerEditorModalProps) {
-  const [text, setText] = useState(() => draftJsonFor(existing));
-  const [scope, setScope] = useState<UpsertScope>("global");
+  // The caller (McpView) keys this component by open-session + target name
+  // so it remounts fresh each time it opens — that remount is what makes
+  // this per-target draft key safe (see useDraftState's "stable per mount"
+  // contract in lib/drafts.ts) and is also why the old re-seed-on-open effect
+  // is gone: a remount re-seeds for free. The caller must call
+  // clearDraft(`mcp.server-editor.${existing?.name ?? "new"}`) on save success.
+  const [text, setText] = useDraftState(`mcp.server-editor.${existing?.name ?? "new"}`, draftJsonFor(existing));
+  const [scope, setScope] = useState<UpsertScope>(existing?.source?.scope === "project" ? "project" : "global");
   const [confirming, setConfirming] = useState<ServerDraft | null>(null);
-
-  // Re-seed the editor whenever the modal opens for a (different) target.
-  const existingName = existing?.name ?? null;
-  useEffect(() => {
-    if (open) {
-      setText(draftJsonFor(existing));
-      setScope(existing?.source?.scope === "project" ? "project" : "global");
-      setConfirming(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, existingName]);
 
   const validation = useMemo(() => {
     let parsed: unknown;

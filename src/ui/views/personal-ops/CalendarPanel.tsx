@@ -53,9 +53,14 @@ function splitAttendees(value: string): string[] {
 }
 
 export function CalendarPanel({
+  active = true,
   createSignal,
   onCreateSignalConsumed,
 }: {
+  /** False while this tab is hidden behind another Personal Ops tab (the
+   * panel stays mounted so an in-progress event draft survives the switch —
+   * item 1 — but its poll pauses while hidden — item 18). */
+  active?: boolean;
   /** >0 = a pending palette "New event" intent; consumed on mount/change. */
   createSignal: number;
   onCreateSignalConsumed: () => void;
@@ -70,7 +75,7 @@ export function CalendarPanel({
   const fromIso = startOfDayIso(anchor);
   const toIso = endOfDayIso(mode === "day" ? anchor : addDays(anchor, 6));
 
-  const events = useCalendarEvents(fromIso, toIso);
+  const events = useCalendarEvents(fromIso, toIso, true, active);
   const items = events.isSuccess ? parseCalendarEvents(events.data) : [];
   const refusal = events.isError ? calendarRefusal(events.error, "calendar.events.list") : null;
 
@@ -82,15 +87,29 @@ export function CalendarPanel({
   const [confirmingImport, setConfirmingImport] = useState(false);
 
   // Palette command "New calendar event" bumps this counter from the view
-  // root; the intent survives a tab switch (consumed on mount).
+  // root; the intent survives a tab switch because the panel stays mounted
+  // (see PersonalOpsView) and this effect re-checks once `active` flips true.
   useEffect(() => {
-    if (createSignal > 0) {
+    if (createSignal > 0 && active) {
       setDraft(EMPTY_EVENT);
       setCreateOpen(true);
       onCreateSignalConsumed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createSignal]);
+  }, [createSignal, active]);
+
+  // Auto-close any open overlay when this tab is hidden behind another
+  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Tab/Escape globally even though nothing is on screen. Draft text and any
+  // loaded .ics content are untouched, so switching back restores them
+  // exactly (item 1 — nothing expires on a tab switch).
+  useEffect(() => {
+    if (!active) {
+      setCreateOpen(false);
+      setConfirmingCreate(false);
+      setConfirmingImport(false);
+    }
+  }, [active]);
 
   const invalidateCalendar = () => queryClient.invalidateQueries({ queryKey: poKeys.calendarRoot });
 
@@ -307,7 +326,9 @@ export function CalendarPanel({
                         {formatTime(item.start)}
                         {item.end ? ` – ${formatTime(item.end)}` : ""}
                       </span>
-                      <span className="po-agenda__title">{item.title}</span>
+                      <span className="po-agenda__title" title={item.title}>
+                        {item.title}
+                      </span>
                       {item.location && <span className="po-agenda__location">{item.location}</span>}
                     </button>
                   </li>

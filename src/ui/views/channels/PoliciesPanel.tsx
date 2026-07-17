@@ -15,6 +15,7 @@ import { invoke } from "../../lib/gv.ts";
 import { formatError } from "../../lib/errors.ts";
 import { formatRelative } from "../../lib/wire.ts";
 import { useToast } from "../../lib/toast.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { channelsKeys } from "./keys.ts";
@@ -147,10 +148,26 @@ function PolicyEditModal({ policy, onClose }: { policy: SurfacePolicy | null; on
   const [allowBareCommands, setAllowBareCommands] = useState(policy?.allowTextCommandsWithoutMention ?? false);
   const [dmPolicy, setDmPolicy] = useState(policy?.dmPolicy ?? "");
   const [groupPolicy, setGroupPolicy] = useState(policy?.groupPolicy ?? "");
-  const [userIds, setUserIds] = useState((policy?.allowlistUserIds ?? []).join("\n"));
-  const [channelIds, setChannelIds] = useState((policy?.allowlistChannelIds ?? []).join("\n"));
-  const [groupIds, setGroupIds] = useState((policy?.allowlistGroupIds ?? []).join("\n"));
-  const [commands, setCommands] = useState((policy?.allowedCommands ?? []).join("\n"));
+  // Allowlists are the fields worth persisting — potentially long id lists a
+  // user would grieve retyping. This modal remounts per policy.surface (key
+  // on the parent), so each surface gets its own draft.
+  const surfaceKey = policy?.surface ?? "new";
+  const [userIds, setUserIds, userIdsDraft] = useDraftState(
+    `channels.policy.${surfaceKey}.user-ids`,
+    (policy?.allowlistUserIds ?? []).join("\n"),
+  );
+  const [channelIds, setChannelIds, channelIdsDraft] = useDraftState(
+    `channels.policy.${surfaceKey}.channel-ids`,
+    (policy?.allowlistChannelIds ?? []).join("\n"),
+  );
+  const [groupIds, setGroupIds, groupIdsDraft] = useDraftState(
+    `channels.policy.${surfaceKey}.group-ids`,
+    (policy?.allowlistGroupIds ?? []).join("\n"),
+  );
+  const [commands, setCommands, commandsDraft] = useDraftState(
+    `channels.policy.${surfaceKey}.commands`,
+    (policy?.allowedCommands ?? []).join("\n"),
+  );
 
   const update = useMutation({
     mutationFn: (meta: ConfirmMetadata) => {
@@ -176,6 +193,10 @@ function PolicyEditModal({ policy, onClose }: { policy: SurfacePolicy | null; on
     },
     onSuccess: async () => {
       setConfirming(false);
+      userIdsDraft.clear();
+      channelIdsDraft.clear();
+      groupIdsDraft.clear();
+      commandsDraft.clear();
       await queryClient.invalidateQueries({ queryKey: channelsKeys.all });
       toast({ title: `Policy updated for ${policy?.surface ?? ""}`, tone: "success" });
       onClose();

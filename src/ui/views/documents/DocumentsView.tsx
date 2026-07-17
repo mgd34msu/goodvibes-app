@@ -16,6 +16,7 @@ import { gv } from "../../lib/gv.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { formatError, errorStatus } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 import { formatRelative } from "../../lib/wire.ts";
 import { useUrlState } from "../../lib/router.ts";
 import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
@@ -147,15 +148,16 @@ export function DocumentsView() {
       </div>
       {/* All three tabs stay mounted (display toggling) so a running compare,
           an unsaved draft, and the packet wizard all survive tab switches —
-          docs/UX.md §4. */}
+          docs/UX.md §4. Each section's own `active` flag gates its poll so a
+          hidden tab stops refetching instead of running forever (item 18). */}
       <div style={tab === "drafts" ? undefined : { display: "none" }}>
-        <DraftsSection />
+        <DraftsSection active={tab === "drafts"} />
       </div>
       <div style={tab === "compare" ? undefined : { display: "none" }}>
-        <CompareLab />
+        <CompareLab active={tab === "compare"} />
       </div>
       <div style={tab === "packets" ? undefined : { display: "none" }}>
-        <PacketsPanel highlightNoteId={filters.note} />
+        <PacketsPanel highlightNoteId={filters.note} active={tab === "packets"} />
       </div>
     </div>
   );
@@ -163,18 +165,20 @@ export function DocumentsView() {
 
 // ─── Drafts (master list + editor) ───────────────────────────────────────────
 
-function DraftsSection() {
+function DraftsSection({ active }: { active: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // App-local registry: no wire events — poll every 30s.
+  // App-local registry: no wire events — poll every 30s while this tab is
+  // the one showing (stays mounted-but-hidden on the other two tabs, so the
+  // poll itself must gate — item 18).
   const docsQuery = useQuery({
     queryKey: docKeys.list,
     queryFn: listDocuments,
-    refetchInterval: 30_000,
+    refetchInterval: active ? 30_000 : false,
   });
   const docs = useMemo(() => (docsQuery.data ?? []).map(documentFrom).filter((d) => d.id), [docsQuery.data]);
   const selected = docs.find((d) => d.id === selectedId) ?? null;
@@ -299,7 +303,7 @@ function DraftsSection() {
 
       <div className="documents-editor-pane">
         {selected ? (
-          <DocumentEditor key={selected.id} doc={selected} onDeleted={() => setSelectedId("")} />
+          <DocumentEditor key={selected.id} doc={selected} active={active} onDeleted={() => setSelectedId("")} />
         ) : (
           <EmptyState
             icon={<FileText size={28} aria-hidden="true" />}
@@ -314,14 +318,24 @@ function DraftsSection() {
 
 // ─── Editor + version timeline + diff + comments ─────────────────────────────
 
-function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => void }) {
+function DocumentEditor({
+  doc,
+  active,
+  onDeleted,
+}: {
+  doc: DocRecord;
+  active: boolean;
+  onDeleted: () => void;
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const versionsQuery = useQuery({
     queryKey: docKeys.versions(doc.id),
     queryFn: () => listVersions(doc.id),
-    refetchInterval: 30_000, // app-local registry — no wire events
+    // app-local registry — no wire events; gated on `active` since Drafts
+    // stays mounted-but-hidden on the other Documents tabs (item 18).
+    refetchInterval: active ? 30_000 : false,
   });
   const versions = useMemo(
     () => (versionsQuery.data ?? []).map(versionFrom).sort((x, y) => y.v - x.v),
@@ -329,22 +343,32 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
   );
   const head = versions[0];
 
-  const [draft, setDraft] = useState<string | null>(null);
+  // The body is the field worth persisting — this component remounts per
+  // document (key=doc.id on the parent), and the persisted draft resumes
+  // over the head version content once it loads, unless a restored draft
+  // already exists (never clobber a real unsaved edit with server content).
+  const [draft, setDraft, draftControl] = useDraftState(`documents.draft.${doc.id}.body`, "");
   const [label, setLabel] = useState("");
   const [preview, setPreview] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [exportConfirmOpen, setExportConfirmOpen] = useState(false);
   const [acceptTarget, setAcceptTarget] = useState<DocComment | null>(null);
+  const syncedFromLoad = useRef(false);
 
-  // The editor buffer starts from the head version content once it loads;
-  // user edits (draft !== null) are never clobbered by refetches.
-  const text = draft ?? head?.content ?? "";
-  const dirty = draft !== null && draft !== (head?.content ?? "");
+  useEffect(() => {
+    if (head && !syncedFromLoad.current) {
+      syncedFromLoad.current = true;
+      if (!draftControl.hadDraft) setDraft(head.content);
+    }
+  }, [head, draftControl.hadDraft, setDraft]);
+
+  const text = draft;
+  const dirty = text !== (head?.content ?? "");
 
   const save = useMutation({
     mutationFn: () => saveVersion(doc.id, text, label.trim() || undefined),
     onSuccess: async () => {
-      setDraft(null);
+      draftControl.clear();
       setLabel("");
       await queryClient.invalidateQueries({ queryKey: docKeys.all });
       toast({ title: `Saved as v${doc.headVersion + 1}`, tone: "success" });
@@ -403,9 +427,12 @@ function DocumentEditor({ doc, onDeleted }: { doc: DocRecord; onDeleted: () => v
         ),
       );
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, comment) => {
       setAcceptTarget(null);
-      setDraft(null);
+      // Explicit overwrite — the confirm dialog says as much. Show the
+      // suggestion immediately and drop the stale persisted draft.
+      setDraft(comment.suggestion);
+      draftControl.clear();
       await queryClient.invalidateQueries({ queryKey: docKeys.all });
       await queryClient.invalidateQueries({ queryKey: docKeys.versions(doc.id) });
       toast({ title: "Suggestion applied", description: "Saved as a new version.", tone: "success" });

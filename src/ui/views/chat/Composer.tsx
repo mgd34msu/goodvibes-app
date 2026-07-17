@@ -301,7 +301,9 @@ function SlashMenu({
           }}
         >
           <span className="composer-slash-item-name">/{cmd.name}</span>
-          <span className="composer-slash-item-desc">{cmd.description}</span>
+          <span className="composer-slash-item-desc" title={cmd.description}>
+            {cmd.description}
+          </span>
         </button>
       ))}
     </div>
@@ -769,7 +771,9 @@ export function Composer({
                   }}
                 >
                   <span className="composer-slash-item-name">{item.label}</span>
-                  <span className="composer-slash-item-desc">{item.artifactId}</span>
+                  <span className="composer-slash-item-desc" title={item.artifactId}>
+                    {item.artifactId}
+                  </span>
                 </button>
               ))
             ) : (

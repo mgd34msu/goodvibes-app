@@ -217,7 +217,7 @@ export function WatchersView() {
                   onClick={() => selectWatcher(row.id)}
                   aria-pressed={selectedId === row.id}
                 >
-                  <span className="watcher-row__label">{row.label}</span>
+                  <span className="watcher-row__label" title={row.label}>{row.label}</span>
                   <span className="badge neutral">{row.kind}</span>
                   <StatusBadge value={row.state} />
                   {row.intervalMs !== undefined && (
@@ -272,6 +272,7 @@ export function WatchersView() {
       <Modal open={editTarget !== null} onClose={() => setEditTarget(null)} title="Edit watcher" size="lg">
         {editTarget && (
           <WatcherForm
+            key={editTarget.id}
             initial={editTarget}
             submitting={update.isPending}
             onSubmit={(body) => update.mutate({ id: editTarget.id, body })}

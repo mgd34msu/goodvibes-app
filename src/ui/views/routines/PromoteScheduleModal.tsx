@@ -64,7 +64,11 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
   const [kind, setKind] = useState<ScheduleKind>("cron");
   const [expression, setExpression] = useState("");
   const [timezone, setTimezone] = useState("");
+  const [initialTimezone, setInitialTimezone] = useState("");
   const [confirming, setConfirming] = useState<ScheduleDraft | null>(null);
+  // Closing a dirty form asks first instead of silently discarding it — same
+  // guard the sibling registry editors (RoutineEditorModal etc.) use.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const routineId = routine?.id ?? "";
   useEffect(() => {
@@ -72,13 +76,19 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
     setKind("cron");
     setExpression("");
     setConfirming(null);
+    setConfirmDiscard(false);
+    let tz = "UTC";
     try {
-      setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     } catch {
-      setTimezone("UTC");
+      tz = "UTC";
     }
+    setTimezone(tz);
+    setInitialTimezone(tz);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routineId]);
+
+  const dirty = kind !== "cron" || expression.trim() !== "" || timezone !== initialTimezone;
 
   const taskBody = useMemo(
     () => (routine ? routineStepsText(routine.name, routine.steps) : ""),
@@ -138,6 +148,15 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
   const trimmedExpression = expression.trim();
   const problem = expressionProblem(kind, trimmedExpression);
 
+  function requestClose(): void {
+    if (create.isPending) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     if (!routine || problem !== null || create.isPending) return;
@@ -150,10 +169,27 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
     <>
       <Modal
         open={routine !== null && confirming === null}
-        onClose={onClose}
+        onClose={requestClose}
         title={routine ? `Promote to schedule: ${routine.name}` : "Promote to schedule"}
         size="lg"
       >
+        {confirmDiscard ? (
+          <div className="reg-form__discard">
+            <p className="reg-form__discard-text">
+              Discard unsaved changes to this schedule promotion? The schedule kind, expression, and timezone will
+              be lost.
+            </p>
+            <div className="reg-form__actions">
+              <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+                Keep editing
+              </button>
+              <button type="button" className="reg-button reg-button--danger" onClick={onClose}>
+                Discard changes
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {routine && capability === "unavailable" && (
           <UnavailableState
             capability="automation.schedules.create"
@@ -221,7 +257,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
             </div>
 
             <div className="reg-form__actions">
-              <button type="button" className="reg-button" onClick={onClose}>
+              <button type="button" className="reg-button" onClick={requestClose}>
                 Cancel
               </button>
               <button
@@ -233,6 +269,8 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
               </button>
             </div>
           </form>
+        )}
+          </>
         )}
       </Modal>
 

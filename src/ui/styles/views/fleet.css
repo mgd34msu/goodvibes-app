@@ -352,69 +352,8 @@
   list-style: none;
 }
 
-.fleet-approval {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-2);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-}
-
-.fleet-approval__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-}
-
-.fleet-approval__tool {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-
-.fleet-approval__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.fleet-approval__summary {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  overflow-wrap: anywhere;
-}
-
-.fleet-approval__actions,
-.fleet-approval__deny-actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.fleet-approval__deny {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.fleet-approval__deny textarea {
-  padding: var(--space-2);
-  color: var(--text-primary);
-  background: var(--surface-base);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: var(--text-xs);
-  resize: vertical;
-}
-
-.fleet-approval__deny textarea:focus {
-  border-color: var(--border-focus);
-  outline: none;
-}
+/* Rows are the shared ApprovalCard (styles/views/approvals.css) — this
+   surface no longer renders its own crippled duplicate card. */
 
 /* ── Inline task actions (GAPS.md §3 row 6) ─────────────────── */
 

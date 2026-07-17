@@ -6,6 +6,7 @@
 
 import { useState, type FormEvent } from "react";
 import { PlusCircle } from "lucide-react";
+import { useDraftState } from "../../lib/drafts.ts";
 import { ErrorState } from "../../components/feedback.tsx";
 import {
   MEMORY_CLASSES,
@@ -36,7 +37,9 @@ export function AddMemoryForm({ isPending, error, onSubmit }: AddMemoryFormProps
   const [cls, setCls] = useState<MemoryClass>("fact");
   const [scope, setScope] = useState<MemoryScope>("project");
   const [summary, setSummary] = useState("");
-  const [detail, setDetail] = useState("");
+  // Detail is the body field worth persisting — a longer explanation a user
+  // would grieve losing to an accidental view switch.
+  const [detail, setDetail, detailDraft] = useDraftState("memory.add.detail", "");
   const [tags, setTags] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>): void {
@@ -52,6 +55,7 @@ export function AddMemoryForm({ isPending, error, onSubmit }: AddMemoryFormProps
     });
     setSummary("");
     setDetail("");
+    detailDraft.clear();
     setTags("");
   }
 

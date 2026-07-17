@@ -4,7 +4,7 @@
 // agent implements Bun-side. Capability-honest: a 404/501 (not landed yet in
 // this build) renders UnavailableState, never a fake "saved".
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, RefreshCw, Send } from "lucide-react";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
@@ -38,6 +38,12 @@ export function NotificationsSection() {
   const { toast } = useToast();
   const [draft, setDraft] = useState<NotificationPrefs | null>(null);
   const [testTitle, setTestTitle] = useState("Test notification");
+  // Tracks the latest draft without adding it as an effect dependency below —
+  // lets the background poll refresh `draft` from the server while it's
+  // untouched, but never clobber an in-progress, unsaved edit (item 1/13:
+  // drafts survive; writes never silently overwrite what the user is doing).
+  const draftRef = useRef<NotificationPrefs | null>(null);
+  draftRef.current = draft;
 
   const prefsQuery = useQuery({
     queryKey: notificationsKeys.prefs,
@@ -47,7 +53,10 @@ export function NotificationsSection() {
   });
 
   useEffect(() => {
-    if (prefsQuery.data) setDraft(prefsQuery.data.prefs);
+    if (!prefsQuery.data) return;
+    const current = draftRef.current;
+    const isDirty = current !== null && JSON.stringify(current) !== JSON.stringify(prefsQuery.data.prefs);
+    if (!isDirty) setDraft(prefsQuery.data.prefs);
   }, [prefsQuery.data]);
 
   const save = useMutation({

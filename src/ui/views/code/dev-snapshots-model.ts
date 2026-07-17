@@ -16,10 +16,13 @@ export interface IntelligenceSnapshot {
   symbolSearchStatus: string;
   completionsStatus: string;
   hoverStatus: string;
-  errorCount: number;
-  warningCount: number;
-  totalRequests: number;
-  avgLatencyMs: number;
+  // undefined = the daemon didn't report this field — never collapsed into a
+  // fabricated 0 (a real zero errors/requests looks identical to "unreported"
+  // otherwise; callers render an honest "—" for the undefined case).
+  errorCount: number | undefined;
+  warningCount: number | undefined;
+  totalRequests: number | undefined;
+  avgLatencyMs: number | undefined;
   raw: unknown;
 }
 
@@ -30,10 +33,10 @@ export function normalizeIntelligenceSnapshot(value: unknown): IntelligenceSnaps
     symbolSearchStatus: firstString(r, ["symbolSearchStatus"]) || "unknown",
     completionsStatus: firstString(r, ["completionsStatus"]) || "unknown",
     hoverStatus: firstString(r, ["hoverStatus"]) || "unknown",
-    errorCount: firstNumber(r, ["errorCount"]) ?? 0,
-    warningCount: firstNumber(r, ["warningCount"]) ?? 0,
-    totalRequests: firstNumber(r, ["totalRequests"]) ?? 0,
-    avgLatencyMs: firstNumber(r, ["avgLatencyMs"]) ?? 0,
+    errorCount: firstNumber(r, ["errorCount"]),
+    warningCount: firstNumber(r, ["warningCount"]),
+    totalRequests: firstNumber(r, ["totalRequests"]),
+    avgLatencyMs: firstNumber(r, ["avgLatencyMs"]),
     raw: value,
   };
 }
@@ -53,11 +56,13 @@ export function statusTone(status: string): "ok" | "bad" | "neutral" {
 export interface ReviewSnapshot {
   apiFamilies: string[];
   routes: string[];
-  sessions: number;
-  tasks: number;
-  pendingApprovals: number;
-  remoteContracts: number;
-  panels: number;
+  // undefined = not reported by this daemon — never a fabricated 0; see
+  // IntelligenceSnapshot's header comment for the same rule.
+  sessions: number | undefined;
+  tasks: number | undefined;
+  pendingApprovals: number | undefined;
+  remoteContracts: number | undefined;
+  panels: number | undefined;
   raw: unknown;
 }
 
@@ -70,11 +75,11 @@ export function normalizeReviewSnapshot(value: unknown): ReviewSnapshot {
   return {
     apiFamilies: stringArray(firstArray(r, ["apiFamilies"])),
     routes: stringArray(firstArray(r, ["routes"])),
-    sessions: firstNumber(r, ["sessions"]) ?? 0,
-    tasks: firstNumber(r, ["tasks"]) ?? 0,
-    pendingApprovals: firstNumber(r, ["pendingApprovals"]) ?? 0,
-    remoteContracts: firstNumber(r, ["remoteContracts"]) ?? 0,
-    panels: firstNumber(r, ["panels"]) ?? 0,
+    sessions: firstNumber(r, ["sessions"]),
+    tasks: firstNumber(r, ["tasks"]),
+    pendingApprovals: firstNumber(r, ["pendingApprovals"]),
+    remoteContracts: firstNumber(r, ["remoteContracts"]),
+    panels: firstNumber(r, ["panels"]),
     raw: value,
   };
 }

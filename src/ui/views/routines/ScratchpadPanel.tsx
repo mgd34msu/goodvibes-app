@@ -11,11 +11,12 @@
 // destination id, but is NOT deleted or edited further — re-promoting stays
 // possible on purpose (the daemon-side record is independent of this note).
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Brain, Plus, StickyNote, Trash2 } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { formatError } from "../../lib/errors.ts";
+import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { useToast } from "../../lib/toast.ts";
 import { asRecord, firstString } from "../../lib/wire.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
@@ -59,6 +60,20 @@ export function ScratchpadPanel() {
   const [editing, setEditing] = useState<NoteItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NoteItem | null>(null);
   const [promoteTarget, setPromoteTarget] = useState<PromoteTarget>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Palette command scoped to this panel's own mount — only registered while
+  // the Scratchpad tab is actually showing (item 19: keyboard access).
+  useEffect(() => {
+    registerCommand({
+      id: "routines.newNote",
+      title: "Scratchpad: New Note",
+      group: "assistant",
+      keywords: ["note", "scratchpad", "capture"],
+      run: () => composerRef.current?.focus(),
+    });
+    return () => unregisterCommand("routines.newNote");
+  }, []);
 
   const list = useQuery({
     queryKey: regKeys.collection("notes"),
@@ -185,6 +200,7 @@ export function ScratchpadPanel() {
         }}
       >
         <textarea
+          ref={composerRef}
           rows={3}
           value={draftText}
           onChange={(e) => setDraftText(e.target.value)}
@@ -327,12 +343,41 @@ function NoteEditor({
 }) {
   const [text, setText] = useState(note.text);
   const [tagsText, setTagsText] = useState(note.tags.join(", "));
+  // Closing a dirty editor asks first instead of silently discarding it —
+  // same guard the sibling registry editors (RoutineEditorModal etc.) use.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const dirty = text !== note.text || tagsText !== note.tags.join(", ");
+
+  function requestCancel(): void {
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onCancel();
+  }
+
+  if (confirmDiscard) {
+    return (
+      <div className="scratchpad-note__editor reg-form__discard">
+        <p className="reg-form__discard-text">Discard unsaved changes to this note? The edited text and tags will be lost.</p>
+        <div className="reg-form__actions">
+          <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+            Keep editing
+          </button>
+          <button type="button" className="reg-button reg-button--danger" onClick={onCancel}>
+            Discard changes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="scratchpad-note__editor">
       <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-label="Edit note text" />
       <input value={tagsText} onChange={(e) => setTagsText(e.target.value)} aria-label="Edit note tags" />
       <div className="scratchpad-note__editor-actions">
-        <button type="button" className="reg-button" onClick={onCancel}>
+        <button type="button" className="reg-button" onClick={requestCancel}>
           Cancel
         </button>
         <button

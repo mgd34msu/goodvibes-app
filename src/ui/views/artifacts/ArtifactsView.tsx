@@ -55,11 +55,13 @@ export function ArtifactsView() {
   const [tab, setTab] = useState<"artifacts" | "media-lab">("artifacts");
   const uploadRef = useRef<HTMLInputElement>(null);
 
-  // artifacts.* has no wire event — poll every 30s (docs rule: comment it).
+  // artifacts.* has no wire event — poll every 30s while the Artifacts tab
+  // is the one showing (gated: irrelevant, and wasted, while Media Lab is
+  // up — item 18).
   const list = useQuery({
     queryKey: artifactKeys.list(limit),
     queryFn: () => gv.artifacts.list({ limit, offset: 0 }),
-    refetchInterval: 30_000,
+    refetchInterval: tab === "artifacts" ? 30_000 : false,
   });
   const records = useMemo(() => artifactsFromListResponse(list.data), [list.data]);
   const total = useMemo(() => listTotalFrom(list.data), [list.data]);

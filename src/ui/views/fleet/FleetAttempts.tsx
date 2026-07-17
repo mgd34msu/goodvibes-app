@@ -186,7 +186,9 @@ export function FleetAttemptsSection({
                 className={`fleet-attempts__group${group.ready ? " ready" : ""}`}
                 onClick={() => onOpenGroup(group.groupId)}
               >
-                <span className="fleet-attempts__group-title">{group.sourceTitle || group.groupId}</span>
+                <span className="fleet-attempts__group-title" title={group.sourceTitle || group.groupId}>
+                  {group.sourceTitle || group.groupId}
+                </span>
                 <span className="fleet-attempts__group-badges">
                   {group.ready ? (
                     <span className="badge warning">Ready — compare &amp; pick</span>

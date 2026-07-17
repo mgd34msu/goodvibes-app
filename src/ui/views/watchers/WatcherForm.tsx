@@ -35,6 +35,19 @@ function readMetaString(row: WatcherRow | null, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
+// Keys the form surfaces through their own dedicated fields — everything
+// else in a watcher's merged metadata bag is a "custom" key this form must
+// still show and round-trip verbatim, or an edit silently drops it (the
+// metadata textarea below only ever sends what's IN it, so any key not
+// preloaded here is invisible to the user and gets clobbered on save).
+const KNOWN_METADATA_KEYS = ["headers", "url", "method", "path", "endpoint", "address"];
+
+function extraMetadataJson(row: WatcherRow | null): string {
+  if (!row) return "";
+  const extra = Object.fromEntries(Object.entries(row.metadata).filter(([key]) => !KNOWN_METADATA_KEYS.includes(key)));
+  return Object.keys(extra).length > 0 ? JSON.stringify(extra, null, 2) : "";
+}
+
 export function WatcherForm({
   initial,
   submitting,
@@ -62,7 +75,7 @@ export function WatcherForm({
     const headers = initial?.metadata["headers"];
     return headers && typeof headers === "object" ? JSON.stringify(headers, null, 2) : "";
   });
-  const [metadataJson, setMetadataJson] = useState("");
+  const [metadataJson, setMetadataJson] = useState(() => extraMetadataJson(initial));
   const [enabled, setEnabled] = useState(initial ? initial.sourceEnabled : true);
 
   const parsed = useMemo(() => {
@@ -207,7 +220,7 @@ export function WatcherForm({
           />
         </label>
         <label className="watcher-form__field" htmlFor={`${uid}-metadata`}>
-          <span>Extra metadata JSON (optional)</span>
+          <span>Extra metadata JSON (optional — any keys beyond the hints above; preloaded on edit so nothing already set is dropped)</span>
           <textarea
             id={`${uid}-metadata`}
             rows={3}

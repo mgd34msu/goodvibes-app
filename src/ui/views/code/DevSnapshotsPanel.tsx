@@ -19,6 +19,11 @@ import {
 
 const TILE_POLL_MS = 30_000; // neither method emits a wire event — targeted poll while visible
 
+/** Honest count render: an em dash for "not reported", never a fabricated 0. */
+function formatCount(value: number | undefined): string {
+  return value === undefined ? "—" : String(value);
+}
+
 const devSnapshotKeys = {
   intelligence: ["code", "intelligence", "snapshot"] as const,
   review: ["code", "review", "snapshot"] as const,
@@ -95,16 +100,17 @@ function IntelligenceTile() {
               </dl>
               <div className="dev-snapshot-tile__counts">
                 <span className="dev-snapshot-tile__count">
-                  <strong>{snap.errorCount}</strong> error{snap.errorCount === 1 ? "" : "s"}
+                  <strong>{formatCount(snap.errorCount)}</strong> error{snap.errorCount === 1 ? "" : "s"}
                 </span>
                 <span className="dev-snapshot-tile__count">
-                  <strong>{snap.warningCount}</strong> warning{snap.warningCount === 1 ? "" : "s"}
+                  <strong>{formatCount(snap.warningCount)}</strong> warning{snap.warningCount === 1 ? "" : "s"}
                 </span>
                 <span className="dev-snapshot-tile__count">
-                  <strong>{snap.totalRequests}</strong> request{snap.totalRequests === 1 ? "" : "s"}
+                  <strong>{formatCount(snap.totalRequests)}</strong> request{snap.totalRequests === 1 ? "" : "s"}
                 </span>
                 <span className="dev-snapshot-tile__count">
-                  avg <strong>{snap.avgLatencyMs.toFixed(1)}</strong>ms
+                  avg <strong>{snap.avgLatencyMs === undefined ? "—" : snap.avgLatencyMs.toFixed(1)}</strong>
+                  {snap.avgLatencyMs === undefined ? "" : "ms"}
                 </span>
               </div>
             </>
@@ -156,7 +162,7 @@ function ReviewTile() {
       {query.isSuccess &&
         (() => {
           const snap = normalizeReviewSnapshot(query.data);
-          const counts: Array<[string, number]> = [
+          const counts: Array<[string, number | undefined]> = [
             ["Sessions", snap.sessions],
             ["Tasks", snap.tasks],
             ["Pending approvals", snap.pendingApprovals],
@@ -168,7 +174,7 @@ function ReviewTile() {
               <div className="dev-snapshot-tile__counts">
                 {counts.map(([label, count]) => (
                   <span key={label} className="dev-snapshot-tile__count">
-                    <strong>{count}</strong> {label.toLowerCase()}
+                    <strong>{formatCount(count)}</strong> {label.toLowerCase()}
                   </span>
                 ))}
               </div>

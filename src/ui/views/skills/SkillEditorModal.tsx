@@ -32,6 +32,9 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
   const [requirementsText, setRequirementsText] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  // Closing a dirty form asks first instead of silently discarding it — item
+  // 1 (closing warns) from the friction checklist's registry-editor callout.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const targetId = skill?.id ?? "";
   useEffect(() => {
@@ -42,8 +45,16 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
     setRequirementsText(skill?.requirements.join(", ") ?? "");
     setEnabled(skill ? skill.enabled : true);
     setMode("edit");
+    setConfirmDiscard(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, targetId]);
+
+  const dirty =
+    name !== (skill?.name ?? "") ||
+    description !== (skill?.description ?? "") ||
+    body !== (skill?.body ?? "") ||
+    requirementsText !== (skill?.requirements.join(", ") ?? "") ||
+    enabled !== (skill ? skill.enabled : true);
 
   const valid = name.trim().length > 0;
 
@@ -62,8 +73,33 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
     });
   }
 
+  function requestClose(): void {
+    if (saving) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title={skill ? `Edit skill: ${skill.name}` : "New skill"} size="lg">
+    <Modal open={open} onClose={requestClose} title={skill ? `Edit skill: ${skill.name}` : "New skill"} size="lg">
+      {confirmDiscard ? (
+        <div className="reg-form__discard">
+          <p className="reg-form__discard-text">
+            Discard unsaved changes to {skill ? `"${skill.name}"` : "this new skill"}? The edited description,
+            body, and requirements will be lost.
+          </p>
+          <div className="reg-form__actions">
+            <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+              Keep editing
+            </button>
+            <button type="button" className="reg-button reg-button--danger" onClick={onClose}>
+              Discard changes
+            </button>
+          </div>
+        </div>
+      ) : (
       <form className="reg-form" onSubmit={handleSubmit}>
         <label className="reg-form__field">
           <span className="reg-form__label">Name</span>
@@ -146,7 +182,7 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
         </label>
 
         <div className="reg-form__actions">
-          <button type="button" className="reg-button" onClick={onClose} disabled={saving}>
+          <button type="button" className="reg-button" onClick={requestClose} disabled={saving}>
             Cancel
           </button>
           <button type="submit" className="reg-button reg-button--primary" disabled={!valid || saving}>
@@ -154,6 +190,7 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
           </button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

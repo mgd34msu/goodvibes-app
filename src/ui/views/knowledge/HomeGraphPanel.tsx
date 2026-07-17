@@ -33,6 +33,7 @@ import { invoke } from "../../lib/gv.ts";
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 import { usePeek } from "../../components/PeekPanel.tsx";
 import type { ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
@@ -411,7 +412,9 @@ function IngestSection({ requestConfirm }: { requestConfirm: (action: PendingAct
   const { toast } = useToast();
   const [url, setUrl] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
-  const [noteBody, setNoteBody] = useState("");
+  // Note body is the field worth persisting — a hand-written note a user
+  // would grieve losing to an accidental view switch.
+  const [noteBody, setNoteBody, noteBodyDraft] = useDraftState("knowledge.homegraph.ingest-note-body", "");
   const [artifactId, setArtifactId] = useState("");
   const [linkTargetKind, setLinkTargetKind] = useState("entity");
   const [linkTargetId, setLinkTargetId] = useState("");
@@ -434,6 +437,7 @@ function IngestSection({ requestConfirm }: { requestConfirm: (action: PendingAct
     onSuccess: async () => {
       setNoteTitle("");
       setNoteBody("");
+      noteBodyDraft.clear();
       await invalidate();
       toast({ title: "Note ingested into home graph", tone: "success" });
     },
@@ -610,8 +614,11 @@ function IngestSection({ requestConfirm }: { requestConfirm: (action: PendingAct
 function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: PendingAction) => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [projectionParams, setProjectionParams] = useState("{}");
-  const [importDraft, setImportDraft] = useState("{}");
+  // Both are JSON bodies a user would grieve retyping — projectionParams is a
+  // shared working value reused across passport/room-page/packet actions (no
+  // single "submit" clears it); importDraft is cleared once import succeeds.
+  const [projectionParams, setProjectionParams] = useDraftState("knowledge.homegraph.projection-params", "{}");
+  const [importDraft, setImportDraft, importDraftControl] = useDraftState("knowledge.homegraph.import-draft", "{}");
   const [lastResult, setLastResult] = useState<{ label: string; value: unknown } | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: KNOWLEDGE_PREFIX });
@@ -689,6 +696,7 @@ function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: Pendi
     mutationFn: (meta: ConfirmMetadata) => invoke(`${HG}.import`, { body: { data: parseJsonParams(importDraft), ...meta } }),
     onSuccess: async (result) => {
       setLastResult({ label: "Import", value: result });
+      importDraftControl.clear();
       await invalidate();
       toast({ title: "Home graph imported", tone: "success" });
     },
@@ -834,7 +842,13 @@ function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: Pendi
 
 // ─── Refinement ──────────────────────────────────────────────────────────────
 
-function RefinementSection({ requestConfirm }: { requestConfirm: (action: PendingAction) => void }) {
+function RefinementSection({
+  requestConfirm,
+  active,
+}: {
+  requestConfirm: (action: PendingAction) => void;
+  active: boolean;
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const peek = usePeek();
@@ -842,7 +856,10 @@ function RefinementSection({ requestConfirm }: { requestConfirm: (action: Pendin
   const tasks = useQuery({
     queryKey: kKeys.homeGraphRefinementTasks,
     queryFn: () => invoke(`${HG}.refinement.tasks.list`, { query: { limit: 100 } }),
-    refetchInterval: 15_000,
+    // The Home graph tab stays mounted-but-hidden on the other Knowledge
+    // tabs — gate on `active` so this stops polling once it's not visible
+    // (item 18).
+    refetchInterval: active ? 15_000 : false,
   });
 
   const run = useMutation({
@@ -979,7 +996,7 @@ function StatusHeader({ status }: { status: unknown }) {
 
 // ─── Panel root ──────────────────────────────────────────────────────────────
 
-export function HomeGraphPanel() {
+export function HomeGraphPanel({ active }: { active: boolean }) {
   const peek = usePeek();
   const [pending, setPending] = useState<PendingAction | null>(null);
   const probe = useHomeGraphProbe();
@@ -1028,7 +1045,7 @@ export function HomeGraphPanel() {
       <MapPagesSection onOpenItem={openItem} />
       <SourcesIssuesSection onOpenItem={openItem} requestConfirm={setPending} />
       <IngestSection requestConfirm={setPending} />
-      <RefinementSection requestConfirm={setPending} />
+      <RefinementSection requestConfirm={setPending} active={active} />
       <MaintenanceSection requestConfirm={setPending} />
       <PendingConfirmSurface pending={pending} onCancel={() => setPending(null)} />
     </div>

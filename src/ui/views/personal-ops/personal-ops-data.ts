@@ -230,36 +230,49 @@ export function parseScheduleJobs(value: unknown): ScheduleJob[] {
 
 // ─── Shared queries ───────────────────────────────────────────────────────────
 
-export function useEmailInbox(enabled = true): UseQueryResult<unknown> {
+/**
+ * @param active Gates the 30 s poll (item 18 — no polling while the tab that
+ * owns this panel is hidden behind another Personal Ops tab). Defaults to
+ * true so call sites outside the tab shell (Home, briefing chips) keep
+ * polling exactly as before.
+ */
+export function useEmailInbox(enabled = true, active = true): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.emailInbox,
     // No wire event exists for email.* — a targeted 30 s poll keeps the inbox
     // fresh without hammering the IMAP endpoint.
     queryFn: () => gv.invoke("email.inbox.list", { query: { limit: 50 } }),
-    refetchInterval: PERSONAL_OPS_POLL_MS,
+    refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
     // 412/404 refusals should render their honest state immediately.
     retry: false,
     enabled,
   });
 }
 
-export function useCalendarEvents(fromIso: string, toIso: string, enabled = true): UseQueryResult<unknown> {
+/** @param active see {@link useEmailInbox}. */
+export function useCalendarEvents(
+  fromIso: string,
+  toIso: string,
+  enabled = true,
+  active = true,
+): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.calendarEvents(fromIso, toIso),
     // calendar.* has NO wire events (pinned upstream) — targeted 30 s poll.
     queryFn: () => gv.invoke("calendar.events.list", { query: { from: fromIso, to: toIso, limit: 100 } }),
-    refetchInterval: PERSONAL_OPS_POLL_MS,
+    refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
     retry: false,
     enabled,
   });
 }
 
-export function useScheduleJobs(enabled = true): UseQueryResult<unknown> {
+/** @param active see {@link useEmailInbox}. */
+export function useScheduleJobs(enabled = true, active = true): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.schedules,
     // automation.* is not in DOMAIN_INVALIDATIONS (no wire event) — 30 s poll.
     queryFn: () => gv.invoke("automation.schedules.list"),
-    refetchInterval: PERSONAL_OPS_POLL_MS,
+    refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
     retry: false,
     enabled,
   });

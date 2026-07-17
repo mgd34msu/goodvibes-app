@@ -209,7 +209,9 @@ export function PairingTokensSection() {
                 </form>
               ) : (
                 <div className="peer-row__main">
-                  <span className="peer-row__label">{token.name}</span>
+                  <span className="peer-row__label" title={token.name}>
+                    {token.name}
+                  </span>
                   <span className="peer-row__meta">
                     created {formatRelative(token.createdAt)} ·{" "}
                     {token.lastSeenAt !== undefined ? `last seen ${formatRelative(token.lastSeenAt)}` : "never seen"}

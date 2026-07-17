@@ -30,10 +30,15 @@ interface ReminderDraft {
 const EMPTY_REMINDER: ReminderDraft = { text: "", when: "" };
 
 export function RemindersPanel({
+  active = true,
   createSignal,
   onCreateSignalConsumed,
   onOpenAutomation,
 }: {
+  /** False while this tab is hidden behind another Personal Ops tab (the
+   * panel stays mounted so an in-progress reminder draft survives the switch
+   * — item 1 — but its poll pauses while hidden — item 18). */
+  active?: boolean;
   /** >0 = a pending palette "New reminder" intent; consumed on mount/change. */
   createSignal: number;
   onCreateSignalConsumed: () => void;
@@ -42,7 +47,7 @@ export function RemindersPanel({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const schedules = useScheduleJobs();
+  const schedules = useScheduleJobs(true, active);
   const jobs = schedules.isSuccess ? parseScheduleJobs(schedules.data) : [];
   const reminders = jobs
     .filter((job) => job.kind === "at")
@@ -60,15 +65,25 @@ export function RemindersPanel({
   const [confirming, setConfirming] = useState(false);
 
   // Palette command "New reminder" bumps this counter from the view root;
-  // consuming it focuses the inline form (survives a tab switch via mount).
+  // the panel stays mounted across a tab switch (see PersonalOpsView) so this
+  // waits for `active` before focusing — the input cannot take real focus
+  // while its tab is display:none.
   const formRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (createSignal > 0) {
+    if (createSignal > 0 && active) {
       formRef.current?.focus();
       onCreateSignalConsumed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createSignal]);
+  }, [createSignal, active]);
+
+  // Auto-dismiss the confirm overlay when this tab is hidden behind another
+  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Tab/Escape globally. The draft text is untouched, so switching back
+  // leaves it exactly as typed (item 1).
+  useEffect(() => {
+    if (!active) setConfirming(false);
+  }, [active]);
 
   const create = useMutation({
     // automation.schedules.create is not confirm-gated on the wire; the

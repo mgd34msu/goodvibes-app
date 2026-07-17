@@ -520,6 +520,52 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 
 ---
 
+## 26. SDK 1.11 adoption (2026-07-17, 34 rows)
+
+The operator contract jumped 1.6.1 → 1.11.2 (333 → 415 methods, 82 new, none removed);
+daemon alignment via `@pellux/goodvibes-tui` 1.19.3 (the 1.9.2 pin bundled a contract-1.0.0
+daemon — every new verb would have answered 501). All rows below landed in one nine-agent
+wave + integration gate, live-verified against a spawned daemon 1.19.3.
+
+| # | Feature | Status | Evidence |
+|---|---|---|---|
+| 1 | Fleet best-of-N attempts (list / judge-as-proposal / pick) | SHIPPED | `FleetAttempts.tsx` → `gv.fleet.attempts.*` `[ws]`; pick checks `result.applied`, judge labeled "MODEL PROPOSAL" |
+| 2 | Fleet merge conflicts → resolution sessions | SHIPPED | `FleetConflicts.tsx` → `gv.fleet.conflicts.*` `[ws]`; conflictSessionId linked |
+| 3 | Fleet task graph (workstreams) | SHIPPED | `FleetTaskGraph.tsx` → `gv.fleet.graph.get`; vertical list, pool honesty (`null` ≠ 0) |
+| 4 | Observed external agents (visibility-only) + steer | SHIPPED | `FleetObservedDetail.tsx` → `gv.fleet.observed.steer` `[ws]`; no-channel = daemon reason verbatim, no dead button; live-verified with 2 real external agents detected |
+| 5 | ACP host third-party agents (Claude Code/Codex/opencode) | SHIPPED | `FleetHostAgent.tsx` → `gv.acp.agents.list`/`gv.acp.sessions.create` `[ws]`; directory picker constrained to known candidates |
+| 6 | Session changes review cockpit | SHIPPED | `SessionChanges.tsx` → `sessions.changes.get` `[ws]` with explicit checkpoints fallback |
+| 7 | Per-hunk revert + restore preview (confirm tokens) | SHIPPED | `checkpoints.revertHunkPreview`→token→`revertHunk`; `restorePreview` same idiom; refusals are 200s, handled |
+| 8 | Message-anchored rewind (plan/apply) | SHIPPED | `SessionRewind.tsx` → `gv.rewind.plan/apply` `[ws]`; per-part availability verbatim; conversation-undo honestly absent (no wire verb) |
+| 9 | Context-usage chip | SHIPPED | `ContextUsageChip.tsx`; hidden on `SESSION_NOT_LOCAL` (daemon-confirmed for companion sessions — designed) |
+| 10 | Per-session permission mode | SHIPPED | operator vocabulary; `custom` read-only, never offered |
+| 11 | Queued messages (list/edit/delete) | SHIPPED | polls 2s only during an active turn |
+| 12 | Single tool-call cancel (turn survives) | SHIPPED | `sessions.toolCalls.cancel`; removed only on tool_result frame |
+| 13 | CI status lookups + persistent watches + fix sessions | SHIPPED | `CiWatchesView.tsx` (new view, Code group); per-job verdicts never rolled up |
+| 14 | Proactive check-in (config/run/receipts) | SHIPPED | `CheckInView.tsx` (new view, Assistant group); enable confirm names channel/cadence/quiet-hours; distinct skip enums preserved |
+| 15 | Skills daemon CRUD | SHIPPED | `DaemonSkillsPanel.tsx` — first `skills.*` UI on any surface; progressive disclosure; live create/delete round-trip verified |
+| 16 | Principals (identity registry) CRUD + resolve probe | SHIPPED | `IdentitiesPanel.tsx` (Channels → Identities tab) |
+| 17 | Channel profiles (per-channel intake defaults) | SHIPPED | same panel; upsert on composite key |
+| 18 | Channel test send | SHIPPED | first `channels.test.send` surface on any GoodVibes client; `delivered:false` rendered verbatim, not thrown |
+| 19 | Per-device pairing tokens + handoff QR + posture | SHIPPED | `DevicesPairingSection.tsx`; QR via vendored Nayuki encoder (SDK pairing subpath is boundary-forbidden in the webview) |
+| 20 | Tailscale detect + serve | SHIPPED | nothing-when-unavailable; serve behind confirm; receipt verbatim |
+| 21 | Durable permission rules | SHIPPED | Approvals view section; `deleted:false` → info toast |
+| 22 | Power keep-awake + held chip | SHIPPED | one toggle (owner ruling: no timer/AC-only); StatusStrip chip only while held; `OPS_POWER_STATE_CHANGED` invalidation |
+| 23 | Memory-governor diagnostics | SHIPPED | ops tab; em-dash for unknown; `OPS_MEMORY_PRESSURE` invalidation |
+| 24 | Runtime metrics | SHIPPED | toolFormat byModel/byClass; honest not-observed states |
+| 25 | Quota snapshot + fan-out advisor | SHIPPED | `hasSignal:false` → no numbers, never zeros; advisory labeled |
+| 26 | Cost attribution with price provenance | SHIPPED | "price unknown" never $0.00; floors labeled; costSource/pricingAsOf absent = honest absence |
+| 27 | Flags graduation report | SHIPPED | first consumer of `flags.graduation.report` on any surface (webui/tui/agent all lack one) |
+| 28 | Memory projections + consolidation receipts | SHIPPED | MemoryView sections; proposals jump to review queue |
+| 29 | Workspace registrations + resolve | SHIPPED | WorktreesView section; checkpointEligible is its own explicit badge (absent = NO) |
+| 30 | Worktree setup rerun + discard | SHIPPED | discard receipt surfaces branch + preservedCommit (the guarantee is the feature) |
+| 31 | Local voice one-act install | SHIPPED | real per-component progress only while installing; honest enum rendering (`bundle-unavailable` labeled "not yet published") |
+| 32 | Feature settings renderer | SHIPPED | `FeatureSettingsSection.tsx` — closes the owner-flagged zero-flag-surface debt (40 units live); config-schema snapshot regenerated 1.3.3 → 1.11.2 (258 → 392 keys) |
+| 33 | Step-up WebAuthn ceremony | EXCLUDED | relay-only feature; this app talks to a localhost daemon with companion-token auth — no mutating relay path exists to gate |
+| 34 | Web-push subscription reconcile | EXCLUDED | requires a browser PushManager/service worker; the desktop app has no SW and already delivers native notifications |
+
+**Section 26 tally: 32 shipped, 0 partial, 0 missing, 2 excluded.**
+
 ## Summary table
 
 | § | Section | Shipped | Partial | Missing | Excluded | Rows |
@@ -548,7 +594,8 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 | 22 | Onboarding | 9 | 0 | 0 | — | 9 |
 | 23 | Palette & Keyboard | 8 | 0 | 0 | — | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | — | 4 |
-| — | **Total** | **287** | **2** | **0** | **0** | **289** |
+| 26 | SDK 1.11 adoption | 32 | 0 | 0 | 2 | 34 |
+| — | **Total** | **319** | **2** | **0** | **2** | **323** |
 
 Section 3 gained row 13 (fleet archive) when SDK 1.6.1 / operator contract 1.6 added the
 `fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` verbs (2026-07-09) —

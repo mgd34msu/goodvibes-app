@@ -38,6 +38,9 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
   const [tagsText, setTagsText] = useState("");
   const [requirementsText, setRequirementsText] = useState("");
   const [enabled, setEnabled] = useState(true);
+  // Closing a dirty form asks first instead of silently discarding it — item
+  // 1 (closing warns) from the friction checklist's registry-editor callout.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   // Re-seed the form whenever the modal opens for a (different) target.
   const targetId = routine?.id ?? "";
@@ -48,8 +51,18 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
     setTagsText(routine?.tags.join(", ") ?? "");
     setRequirementsText(routine?.requirements.join(", ") ?? "");
     setEnabled(routine ? routine.enabled : true);
+    setConfirmDiscard(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, targetId]);
+
+  const initialSteps = routine && routine.steps.length > 0 ? routine.steps : [""];
+  const dirty =
+    name !== (routine?.name ?? "") ||
+    steps.length !== initialSteps.length ||
+    steps.some((step, i) => step !== initialSteps[i]) ||
+    tagsText !== (routine?.tags.join(", ") ?? "") ||
+    requirementsText !== (routine?.requirements.join(", ") ?? "") ||
+    enabled !== (routine ? routine.enabled : true);
 
   function setStep(index: number, value: string): void {
     setSteps((current) => current.map((step, i) => (i === index ? value : step)));
@@ -88,9 +101,39 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
     });
   }
 
+  function requestClose(): void {
+    if (saving) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title={routine ? `Edit routine: ${routine.name}` : "New routine"} size="lg">
-      <form className="reg-form" onSubmit={handleSubmit}>
+    <Modal
+      open={open}
+      onClose={requestClose}
+      title={routine ? `Edit routine: ${routine.name}` : "New routine"}
+      size="lg"
+    >
+      {confirmDiscard ? (
+        <div className="reg-form__discard">
+          <p className="reg-form__discard-text">
+            Discard unsaved changes to {routine ? `"${routine.name}"` : "this new routine"}? The edited name,
+            steps, tags, and requirements will be lost.
+          </p>
+          <div className="reg-form__actions">
+            <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+              Keep editing
+            </button>
+            <button type="button" className="reg-button reg-button--danger" onClick={onClose}>
+              Discard changes
+            </button>
+          </div>
+        </div>
+      ) : (
+        <form className="reg-form" onSubmit={handleSubmit}>
         <label className="reg-form__field">
           <span className="reg-form__label">Name</span>
           <input
@@ -184,7 +227,7 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
         </label>
 
         <div className="reg-form__actions">
-          <button type="button" className="reg-button" onClick={onClose} disabled={saving}>
+          <button type="button" className="reg-button" onClick={requestClose} disabled={saving}>
             Cancel
           </button>
           <button type="submit" className="reg-button reg-button--primary" disabled={!valid || saving}>
@@ -192,6 +235,7 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
           </button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

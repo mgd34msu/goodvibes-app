@@ -875,7 +875,9 @@
 }
 
 .channels-test-result--fail {
-  border-color: var(--status-danger-soft);
+  /* Not-delivered is the normal, expected outcome of a probe the surface
+     rejected — informational, not an app error (friction item 9). */
+  border-color: var(--status-warning-soft);
 }
 
 .channels-test-result code {
@@ -885,7 +887,7 @@
 }
 
 .channels-test-result__error {
-  color: var(--status-danger);
+  color: var(--status-warning);
   overflow-wrap: anywhere;
 }
 

@@ -123,7 +123,10 @@ export function TestSendPanel() {
           }
           role="status"
         >
-          <span className={result.delivered ? "badge ok" : "badge bad"}>
+          {/* Not delivered is a real, expected result the surface reported —
+              informational (warning tone), never alarming "error" red: the
+              app resolved the probe fine, the surface just declined it. */}
+          <span className={result.delivered ? "badge ok" : "badge warning"}>
             {result.delivered ? "delivered" : "not delivered"}
           </span>
           <span className="channels-catalog__id">{result.surface}</span>

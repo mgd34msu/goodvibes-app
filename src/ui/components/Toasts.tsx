@@ -2,9 +2,11 @@
 // toasts move to the drawer behind a "+N more" button — the drawer is a real
 // notification list, nothing silently dropped (docs/UX.md §4).
 
+import { useEffect } from "react";
 import { useToastContext, useAutoDismiss, splitVisible, TOAST_EXIT_DURATION_MS } from "../lib/toast.ts";
 import type { ToastEntry, ToastTone } from "../lib/toast.ts";
 import { Presence } from "./motion.tsx";
+import { useFocusTrap } from "../lib/focus-trap.ts";
 
 /** alert (assertive) for warning/danger; status (polite) for info/success. */
 export function roleForTone(tone: ToastTone): "alert" | "status" {
@@ -69,6 +71,21 @@ export function Toast({ toast, onDismiss }: ToastProps) {
 export function ToastViewport() {
   const { toasts, leavingIds, drawerOpen, dismiss, dismissAll, setDrawerOpen } = useToastContext();
   const { visible, overflow } = splitVisible(toasts);
+  // Same focus-trap contract as Modal/PeekPanel/ShortcutCheatsheet: focuses
+  // the first control on open, cycles Tab inside, restores focus on close.
+  const drawerRef = useFocusTrap<HTMLDivElement>(drawerOpen);
+
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setDrawerOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [drawerOpen, setDrawerOpen]);
 
   return (
     <>
@@ -93,13 +110,20 @@ export function ToastViewport() {
       </div>
 
       {drawerOpen && (
-        <div className="toast-drawer" role="dialog" aria-label="Notification drawer">
+        <div
+          ref={drawerRef}
+          className="toast-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Notification drawer"
+          tabIndex={-1}
+        >
           <div className="toast-drawer__header">
             <h2 className="toast-drawer__title">Notifications ({toasts.length})</h2>
             <div className="toast-drawer__header-actions">
-              <button type="button" className="toast-drawer__clear" onClick={dismissAll}>
-                Clear all
-              </button>
+              {/* DOM order puts the non-destructive close button first so the
+                  focus trap's default focus (first focusable) never lands on
+                  "Clear all" — CSS `order` below restores the visual layout. */}
               <button
                 type="button"
                 className="toast-drawer__close"
@@ -107,6 +131,9 @@ export function ToastViewport() {
                 onClick={() => setDrawerOpen(false)}
               >
                 ×
+              </button>
+              <button type="button" className="toast-drawer__clear" onClick={dismissAll}>
+                Clear all
               </button>
             </div>
           </div>

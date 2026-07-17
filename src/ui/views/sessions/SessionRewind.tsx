@@ -68,6 +68,42 @@ function parsePlanPart(value: unknown): PlanPart | null {
     messagesRemaining: typeof record["messagesRemaining"] === "number" ? (record["messagesRemaining"] as number) : 0,
   };
 }
+/** The "this rewind would change" detail — rendered both in the plan preview
+ * and again inside the confirm dialog itself (checklist item 3: the full
+ * consequence has to be visible at the moment of consent, not just above a
+ * modal that may cover it). */
+function RewindPlanDetail({ scope, planResult }: { scope: RewindScope; planResult: RewindPlanResult }) {
+  return (
+    <>
+      <ul className="session-rewind__plan-list">
+        {(scope === "files" || scope === "both") && (
+          <li>
+            <strong>Files:</strong>{" "}
+            {planResult.files?.available
+              ? `restore ${planResult.files.affectedFileCount} file${planResult.files.affectedFileCount === 1 ? "" : "s"} from checkpoint "${planResult.files.checkpointLabel ?? planResult.files.checkpointId ?? "nearest"}"`
+              : "unavailable on this runtime — no workspace checkpoint store is wired."}
+          </li>
+        )}
+        {(scope === "conversation" || scope === "both") && (
+          <li>
+            <strong>Conversation:</strong>{" "}
+            {planResult.conversation?.available
+              ? `drop ${planResult.conversation.messagesToDrop} message${planResult.conversation.messagesToDrop === 1 ? "" : "s"}, keep ${planResult.conversation.messagesRemaining}`
+              : "unavailable on this runtime — no conversation store is wired for a rewind here."}
+          </li>
+        )}
+      </ul>
+      {planResult.warnings.length > 0 && (
+        <ul className="session-rewind__warnings" role="note">
+          {planResult.warnings.map((w, i) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
 interface RewindPlanResult {
   token: string | null;
   files: PlanPart | null;
@@ -311,31 +347,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
           {planResult && !receipt && (
             <div className="session-rewind__plan" role="group" aria-label="Rewind plan preview">
               <h4 className="session-rewind__plan-title">This rewind would change:</h4>
-              <ul className="session-rewind__plan-list">
-                {(scope === "files" || scope === "both") && (
-                  <li>
-                    <strong>Files:</strong>{" "}
-                    {planResult.files?.available
-                      ? `restore ${planResult.files.affectedFileCount} file${planResult.files.affectedFileCount === 1 ? "" : "s"} from checkpoint "${planResult.files.checkpointLabel ?? planResult.files.checkpointId ?? "nearest"}"`
-                      : "unavailable on this runtime — no workspace checkpoint store is wired."}
-                  </li>
-                )}
-                {(scope === "conversation" || scope === "both") && (
-                  <li>
-                    <strong>Conversation:</strong>{" "}
-                    {planResult.conversation?.available
-                      ? `drop ${planResult.conversation.messagesToDrop} message${planResult.conversation.messagesToDrop === 1 ? "" : "s"}, keep ${planResult.conversation.messagesRemaining}`
-                      : "unavailable on this runtime — no conversation store is wired for a rewind here."}
-                  </li>
-                )}
-              </ul>
-              {planResult.warnings.length > 0 && (
-                <ul className="session-rewind__warnings" role="note">
-                  {planResult.warnings.map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                </ul>
-              )}
+              <RewindPlanDetail scope={scope} planResult={planResult} />
               <button type="button" className="session-rewind__apply-btn" onClick={() => setConfirmApply(true)}>
                 <Undo2 size={14} aria-hidden="true" /> Rewind to this point…
               </button>
@@ -444,7 +456,9 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
             });
           }}
           onCancel={() => setConfirmApply(false)}
-        />
+        >
+          <RewindPlanDetail scope={scope} planResult={planResult} />
+        </ConfirmSurface>
       )}
 
       {/* Undo-the-file-restore flow: preview mints a token, then its own confirm. */}

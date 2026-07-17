@@ -6,10 +6,11 @@
 // config file that changes hook behavior everywhere still gets the confirm
 // treatment this app reserves for consequential actions.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, FileJson, RotateCcw, Save } from "lucide-react";
 import { useToast } from "../../lib/toast.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import {
@@ -34,25 +35,31 @@ function lineAndColumnAt(content: string, position: number): { line: number; col
 export function HooksSection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [draft, setDraft] = useState<string | null>(null);
+  const [draft, setDraft, draftControl] = useDraftState("automation.hooks-json", "");
   const [confirmSave, setConfirmSave] = useState(false);
   const [saveError, setSaveError] = useState<HooksSaveError | null>(null);
+  const syncedFromLoad = useRef(false);
 
   const file = useQuery({
     queryKey: hooksLocalKeys.file,
     queryFn: () => hooksApi.get(),
   });
 
-  // Sync the draft from a fresh load/reload — never clobber in-progress edits.
+  // Sync the draft from a fresh load/reload — never clobber a restored draft
+  // (a real unsaved edit that survived a remount) with server content.
   useEffect(() => {
-    if (file.data && draft === null) setDraft(file.data.content);
-  }, [file.data, draft]);
+    if (file.data && !syncedFromLoad.current) {
+      syncedFromLoad.current = true;
+      if (!draftControl.hadDraft) setDraft(file.data.content);
+    }
+  }, [file.data, draftControl.hadDraft, setDraft]);
 
   const save = useMutation({
     mutationFn: (content: string) => hooksApi.put(content),
     onSuccess: async () => {
       setConfirmSave(false);
       setSaveError(null);
+      draftControl.clear();
       await queryClient.invalidateQueries({ queryKey: hooksLocalKeys.file });
       toast({ title: "hooks.json saved", tone: "success" });
     },
@@ -79,9 +86,9 @@ export function HooksSection() {
     return <ErrorState error={file.error} onRetry={() => void file.refetch()} title="Failed to load hooks.json" />;
   }
 
-  const dirty = draft !== null && draft !== file.data.content;
+  const dirty = draft !== file.data.content;
   const position = saveError?.position;
-  const location = position !== undefined && draft !== null ? lineAndColumnAt(draft, position) : null;
+  const location = position !== undefined ? lineAndColumnAt(draft, position) : null;
 
   return (
     <section className="hooks-section" aria-label="Hooks">
@@ -99,7 +106,7 @@ export function HooksSection() {
 
           <textarea
             className="hooks-section__textarea"
-            value={draft ?? ""}
+            value={draft}
             onChange={(e) => {
               setDraft(e.target.value);
               setSaveError(null);
@@ -131,6 +138,7 @@ export function HooksSection() {
               disabled={!dirty}
               onClick={() => {
                 setDraft(file.data.content);
+                draftControl.clear();
                 setSaveError(null);
               }}
             >
@@ -171,9 +179,7 @@ export function HooksSection() {
         target={file.data.path}
         blastRadius="Overwrites the file on disk immediately. The daemon and TUI re-read it on their own schedule — hook behavior everywhere that reads this file changes as soon as they do."
         confirmLabel="Save"
-        onConfirm={() => {
-          if (draft !== null) save.mutate(draft);
-        }}
+        onConfirm={() => save.mutate(draft)}
         onCancel={() => setConfirmSave(false)}
       />
     </section>

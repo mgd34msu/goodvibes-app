@@ -10,6 +10,7 @@ import { CalendarClock, Pencil, Play, Plus, RefreshCw, Trash2 } from "lucide-rea
 import { gv } from "../../lib/gv.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { clearDraft } from "../../lib/drafts.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
@@ -95,8 +96,9 @@ export function JobsSection({ noun, methods, paramName, queryKey, onCreate, note
       if (!methods.update) throw new Error(`No update method for ${noun}s`);
       return gv.invoke(methods.update, { params: { [paramName]: id }, body });
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       setEditTarget(null);
+      clearDraft(`automation.job-edit.${variables.id}.prompt`);
       await invalidate();
       toast({ title: `Updated ${noun}`, tone: "success" });
     },
@@ -253,6 +255,8 @@ export function JobsSection({ noun, methods, paramName, queryKey, onCreate, note
         <Modal open={editTarget !== null} onClose={() => setEditTarget(null)} title={`Edit ${noun}`}>
           {editTarget && (
             <EditJobForm
+              key={editTarget.id}
+              entityId={editTarget.id}
               initialName={editTarget.name}
               initialPrompt={editTarget.description}
               submitting={update.isPending}

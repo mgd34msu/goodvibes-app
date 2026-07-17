@@ -519,7 +519,7 @@ function PrRow({ owner, repo, pr, onChanged }: { owner: string; repo: string; pr
   return (
     <li className="github-item">
       <button type="button" className="github-row" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
-        <span className="github-row__title">{pr.title}</span>
+        <span className="github-row__title" title={pr.title}>{pr.title}</span>
         <span className="github-row__meta">
           <span className={`badge ${badgeTone}`}>{stateLabel}</span>
           {pr.draft && <span className="badge neutral">draft</span>}
@@ -549,7 +549,7 @@ function IssueRow({ owner, repo, issue }: { owner: string; repo: string; issue: 
   return (
     <li className="github-item">
       <button type="button" className="github-row" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
-        <span className="github-row__title">{issue.title}</span>
+        <span className="github-row__title" title={issue.title}>{issue.title}</span>
         <span className="github-row__meta">
           <span className={`badge ${issue.state === "open" ? "ok" : "neutral"}`}>{issue.state}</span>
           #{issue.number}
@@ -613,12 +613,16 @@ function CommentBox({ itemLabel, postComment }: { itemLabel: string; postComment
       <ConfirmSurface
         open={confirming}
         action={`Comment on ${itemLabel}`}
-        target={body.trim().slice(0, 120) || "(empty)"}
+        target={itemLabel}
         blastRadius={`Posts a public comment on ${itemLabel} on GitHub — visible to anyone with access to the repo.`}
         confirmLabel={comment.isPending ? "Posting…" : "Post comment"}
         onConfirm={() => comment.mutate(body.trim())}
         onCancel={() => setConfirming(false)}
-      />
+      >
+        {/* Full comment text at the consent moment — never a truncated preview
+            hiding what is about to be published. */}
+        <pre className="github-confirm-preview">{body.trim() || "(empty)"}</pre>
+      </ConfirmSurface>
     </div>
   );
 }
@@ -705,7 +709,11 @@ function ReviewButtons({
           if (pendingEvent) review.mutate(pendingEvent);
         }}
         onCancel={() => setPendingEvent(null)}
-      />
+      >
+        {/* Full review comment at the consent moment, when there is one —
+            never a truncated preview hiding what is about to be published. */}
+        {body.trim() && <pre className="github-confirm-preview">{body.trim()}</pre>}
+      </ConfirmSurface>
     </div>
   );
 }

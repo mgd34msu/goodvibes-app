@@ -60,16 +60,28 @@ function slug(text: string): string {
 export interface PacketsPanelProps {
   /** Note id to scroll to + highlight (from the /note toast's jump link). */
   highlightNoteId?: string;
+  /** Whether the Packets & notes tab is the one currently showing — this
+   * panel stays mounted-but-hidden on the other Documents tabs, so its polls
+   * gate on this instead of running forever in the background (item 18). */
+  active: boolean;
 }
 
-export function PacketsPanel({ highlightNoteId }: PacketsPanelProps) {
+export function PacketsPanel({ highlightNoteId, active }: PacketsPanelProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const docsQuery = useQuery({ queryKey: docKeys.list, queryFn: listDocuments, refetchInterval: 30_000 });
+  const docsQuery = useQuery({
+    queryKey: docKeys.list,
+    queryFn: listDocuments,
+    refetchInterval: active ? 30_000 : false,
+  });
   const docs = useMemo(() => (docsQuery.data ?? []).map(documentFrom).filter((d) => d.id), [docsQuery.data]);
 
-  const notesQuery = useQuery({ queryKey: docKeys.allNotes, queryFn: listAllNotes, refetchInterval: 30_000 });
+  const notesQuery = useQuery({
+    queryKey: docKeys.allNotes,
+    queryFn: listAllNotes,
+    refetchInterval: active ? 30_000 : false,
+  });
   const notes = notesQuery.data ?? [];
   const packets = useMemo(() => packetsFrom(notes), [notes]);
   const presets = useMemo(() => presetsFrom(notes), [notes]);

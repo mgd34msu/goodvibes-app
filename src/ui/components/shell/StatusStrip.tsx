@@ -236,7 +236,9 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
 
       {daemonVersion !== null && (
         <div className="status-strip__segment status-strip__segment--right status-strip__segment--model">
-          <span className="status-strip__label status-strip__label--mono">daemon v{daemonVersion}</span>
+          <span className="status-strip__label status-strip__label--mono" title={`daemon v${daemonVersion}`}>
+            daemon v{daemonVersion}
+          </span>
         </div>
       )}
     </footer>

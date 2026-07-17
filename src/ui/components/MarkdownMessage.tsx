@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, Copy } from "lucide-react";
 import { highlightCode } from "../lib/highlight.ts";
+import { useToast } from "../lib/toast.ts";
 
 function codeElementFromChildren(children: ReactNode) {
   const child = Array.isArray(children) ? children[0] : children;
@@ -41,6 +42,11 @@ interface CodeBlockProps {
 
 function CodeBlock({ children, lineNumbers }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  // MarkdownMessage renders under App.tsx's single ToastProvider (App.tsx:21,
+  // wrapping AppShell — every view in this app's one React tree) regardless
+  // of which view hosts this code block, so a toast is a safe, visible way
+  // to surface a clipboard failure.
+  const { toast } = useToast();
   const language = languageFromCodeChild(children);
   const code = codeTextFromChildren(children);
   const visibleCode = code.endsWith("\n") ? code.slice(0, -1) : code;
@@ -50,9 +56,21 @@ function CodeBlock({ children, lineNumbers }: CodeBlockProps) {
 
   async function copyCode() {
     if (!code) return;
-    await navigator.clipboard?.writeText(code);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1300);
+    if (!navigator.clipboard) {
+      toast({ title: "Copy failed", description: "Clipboard access isn't available in this window.", tone: "danger" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1300);
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: error instanceof Error ? error.message : "The browser blocked the clipboard write.",
+        tone: "danger",
+      });
+    }
   }
 
   return (

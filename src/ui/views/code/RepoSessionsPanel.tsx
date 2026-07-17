@@ -114,7 +114,7 @@ export function RepoSessionsPanel({ workspaceDir }: { workspaceDir: string }) {
                 onClick={() => setUrlState({ view: "sessions", session: row.id })}
                 title={`project: ${row.project}`}
               >
-                <span className="repo-sessions__title">{row.title}</span>
+                <span className="repo-sessions__title" title={row.title}>{row.title}</span>
                 <span className="repo-sessions__meta">
                   <span className="badge neutral">{row.kind}</span>
                   <span className={`badge ${row.status === "closed" ? "neutral" : "ok"}`}>{row.status}</span>

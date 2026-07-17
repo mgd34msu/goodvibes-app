@@ -8,7 +8,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2 } from "lucide-react";
+import { Check, Copy, Link2 } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
@@ -29,6 +29,34 @@ import {
   type MemoryRecord,
   type MemoryScope,
 } from "./memory-wire.ts";
+
+/** Copyable id — linking two records (below) needs the target's raw id, and
+ * this is the only place that id is ever shown, so it must be selectable
+ * without retyping (item 12: never make the operator retype what the app
+ * just displayed). */
+function CopyId({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <span className="memory-copy">
+      <code className="memory-copy__value" title={value}>
+        {value}
+      </code>
+      <button
+        type="button"
+        className="memory-copy__button"
+        aria-label={`Copy ${label}`}
+        onClick={() => {
+          void navigator.clipboard.writeText(value).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          });
+        }}
+      >
+        {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+      </button>
+    </span>
+  );
+}
 
 export function MemoryRecordPeek({ initial }: { initial: MemoryRecord }) {
   const queryClient = useQueryClient();
@@ -68,6 +96,12 @@ export function MemoryRecordPeek({ initial }: { initial: MemoryRecord }) {
       <section className="memory-record-detail__section">
         <h3>{record.summary}</h3>
         <dl className="memory-record-detail__facts">
+          <div>
+            <dt>Id</dt>
+            <dd>
+              <CopyId value={record.id} label="record id" />
+            </dd>
+          </div>
           <div>
             <dt>Type</dt>
             <dd>
@@ -359,7 +393,7 @@ function LinksSection({ record }: { record: MemoryRecord }) {
               return (
                 <li key={`${link.fromId}-${link.relation}-${link.toId}-${index}`}>
                   <span className="badge info">{outgoing ? link.relation : `⟵ ${link.relation}`}</span>{" "}
-                  <code className="memory-record-detail__link-id">{otherId}</code>
+                  <CopyId value={otherId} label="linked record id" />
                   {link.createdAt !== undefined && (
                     <span className="memory-record-detail__link-time"> · {formatTimestamp(link.createdAt)}</span>
                   )}

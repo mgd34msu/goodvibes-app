@@ -11,6 +11,7 @@ import { Plug, Plus, RefreshCw, RotateCw, Search, Wrench } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { formatError, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { clearDraft } from "../../lib/drafts.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
@@ -100,6 +101,7 @@ export function McpView(): React.ReactElement {
   const upsert = useMutation({
     mutationFn: (payload: ServerEditorSubmit) => gv.invoke("mcp.servers.upsert", { body: payload }),
     onSuccess: async (result, payload) => {
+      clearDraft(`mcp.server-editor.${editTarget?.name ?? "new"}`);
       setEditorOpen(false);
       setEditTarget(null);
       await invalidate();
@@ -420,6 +422,7 @@ export function McpView(): React.ReactElement {
       />
 
       <ServerEditorModal
+        key={editorOpen ? (editTarget?.name ?? "new") : "closed"}
         open={editorOpen}
         existing={editTarget}
         saving={upsert.isPending}

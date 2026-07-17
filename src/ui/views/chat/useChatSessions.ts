@@ -39,7 +39,17 @@ export interface UseChatSessionsReturn {
   deletePending: boolean;
 }
 
-export function useChatSessions(): UseChatSessionsReturn {
+export interface UseChatSessionsOptions {
+  /** Gate the fallback poll below on the caller's own visibility signal
+   * (ChatView is a keep-alive view — this hook stays mounted, and React
+   * Query's refetchInterval only pauses for document/window visibility, not
+   * an ancestor's display:none, so the caller has to say so explicitly;
+   * checklist item 18). Defaults to true so other callers are unaffected. */
+  pollingEnabled?: boolean;
+}
+
+export function useChatSessions(options: UseChatSessionsOptions = {}): UseChatSessionsReturn {
+  const { pollingEnabled = true } = options;
   const queryClient = useQueryClient();
   const [localSessions, setLocalSessions] = useState<unknown[]>(() => readStoredCompanionSessions());
 
@@ -48,8 +58,9 @@ export function useChatSessions(): UseChatSessionsReturn {
     queryFn: () => gv.chat.sessions.list(),
     // Companion-chat emits NO wire event for external mutations (verified
     // against the live daemon 2026-07-07): sessions created by other surfaces
-    // never invalidate. Honest fallback poll, same rationale as fleet.
-    refetchInterval: 15_000,
+    // never invalidate. Honest fallback poll, same rationale as fleet — but
+    // only while the caller says this is actually visible.
+    refetchInterval: pollingEnabled ? 15_000 : false,
   });
 
   const fetchedSessions = useMemo(() => companionSessionsFromListResponse(sessions.data), [sessions.data]);

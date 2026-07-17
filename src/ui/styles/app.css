@@ -448,6 +448,10 @@ a {
   padding: var(--space-6);
   background: rgb(0 0 0 / 0.6);
   backdrop-filter: blur(6px);
+  /* Non-modal overlay (aria-modal="false"): the workspace underneath stays
+     mounted and readable — pointer events pass through everywhere except the
+     panel itself, so scrolling/inspecting a draft behind the gate still works. */
+  pointer-events: none;
 }
 
 .daemon-gate__panel {
@@ -460,6 +464,7 @@ a {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--elevation-4);
+  pointer-events: auto;
 }
 
 .daemon-gate__title {

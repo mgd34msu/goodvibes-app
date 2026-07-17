@@ -86,6 +86,17 @@ export function CheckpointsView() {
     retry: false,
   });
 
+  // Restore always overwrites the CURRENT working tree, regardless of what
+  // compareToId the detail pane happens to be showing — so the confirm's
+  // preview is its OWN working-tree diff, never whatever comparison the
+  // pane is mid-browsing (never show the wrong diff at the consent moment).
+  const restoreDiff = useQuery({
+    queryKey: [...queryKeys.checkpoints, restoreTarget?.id ?? "", "diff", "working-tree"],
+    queryFn: () => gv.checkpoints.diff({ a: restoreTarget?.id ?? "" }),
+    enabled: restoreTarget !== null,
+    retry: false,
+  });
+
   const create = useMutation({
     mutationFn: () => {
       const trimmed = labelDraft.trim();
@@ -264,7 +275,9 @@ export function CheckpointsView() {
           if (restoreTarget) restore.mutate({ checkpoint: restoreTarget, meta });
         }}
         onCancel={() => setRestoreTarget(null)}
-      />
+      >
+        {restoreTarget && <RestoreDiffPreview query={restoreDiff} />}
+      </ConfirmSurface>
     </div>
   );
 }
@@ -380,6 +393,44 @@ function CheckpointDetail({
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── restore confirm: full working-tree diff, never a truncated summary ─────
+
+/** What restoring this checkpoint would actually do to the CURRENT working
+ * tree, rendered in full at the moment of consent — never just the worded
+ * blast-radius sentence with the real change hidden behind it. */
+function RestoreDiffPreview({
+  query,
+}: {
+  query: { isPending: boolean; isError: boolean; error: unknown; isSuccess: boolean; data: unknown };
+}) {
+  const parsed = useMemo(() => (query.isSuccess ? parseCheckpointDiff(query.data) : null), [query.isSuccess, query.data]);
+  return (
+    <div className="confirm-surface__diff-preview">
+      <strong className="confirm-surface__diff-preview-label">What restoring will change (vs. the working tree)</strong>
+      {query.isPending && <SkeletonBlock variant="text" lines={4} />}
+      {query.isError && (
+        <p className="git-honest-note" role="note">
+          Could not load the diff this restore would apply — the blast-radius description above still holds.
+        </p>
+      )}
+      {parsed &&
+        (parsed.files.length === 0 ? (
+          <p className="git-honest-note" role="note">
+            No file differences from the working tree — restoring will not change anything on disk.
+          </p>
+        ) : (
+          <>
+            <p className="checkpoint-detail__diff-files">
+              {parsed.files.length} file{parsed.files.length === 1 ? "" : "s"} will be overwritten:{" "}
+              {parsed.files.join(", ")}
+            </p>
+            {parsed.unifiedDiff && <pre className="checkpoint-detail__diff-pre">{parsed.unifiedDiff}</pre>}
+          </>
+        ))}
     </div>
   );
 }

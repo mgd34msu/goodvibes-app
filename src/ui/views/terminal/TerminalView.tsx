@@ -256,7 +256,9 @@ function TabButton({
           }
           aria-hidden="true"
         />
-        <span className="terminal-tab__title">{controller.emulator.title || controller.summary.title}</span>
+        <span className="terminal-tab__title" title={controller.emulator.title || controller.summary.title}>
+          {controller.emulator.title || controller.summary.title}
+        </span>
         {!controller.alive && (
           <span className="terminal-tab__exit">
             {controller.signal ? controller.signal : `exit ${controller.exitCode ?? "?"}`}

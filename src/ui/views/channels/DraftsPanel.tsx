@@ -13,6 +13,7 @@ import { invoke } from "../../lib/gv.ts";
 import { formatError } from "../../lib/errors.ts";
 import { compactJson } from "../../lib/wire.ts";
 import { useToast } from "../../lib/toast.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
@@ -121,7 +122,12 @@ export function DraftsPanel() {
                     <StatusBadge value={draft.status} />
                     {draft.sendError && <span className="badge bad">send failed</span>}
                   </span>
-                  <span className="channels-catalog__desc">{draft.message.slice(0, 160)}</span>
+                  {/* Truncated preview of unbounded draft text — full text is
+                      one click away via View, plus title= for a hover peek. */}
+                  <span className="channels-catalog__desc" title={draft.message || undefined}>
+                    {draft.message.slice(0, 160)}
+                    {draft.message.length > 160 ? "…" : ""}
+                  </span>
                   <span className="channels-audit__meta">
                     {draft.channel && <code>channel {draft.channel}</code>}
                     {draft.route && <code>route {draft.route}</code>}
@@ -202,7 +208,10 @@ function DraftEditModal({
 
   const base = editing?.draft;
   const [title, setTitle] = useState(base?.title ?? "");
-  const [message, setMessage] = useState(base?.message ?? "");
+  // Message is the field worth persisting — this component remounts (key=
+  // editing.draft.id on the parent) each time the modal opens/closes, so the
+  // draft key only needs to be stable for this instance's lifetime.
+  const [message, setMessage, messageDraft] = useDraftState(`channels.draft.${base?.id ?? "new"}.message`, base?.message ?? "");
   const [channel, setChannel] = useState(base?.channel ?? "");
   const [route, setRoute] = useState(base?.route ?? "");
   const [link, setLink] = useState(base?.link ?? "");
@@ -237,6 +246,7 @@ function DraftEditModal({
     },
     onSuccess: async () => {
       setConfirming(false);
+      messageDraft.clear();
       await queryClient.invalidateQueries({ queryKey: channelsKeys.all });
       toast({ title: editing?.isNew ? "Draft created" : "Draft saved", tone: "success" });
       onClose();

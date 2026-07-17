@@ -14,10 +14,11 @@
 // goodvibes-tui/daemon concept this app does not implement — the skills list
 // is shown for reference only and is NOT auto-enabled/disabled on activate.
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Code2, FlaskConical, PenLine, Plus, Power, Sparkles, Trash2 } from "lucide-react";
 import { formatError } from "../../lib/errors.ts";
+import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { useToast } from "../../lib/toast.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
@@ -147,6 +148,19 @@ export function ProfilesPanel() {
   const { toast } = useToast();
   const [editor, setEditor] = useState<EditorTarget>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProfileItem | null>(null);
+
+  // Palette command scoped to this panel's own mount — only registered while
+  // the Profiles tab is actually showing (item 19: keyboard access).
+  useEffect(() => {
+    registerCommand({
+      id: "routines.newProfile",
+      title: "Profiles: New Profile",
+      group: "assistant",
+      keywords: ["profile", "preset", "persona", "vibe"],
+      run: () => setEditor({ mode: "create", template: blankTemplate() }),
+    });
+    return () => unregisterCommand("routines.newProfile");
+  }, []);
 
   const list = useQuery({
     queryKey: regKeys.collection("profiles"),
@@ -396,19 +410,50 @@ function ProfileEditorModal({
   const [draft, setDraft] = useState<ProfileDraft>(
     initialDraft ?? { name: "", description: "", template: "custom", personaDescription: "", personaPrompt: "", skillsText: "", vibeContent: "" },
   );
+  // Closing a dirty form asks first instead of silently discarding it — item
+  // 1 (closing warns) from the friction checklist's registry-editor callout.
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   // Re-seed the local form whenever a fresh target opens (template or edit target changes).
   const key = initialDraft ? JSON.stringify(initialDraft) : "";
   const [seenKey, setSeenKey] = useState(key);
   if (open && key !== seenKey) {
     setSeenKey(key);
+    setConfirmDiscard(false);
     setDraft(
       initialDraft ?? { name: "", description: "", template: "custom", personaDescription: "", personaPrompt: "", skillsText: "", vibeContent: "" },
     );
   }
 
+  const dirty = JSON.stringify(draft) !== key;
+
+  function requestClose(): void {
+    if (saving) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onClose();
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title="Profile" size="lg">
+    <Modal open={open} onClose={requestClose} title="Profile" size="lg">
+      {confirmDiscard ? (
+        <div className="reg-form__discard">
+          <p className="reg-form__discard-text">
+            Discard unsaved changes to {draft.name.trim() ? `"${draft.name.trim()}"` : "this profile"}? Every
+            edited field, including the persona snapshot and VIBE.md content, will be lost.
+          </p>
+          <div className="reg-form__actions">
+            <button type="button" className="reg-button" onClick={() => setConfirmDiscard(false)}>
+              Keep editing
+            </button>
+            <button type="button" className="reg-button reg-button--danger" onClick={onClose}>
+              Discard changes
+            </button>
+          </div>
+        </div>
+      ) : (
       <form
         className="profile-editor"
         onSubmit={(e) => {
@@ -457,7 +502,7 @@ function ProfileEditorModal({
           <textarea rows={6} value={draft.vibeContent} onChange={(e) => setDraft({ ...draft, vibeContent: e.target.value })} />
         </label>
         <div className="profile-editor__actions">
-          <button type="button" className="reg-button" onClick={onClose}>
+          <button type="button" className="reg-button" onClick={requestClose}>
             Cancel
           </button>
           <button type="submit" className="reg-button reg-button--primary" disabled={saving || !draft.name.trim()}>
@@ -465,6 +510,7 @@ function ProfileEditorModal({
           </button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

@@ -58,14 +58,15 @@ interface UnifiedRow {
   hasAttachment: boolean;
 }
 
-export function UnifiedInboxPanel() {
-  const email = useEmailInbox();
+export function UnifiedInboxPanel({ active = true }: { active?: boolean }) {
+  const email = useEmailInbox(true, active);
   const channels = useQuery({
     queryKey: ["personal-ops", "unified-inbox", "channels"],
     queryFn: () => gv.invoke("channels.inbox.list", { query: { limit: 50 } }),
     // No wire event for channels inbox in this composed view — 30s poll,
-    // matching the email side's cadence.
-    refetchInterval: 30_000,
+    // matching the email side's cadence. Paused while this tab is hidden
+    // behind another Personal Ops tab (item 18).
+    refetchInterval: active ? 30_000 : false,
     retry: false,
   });
 
@@ -154,11 +155,13 @@ export function UnifiedInboxPanel() {
               <span className="po-unified-inbox__from" title={row.from}>
                 {row.from || "(unknown sender)"}
               </span>
-              <span className="po-unified-inbox__subject">
+              <span className="po-unified-inbox__subject" title={row.subject || "(no subject)"}>
                 {row.subject || "(no subject)"}
                 {row.hasAttachment && <Paperclip size={12} aria-hidden="true" />}
               </span>
-              <span className="po-unified-inbox__preview">{row.preview}</span>
+              <span className="po-unified-inbox__preview" title={row.preview}>
+                {row.preview}
+              </span>
               <span className="po-unified-inbox__when">
                 {row.when ? new Date(row.when).toLocaleString() : ""}
               </span>

@@ -11,13 +11,14 @@
 // — freshness comes from mutation-driven invalidation plus ChannelsView's
 // manual refresh, same posture as fleet.*/checkpoints.*/ci.*.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
+import { clearDraft, useDraftState } from "../../lib/drafts.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { QueryPanel } from "./QueryPanel.tsx";
@@ -72,6 +73,7 @@ export function PrincipalsPanel() {
     mutationFn: (input: PrincipalInput) => gv.principals.create(input),
     onSuccess: async () => {
       setFormState(null);
+      clearDraft("channels.principal.new.identities");
       await invalidate();
       toast({ title: "Principal created", tone: "success" });
     },
@@ -82,8 +84,9 @@ export function PrincipalsPanel() {
   const update = useMutation({
     mutationFn: ({ principalId, input }: { principalId: string; input: PrincipalInput }) =>
       gv.principals.update(principalId, input),
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       setFormState(null);
+      clearDraft(`channels.principal.${variables.principalId}.identities`);
       await invalidate();
       toast({ title: "Principal updated", tone: "success" });
     },
@@ -187,6 +190,7 @@ export function PrincipalsPanel() {
       </QueryPanel>
 
       <PrincipalFormModal
+        key={formState?.mode === "edit" ? formState.principal.id : formState?.mode === "create" ? "create" : "none"}
         state={formState}
         submitting={create.isPending || update.isPending}
         onSubmit={handleSubmit}
@@ -223,17 +227,14 @@ function PrincipalFormModal({
   const editing = state?.mode === "edit" ? state.principal : null;
   const [name, setName] = useState(editing?.name ?? "");
   const [kind, setKind] = useState<string>(editing?.kind ?? "user");
-  const [identitiesDraft, setIdentitiesDraft] = useState(editing ? identitiesToDraft(editing.identities) : "");
-
-  // Reset the draft whenever a different form target opens (new create, or a
-  // different principal to edit) — never carry stale text across targets.
-  const resetKey = editing?.id ?? (state?.mode === "create" ? "create" : "none");
-  useEffect(() => {
-    setName(editing?.name ?? "");
-    setKind(editing?.kind ?? "user");
-    setIdentitiesDraft(editing ? identitiesToDraft(editing.identities) : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
+  // The identities textarea is the field worth persisting — a hand-typed list
+  // of "channel:value" lines a user would grieve retyping. This component
+  // remounts per form target (key on the parent, PrincipalsPanel), so a
+  // stable per-entity key is enough; no manual reset effect needed.
+  const [identitiesDraft, setIdentitiesDraft] = useDraftState(
+    `channels.principal.${editing?.id ?? "new"}.identities`,
+    editing ? identitiesToDraft(editing.identities) : "",
+  );
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();

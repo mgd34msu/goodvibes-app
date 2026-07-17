@@ -26,6 +26,23 @@ export function CheckInConfigForm({ config, onSaved, onCancel }: CheckInConfigFo
   const [deliveryChannel, setDeliveryChannel] = useState(config.deliveryChannel);
   const [quietHours, setQuietHours] = useState(config.quietHours);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Closing a dirty form asks first instead of silently discarding the edits
+  // — item 1 (closing warns) from the friction checklist.
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+
+  const dirty =
+    enabled !== config.enabled ||
+    cadence !== config.cadence ||
+    deliveryChannel !== config.deliveryChannel ||
+    quietHours !== config.quietHours;
+
+  function requestCancel(): void {
+    if (dirty) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    onCancel();
+  }
 
   const save = useMutation({
     mutationFn: () => gv.checkin.config.set({ enabled, cadence, deliveryChannel, quietHours }),
@@ -83,11 +100,24 @@ export function CheckInConfigForm({ config, onSaved, onCancel }: CheckInConfigFo
           <button type="submit" className="checkin-button checkin-button--primary" disabled={save.isPending}>
             {save.isPending ? "Saving…" : "Save"}
           </button>
-          <button type="button" className="checkin-button" onClick={onCancel} disabled={save.isPending}>
+          <button type="button" className="checkin-button" onClick={requestCancel} disabled={save.isPending}>
             Cancel
           </button>
         </div>
       </form>
+
+      <ConfirmSurface
+        open={confirmDiscardOpen}
+        action="Discard unsaved changes"
+        target="check-in configuration"
+        blastRadius="The edited enabled/cadence/channel/quiet-hours values above will be lost; the saved configuration is untouched."
+        confirmLabel="Discard changes"
+        onCancel={() => setConfirmDiscardOpen(false)}
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          onCancel();
+        }}
+      />
 
       <ConfirmSurface
         open={confirmOpen}

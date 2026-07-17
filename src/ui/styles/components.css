@@ -594,9 +594,7 @@
   margin: 0;
   font-weight: var(--weight-medium);
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .toast__description {
@@ -708,7 +706,11 @@
   gap: var(--space-2);
 }
 
+/* Visual order keeps "Clear all" before the close button; DOM order is
+   reversed (Toasts.tsx) so the drawer's focus trap defaults to the
+   non-destructive close control, not "Clear all". */
 .toast-drawer__clear {
+  order: 1;
   background: transparent;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -723,6 +725,7 @@
 }
 
 .toast-drawer__close {
+  order: 2;
   background: transparent;
   border: none;
   color: var(--text-tertiary);

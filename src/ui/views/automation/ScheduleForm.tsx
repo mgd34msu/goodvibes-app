@@ -25,6 +25,7 @@ import {
   type DeliveryPolicyDraft,
 } from "./delivery-targets.ts";
 import { compactJson } from "../../lib/wire.ts";
+import { useDraftState } from "../../lib/drafts.ts";
 
 export type ScheduleKind = "cron" | "every" | "at";
 
@@ -59,7 +60,10 @@ const KIND_LABELS: Record<ScheduleKind, string> = {
 export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleFormProps) {
   const uid = useId();
   const [name, setName] = useState("");
-  const [prompt, setPrompt] = useState("");
+  // Prompt and raw delivery JSON are the fields a user would grieve losing to
+  // an accidental modal close — persisted as drafts; cleared by the caller on
+  // successful create (see AutomationView's `create` mutation onSuccess).
+  const [prompt, setPrompt] = useDraftState(`automation.schedule-form.${noun}.prompt`, "");
   const [kind, setKind] = useState<ScheduleKind>("cron");
   const [cron, setCron] = useState("0 9 * * 1-5");
   const [timezone, setTimezone] = useState(localTimezone());
@@ -70,7 +74,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
   const [enabled, setEnabled] = useState(true);
   const [deliveryDraft, setDeliveryDraft] = useState<DeliveryPolicyDraft>(emptyDeliveryPolicy);
   const [deliveryRawMode, setDeliveryRawMode] = useState(false);
-  const [deliveryJson, setDeliveryJson] = useState("");
+  const [deliveryJson, setDeliveryJson] = useDraftState(`automation.schedule-form.${noun}.delivery-json`, "");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const timezones = useMemo(() => timezoneOptions(), []);
@@ -387,12 +391,15 @@ export interface JobEditBody {
 }
 
 export function EditJobForm({
+  entityId,
   initialName,
   initialPrompt,
   submitting,
   onSubmit,
   onCancel,
 }: {
+  /** The job/schedule id — scopes the persisted prompt draft to this entity. */
+  entityId: string;
   initialName: string;
   initialPrompt: string;
   submitting: boolean;
@@ -401,7 +408,10 @@ export function EditJobForm({
 }) {
   const uid = useId();
   const [name, setName] = useState(initialName);
-  const [prompt, setPrompt] = useState(initialPrompt);
+  // Prompt is the field worth persisting across an accidental close; name is
+  // short enough that losing it is no loss. Cleared by the caller on
+  // successful update (see JobsSection's `update` mutation onSuccess).
+  const [prompt, setPrompt] = useDraftState(`automation.job-edit.${entityId}.prompt`, initialPrompt);
 
   const dirty = name !== initialName || prompt !== initialPrompt;
 

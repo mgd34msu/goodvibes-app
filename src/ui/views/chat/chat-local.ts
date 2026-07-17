@@ -137,6 +137,41 @@ export function toggleBookmark(sessionId: string, messageId: string, snippet: st
   return true;
 }
 
+// ─── Composer draft (per session; survives an app restart, not just a view
+// switch inside the keep-alive chat tree — friction checklist item 1) ────────
+
+const DRAFTS_KEY = "goodvibes.app.chat.drafts";
+const MAX_DRAFTS = 50;
+const NEW_CHAT_DRAFT_KEY = "__new__";
+
+function readDraftMap(): Record<string, string> {
+  const parsed = readJson<unknown>(DRAFTS_KEY, {});
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (typeof value === "string" && value) out[key] = value;
+  }
+  return out;
+}
+
+/** Read the composer draft saved for a session ("" reads the not-yet-created
+ * new-chat draft). */
+export function readDraft(sessionId: string): string {
+  return readDraftMap()[sessionId || NEW_CHAT_DRAFT_KEY] ?? "";
+}
+
+/** Save (or, for empty text, clear) the composer draft for a session.
+ * Bounded to MAX_DRAFTS entries (checklist item 14: no unbounded growth) —
+ * the oldest-touched entry is evicted first once the cap is exceeded. */
+export function writeDraft(sessionId: string, text: string): void {
+  const key = sessionId || NEW_CHAT_DRAFT_KEY;
+  const map = readDraftMap();
+  delete map[key]; // drop-then-reinsert so this key counts as most-recently-touched
+  if (text) map[key] = text;
+  const bounded = Object.fromEntries(Object.entries(map).slice(-MAX_DRAFTS));
+  writeJson(DRAFTS_KEY, bounded);
+}
+
 // ─── Display prefs ───────────────────────────────────────────────────────────
 
 const LINE_NUMBERS_KEY = "goodvibes.app.chat.lineNumbers";

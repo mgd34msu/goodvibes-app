@@ -80,7 +80,7 @@ function CiReportDetail({ report }: { report: CiReport }) {
         <ul className="ci-report__jobs">
           {report.jobs.map((job, index) => (
             <li key={`${job.name}-${index}`} className="ci-report__job">
-              <span className="ci-report__job-name">{job.name || "unnamed job"}</span>
+              <span className="ci-report__job-name" title={job.name || "unnamed job"}>{job.name || "unnamed job"}</span>
               <span className={`badge ${ciTone(job.conclusion ?? job.status)}`}>{job.conclusion ?? job.status}</span>
               {job.continueOnError && <span className="badge warning">continue-on-error</span>}
               {job.url && (
@@ -435,7 +435,7 @@ export function CiWatchesView() {
                   className={watch.id === selectedId ? "ci-row active" : "ci-row"}
                   onClick={() => selectWatch(watch)}
                 >
-                  <span className="ci-row__title">{watchLabel(watch)}</span>
+                  <span className="ci-row__title" title={watchLabel(watch)}>{watchLabel(watch)}</span>
                   <span className="ci-row__badges">
                     {watch.lastOverall && <span className={`badge ${ciTone(watch.lastOverall)}`}>{watch.lastOverall}</span>}
                     {watch.triggerFixSession && <span className="badge warning">fix-session on failure</span>}

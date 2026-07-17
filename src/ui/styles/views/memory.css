@@ -552,10 +552,6 @@
   overflow-wrap: anywhere;
 }
 
-.memory-record-detail__link-id {
-  font-size: var(--text-xs);
-}
-
 .memory-record-detail__link-time {
   color: var(--text-tertiary);
   font-size: var(--text-xs);
@@ -565,6 +561,38 @@
   margin: 0;
   font-size: var(--text-sm);
   color: var(--text-tertiary);
+}
+
+/* Copyable id chip (record id, linked record ids) — the operator should
+ * never have to retype an id the app already displayed (friction item 12). */
+.memory-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.memory-copy__value {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 340px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.memory-copy__button {
+  display: inline-flex;
+  padding: 2px;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.memory-copy__button:hover {
+  color: var(--text-accent);
 }
 
 .memory-link-form {

@@ -91,7 +91,7 @@ interface ActiveRun {
 const POLL_MS = 2_500;
 const REPLY_DEADLINE_MS = 180_000;
 
-export function CompareLab() {
+export function CompareLab({ active }: { active: boolean }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -234,11 +234,13 @@ export function CompareLab() {
       toast({ title: "config.set failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Past judgments — app-local registry, no wire events: 30s poll.
+  // Past judgments — app-local registry, no wire events: 30s poll while this
+  // tab is the one showing (stays mounted-but-hidden on the other Documents
+  // tabs, so the poll itself must gate — item 18).
   const notesQuery = useQuery({
     queryKey: docKeys.compareNotes,
     queryFn: listNotes,
-    refetchInterval: 30_000,
+    refetchInterval: active ? 30_000 : false,
     retry: false,
   });
   const judgments = useMemo(

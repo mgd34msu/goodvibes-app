@@ -5,7 +5,7 @@
 // state; the authoritative result reconciles off the session-update-driven
 // refetch. Ported from goodvibes-webui src/views/sessions/SteerComposer.tsx.
 
-import { useState, type KeyboardEvent, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type SyntheticEvent } from "react";
 import { SendHorizontal } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { gv } from "../../lib/gv.ts";
@@ -13,6 +13,7 @@ import { queryKeys } from "../../lib/queries.ts";
 import { formatCombo } from "../../lib/keybindings.ts";
 import { formatError, isSessionClosedError } from "../../lib/errors.ts";
 import { APP_SURFACE_ID, APP_SURFACE_KIND } from "./sessions-union.ts";
+import { readSteerDraft, writeSteerDraft } from "./steer-local.ts";
 
 export type DispatchMode = "steer" | "followUp";
 export type DeliveryState = "queued" | "delivered" | "failed";
@@ -48,8 +49,38 @@ function shouldSubmitKey(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
 
 export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: SteerComposerProps) {
   const queryClient = useQueryClient();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => readSteerDraft(sessionId));
   const [dispatches, setDispatches] = useState<LocalDispatch[]>([]);
+  const textRef = useRef(text);
+  textRef.current = text;
+  const debounceTimerRef = useRef<number | null>(null);
+
+  // This component is reused across a session pick in the master/detail list
+  // (no `key`, so it never remounts on selection change) and SessionsView
+  // itself unmounts on a view switch — load the newly-selected session's own
+  // draft, and flush the outgoing one first so it isn't lost (the cleanup
+  // below runs with the OLD sessionId still closed over, right before this
+  // effect re-runs with the new one, and on unmount).
+  useEffect(() => {
+    setText(readSteerDraft(sessionId));
+    return () => writeSteerDraft(sessionId, textRef.current);
+  }, [sessionId]);
+
+  const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    setText(value);
+    // Debounced persistence for an abrupt app close mid-typing — targets the
+    // sessionId in scope at keystroke time, so a session switch mid-debounce
+    // can never write into the wrong slot.
+    if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = window.setTimeout(() => writeSteerDraft(sessionId, value), 400);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const mode: DispatchMode = canSteer ? "steer" : "followUp";
 
@@ -87,6 +118,8 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
     const id = `dispatch-${++dispatchSeq}`;
     setDispatches((current) => [{ id, mode, text: body, state: "queued" as const }, ...current].slice(0, 20));
     setText("");
+    if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current);
+    writeSteerDraft(sessionId, "");
     mutation.mutate({ id, body });
   }
 
@@ -119,7 +152,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
         <textarea
           className="steer-composer__input"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={handleTextChange}
           placeholder={
             closed ? "This session is closed." : mode === "steer" ? "Inject a mid-turn steer…" : "Queue a follow-up turn…"
           }
