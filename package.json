@@ -1,6 +1,6 @@
 {
   "name": "goodvibes-app",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "GoodVibes desktop app — the unified GUI for the GoodVibes ecosystem (tui + agent feature set) on Bun + Electrobun.",
