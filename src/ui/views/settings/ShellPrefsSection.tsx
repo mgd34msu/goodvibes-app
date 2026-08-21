@@ -140,6 +140,7 @@ const COMMAND_LABELS: Record<string, string> = {
   "nav.personas": "Go to Personas",
   "nav.skills": "Go to Skills",
   "nav.personal-ops": "Go to Personal Ops",
+  "nav.dates": "Go to Dates",
   "nav.git": "Go to Git",
   "nav.diff": "Go to Diff",
   "nav.worktrees": "Go to Worktrees",

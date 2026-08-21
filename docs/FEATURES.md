@@ -200,6 +200,27 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Unified inbox (channels + email merged) | agent | `channels.inbox.list` + `email.inbox.list` | planned | triage decorations preserved |
 | Reminders | agent | `automation.schedules.create` (kind=at) | planned | |
 
+## 9b. Dates (occasions, gift interviews, plans)
+
+The occasions domain, top-level view `dates` (Assistant group). Every write lands as one
+line in the owner profile and goes through that file's write gate, so `confirm` takes
+surface + a verbatim `said` + authority exactly as `profile.set/append` do.
+
+| Feature | Source | Backing | Status | Notes |
+|---|---|---|---|---|
+| Important dates list with countdown | agent | `occasions.list` | shipped | the one verb that carries dates; `daysUntil`/`inLeadWindow` are read, never recomputed (the daemon owns `daemon.timezone`) |
+| Add a date: preview then confirm | agent | `occasions.propose` → `occasions.confirm` | shipped | propose writes nothing; kind is required and never inferred (`needsKind`); preview freshness is derived from the draft |
+| Remove a date | agent | `occasions.remove` | shipped | daemon's own two-step: `confirmed:false` returns the sentence, which becomes the confirm sheet's blast radius; dangerous |
+| Answer an occurrence (yes / no / later) | agent | `occasions.answer` | shipped | a yes on a gift-giving occasion returns the interview's first question inline |
+| Acknowledge ("I have this in hand") | agent | `occasions.acknowledge` | shipped | not a yes and not a no: the item stays open and enumerable, only the push stops; the daemon's reply is rendered verbatim |
+| Gift interview: resume, answer, record | agent | `occasions.interview.get/.answer/.record` | shipped | conversational card flow; `complete` and `nextStep` are read together, since every question answered still leaves `complete:false` until the outcome is recorded |
+| Gift history peek | agent | `occasions.gifts` | shipped | read-only; a record is written only by closing an interview |
+| Outstanding items, pulled not pushed | agent | `occasions.pending` | shipped | nudge + conflicts + mid-thread interviews; carries the person and a proximity word, never a date |
+| Date conflicts | agent | `occasions.list` conflicts + `occasions.conflict.resolve` | shipped | never resolved automatically; `resolved:false` means nothing was being raised, reported as that and not as a failure |
+| Plans (ambient dated ranges) | agent | `occasions.plans.list/.propose/.confirm` | shipped | never prompts; `away` is opt-in, never assumed |
+| Approach sweep on demand | agent | `occasions.sweep` | shipped | `hold:"quiet-hours"` / `hold:"disabled"` named against `occasions.activeHours` / `occasions.enabled`; per-destination delivery results |
+| Store state disclosure | agent | `occasions.state` | shipped | counts and reasons only, no answer/gift/date/name; the one part of the view safe in a support bundle |
+
 ## 10. Research
 
 | Feature | Source | Backing | Status | Notes |

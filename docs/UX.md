@@ -34,7 +34,8 @@ Left sidebar (collapsible to icon rail, 264px/60px), grouped:
 - **Work**: Chat · Sessions · Fleet · Approvals
 - **Automate**: Automation (jobs/schedules/runs) · Watchers · Channels
 - **Know**: Knowledge · Memory · Artifacts · Research · Documents
-- **Assistant**: Home (briefing/away-digest/coming-up) · Routines · Personas · Skills · Personal Ops
+- **Assistant**: Home (briefing/away-digest/coming-up) · Routines · Personas · Skills · Personal Ops ·
+  Check-in · Dates (important dates, gift interviews, plans)
 - **Code**: Git · Diff · Worktrees · Checkpoints · Terminal
 - **System**: Observability · Providers & Models · MCP · Settings
 

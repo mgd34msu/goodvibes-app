@@ -32,6 +32,7 @@ export const DEFAULT_KEYBINDINGS: Readonly<Record<string, string>> = {
   "nav.personas": "g p",
   "nav.skills": "g l",
   "nav.personal-ops": "g i",
+  "nav.dates": "g j",
   "nav.git": "g g",
   "nav.diff": "g x",
   "nav.worktrees": "g y",

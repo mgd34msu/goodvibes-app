@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-/** The 26 sidebar views (docs/UX.md §2 information architecture). */
+/** The sidebar views (docs/UX.md §2 information architecture). */
 export type ViewId =
   // Work
   | "chat"
@@ -29,6 +29,7 @@ export type ViewId =
   | "skills"
   | "personal-ops"
   | "checkin"
+  | "dates"
   // Code
   | "git"
   | "diff"
@@ -62,6 +63,7 @@ export const ALL_VIEW_IDS: readonly ViewId[] = [
   "skills",
   "personal-ops",
   "checkin",
+  "dates",
   "git",
   "diff",
   "worktrees",

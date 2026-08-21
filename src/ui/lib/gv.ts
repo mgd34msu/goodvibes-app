@@ -642,6 +642,53 @@ export const gv = {
     undo: (body: unknown) => invoke("profile.undo", { body }),
   },
 
+  /**
+   * Occasions: the owner's important dates, his plans, the gift interviews and
+   * the machine-owned state kept against them. Seventeen verbs, all plain HTTP.
+   *
+   * The two confirms write a line into the owner profile, so they go through
+   * the SAME write gate profile.set/append do and take surface + a verbatim
+   * `said` + authority; remove is gated on authority alone. Callers build those
+   * bodies in views/dates/dates-data.ts, at the site that can make the claim
+   * honestly, exactly as the profile namespace above does.
+   *
+   * Reads split by what they carry. list() is the one verb that returns DATES,
+   * and it is the owner asking his own system what it holds. pending() and
+   * sweep() deliberately do not: a nudge names the occasion and the person and
+   * says "approaching" or "imminent" instead of a count of days. state() is
+   * counts only, with no answer, gift or date anywhere in its shape.
+   */
+  occasions: {
+    list: () => invoke("occasions.list"),
+    pending: () => invoke("occasions.pending"),
+    state: () => invoke("occasions.state"),
+    propose: (body: unknown) => invoke("occasions.propose", { body }),
+    confirm: (body: unknown) => invoke("occasions.confirm", { body }),
+    // Takes exactly one confirmation and no more. A confirmed:false call
+    // returns the sentence to put to the owner and removes nothing. dangerous.
+    remove: (body: unknown) => invoke("occasions.remove", { body }),
+    // yes / no / later all RESOLVE the open item. To say "I have this in hand"
+    // without ending the question, use acknowledge instead.
+    answer: (body: unknown) => invoke("occasions.answer", { body }),
+    acknowledge: (body: unknown) => invoke("occasions.acknowledge", { body }),
+    // Stops a RAISED conflict being re-raised. Never picks a date: two dates
+    // for one thing means only the owner knows which was right.
+    conflictResolve: (occasionId: string) =>
+      invoke("occasions.conflict.resolve", { body: { occasionId } }),
+    gifts: (occasionId: string) => invoke("occasions.gifts", { body: { occasionId } }),
+    sweep: () => invoke("occasions.sweep", { body: {} }),
+    interview: {
+      get: (interviewId: string) => invoke("occasions.interview.get", { body: { interviewId } }),
+      answer: (body: unknown) => invoke("occasions.interview.answer", { body }),
+      record: (body: unknown) => invoke("occasions.interview.record", { body }),
+    },
+    plans: {
+      list: () => invoke("occasions.plans.list"),
+      propose: (body: unknown) => invoke("occasions.plans.propose", { body }),
+      confirm: (body: unknown) => invoke("occasions.plans.confirm", { body }),
+    },
+  },
+
   artifacts: {
     list: (query?: QueryParams) => invoke("artifacts.list", { query }),
     get: (artifactId: string) => invoke("artifacts.get", { params: { artifactId } }),

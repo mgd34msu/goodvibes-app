@@ -13,6 +13,7 @@ import {
   Bot,
   Brain,
   CalendarClock,
+  CalendarHeart,
   CircleGauge,
   CheckCircle2,
   Eye,
@@ -53,7 +54,11 @@ export const VIEW_GROUPS: readonly ViewGroupDef[] = [
   { id: "work", label: "Work", views: ["chat", "sessions", "fleet", "approvals"] },
   { id: "automate", label: "Automate", views: ["automation", "watchers", "channels"] },
   { id: "know", label: "Know", views: ["knowledge", "memory", "artifacts", "research", "documents"] },
-  { id: "assistant", label: "Assistant", views: ["home", "routines", "personas", "skills", "personal-ops", "checkin"] },
+  {
+    id: "assistant",
+    label: "Assistant",
+    views: ["home", "routines", "personas", "skills", "personal-ops", "checkin", "dates"],
+  },
   { id: "code", label: "Code", views: ["git", "diff", "worktrees", "checkpoints", "ci", "terminal"] },
   { id: "system", label: "System", views: ["observability", "providers", "mcp", "peers", "settings"] },
 ];
@@ -188,6 +193,16 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     icon: BellRing,
     keepAlive: false,
     Component: lazy(() => import("./checkin/CheckInView.tsx").then((m) => ({ default: m.CheckInView }))),
+  },
+  // keepAlive: the add-a-date and add-a-plan forms hold a typed draft plus a
+  // returned proposal that nothing else can reproduce, and an interview reply
+  // in progress is the owner mid-sentence. Dropping any of those on a view
+  // switch is the friction the keep-alive policy exists for.
+  dates: {
+    title: "Dates",
+    icon: CalendarHeart,
+    keepAlive: true,
+    Component: lazy(() => import("./dates/DatesView.tsx").then((m) => ({ default: m.DatesView }))),
   },
   // Code, Wave B
   git: {

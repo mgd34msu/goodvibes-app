@@ -248,6 +248,43 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 9 tally: 9 shipped, 0 partial, 0 missing.** Wave F closed row 1 (briefing now includes `deliveries.list`) and row 8 (unified channels+email inbox).
 
+## 9b. Dates / occasions (12 rows)
+
+New section, added with the Dates view. Backing ids checked against
+`src/ui/lib/generated/operator-routes.ts` (17 occasions verbs, all reachable through
+`gv.occasions.*`) and every row live-verified against a scratch daemon
+(`@pellux/goodvibes-daemon` 1.28.19 / sdk 2.0.17) in an isolated home, driven through the
+app's own call path rather than curl.
+
+| # | Feature | Status | Evidence |
+|---|---|---|---|
+| 1 | Important dates list with countdown | SHIPPED | `UpcomingDatesPanel.tsx` → `occasions.list`; parsed by `dates-data.ts` `parseOccasionsList` |
+| 2 | Add a date (preview then confirm) | SHIPPED | `UpcomingDatesPanel.tsx` propose/confirm mutations → `occasions.propose` / `occasions.confirm`; write gate built by `buildOccasionConfirmInput` |
+| 3 | Remove a date | SHIPPED | `UpcomingDatesPanel.tsx` `askRemoval`/`confirmRemoval` → `occasions.remove`, the daemon's `confirmed:false` sentence feeding `ConfirmSurface` |
+| 4 | Answer an occurrence | SHIPPED | `UpcomingDatesPanel.tsx` and `OpenItemsPanel.tsx` → `occasions.answer` |
+| 5 | Acknowledge an occurrence | SHIPPED | both panels → `occasions.acknowledge`, source `explicit`; reply rendered verbatim |
+| 6 | Gift interview (get / answer / record) | SHIPPED | `InterviewCard.tsx` → `occasions.interview.get/.answer/.record`; stage rule in `dates-data.ts` `interviewStage` |
+| 7 | Gift history | SHIPPED | `GiftHistoryPeek.tsx` → `occasions.gifts`, opened as a peek from a gift-giving row |
+| 8 | Outstanding items (pull path) | SHIPPED | `OpenItemsPanel.tsx` → `occasions.pending` |
+| 9 | Date conflicts | SHIPPED | `UpcomingDatesPanel.tsx` (from `occasions.list`) and `OpenItemsPanel.tsx` (raised) → `occasions.conflict.resolve` |
+| 10 | Plans | SHIPPED | `PlansPanel.tsx` → `occasions.plans.list/.propose/.confirm` |
+| 11 | Approach sweep | SHIPPED | `OccasionsStatePanel.tsx` → `occasions.sweep`; holds named against their config keys by `sweepHoldNote` |
+| 12 | Store state disclosure | SHIPPED | `OccasionsStatePanel.tsx` → `occasions.state` |
+
+**Section 9b tally: 12 shipped, 0 partial, 0 missing.** All 17 occasions verbs are
+reachable from a rendered view.
+
+Two daemon behaviours are worked around here rather than papered over, both measured:
+`occasions.confirm` appends with no duplicate check and `occasions.propose` reports
+nothing for an exact repeat (`conflictsWith: []`), while the resulting twin line is
+invisible to `occasions.list` and makes `occasions.remove` refuse with "2 lines in
+Important dates read exactly that ... edit the file directly". `UpcomingDatesPanel`
+therefore reads the list before every confirm and refuses locally
+(`findExistingOccasion` / `duplicateWriteRefusal`). Separately, an interview reply
+cannot be refused by the daemon (a re-answer and an unknown `stepId` both return
+`present:true`), so the card states plainly that a reply replaces any earlier answer for
+that question rather than implying a refusal path exists.
+
 ## 10. Research (7 rows)
 
 | # | Feature | Status | Evidence |

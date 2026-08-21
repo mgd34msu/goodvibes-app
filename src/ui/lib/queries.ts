@@ -79,6 +79,18 @@ export const queryKeys = {
   // Conversation-rewind hosts: which surface is offering which session's
   // conversation. No wire event either; read on demand and on mutation.
   rewindHosts: ["rewind", "conversation-hosts"] as const,
+  // Occasions (the Dates view). occasions.* emits NO wire event, so the whole
+  // prefix is invalidated on any mutation: one answer can resolve an open
+  // item, open an interview, and change what the state counts say, and the
+  // four reads must not disagree afterwards. Gift history is nested under the
+  // same prefix but keyed per occasion, so opening one occasion's history does
+  // not evict another's.
+  occasions: ["occasions"] as const,
+  occasionsList: ["occasions", "list"] as const,
+  occasionsPlans: ["occasions", "plans"] as const,
+  occasionsPending: ["occasions", "pending"] as const,
+  occasionsState: ["occasions", "state"] as const,
+  occasionsGifts: (occasionId: string) => ["occasions", "gifts", occasionId] as const,
   artifacts: ["artifacts"] as const,
   automation: ["automation"] as const,
   watchers: ["watchers"] as const,
