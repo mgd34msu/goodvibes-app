@@ -32,6 +32,10 @@ import { NotificationsSection } from "./NotificationsSection.tsx";
 import { NotificationTargetsSection } from "./NotificationTargetsSection.tsx";
 import { AppLaunchSection } from "./AppLaunchSection.tsx";
 import { DaemonUpdateSection } from "./DaemonUpdateSection.tsx";
+import { RewindHostsSection } from "./RewindHostsSection.tsx";
+import { DeviceNodesSection } from "./DeviceNodesSection.tsx";
+import { DeviceGrantsSection } from "./DeviceGrantsSection.tsx";
+import { DeviceCapturesSection } from "./DeviceCapturesSection.tsx";
 import { OwnerProfileSection } from "./OwnerProfileSection.tsx";
 import { ProfilesSection } from "./ProfilesSection.tsx";
 import { flashSection, searchSettings, type SettingsSectionId } from "./settings-search.ts";
@@ -48,6 +52,11 @@ const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string }> = [
   { id: "sync", label: "Sync & storage" },
   { id: "secrets", label: "Secrets & Services" },
   { id: "notifications", label: "Notifications" },
+  // Paired phones, the capabilities they offer, the durable grants that let
+  // them run without asking again, and the captures they sent back. One tab,
+  // because a person asking "what can my phone do for this, and what has it
+  // already sent" is asking one question.
+  { id: "devices", label: "Devices" },
   { id: "launch", label: "App & Launch" },
   // "Owner profile" is what the daemon knows about the person using it; the
   // "Profiles & Import" tab below is app-local settings bundles. Two different
@@ -182,10 +191,18 @@ export function SettingsView(): React.ReactElement {
           <NotificationTargetsSection />
         </>
       )}
+      {section === "devices" && (
+        <>
+          <DeviceNodesSection />
+          <DeviceGrantsSection />
+          <DeviceCapturesSection />
+        </>
+      )}
       {section === "launch" && (
         <>
           <AppLaunchSection />
           <DaemonUpdateSection />
+          <RewindHostsSection />
         </>
       )}
       {section === "owner-profile" && <OwnerProfileSection />}

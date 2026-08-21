@@ -2048,3 +2048,302 @@
   font-size: var(--text-xs);
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------------------
+   Devices: paired nodes, the capability request form, durable grants, and the
+   retained captures viewer.
+   --------------------------------------------------------------------------- */
+
+.settings-devices,
+.settings-device-grants,
+.settings-device-captures,
+.settings-rewind-hosts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.settings-devices__policy {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.settings-devices__policy dt {
+  color: var(--text-tertiary);
+}
+
+.settings-devices__policy dd {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.settings-devices__nodes,
+.settings-device-grants__list,
+.settings-device-captures__list,
+.settings-rewind-hosts__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-devices__node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-devices__node-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.settings-devices__contract {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-devices__contract--bad {
+  color: var(--status-danger);
+}
+
+.settings-devices__node-detail,
+.settings-device-grants__detail,
+.settings-device-captures__detail,
+.settings-rewind-hosts__detail {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-devices__caps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.settings-devices__caps-label {
+  color: var(--text-tertiary);
+}
+
+.settings-devices__caps-why {
+  flex-basis: 100%;
+  color: var(--text-tertiary);
+}
+
+.settings-devices__cap {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.settings-devices__caps--gated .settings-devices__cap {
+  background: var(--status-warning-soft);
+  color: var(--status-warning);
+}
+
+.settings-devices__caps--unknown .settings-devices__cap {
+  background: var(--status-info-soft);
+  color: var(--status-info);
+  font-family: var(--font-mono);
+}
+
+.settings-devices__request {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-devices__request h3 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.settings-devices__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.settings-devices__hint,
+.settings-devices__purpose {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-devices__purpose {
+  margin: 0;
+}
+
+.settings-devices__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--status-info-soft);
+  color: var(--status-info);
+  font-size: var(--text-xs);
+}
+
+.settings-devices__problem {
+  margin: 0;
+  color: var(--status-danger);
+  font-size: var(--text-sm);
+}
+
+.settings-devices__malformed,
+.settings-devices__outcome,
+.settings-device-grants__sweep,
+.settings-rewind-hosts__posture,
+.settings-rewind-hosts__note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-devices__outcome--ok {
+  background: var(--status-success-soft);
+  color: var(--status-success);
+}
+
+.settings-devices__outcome--info {
+  background: var(--status-info-soft);
+  color: var(--status-info);
+}
+
+.settings-devices__outcome--warning,
+.settings-device-grants__sweep--warning {
+  background: var(--status-warning-soft);
+  color: var(--status-warning);
+}
+
+.settings-devices__outcome-artifact {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+/* Payload that came off someone's phone. Rendered as text, wrapped, and never
+   allowed to widen the settings pane. */
+.settings-devices__outcome-data,
+.settings-device-captures__text {
+  max-height: 18rem;
+  margin: 0;
+  overflow: auto;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.settings-device-grants__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.settings-device-grants__description,
+.settings-device-captures__description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-device-grants__row,
+.settings-device-captures__row,
+.settings-rewind-hosts__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-device-grants__audit ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+}
+
+.settings-device-grants__audit li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+}
+
+.settings-device-captures__reason {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.settings-device-captures__viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+
+.settings-device-captures__viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.settings-device-captures__viewer-note {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-device-captures__image {
+  max-width: 100%;
+  max-height: 32rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  object-fit: contain;
+}
+
+.settings-rewind-hosts__state {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.settings-rewind-hosts__row--lapsed .settings-rewind-hosts__state {
+  color: var(--status-warning);
+}

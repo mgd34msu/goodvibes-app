@@ -20,8 +20,9 @@
     "generate:presentation": "bun scripts/generate-presentation-tokens.ts",
     "generate:config-schema": "bun scripts/generate-config-schema.ts",
     "generate:feature-settings": "bun scripts/generate-feature-settings.ts",
-    "generate": "bun run generate:routes && bun run generate:presentation && bun run generate:config-schema && bun run generate:feature-settings",
-    "generate:check": "bun scripts/generate-operator-routes.ts --check && bun scripts/generate-presentation-tokens.ts --check && bun scripts/generate-config-schema.ts --check && bun scripts/generate-feature-settings.ts --check",
+    "generate:device-capabilities": "bun scripts/generate-device-capabilities.ts",
+    "generate": "bun run generate:routes && bun run generate:presentation && bun run generate:config-schema && bun run generate:feature-settings && bun run generate:device-capabilities",
+    "generate:check": "bun scripts/generate-operator-routes.ts --check && bun scripts/generate-presentation-tokens.ts --check && bun scripts/generate-config-schema.ts --check && bun scripts/generate-feature-settings.ts --check && bun scripts/generate-device-capabilities.ts --check",
     "verify": "bun run typecheck && bun run check:boundaries && bun run generate:check && bun test"
   },
   "dependencies": {

@@ -339,6 +339,86 @@ export const gv = {
   rewind: {
     plan: (body: unknown) => invoke("rewind.plan", { body }), // [ws]
     apply: (body: unknown) => invoke("rewind.apply", { body }), // [ws] dangerous
+
+    /**
+     * The surface-facing half of conversation rewind: a process that is RUNNING
+     * a session's conversation offers it, and the daemon asks that process when
+     * a rewind touches the session. All five are [ws].
+     *
+     * This app calls exactly one of them, hosts.list, and the restraint is the
+     * point. It holds no conversation of its own (companion chat and hosted
+     * sessions live in the daemon, a tui session lives in that terminal), so it
+     * could only ever answer `unavailable`. Registering anyway would be strictly
+     * worse than staying out: register() without a hostId CLAIMS the session and
+     * evicts whoever actually holds it, and a host that never answers turns a
+     * 4ms honest "unavailable" into a 20s wait for the same answer (measured
+     * against a scratch daemon, see views/settings/rewind-hosts.ts).
+     *
+     * The other four stay wired because they are the client half of a real
+     * contract and were verified live against that daemon; a surface in this
+     * process that ever does hold messages needs them, and the SDK ships the
+     * polling loop (platform/runtime/client/conversation-rewind-host.ts) for the
+     * Bun side to drive. Until such a surface exists, do not call them.
+     */
+    conversation: {
+      hosts: {
+        list: () => invoke("rewind.conversation.hosts.list", { body: {} }), // [ws]
+      },
+      host: {
+        // Re-registering with the returned hostId RENEWS; registering without
+        // one replaces the current host and answers its pending requests
+        // unavailable. Only for a caller holding the session's messages.
+        register: (body: unknown) => invoke("rewind.conversation.host.register", { body }), // [ws]
+        // Only the registered host may release its own session; 409 otherwise.
+        release: (sessionId: string, hostId: string) =>
+          invoke("rewind.conversation.host.release", { body: { sessionId, hostId } }), // [ws]
+      },
+      requests: {
+        // A long poll that also renews the lease: a surface that is polling is a
+        // surface that is alive. An empty result is a normal answer.
+        take: (body: unknown) => invoke("rewind.conversation.requests.take", { body }), // [ws]
+        // The expected fields follow from the REQUEST's kind, never from the
+        // caller; a non-empty unavailableReason answers either kind. Answering
+        // late, or answering a request put to someone else, is a 409.
+        answer: (body: unknown) => invoke("rewind.conversation.requests.answer", { body }), // [ws]
+      },
+    },
+  },
+
+  /**
+   * Paired device nodes (today, a phone) as an agent tool. All seven verbs are
+   * plain HTTP. This app is the CONSUMER end: it sees what is paired, asks for a
+   * capability, reads back what came, and manages the durable grants and the
+   * retained captures. The phone is the end that serves.
+   *
+   * Every gate lives in the daemon-owned device runtime and none of them is
+   * re-decided here: the confirmation prompt, the durable-grant lookup, the
+   * input check, the retention window and the disclosure all belong to it.
+   *
+   * capabilityRequest() answers HTTP 200 with ok:false when the person holding
+   * the device declines. That is an ANSWER, not a fault, so callers must read
+   * `ok` rather than treating a resolved promise as success.
+   */
+  devices: {
+    nodes: {
+      list: () => invoke("devices.nodes.list"),
+    },
+    // The `reason` is required and is shown VERBATIM on the phone's prompt.
+    capabilityRequest: (body: unknown) => invoke("devices.capability.request", { body }),
+    artifacts: {
+      list: (query?: QueryParams) => invoke("devices.artifacts.list", { query }),
+      // Returns the bytes base64-encoded, for a caller that is not on the daemon
+      // host. A capture that is gone (expired, swept, missing, or failing its
+      // digest re-check) is an honest 404 naming which of those it was.
+      read: (artifactId: string) => invoke("devices.artifacts.read", { params: { artifactId } }),
+    },
+    grants: {
+      list: (query?: QueryParams) => invoke("devices.grants.list", { query }),
+      // Revoked grants are removed rather than flagged, so the next request for
+      // that capability asks the person again. Check `revoked`, not just HTTP ok.
+      revoke: (body: unknown) => invoke("devices.grants.revoke", { body }),
+    },
+    housekeepingRun: () => invoke("devices.housekeeping.run", { body: {} }),
   },
 
   ci: {

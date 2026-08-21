@@ -22,13 +22,18 @@
 // Ported in spirit from goodvibes-webui src/views/sessions/SessionRewind.tsx.
 
 import { useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { History, Undo2 } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
+import { queryKeys } from "../../lib/queries.ts";
 import { formatError } from "../../lib/errors.ts";
 import { asRecord } from "../../lib/wire.ts";
 import { useToast } from "../../lib/toast.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
+import {
+  conversationRewindPosture,
+  readConversationRewindHosts,
+} from "../settings/rewind-hosts.ts";
 import { turnAnchorsFromMessages } from "./rewind-model.ts";
 
 export interface SessionRewindProps {
@@ -72,7 +77,16 @@ function parsePlanPart(value: unknown): PlanPart | null {
  * and again inside the confirm dialog itself (checklist item 3: the full
  * consequence has to be visible at the moment of consent, not just above a
  * modal that may cover it). */
-function RewindPlanDetail({ scope, planResult }: { scope: RewindScope; planResult: RewindPlanResult }) {
+function RewindPlanDetail({
+  scope,
+  planResult,
+  conversationPosture,
+}: {
+  scope: RewindScope;
+  planResult: RewindPlanResult;
+  /** Which surface, if any, is offering this session's conversation. */
+  conversationPosture: { tone: "ok" | "info" | "warning"; text: string };
+}) {
   return (
     <>
       <ul className="session-rewind__plan-list">
@@ -89,7 +103,17 @@ function RewindPlanDetail({ scope, planResult }: { scope: RewindScope; planResul
             <strong>Conversation:</strong>{" "}
             {planResult.conversation?.available
               ? `drop ${planResult.conversation.messagesToDrop} message${planResult.conversation.messagesToDrop === 1 ? "" : "s"}, keep ${planResult.conversation.messagesRemaining}`
-              : "unavailable on this runtime: no conversation store is wired for a rewind here."}
+              : "unavailable"}
+            {/* An unavailable conversation has more than one cause, and they
+                have different fixes: nobody offered the session and the daemon
+                is not running it either, or a surface claimed it and then
+                stopped answering. The plan's own warning names which; this row
+                names WHO, from the host registry. */}
+            {!planResult.conversation?.available && (
+              <span className={`session-rewind__conversation-host session-rewind__conversation-host--${conversationPosture.tone}`}>
+                {conversationPosture.text}
+              </span>
+            )}
           </li>
         )}
       </ul>
@@ -223,6 +247,25 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
 
   const anchors = useMemo(() => turnAnchorsFromMessages(rawMessages), [rawMessages]);
 
+  // Only fetched once the section is open: an unavailable conversation half is
+  // the one case this answers, and asking for it on every collapsed session
+  // detail would be a ws call nobody reads.
+  const hosts = useQuery({
+    queryKey: queryKeys.rewindHosts,
+    queryFn: () => gv.rewind.conversation.hosts.list(),
+    retry: false,
+    enabled: expanded,
+    // A lease can lapse while the panel stays open; without a refresh the
+    // posture keeps promising a host that has stopped polling.
+    refetchInterval: 30_000,
+  });
+  // A failed or unfetched host read is `null`, which posture() reports as "this
+  // app could not check", never as "no surface is offering it".
+  const conversationPosture = useMemo(
+    () => conversationRewindPosture(hosts.data ? readConversationRewindHosts(hosts.data) : null, sessionId),
+    [hosts.data, sessionId],
+  );
+
   const plan = useMutation({
     mutationFn: () =>
       gv.rewind.plan({ sessionId, scope, ...(anchorTurnId ? { turnId: anchorTurnId } : {}) }),
@@ -347,7 +390,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
           {planResult && !receipt && (
             <div className="session-rewind__plan" role="group" aria-label="Rewind plan preview">
               <h4 className="session-rewind__plan-title">This rewind would change:</h4>
-              <RewindPlanDetail scope={scope} planResult={planResult} />
+              <RewindPlanDetail scope={scope} planResult={planResult} conversationPosture={conversationPosture} />
               <button type="button" className="session-rewind__apply-btn" onClick={() => setConfirmApply(true)}>
                 <Undo2 size={14} aria-hidden="true" /> Rewind to this point…
               </button>
@@ -457,7 +500,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
           }}
           onCancel={() => setConfirmApply(false)}
         >
-          <RewindPlanDetail scope={scope} planResult={planResult} />
+          <RewindPlanDetail scope={scope} planResult={planResult} conversationPosture={conversationPosture} />
         </ConfirmSurface>
       )}
 

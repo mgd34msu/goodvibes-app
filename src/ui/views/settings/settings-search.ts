@@ -23,6 +23,7 @@ export type SettingsSectionId =
   | "sync"
   | "secrets"
   | "notifications"
+  | "devices"
   | "launch"
   | "owner-profile"
   | "profiles";
@@ -61,10 +62,17 @@ const CURATED: ReadonlyArray<Omit<SettingsSearchEntry, "keywords">> = [
   { sectionId: "notifications", sectionLabel: "Notifications", label: "Batching cadence", anchorSelector: ".settings-notify" },
   { sectionId: "notifications", sectionLabel: "Notifications", label: "Quiet while typing", anchorSelector: ".settings-notify" },
   { sectionId: "notifications", sectionLabel: "Notifications", label: "Per-domain verbosity", anchorSelector: ".settings-notify" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Paired phones and what they offer", anchorSelector: ".settings-devices" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Ask a phone for a photo or its screen", anchorSelector: ".settings-devices" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Ask a phone for its location or clipboard", anchorSelector: ".settings-devices" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Always-allow grants (revoke)", anchorSelector: ".settings-device-grants" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Run device housekeeping now", anchorSelector: ".settings-device-grants" },
+  { sectionId: "devices", sectionLabel: "Devices", label: "Retained captures from a phone", anchorSelector: ".settings-device-captures" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Stop daemon on quit", anchorSelector: ".settings-launch" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Launch at login", anchorSelector: ".settings-launch" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Daemon update status (staged / rolled back)", anchorSelector: ".settings-daemon-update" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Check for a daemon update now", anchorSelector: ".settings-daemon-update" },
+  { sectionId: "launch", sectionLabel: "App & Launch", label: "Which surface serves a conversation rewind", anchorSelector: ".settings-rewind-hosts" },
   { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "What the platform knows about you", anchorSelector: ".settings-owner-profile" },
   { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Where did you get that (provenance)", anchorSelector: ".settings-owner-profile" },
   { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Undo a profile correction", anchorSelector: ".settings-owner-profile" },

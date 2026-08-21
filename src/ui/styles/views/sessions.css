@@ -1233,3 +1233,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Why a conversation rewind is unavailable, in the session detail's rewind
+   section: which surface holds it, or that none does. */
+.session-rewind__conversation-host {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.session-rewind__conversation-host--warning {
+  color: var(--status-warning);
+}

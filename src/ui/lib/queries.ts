@@ -68,6 +68,17 @@ export const queryKeys = {
   ownerProfileProvenance: (fieldId: string) => ["owner-profile", "provenance", fieldId] as const,
   ownerProfilePerson: (name: string) => ["owner-profile", "person", name] as const,
   ownerProfileField: (fieldId: string) => ["owner-profile", "field", fieldId] as const,
+  // Paired devices. devices.* emits NO wire event, so the whole prefix is
+  // invalidated on any mutation: a capability request can mint a durable grant
+  // (confirmed-always), retain a capture, and change what the ledger says, all
+  // in one call, and the three lists must not disagree afterwards.
+  devices: ["devices"] as const,
+  deviceNodes: ["devices", "nodes"] as const,
+  deviceGrants: ["devices", "grants"] as const,
+  deviceArtifacts: ["devices", "artifacts"] as const,
+  // Conversation-rewind hosts: which surface is offering which session's
+  // conversation. No wire event either; read on demand and on mutation.
+  rewindHosts: ["rewind", "conversation-hosts"] as const,
   artifacts: ["artifacts"] as const,
   automation: ["automation"] as const,
   watchers: ["watchers"] as const,
