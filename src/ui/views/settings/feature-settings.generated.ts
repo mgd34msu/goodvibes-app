@@ -1,23 +1,23 @@
-// GENERATED FILE — pinned snapshot of FEATURE_SETTINGS (platform/runtime/
+// GENERATED FILE, pinned snapshot of FEATURE_SETTINGS (platform/runtime/
 // feature-flags) plus the CONFIG_SCHEMA entries every feature unit's
 // enablement key and settings keys reference, from the installed
 // @pellux/goodvibes-sdk@1.11.2. The dissolved-feature model (SDK 1.7.1+):
-// every platform capability is a first-class domain settings key — there is
+// every platform capability is a first-class domain settings key, there is
 // no separate enablement namespace. This file is the FeatureSettingsSection
 // counterpart to config-schema.generated.ts (which pins only CONFIG_SCHEMA
-// and is stale relative to this SDK version — see settings/README notes in
+// and is stale relative to this SDK version, see settings/README notes in
 // the integration report); FEATURE_SETTINGS_SNAPSHOT and
 // FEATURE_SCHEMA_ENTRIES below are generated straight from the SDK's
 // platform/runtime/feature-flags and platform/config barrels so every
 // feature card renders a fully typed enablement control and settings
-// fields regardless of that staleness. Pure data — no runtime functions
+// fields regardless of that staleness. Pure data, no runtime functions
 // cross the Bun/webview boundary. The daemon re-validates every config.set
 // anyway; client-side hints are advisory only.
 //
 // Regenerate with a one-off Bun snippet that requires the SDK's
 // platform/runtime/feature-flags and platform/config barrels, intersects
 // FEATURE_SETTINGS's referenced keys against CONFIG_SCHEMA, and
-// re-serializes both arrays — mirrors config-schema.generated.ts's own
+// re-serializes both arrays, mirrors config-schema.generated.ts's own
 // header instructions and scripts/generate-operator-routes.ts's pattern.
 
 import type { ConfigSettingMeta } from "./config-schema.generated.ts";
@@ -1096,7 +1096,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
 ];
 
 /** CONFIG_SCHEMA entries for every key referenced by FEATURE_SETTINGS_SNAPSHOT
- *  (enablement keys + owned settings keys) — a superset of
+ *  (enablement keys + owned settings keys), a superset of
  *  config-schema.generated.ts's CONFIG_SCHEMA_SNAPSHOT for these specific
  *  keys, since several (permissions.engine, policy.requireSignedBundles,
  *  fetch.sanitizeMode, telemetry.otelMode, runtime.unifiedTasks, ...) postdate

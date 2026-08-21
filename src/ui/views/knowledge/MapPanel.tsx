@@ -2,7 +2,7 @@
 // GUI-native win over the TUI): the daemon returns laid-out nodes (x/y/radius)
 // and edges, drawn natively with hover titles, a kind legend, and click →
 // item peek. When a daemon returns only the pre-rendered `svg` string (older
-// builds), it renders via an <img data:> URL — never dangerouslySetInnerHTML
+// builds), it renders via an <img data:> URL, never dangerouslySetInnerHTML
 // on daemon-sourced markup. Empty-state honesty ports the webui W8 ladder:
 // "jobs ran / 0 nodes" is a named state, never a blank.
 
@@ -164,7 +164,7 @@ export function MapPanel({ active, onViewJobs }: { active: boolean; onViewJobs: 
           ...(applied ? { query: applied } : {}),
         },
       }),
-    // No dedicated map wire event — refresh on a slow poll while visible so
+    // No dedicated map wire event, refresh on a slow poll while visible so
     // background ingestion shows up without a manual refresh.
     refetchInterval: active ? 60_000 : false,
   });

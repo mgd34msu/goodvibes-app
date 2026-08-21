@@ -1,14 +1,14 @@
-// Providers & Models — docs/FEATURES.md §14. Master/detail over
+// Providers & Models, docs/FEATURES.md §14. Master/detail over
 // providers.list with per-route auth-freshness derivation (provider-status.ts,
 // ported from goodvibes-webui), provider detail + usage (providers.get /
 // providers.usage.get), secret-free credential status (credentials.get),
 // accounts snapshot (accounts.snapshot), current-model display + provider-first
-// model-second selection (config provider.model — this pin has no models.*
+// model-second selection (config provider.model, this pin has no models.*
 // verbs, see model-catalog.ts), and the Model Workspace modal for multi-target
 // routing. Config writes are confirm-gated through ConfirmSurface.
 //
 // Freshness: the `providers` SSE domain (lib/realtime.ts DOMAIN_INVALIDATIONS)
-// invalidates the ["providers"] prefix — the list, every open detail/usage
+// invalidates the ["providers"] prefix, the list, every open detail/usage
 // query, and the credential panel all key under that prefix on purpose.
 // accounts.snapshot has no wire event and polls (see AccountsPanel).
 
@@ -25,7 +25,7 @@ import { usePeek } from "../../components/PeekPanel.tsx";
 import { StatusBadge } from "../../components/StatusBadge.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorBoundary, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
-// Provider option normalization is shared with chat's composer picker —
+// Provider option normalization is shared with chat's composer picker,
 // imported read-only from views/chat to stay DRY (sanctioned by the brief).
 import { providerOptionsFromResponse } from "../chat/provider-models.ts";
 import { deriveProviderStatus, providerHeaderLabel } from "./provider-status.ts";
@@ -96,7 +96,7 @@ export function ProvidersView() {
     queryKey: queryKeys.providers,
     queryFn: () => gv.providers.list(),
   });
-  // Full config read (admin) — current model + reasoning default live here.
+  // Full config read (admin), current model + reasoning default live here.
   const config = useQuery({
     queryKey: queryKeys.configAll,
     queryFn: () => gv.config.get(),
@@ -195,14 +195,14 @@ export function ProvidersView() {
           <pre className="providers-raw">{compactJson(selectedProviderDetail)}</pre>
           <h3>Usage</h3>
           <pre className="providers-raw">
-            {usage.isSuccess ? compactJson(usage.data) : "Usage not loaded — see the usage panel."}
+            {usage.isSuccess ? compactJson(usage.data) : "Usage not loaded: see the usage panel."}
           </pre>
         </div>
       ),
     });
   }, [peek, selectedProvider, selectedId, selectedProviderDetail, usage.isSuccess, usage.data]);
 
-  // ── Palette commands — view-scoped, live only while mounted ────────────────
+  // ── Palette commands, view-scoped, live only while mounted ────────────────
   useEffect(() => {
     registerCommand({
       id: "providers.refresh",
@@ -517,7 +517,7 @@ export function ProvidersView() {
         open={pendingMainModel !== null}
         action="Set main chat model"
         target={pendingMainModel?.registryKey ?? ""}
-        blastRadius="Writes shared config key provider.model — the daemon default every surface (TUI, agent, webui, app) uses when a session has no explicit model."
+        blastRadius="Writes shared config key provider.model: the daemon default every surface (TUI, agent, webui, app) uses when a session has no explicit model."
         confirmLabel={selectMainModel.isPending ? "Writing…" : "Set model"}
         onConfirm={(meta) => {
           if (pendingMainModel && !selectMainModel.isPending) {

@@ -1,11 +1,11 @@
-// Memory governor — ops.memory.get. Crib: goodvibes-webui
-// src/components/settings/MemoryDiagnostics.tsx — same tier badge / budget
+// Memory governor, ops.memory.get. Crib: goodvibes-webui
+// src/components/settings/MemoryDiagnostics.tsx, same tier badge / budget
 // bar / per-cache table / paused-jobs list / tripwire line, ported onto this
 // app's query client + feedback kit.
 //
 // OPS_MEMORY_PRESSURE rides the same "ops" wire domain as
 // OPS_POWER_STATE_CHANGED, but lib/realtime.ts's DOMAIN_INVALIDATIONS has no
-// "ops" entry yet — this polls sparsely as a fallback (integration-gate
+// "ops" entry yet, this polls sparsely as a fallback (integration-gate
 // note) rather than inventing a subscription this view doesn't own.
 
 import { useQuery } from "@tanstack/react-query";

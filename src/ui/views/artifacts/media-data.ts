@@ -1,6 +1,6 @@
 // Media Lab data layer (docs/FEATURES.md §18, media.* + multimodal.* rows).
 // Neither namespace is on the gv.ts facade (Wave A only wrapped voice.*), so
-// every call here goes through the generic `invoke(methodId, …)` export —
+// every call here goes through the generic `invoke(methodId, …)` export,
 // no gv.ts edits. Every response shape is read defensively (lib/wire) since
 // media.analyze/generate/transform and multimodal.analyze/packet payloads
 // are not pinned across daemon versions; unrecognized shapes still render
@@ -11,7 +11,7 @@ import { gv, invoke } from "../../lib/gv.ts";
 import type { ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { asRecord, firstArrayAtPath, firstString } from "../../lib/wire.ts";
 
-// ─── Query keys — LOCAL to this view, unique prefixes ("media"/"multimodal"),
+// ─── Query keys, LOCAL to this view, unique prefixes ("media"/"multimodal"),
 // not registered in lib/queries.ts (out of this agent's grant). ─────────────
 
 export const mediaKeys = {
@@ -86,7 +86,7 @@ export function useMultimodalProviders() {
   return { rows: query.data ? mediaProviderRowsFrom(query.data) : [], ...query };
 }
 
-// ─── Result readers — best-effort field extraction, raw payload kept for the
+// ─── Result readers, best-effort field extraction, raw payload kept for the
 // honest JSON fallback the view renders when nothing recognizable is found. ──
 
 export interface MediaResultSummary {
@@ -140,7 +140,7 @@ export function useGenerateMedia() {
         body: { prompt: vars.prompt, ...(vars.kind ? { kind: vars.kind } : {}), ...(vars.providerId ? { providerId: vars.providerId } : {}) },
       }),
     onSuccess: () => {
-      // A successful generate typically materializes a new artifact —
+      // A successful generate typically materializes a new artifact,
       // refresh the artifacts list prefix so it shows up without a manual reload.
       void queryClient.invalidateQueries({ queryKey: ["artifacts"] });
     },
@@ -182,7 +182,7 @@ export function useMultimodalWriteback() {
   });
 }
 
-// ─── Artifact picker (reuses artifacts.list — same daemon list every
+// ─── Artifact picker (reuses artifacts.list, same daemon list every
 // ArtifactsView row uses, kept here so Media Lab doesn't import ArtifactsView
 // internals). ──────────────────────────────────────────────────────────────
 

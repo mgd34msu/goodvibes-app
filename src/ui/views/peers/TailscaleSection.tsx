@@ -1,9 +1,9 @@
-// Tailscale — strictly read-only detection (tailscale.get) renders NOTHING
-// while unavailable or not logged in: no nag, no dead button — the daemon
+// Tailscale, strictly read-only detection (tailscale.get) renders NOTHING
+// while unavailable or not logged in: no nag, no dead button, the daemon
 // host simply not having Tailscale installed/signed-in is the overwhelmingly
 // common case and deserves silence, not an empty-state card. Once usable
 // (available && loggedIn) this shows the connected identity, the last serve
-// receipt if any, and the ONE state-changing action here — confirm-gated,
+// receipt if any, and the ONE state-changing action here, confirm-gated,
 // because it shells out to the real `tailscale serve` command on the
 // daemon's host and the daemon never mints its own certificate for it.
 
@@ -92,7 +92,7 @@ export function TailscaleSection() {
         open={confirming}
         action="Serve over tailscale"
         target={magicDnsName || "this daemon"}
-        blastRadius="Runs `tailscale serve` on the daemon's host — the daemon never mints its own certificate."
+        blastRadius="Runs `tailscale serve` on the daemon's host; the daemon never mints its own certificate."
         confirmLabel={serve.isPending ? "Serving…" : "Serve over tailscale"}
         onConfirm={() => serve.mutate()}
         onCancel={() => setConfirming(false)}

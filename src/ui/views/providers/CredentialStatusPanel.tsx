@@ -1,14 +1,14 @@
-// CredentialStatusPanel — secret-free credential status over the admin-scoped
+// CredentialStatusPanel, secret-free credential status over the admin-scoped
 // credentials.get route (docs/FEATURES.md §14 "Credential status (secret-free)").
 // Ported from goodvibes-webui src/components/CredentialStatusPanel.tsx.
 //
 // Three honest outcomes, never a fourth fabricated one:
-//   1. REFUSED — the admin-scoped route 403s a non-admin token (the wire
+//   1. REFUSED, the admin-scoped route 403s a non-admin token (the wire
 //      carries no machine code for this, so it is status-checked).
-//   2. DEGRADED — deriveCredentialAvailability's `available: false` states
+//   2. DEGRADED, deriveCredentialAvailability's `available: false` states
 //      (503 CREDENTIAL_STORE_UNAVAILABLE, METHOD_NOT_FOUND, transport failure).
-//   3. AVAILABLE — the credential list; entries carry key/configured/usable/
-//      source/secure ONLY — no secret value field exists by construction.
+//   3. AVAILABLE, the credential list; entries carry key/configured/usable/
+//      source/secure ONLY, no secret value field exists by construction.
 
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
@@ -19,7 +19,7 @@ import { deriveCredentialAvailability, type CredentialStatusEntry } from "./prov
 
 // 'providers'-prefixed on purpose: the `providers` SSE domain invalidation
 // (lib/realtime.ts) invalidates the ["providers"] prefix, which refetches this
-// too — credential freshness rides provider auth changes.
+// too, credential freshness rides provider auth changes.
 const CREDENTIALS_QUERY_KEY = ["providers", "credentials"] as const;
 
 function credentialTone(entry: CredentialStatusEntry): "ok" | "warning" | "neutral" {
@@ -33,7 +33,7 @@ function credentialLabel(entry: CredentialStatusEntry): string {
 }
 
 export interface CredentialStatusPanelProps {
-  /** Currently selected provider id — soft, best-effort highlight only: a
+  /** Currently selected provider id, soft, best-effort highlight only: a
    * credential key containing the id is marked "for this provider"; no match
    * means no highlight, never a fabricated link. */
   selectedProviderId?: string;

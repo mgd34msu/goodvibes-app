@@ -13,7 +13,7 @@ export const queryKeys = {
   control: ["control", "snapshot"] as const,
   contract: ["control", "contract"] as const,
   authCurrent: ["control", "auth", "current"] as const,
-  // Full config read (admin) — onboarding/doctor reads provider.model off it.
+  // Full config read (admin), onboarding/doctor reads provider.model off it.
   configAll: ["config"] as const,
   accounts: ["accounts"] as const,
   providers: ["providers"] as const,
@@ -25,7 +25,7 @@ export const queryKeys = {
   sessions: ["sessions"] as const,
   // Detail/messages keys are PREFIXED with 'sessions' so invalidating
   // queryKeys.sessions (non-exact) refetches the union list AND every open
-  // detail/messages query — the single invalidation the raw session-update
+  // detail/messages query, the single invalidation the raw session-update
   // stream fires.
   sessionDetail: (sessionId: string) => ["sessions", sessionId] as const,
   sessionMessages: (sessionId: string) => ["sessions", sessionId, "messages"] as const,
@@ -36,7 +36,7 @@ export const queryKeys = {
     ["sessions", "search", query, includeClosed] as const,
   chatSessions: ["chat", "sessions"] as const,
   chatMessages: (sessionId: string) => ["chat", "sessions", sessionId, "messages"] as const,
-  // fleet.*/checkpoints.* have no wire events (pinned upstream) — views poll
+  // fleet.*/checkpoints.* have no wire events (pinned upstream), views poll
   // and refetch on mutation; these keys are NOT in DOMAIN_INVALIDATIONS.
   fleet: ["fleet"] as const,
   fleetArchived: ["fleet", "archived"] as const,
@@ -46,7 +46,7 @@ export const queryKeys = {
   knowledgeSources: ["knowledge", "sources"] as const,
   knowledgeNodes: ["knowledge", "nodes"] as const,
   knowledgeIssues: ["knowledge", "issues"] as const,
-  // memory.* has no wire event either — poll/refetch-on-mutation.
+  // memory.* has no wire event either, poll/refetch-on-mutation.
   memoryList: ["memory", "list"] as const,
   memoryReviewQueue: ["memory", "review-queue"] as const,
   artifacts: ["artifacts"] as const,
@@ -105,7 +105,7 @@ export interface BootEntry {
 /**
  * Boot snapshot: one Promise.allSettled sweep priming the query cache so the
  * shell hydrates without a request waterfall. Failures are recorded per-key,
- * never thrown — the shell paints regardless.
+ * never thrown, the shell paints regardless.
  */
 export async function loadBootSnapshot(queryClient: QueryClient): Promise<Record<string, BootEntry>> {
   const loads: Array<{ key: readonly unknown[]; name: string; run: () => Promise<unknown> }> = [

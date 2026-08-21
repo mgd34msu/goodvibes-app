@@ -38,7 +38,7 @@ export function diffLines(fromText: string, toText: string): DiffLine[] {
   const midB = b.slice(start, endB);
 
   if (midA.length * midB.length > MAX_DP_CELLS) {
-    // Too large for LCS — honest whole-block replace.
+    // Too large for LCS, honest whole-block replace.
     midA.forEach((text, i) => out.push({ type: "del", text, aLine: start + i + 1 }));
     midB.forEach((text, i) => out.push({ type: "add", text, bLine: start + i + 1 }));
   } else {

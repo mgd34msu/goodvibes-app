@@ -1,4 +1,4 @@
-// AccountsPanel — structured provider accounts/subscription health over
+// AccountsPanel, structured provider accounts/subscription health over
 // accounts.snapshot (docs/FEATURES.md §14 "Accounts snapshot (route posture,
 // fallback risk)" + "Subscriptions status"). Ported from goodvibes-webui
 // src/components/AccountsPanel.tsx, owning its query here: accounts.snapshot
@@ -7,12 +7,12 @@
 //
 // docs/GAPS.md §14 row 11 (Subscriptions status, PARTIAL): the operator
 // contract's accounts.snapshot output schema documents real per-provider
-// OAuth-route detail beyond activeRoute/authFreshness — availableRoutes,
+// OAuth-route detail beyond activeRoute/authFreshness, availableRoutes,
 // preferredRoute, activeRouteReason, fallbackRoute/fallbackRisk, expiresAt,
 // tokenType, notes, and a per-route `routeRecords` array (route/usable/
 // freshness/detail/issues) that reports the "subscription" route's health
 // independently of whichever route is currently active. This panel now reads
-// all of it, wire-shape-defensively (every field optional/absent-safe) —
+// all of it, wire-shape-defensively (every field optional/absent-safe),
 // closing the row for any daemon that populates it, honest empty otherwise.
 
 import { useQuery } from "@tanstack/react-query";
@@ -108,7 +108,7 @@ export function AccountsPanel() {
   const accounts = useQuery({
     queryKey: queryKeys.accounts,
     queryFn: () => gv.accounts.snapshot(),
-    // No `accounts` wire event exists on this pin — poll while visible.
+    // No `accounts` wire event exists on this pin, poll while visible.
     refetchInterval: 30_000,
   });
 
@@ -179,7 +179,7 @@ export function AccountsPanel() {
                   {row.fallbackRoute && (
                     <span className="providers-accounts__fallback">
                       Fallback: {row.fallbackRoute}
-                      {row.fallbackRisk ? ` — ${row.fallbackRisk}` : ""}
+                      {row.fallbackRisk ? `, ${row.fallbackRisk}` : ""}
                     </span>
                   )}
                   {(row.tokenType || row.expiresAt !== undefined) && (
@@ -196,7 +196,7 @@ export function AccountsPanel() {
                       <StatusBadge value={subscription.freshness} />
                       <span>
                         Subscription route: {subscription.usable ? "usable" : "not usable"}
-                        {subscription.detail ? ` — ${subscription.detail}` : ""}
+                        {subscription.detail ? `, ${subscription.detail}` : ""}
                       </span>
                       {subscription.issues.length > 0 && (
                         <ul className="providers-accounts__issues">

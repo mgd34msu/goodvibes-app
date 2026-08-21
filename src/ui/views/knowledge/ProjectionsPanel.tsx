@@ -1,7 +1,7 @@
 // Projections tab: wiki/markdown projections over the knowledge store.
 // knowledge.projections.list → target picker; knowledge.projection.render →
 // read-only markdown pages viewer; knowledge.projection.materialize (admin,
-// confirm-gated — it WRITES an artifact/source) behind ConfirmSurface.
+// confirm-gated, it WRITES an artifact/source) behind ConfirmSurface.
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -211,8 +211,8 @@ export function ProjectionsPanel() {
       <ConfirmSurface
         open={materializeOpen}
         action="Materialize projection"
-        target={selected ? `${selected.kind}${selected.id ? ` · ${selected.id}` : ""} — ${selected.title}` : ""}
-        blastRadius="Writes the rendered pages back into the store as an artifact/source (admin operation) — Render is the read-only preview."
+        target={selected ? `${selected.kind}${selected.id ? ` · ${selected.id}` : ""}: ${selected.title}` : ""}
+        blastRadius="Writes the rendered pages back into the store as an artifact/source (admin operation); Render is the read-only preview."
         confirmLabel="Materialize"
         onConfirm={(meta) => selected && materialize.mutate({ target: selected, meta })}
         onCancel={() => setMaterializeOpen(false)}

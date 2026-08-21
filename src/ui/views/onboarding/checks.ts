@@ -1,7 +1,7 @@
 // Pure logic for the onboarding/Doctor checks (docs/UX.md §5): parse the
 // three live checks' wire payloads defensively (shapes drift across daemon
 // versions) and hold the provider → credential env-key inventory. No React,
-// no fetch — the components own the queries.
+// no fetch, the components own the queries.
 
 import type { AppHealth, DaemonMode } from "../../../shared/app-contract.ts";
 import { asRecord, firstArrayAtPath, firstString, readPath } from "../../lib/wire.ts";
@@ -17,7 +17,7 @@ export interface CheckResult {
 }
 
 // ---------------------------------------------------------------------------
-// Check 1 — daemon (from /app/health: found/spawned/adopted + mode display)
+// Check 1, daemon (from /app/health: found/spawned/adopted + mode display)
 // ---------------------------------------------------------------------------
 
 export function daemonModeLabel(mode: DaemonMode): string {
@@ -57,7 +57,7 @@ export function daemonCheck(health: AppHealth | undefined, appUnreachable: boole
 }
 
 // ---------------------------------------------------------------------------
-// Check 2 — auth (control.auth.current through the token-injecting proxy)
+// Check 2, auth (control.auth.current through the token-injecting proxy)
 // ---------------------------------------------------------------------------
 
 /** Best-effort principal off the auth.current payload, "" when absent. */
@@ -79,13 +79,13 @@ export function authExplicitlyRejected(response: unknown): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Check 3 — provider + model (providers.list + config.get provider.model)
+// Check 3, provider + model (providers.list + config.get provider.model)
 // ---------------------------------------------------------------------------
 
 export interface ProviderOption {
   id: string;
   label: string;
-  /** Raw provider record — model options are parsed off it. */
+  /** Raw provider record, model options are parsed off it. */
   value: unknown;
 }
 
@@ -169,7 +169,7 @@ export function configuredModelFrom(config: unknown): string {
  * Provider → credential env-var name, mirrored from the SDK's
  * platform/config/api-keys.ts inventory (the daemon resolves keys env-first,
  * then its secrets store). Providers absent here take credentials through the
- * TUI (`goodvibes config`) or environment — the fix panel says so honestly.
+ * TUI (`goodvibes config`) or environment, the fix panel says so honestly.
  */
 export const PROVIDER_ENV_KEYS: Readonly<Record<string, string>> = {
   openai: "OPENAI_API_KEY",
@@ -208,10 +208,6 @@ export const PROVIDER_ENV_KEYS: Readonly<Record<string, string>> = {
 export function envKeyForProvider(providerId: string): string | undefined {
   return PROVIDER_ENV_KEYS[providerId];
 }
-
-// ---------------------------------------------------------------------------
-// First-run persistence
-// ---------------------------------------------------------------------------
 
 export const ONBOARDED_STORAGE_KEY = "goodvibes.app.onboarded";
 

@@ -1,4 +1,4 @@
-// Ops & observability — subtabs: Power, Memory, Runtime, Quota, Cost
+// Ops & observability, subtabs: Power, Memory, Runtime, Quota, Cost
 // attribution, Flags graduation. Subtab selection is URL-addressable
 // (?filter[obs-ops]=…), same pattern as SystemSection's subtabs.
 

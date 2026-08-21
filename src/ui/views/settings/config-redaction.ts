@@ -1,9 +1,9 @@
 /**
- * config-redaction.ts — secret-free config display, honestly.
+ * config-redaction.ts, secret-free config display, honestly.
  * Ported wholesale from goodvibes-webui src/lib/config-redaction.ts (per
  * docs/FEATURES.md §19: TUI-parity category labels + secret-key masking).
  *
- * GROUNDED: GET /config (config.get) returns configManager.getAll() verbatim —
+ * GROUNDED: GET /config (config.get) returns configManager.getAll() verbatim,
  * a plain structuredClone with NO field-level redaction anywhere in the daemon.
  * Provider API keys are NOT part of this object (they live in the separate
  * SecretsManager store), but several `surfaces.*` integration settings ARE
@@ -11,7 +11,7 @@
  * webhook secrets. This surface must never render those verbatim.
  *
  * Two layers, belt-and-suspenders:
- *   1. SECRET_CONFIG_KEYS — the TUI's own curated allowlist, ported verbatim
+ *   1. SECRET_CONFIG_KEYS, the TUI's own curated allowlist, ported verbatim
  *      for cross-surface parity.
  *   2. A generic last-segment heuristic (token/secret/password/key) as a
  *      safety net. Over-masking is the honest failure direction.
@@ -77,10 +77,10 @@ export function displayConfigValue(key: string, value: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Category naming parity — mirrors goodvibes-tui's settings-modal-helpers.ts
+// Category naming parity, mirrors goodvibes-tui's settings-modal-helpers.ts
 // CATEGORY_LABELS (ported via goodvibes-webui). The config namespace (first
 // dot-segment) maps 1:1 onto the TUI's rail category ids; a namespace with no
-// TUI analogue falls back to Title Case of itself (honest — never invented).
+// TUI analogue falls back to Title Case of itself (honest, never invented).
 // ---------------------------------------------------------------------------
 
 export const CATEGORY_LABELS: Record<string, string> = {
@@ -139,7 +139,7 @@ export interface ConfigEntry {
 }
 
 /** Flatten a nested config object into dotted-key rows, deepest values only
- *  (objects are descended, not shown as a row themselves — arrays are treated
+ *  (objects are descended, not shown as a row themselves, arrays are treated
  *  as leaf values). Mirrors the dotted config-key shape config.set expects. */
 export function flattenConfig(value: unknown, prefix = ""): ConfigEntry[] {
   const record = asRecord(value);
@@ -183,7 +183,7 @@ export function configValueEquals(a: unknown, b: unknown): boolean {
 }
 
 /**
- * True when the value differs from the schema default — the ◆ marker — only
+ * True when the value differs from the schema default, the ◆ marker, only
  * where the default is derivable from the pinned schema (never guessed).
  */
 export function differsFromDefault(key: string, value: unknown): boolean {
@@ -203,7 +203,7 @@ export function isDangerousConfigKey(key: string): boolean {
   return false;
 }
 
-/** controlPlane/httpListener/daemon edits only take effect after a daemon restart — say so. */
+/** controlPlane/httpListener/daemon edits only take effect after a daemon restart, say so. */
 export function requiresDaemonRestart(key: string): boolean {
   return key.startsWith("controlPlane.") || key.startsWith("httpListener.") || key.startsWith("daemon.");
 }

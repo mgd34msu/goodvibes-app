@@ -1,16 +1,16 @@
-// /app/subscriptions — OAuth-backed provider subscriptions (docs/GAPS.md §14
+// /app/subscriptions, OAuth-backed provider subscriptions (docs/GAPS.md §14
 // row 11), built entirely on @pellux/goodvibes-sdk's SubscriptionManager /
 // subscription-provider helpers / OpenAI Codex OAuth helpers / loopback OAuth
-// listener — the exact same SDK primitives goodvibes-tui drives in-process
+// listener, the exact same SDK primitives goodvibes-tui drives in-process
 // (../goodvibes-tui/src/input/commands/subscription-runtime.ts, READ-ONLY
 // reference; the openai-codex branch below mirrors its
 // beginOpenAICodexLogin/exchangeOpenAICodexCode special-case verbatim). No
 // OAuth mechanics are reimplemented here.
 //
 // Storage: SubscriptionManager and ServiceRegistry are constructed pointed at
-// the exact same files the TUI uses — ~/.goodvibes/tui/subscriptions.json and
+// the exact same files the TUI uses, ~/.goodvibes/tui/subscriptions.json and
 // ~/.goodvibes/tui/services.json (shellPaths.resolveUserPath('tui', ...) on
-// the TUI side) — so a login made in either surface is visible in both. This
+// the TUI side), so a login made in either surface is visible in both. This
 // module builds its own SDK instances rather than importing secrets.ts's
 // private module-level ones (that file exports no such handle); same idiom as
 // github.ts building its own SecretsManager pointed at the shared TUI store.
@@ -23,7 +23,7 @@
 //   DELETE /login/pending       ?provider= -> {ok:true}  (abandons a stuck login; closes any loopback listener)
 //   DELETE /                    ?provider= -> {ok:true, removed}
 //
-// Every response is built from a whitelist of safe fields — accessToken,
+// Every response is built from a whitelist of safe fields, accessToken,
 // refreshToken (raw), and the PKCE verifier NEVER leave this process; GET
 // reports only hasRefreshToken (boolean) plus expiry/scope/mode metadata.
 //
@@ -33,7 +33,7 @@
 // loopback redirectUri on a service-registered provider), login/start also
 // spins up createOAuthLocalListener in the background. If it captures a code
 // before the user pastes one, the login completes server-side and the
-// pending record clears on its own — GET keeps reporting that pending record
+// pending record clears on its own, GET keeps reporting that pending record
 // until then, so the panel's poll-until-cleared UX needs no extra signal.
 // The manual paste-code-or-URL path (login/finish) always remains available
 // as a fallback since the listener may fail to bind.
@@ -79,7 +79,7 @@ function defaultServiceRegistry(subscriptionManager: SubscriptionManager): Servi
   return new ServiceRegistry(servicesFilePath, { secretsManager, subscriptionManager });
 }
 
-// ─── response helpers (duplicated small idiom — see local-tools.ts header) ──
+// ─── response helpers (duplicated small idiom, see local-tools.ts header) ──
 
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { "cache-control": "no-store" } });
@@ -113,7 +113,7 @@ function readString(body: Record<string, unknown>, key: string): string {
 
 // ─── code-or-URL extraction (same tolerance as the TUI's own login finish) ──
 
-/** Accepts either a bare authorization code or a full pasted redirect URL —
+/** Accepts either a bare authorization code or a full pasted redirect URL,
  *  when the input parses as a URL carrying a `code` query param, that param
  *  wins; otherwise the trimmed input is returned as-is (a bare code, or an
  *  unparseable string the token endpoint will honestly reject). */
@@ -127,7 +127,7 @@ export function extractAuthorizationCode(input: string): string {
   }
 }
 
-// ─── safe-field whitelists — accessToken/refreshToken/verifier never escape ─
+// ─── safe-field whitelists, accessToken/refreshToken/verifier never escape ─
 
 interface SafeSubscription {
   provider: string;
@@ -195,7 +195,7 @@ function loopbackListenerConfigFromRedirectUri(
 }
 
 /** Prefers an explicit `localCallback` block (exact host/port/path from the
- *  provider config) and falls back to sniffing a plain loopback redirectUri —
+ *  provider config) and falls back to sniffing a plain loopback redirectUri,
  *  either way, only ever returns non-null for a genuinely loopback target. */
 function resolveLoopbackListenerConfig(
   oauth: OAuthProviderConfig,
@@ -253,7 +253,7 @@ export function createSubscriptionRoutes(deps: SubscriptionRouteDeps = {}): AppR
         updatedAt: nowMs,
       });
     } catch {
-      // best-effort: capture failed/timed out — the pending record survives
+      // best-effort: capture failed/timed out, the pending record survives
       // for the manual paste-code-or-URL fallback (login/finish).
     } finally {
       if (listeners.get(provider) === listener) listeners.delete(provider);
@@ -271,7 +271,7 @@ export function createSubscriptionRoutes(deps: SubscriptionRouteDeps = {}): AppR
       const callback = await listener.waitForCode();
       await subscriptionManager.completeOAuthLogin(provider, config, callback.code);
     } catch {
-      // best-effort — manual finish remains available
+      // best-effort, manual finish remains available
     } finally {
       if (listeners.get(provider) === listener) listeners.delete(provider);
     }

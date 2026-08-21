@@ -1,6 +1,6 @@
 // UI-layer message shape: a union of local optimistic messages and the
 // server's CompanionChatMessage (plus whatever extra fields a newer daemon
-// sends — the index signature admits them without `any`). Ported from
+// sends, the index signature admits them without `any`). Ported from
 // goodvibes-webui src/views/chat/types.ts.
 
 export interface ChatMessage {
@@ -39,7 +39,7 @@ export interface ChatMessage {
   supersededAt?: number | string;
   supersededReason?: string;
   revisionOf?: string;
-  /** The user message id an assistant message answers (daemon >= 1.11) — the
+  /** The user message id an assistant message answers (daemon >= 1.11), the
    * honest pairing signal queue-when-busy sends and steer need (position
    * alone no longer tells you which reply answers which message). */
   inReplyTo?: string;

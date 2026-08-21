@@ -1,4 +1,4 @@
-// Import bridge modal — "Import from goodvibes-agent". ONE implementation
+// Import bridge modal, "Import from goodvibes-agent". ONE implementation
 // shared by the Routines / Personas / Skills views (all owned by the same
 // wave agent; the other two import from views/routines/).
 //
@@ -29,7 +29,7 @@ const IMPORT_SOURCE = "agent";
 export interface ImportBridgeModalProps {
   open: boolean;
   onClose: () => void;
-  /** The collection the opening view cares about — pre-checked by default. */
+  /** The collection the opening view cares about, pre-checked by default. */
   defaultCollection?: string;
 }
 

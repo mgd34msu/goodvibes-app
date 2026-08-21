@@ -45,7 +45,7 @@ export function resolveEndpoint(): { host: string; port: number } {
       };
     }
   } catch {
-    // fall through to defaults — a broken settings file must not block launch
+    // fall through to defaults, a broken settings file must not block launch
   }
   return { host: DEFAULT_HOST, port: DEFAULT_PORT };
 }
@@ -88,7 +88,7 @@ export const SUPPORTED_DAEMON_MAJOR = 1;
 
 /**
  * Compatible iff the remote reports the supported major (see SUPPORTED_DAEMON_MAJOR).
- * Unparseable or off-major versions are incompatible — we refuse to drive a
+ * Unparseable or off-major versions are incompatible, we refuse to drive a
  * daemon whose protocol we cannot reason about.
  */
 export function versionCompatible(remote: string | undefined): boolean {
@@ -100,7 +100,7 @@ export function versionCompatible(remote: string | undefined): boolean {
 }
 
 function daemonBinPath(): string | null {
-  // Dev/installed-from-npm layout. Packaging for dist will copy this tree —
+  // Dev/installed-from-npm layout. Packaging for dist will copy this tree,
   // tracked in FEATURES.md exclusions until the dist wave.
   const candidates = [
     join(import.meta.dir, "..", "..", "node_modules", ".bin", "goodvibes-daemon"),

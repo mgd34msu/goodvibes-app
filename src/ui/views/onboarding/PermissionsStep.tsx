@@ -1,9 +1,9 @@
 // Permissions-posture pick (docs/GAPS.md §22 row 5). Reads security.settings
 // for the daemon's own live audit of the `permissions.mode` key; only offers
-// the config.set write path when that audit actually lists the key — a
+// the config.set write path when that audit actually lists the key, a
 // daemon that doesn't gets the honest read-only explanation, never a fake
 // picker (docs/FEATURES.md "Permissions posture pick": `config.set
-// permissions.mode`, admin-scoped, dangerous — routed through ConfirmSurface
+// permissions.mode`, admin-scoped, dangerous, routed through ConfirmSurface
 // exactly like the settings config editor routes its own dangerous keys).
 
 import { useState } from "react";
@@ -79,8 +79,8 @@ export function PermissionsStep({ daemonUp }: { daemonUp: boolean }) {
       {!keyDiscovered && (
         <p className="onboarding-section__hint">
           {securityUnavailable
-            ? "This daemon does not serve security.settings, so this app cannot confirm a writable permission-mode key exists here — no picker is offered to avoid a fake choice. Whatever posture the daemon already runs stays in effect."
-            : "The daemon's security audit does not list a permissions.mode key on this build — no picker is offered to avoid a fake choice. Whatever posture the daemon already runs stays in effect."}
+            ? "This daemon does not serve security.settings, so this app cannot confirm a writable permission-mode key exists here; no picker is offered to avoid a fake choice. Whatever posture the daemon already runs stays in effect."
+            : "The daemon's security audit does not list a permissions.mode key on this build; no picker is offered to avoid a fake choice. Whatever posture the daemon already runs stays in effect."}
         </p>
       )}
 
@@ -88,7 +88,7 @@ export function PermissionsStep({ daemonUp }: { daemonUp: boolean }) {
         <>
           <p className="onboarding-section__hint">
             Current posture: <strong>{labelForPermissionsMode(currentValue)}</strong>
-            {row?.summary ? ` — ${row.summary}` : ""}
+            {row?.summary ? `, ${row.summary}` : ""}
           </p>
           <ul className="onboarding-permissions">
             {PERMISSIONS_MODE_OPTIONS.map((option) => (
@@ -119,7 +119,7 @@ export function PermissionsStep({ daemonUp }: { daemonUp: boolean }) {
         open={pendingValue !== null}
         action="Change permission posture"
         target={PERMISSIONS_MODE_KEY}
-        blastRadius="This changes the approval posture for every surface and agent using this daemon — not just this app."
+        blastRadius="This changes the approval posture for every surface and agent using this daemon, not just this app."
         danger
         confirmLabel="Change posture"
         onCancel={() => setPendingValue(null)}

@@ -1,8 +1,8 @@
-// ARIA live announcer — a module-level store so ANY code (hooks, toast(),
+// ARIA live announcer, a module-level store so ANY code (hooks, toast(),
 // mutation callbacks) can announce without being under a provider, and one
 // stable <AnnouncerRegion /> near the root renders the live regions.
 // Ported from goodvibes-webui src/hooks/useAnnouncer.ts. Unlike the desktop
-// prior art (useAnnounce with zero callers — autopsy), kit actions here DO
+// prior art (useAnnounce with zero callers, autopsy), kit actions here DO
 // call announce(): toast() announces every toast title (lib/toast.ts) and
 // ConfirmSurface announces confirmation outcomes.
 
@@ -63,7 +63,7 @@ export function announce(message: string, politeness: AnnouncePoliteness = "poli
 }
 
 /** Two sibling live regions (polite + assertive). Mount ONCE near the root.
- * Stable module-level identity — never unmounted between announcements. */
+ * Stable module-level identity, never unmounted between announcements. */
 export const AnnouncerRegion: FC = function AnnouncerRegion(): ReactElement {
   const state = useSyncExternalStore(_subscribe, _getSnapshot, _getSnapshot);
   return createElement(
@@ -74,7 +74,7 @@ export const AnnouncerRegion: FC = function AnnouncerRegion(): ReactElement {
   );
 };
 
-/** Hook form for components — same store, stable callback identity. */
+/** Hook form for components, same store, stable callback identity. */
 export function useAnnounce(): (message: string, politeness?: AnnouncePoliteness) => void {
   return useCallback((message: string, politeness: AnnouncePoliteness = "polite") => {
     announce(message, politeness);

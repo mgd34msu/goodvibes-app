@@ -1,4 +1,4 @@
-// Durable form drafts — owner friction rule #1: a draft survives view
+// Durable form drafts, owner friction rule #1: a draft survives view
 // switches, window close, and app restart. useDraftState is a drop-in
 // useState replacement for form fields whose views are keepAlive:false
 // (top-level view switches unmount them).
@@ -6,11 +6,11 @@
 // Storage: localStorage under "gv-draft:<key>". Only non-empty values are
 // stored (an empty/default draft removes the entry), and every write also
 // stamps "gv-draft-index" so stale drafts can be pruned; entries older than
-// DRAFT_TTL_MS are dropped at module load — bounded growth (friction rule
+// DRAFT_TTL_MS are dropped at module load, bounded growth (friction rule
 // #14), no draft graveyard.
 //
 // Commit/discard: call clearDraft(key) on successful submit AND on an
-// explicit user discard — a draft outliving its submit is a lie about
+// explicit user discard, a draft outliving its submit is a lie about
 // pending work. A cancel that keeps the draft is the default (rule #2:
 // decline is feedback, not destruction).
 
@@ -36,7 +36,7 @@ function writeIndex(index: DraftIndex): void {
   try {
     localStorage.setItem(INDEX_KEY, JSON.stringify(index));
   } catch {
-    // Storage full/denied — drafts degrade to in-memory only; never throw.
+    // Storage full/denied, drafts degrade to in-memory only; never throw.
   }
 }
 
@@ -79,7 +79,7 @@ export function writeDraft(key: string, value: string): void {
     index[key] = Date.now();
     writeIndex(index);
   } catch {
-    // Storage full/denied — degrade silently to in-memory.
+    // Storage full/denied, degrade silently to in-memory.
   }
 }
 
@@ -130,7 +130,7 @@ export function useDraftState(
   );
 
   // Flush the pending debounce on unmount so a fast view-switch never loses
-  // the last keystrokes — the whole point of the hook.
+  // the last keystrokes, the whole point of the hook.
   useEffect(() => {
     return () => {
       if (timer.current) {

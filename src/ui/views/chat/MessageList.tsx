@@ -1,5 +1,5 @@
 // Transcript: honest-lineage nodes + the live streaming bubble (deltas paint
-// as they arrive — the sanctioned render-from-frames exception), tool-call
+// as they arrive, the sanctioned render-from-frames exception), tool-call
 // blocks, thinking strip, and jump-to-bottom. Ported from goodvibes-webui
 // src/views/chat/MessageList.tsx.
 
@@ -19,14 +19,14 @@ interface MessageListProps {
   turnState: string;
   toolCalls: ToolCallBlock[];
   turnMetrics: TurnMetrics | null;
-  /** sessions.toolCalls.cancel plumbing (useChatStream) — undefined onCancel
+  /** sessions.toolCalls.cancel plumbing (useChatStream), undefined onCancel
    * once that daemon build has proven it doesn't support the verb. */
   onCancelToolCall?: (callId: string) => void;
   cancellingToolCallIds?: ReadonlySet<string>;
   showJumpToBottom: boolean;
   isSendPending: boolean;
   isStreaming: boolean;
-  /** ChatView's keep-alive visibility signal — see its own `viewVisible`
+  /** ChatView's keep-alive visibility signal, see its own `viewVisible`
    * MutationObserver comment for why this can't just be React Query's
    * document-visibility check. */
   viewVisible: boolean;
@@ -81,7 +81,7 @@ export function MessageList({
           const nodeId = node.message.id ?? node.message.messageId ?? "";
           // Queue-when-busy sends and steer both break simple positional
           // pairing (the message right above this one in the transcript is
-          // not necessarily what it answers) — when the daemon's inReplyTo
+          // not necessarily what it answers), when the daemon's inReplyTo
           // disagrees with the plain preceding message, surface a snippet of
           // what it actually answers instead of leaving the mismatch mute.
           const inReplyTo = messageInReplyTo(node.message);

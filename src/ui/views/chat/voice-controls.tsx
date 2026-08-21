@@ -1,6 +1,6 @@
 // Voice settings surface (docs/FEATURES.md §18 rows 3-5): TTS speed/voice/
 // provider config, the voice status/doctor row, and the realtime-session
-// bootstrap. "Modals are configuration" (docs/UX.md §5) — this whole surface
+// bootstrap. "Modals are configuration" (docs/UX.md §5), this whole surface
 // lives in one Modal opened from the composer toolbar (voice-controls wiring
 // in Composer.tsx). MicButton.tsx / SpeakButton.tsx (Wave A) keep owning the
 // per-message dictation/playback controls; this file is purely settings +
@@ -41,7 +41,7 @@ export function VoiceSettingsButton() {
       <button
         type="button"
         className="composer-tool"
-        title="Voice settings — speed, voice, provider, status"
+        title="Voice settings: speed, voice, provider, status"
         aria-label="Open voice settings"
         onClick={() => setOpen(true)}
       >
@@ -133,7 +133,7 @@ function TtsSettingsSection() {
   const { apply, isPending } = useApplyTtsChanges();
   const [pendingChanges, setPendingChanges] = useState<Array<{ key: string; value: unknown }> | null>(null);
 
-  // Seed drafts from the loaded settings exactly once per successful load —
+  // Seed drafts from the loaded settings exactly once per successful load,
   // never fights the user's in-progress edit on a background refetch.
   const [seeded, setSeeded] = useState(false);
   useEffect(() => {
@@ -168,7 +168,7 @@ function TtsSettingsSection() {
 
       {isLoading && <SkeletonBlock variant="text" lines={3} />}
       {isError && (
-        <ErrorState error={error} title="Could not load current tts.* config — edits below start from blank." />
+        <ErrorState error={error} title="Could not load current tts.* config; edits below start from blank." />
       )}
 
       {!isLoading && (
@@ -252,7 +252,7 @@ function TtsSettingsSection() {
         open={pendingChanges !== null}
         action="Write voice config"
         target={(pendingChanges ?? []).map((c) => c.key).join(", ") || "tts.*"}
-        blastRadius="Changes speech settings (provider/voice/speed) for every surface sharing this daemon config — admin-scoped config.set."
+        blastRadius="Changes speech settings (provider/voice/speed) for every surface sharing this daemon config: admin-scoped config.set."
         confirmLabel="Save voice settings"
         onCancel={() => setPendingChanges(null)}
         onConfirm={(meta) => void confirmAndApply(meta)}
@@ -269,7 +269,7 @@ function TtsSettingsSection() {
   );
 }
 
-// ─── Realtime voice session — bootstrap only (explicit stretch caption) ────
+// ─── Realtime voice session, bootstrap only (explicit stretch caption) ────
 
 function RealtimeSessionSection() {
   const bootstrap = useBootstrapRealtimeSession();
@@ -329,13 +329,13 @@ function RealtimeSessionSection() {
   );
 }
 
-// ─── Local voice — managed piper/whisper.cpp install (voice.local.*) ───────
+// ─── Local voice, managed piper/whisper.cpp install (voice.local.*) ───────
 // Crib (faithfully adopted): goodvibes-webui's VoiceSettings.tsx
 // "voice-settings-local" section + lib/voice/voice-local-setup.ts, and
 // goodvibes-tui's /voice setup. Independent of the tts.provider dropdown
-// above — a fully-unprovisioned 'local' provider has no capabilities yet so
+// above, a fully-unprovisioned 'local' provider has no capabilities yet so
 // it never appears there; this section is the only place that offers the
-// one-act setup. No wire event exists for this domain — the status query is
+// one-act setup. No wire event exists for this domain, the status query is
 // plain fetch-once, except while an install is running: voice.local.status
 // then carries an OPTIONAL `installInProgress` section (no separate progress
 // stream exists), so the status query polls on a short interval for exactly
@@ -369,13 +369,13 @@ interface VoiceLocalStatusSnapshot {
   readonly ttsEngine: string;
   readonly sttEngine: string;
   readonly sttSupported: boolean;
-  /** null when no pinned build exists for this platform at all — nothing to offer. */
+  /** null when no pinned build exists for this platform at all, nothing to offer. */
   readonly offerBytes: number | null;
   readonly installInProgress?: VoiceLocalInstallProgress;
 }
 
 /** Defensive wire parse for voice.local.status. Null when the answer does not
- * carry a real runtime state — an honest, retriable error, never a crash or
+ * carry a real runtime state, an honest, retriable error, never a crash or
  * a fabricated label. */
 function readVoiceLocalStatus(value: unknown): VoiceLocalStatusSnapshot | null {
   const record = asRecord(value);
@@ -451,7 +451,7 @@ function readInstallEngineOutcome(value: unknown, fallbackEngine: string): Voice
 }
 
 /** Defensive wire parse for the voice.local.install receipt. Null when either
- * per-engine terminal state is missing — the receipt is meaningless without
+ * per-engine terminal state is missing, the receipt is meaningless without
  * both. */
 function readVoiceLocalInstallResult(value: unknown): VoiceLocalInstallResult | null {
   const record = asRecord(value);
@@ -471,7 +471,7 @@ function readVoiceLocalInstallResult(value: unknown): VoiceLocalInstallResult | 
   };
 }
 
-/** True when the resting status justifies offering the one-act setup —
+/** True when the resting status justifies offering the one-act setup,
  * 'unsupported-platform' gets an honest message instead (no pinned build
  * exists for this platform at all, so an install attempt cannot succeed). */
 function voiceLocalNeedsSetup(state: VoiceLocalRuntimeState): boolean {
@@ -491,7 +491,7 @@ function voiceLocalStateLabel(state: VoiceLocalRuntimeState): string {
   }
 }
 
-/** Honest enum label — the real wire enum name stays as-is in code (never
+/** Honest enum label, the real wire enum name stays as-is in code (never
  * renamed), only the displayed label softens it. bundle-unavailable reads as
  * "not yet published for this platform" per this round's brief. */
 function voiceLocalInstallStateLabel(state: VoiceLocalInstallEngineState): string {
@@ -511,7 +511,7 @@ function voiceLocalInstallStateLabel(state: VoiceLocalInstallEngineState): strin
   }
 }
 
-/** Retriable ONLY for download-failed/checksum-mismatch — a platform gap, an
+/** Retriable ONLY for download-failed/checksum-mismatch, a platform gap, an
  * unpublished bundle, or a mismatched sideloaded file will not be fixed by
  * clicking the same button again. */
 function voiceLocalInstallIsRetriable(state: VoiceLocalInstallEngineState): boolean {
@@ -553,7 +553,7 @@ function useVoiceLocalStatus(pollForInstallProgress: boolean) {
     queryKey: queryKeys.voiceLocal,
     queryFn: () => gv.voice.local.status(),
     retry: false,
-    // Poll only while an install this surface kicked off is in flight — the
+    // Poll only while an install this surface kicked off is in flight, the
     // one window the daemon serves installInProgress at all.
     refetchInterval: pollForInstallProgress ? 2_000 : false,
   });
@@ -573,7 +573,7 @@ function LocalVoiceSection() {
   const install = useVoiceLocalInstall();
   const status = useVoiceLocalStatus(install.isPending);
 
-  // Skip the whole section — not even a note — only when the base status
+  // Skip the whole section, not even a note, only when the base status
   // verb itself is unavailable on this daemon build; genuinely nothing to
   // offer there (same honest-omission call as webui's own local section).
   if (status.isError && (isMethodUnavailableError(status.error) || isMethodNotInvokableError(status.error))) {
@@ -606,8 +606,8 @@ function LocalVoiceSection() {
           {!needsSetup && (
             <p className="voice-doctor__note" role="status">
               {snapshot.state === "provisioned"
-                ? `Installed — TTS: ${snapshot.ttsEngine}${snapshot.sttSupported ? `, STT: ${snapshot.sttEngine}` : ""}.`
-                : `${voiceLocalStateLabel(snapshot.state)} — no pinned engine build exists for this host.`}
+                ? `Installed: TTS: ${snapshot.ttsEngine}${snapshot.sttSupported ? `, STT: ${snapshot.sttEngine}` : ""}.`
+                : `${voiceLocalStateLabel(snapshot.state)}: no pinned engine build exists for this host.`}
             </p>
           )}
 
@@ -631,9 +631,9 @@ function LocalVoiceSection() {
                   <span className="voice-local-progress__phase">
                     {voiceLocalPhaseLabel(component.phase)}
                     {typeof component.bytesDone === "number" && typeof component.bytesTotal === "number"
-                      ? ` — ${formatVoiceLocalBytes(component.bytesDone)} of ${formatVoiceLocalBytes(component.bytesTotal)}`
+                      ? `, ${formatVoiceLocalBytes(component.bytesDone)} of ${formatVoiceLocalBytes(component.bytesTotal)}`
                       : typeof component.bytesTotal === "number"
-                        ? ` — ${formatVoiceLocalBytes(component.bytesTotal)}`
+                        ? `, ${formatVoiceLocalBytes(component.bytesTotal)}`
                         : ""}
                   </span>
                   {component.phase === "error" && component.message && (
@@ -657,11 +657,11 @@ function LocalVoiceSection() {
             <div className="voice-local-receipt" role="status">
               <p>
                 TTS ({installResult.tts.engine}): {voiceLocalInstallStateLabel(installResult.tts.state)}
-                {installResult.tts.reason ? ` — ${installResult.tts.reason}` : ""}
+                {installResult.tts.reason ? `, ${installResult.tts.reason}` : ""}
               </p>
               <p>
                 STT ({installResult.stt.engine}): {voiceLocalInstallStateLabel(installResult.stt.state)}
-                {installResult.stt.reason ? ` — ${installResult.stt.reason}` : ""}
+                {installResult.stt.reason ? `, ${installResult.stt.reason}` : ""}
               </p>
               {installResult.configuredSet.length > 0 && (
                 <p className="voice-doctor__note">Configured: {installResult.configuredSet.join(", ")}</p>

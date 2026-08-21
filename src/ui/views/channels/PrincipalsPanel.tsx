@@ -1,14 +1,14 @@
-// Principals — the named-identity registry (principals.*, contract 1.11).
+// Principals, the named-identity registry (principals.*, contract 1.11).
 // Every row shows channel:value identities as badges; create/edit go through
 // a modal form with a one-per-line "channel:value" textarea (identities
-// REPLACE the set on update, never merge — same as the daemon's own
+// REPLACE the set on update, never merge, same as the daemon's own
 // semantics). Delete is behind a danger confirm: mapped identities resolve
 // as unknown afterwards until re-mapped. A small resolve probe below the
 // toolbar answers channel+value -> named principal, or the honest "unknown
-// principal" — never a fabricated identity.
+// principal", never a fabricated identity.
 //
 // No wire event for this domain (not on lib/realtime.ts's DOMAIN_INVALIDATIONS)
-// — freshness comes from mutation-driven invalidation plus ChannelsView's
+//, freshness comes from mutation-driven invalidation plus ChannelsView's
 // manual refresh, same posture as fleet.*/checkpoints.*/ci.*.
 
 import { useState, type FormEvent } from "react";
@@ -227,7 +227,7 @@ function PrincipalFormModal({
   const editing = state?.mode === "edit" ? state.principal : null;
   const [name, setName] = useState(editing?.name ?? "");
   const [kind, setKind] = useState<string>(editing?.kind ?? "user");
-  // The identities textarea is the field worth persisting — a hand-typed list
+  // The identities textarea is the field worth persisting, a hand-typed list
   // of "channel:value" lines a user would grieve retyping. This component
   // remounts per form target (key on the parent, PrincipalsPanel), so a
   // stable per-entity key is enough; no manual reset effect needed.

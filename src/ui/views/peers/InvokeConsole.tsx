@@ -1,9 +1,9 @@
-// Advanced "invoke on peer" console — remote.peers.invoke (docs/FEATURES.md
+// Advanced "invoke on peer" console, remote.peers.invoke (docs/FEATURES.md
 // §21 row 2, the advanced end of it). Free-form: pick a peer, name a command
-// (the peer's own command vocabulary — this client has no way to validate it
+// (the peer's own command vocabulary, this client has no way to validate it
 // beyond what the peer's `commands` list advertises), give it a JSON payload,
 // and see the queued work item come back. This is an operator escape hatch,
-// not a friendly form — the daemon queues the work for the peer to pull and
+// not a friendly form, the daemon queues the work for the peer to pull and
 // interpret; nothing here confirms the peer actually understood it.
 
 import { useState } from "react";

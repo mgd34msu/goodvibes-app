@@ -1,8 +1,8 @@
-// Durable approval rules — every remembered decision at a generalizing tier
+// Durable approval rules, every remembered decision at a generalizing tier
 // (permissions.rules.list), with revocation (permissions.rules.delete).
-// Write-only from decisions: nothing here mints a rule — a rule is created
+// Write-only from decisions: nothing here mints a rule, a rule is created
 // only by approving with a remember scope elsewhere. A `deleted:false`
-// response is the daemon's honest "no such rule" (already gone) — surfaced
+// response is the daemon's honest "no such rule" (already gone), surfaced
 // as info, never as an error, same posture as the principals/channel-profile
 // deletes in the Channels view.
 
@@ -117,7 +117,7 @@ export function PermissionRulesSection() {
                 className="approval-card__btn approval-card__btn--deny"
                 disabled={remove.isPending && remove.variables === rule.id}
                 aria-label={`Delete rule: ${ruleSummary(rule)}`}
-                title="Delete this rule — matching asks will prompt again"
+                title="Delete this rule; matching asks will prompt again"
                 onClick={() => remove.mutate(rule.id)}
               >
                 <Trash2 size={13} aria-hidden="true" /> {remove.isPending && remove.variables === rule.id ? "Deleting…" : "Delete"}

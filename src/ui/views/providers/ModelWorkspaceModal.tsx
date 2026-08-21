@@ -1,9 +1,9 @@
-// ModelWorkspaceModal — the multi-target model picker (main / helper / tool /
+// ModelWorkspaceModal, the multi-target model picker (main / helper / tool /
 // tts / embeddings), search + price/tier filters, toward the TUI's Model
 // Workspace (docs/FEATURES.md §14). Ported from goodvibes-webui
 // src/components/model-workspace/ModelWorkspaceModal.tsx, adapted to this pin:
 // every target routes through config.get/config.set (no models.* verbs exist
-// here — see model-catalog.ts header), and EVERY write is confirm-gated
+// here, see model-catalog.ts header), and EVERY write is confirm-gated
 // through the shared ConfirmSurface (admin config write) with confirm:true +
 // explicitUserRequest forwarded on the wire.
 //
@@ -124,7 +124,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
   const write = useMutation({
     mutationFn: async ({ pending, meta }: { pending: PendingWrite; meta: ConfirmMetadata }) => {
       // Sequential, not Promise.all: the daemon's /config route accepts one
-      // key at a time — several keys for one target means several awaited
+      // key at a time, several keys for one target means several awaited
       // config.set calls in a row. The ConfirmSurface metadata rides each one.
       for (const [key, value] of pending.entries) {
         await gv.config.set({ key, value, ...meta });
@@ -151,7 +151,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
       target: targetHasNoModelConcept(target) ? model.provider : model.registryKey,
       blastRadius: `Writes shared config key${entries.length === 1 ? "" : "s"} ${entries
         .map(([key]) => key)
-        .join(", ")} — every surface on this daemon (TUI, agent, webui, app) follows the new routing.`,
+        .join(", ")}; every surface on this daemon (TUI, agent, webui, app) follows the new routing.`,
       entries,
     });
   }
@@ -162,7 +162,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
     setPendingWrite({
       action: `${enabled ? "Enable" : "Disable"} ${TARGET_LABELS[target]}`,
       target: entry[0],
-      blastRadius: `Writes shared config key ${entry[0]}=${String(enabled)} — daemon-wide, all surfaces follow.`,
+      blastRadius: `Writes shared config key ${entry[0]}=${String(enabled)}; daemon-wide, all surfaces follow.`,
       entries: [entry],
     });
   }
@@ -172,13 +172,13 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
       action: "Set default reasoning effort",
       target: value,
       blastRadius:
-        "Writes shared config key provider.reasoningEffort — the daemon-wide default for new turns on every surface.",
+        "Writes shared config key provider.reasoningEffort: the daemon-wide default for new turns on every surface.",
       entries: [["provider.reasoningEffort", value]],
     });
   }
 
   // While a confirm is pending, Escape/backdrop on the underlying workspace
-  // must cancel the confirm only — both Modal Escape handlers fire on the same
+  // must cancel the confirm only, both Modal Escape handlers fire on the same
   // keypress, so the workspace's close is guarded here.
   function handleWorkspaceClose(): void {
     if (pendingWrite) {
@@ -277,7 +277,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
                 className={
                   mode === "catalog" ? "model-workspace-target model-workspace-target--active" : "model-workspace-target"
                 }
-                title="Browse the models.dev catalog — 4000+ models across every provider it tracks"
+                title="Browse the models.dev catalog: 4000+ models across every provider it tracks"
                 onClick={() => setMode("catalog")}
               >
                 Catalog
@@ -315,7 +315,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
               </span>
             ) : routing.unset ? (
               <span className="model-workspace-routing__note">
-                {routing.label}: not configured{routing.configuredNote ? ` — ${routing.configuredNote}` : ""}
+                {routing.label}: not configured{routing.configuredNote ? `, ${routing.configuredNote}` : ""}
               </span>
             ) : (
               <span className="model-workspace-routing__current">
@@ -336,7 +336,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
               </label>
             )}
             {target === "main" && !configRefused && config.isSuccess && (
-              <label className="model-workspace-reasoning" title="provider.reasoningEffort — daemon-wide default">
+              <label className="model-workspace-reasoning" title="provider.reasoningEffort: daemon-wide default">
                 <span>Reasoning effort</span>
                 <select
                   value={REASONING_LEVELS.includes(reasoningEffort as (typeof REASONING_LEVELS)[number]) ? reasoningEffort : ""}

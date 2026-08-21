@@ -1,5 +1,5 @@
 // App-local pinned/favorite models (docs/FEATURES.md §14 "Pin/unpin favorite
-// models" — backing: app-local favorites). Persisted per the app's shared-store
+// models", backing: app-local favorites). Persisted per the app's shared-store
 // conventions in localStorage; a tiny external store so every mounted pin
 // button re-renders on toggle without prop drilling.
 
@@ -26,7 +26,7 @@ function persist(next: readonly string[]): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // Quota/privacy failures degrade to session-only pins — never a crash.
+    // Quota/privacy failures degrade to session-only pins, never a crash.
   }
   listeners.forEach((fn) => fn());
 }

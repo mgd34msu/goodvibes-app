@@ -1,7 +1,7 @@
 // Local query keys for the Channels view. Every key is PREFIXED with
 // "channels" so the `communication` realtime domain invalidation
 // (lib/realtime.ts DOMAIN_INVALIDATIONS → queryKeys.channels = ["channels"])
-// fans out to every query this view owns — list, detail, and per-surface
+// fans out to every query this view owns, list, detail, and per-surface
 // drill-ins alike. Defined locally (not in lib/queries.ts) per the wave
 // ownership rules; the shared prefix is the alignment contract.
 
@@ -22,6 +22,6 @@ export const channelsKeys = {
   policiesAudit: ["channels", "policies-audit"] as const,
   drafts: ["channels", "drafts"] as const,
   routing: ["channels", "routing"] as const,
-  /** /app/pairing is app-local (no daemon event) — fetched only while the modal is open. */
+  /** /app/pairing is app-local (no daemon event), fetched only while the modal is open. */
   pairing: ["channels", "pairing"] as const,
 } as const;

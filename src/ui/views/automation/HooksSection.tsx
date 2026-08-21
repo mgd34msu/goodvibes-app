@@ -1,7 +1,7 @@
-// Hooks — .goodvibes/hooks.json editor (docs/GAPS.md §5 row 10) against the
+// Hooks, .goodvibes/hooks.json editor (docs/GAPS.md §5 row 10) against the
 // app-local GET/PUT /app/local/hooks route (src/bun/local-tools.ts). No wire
 // method backs this: the file lives on the machine this app runs on, not on
-// the daemon, so there is no realtime domain and no poll — refetch happens on
+// the daemon, so there is no realtime domain and no poll, refetch happens on
 // mount and after a save. Save is admin-flavored: writing an operational
 // config file that changes hook behavior everywhere still gets the confirm
 // treatment this app reserves for consequential actions.
@@ -24,7 +24,7 @@ import {
   type HooksSaveError,
 } from "./hooks-api.ts";
 
-/** Best-effort line/column from a JSON.parse-style character offset — a display convenience over the daemon's own position, never a re-derivation of it. */
+/** Best-effort line/column from a JSON.parse-style character offset, a display convenience over the daemon's own position, never a re-derivation of it. */
 function lineAndColumnAt(content: string, position: number): { line: number; column: number } {
   const clipped = Math.max(0, Math.min(position, content.length));
   const prefix = content.slice(0, clipped);
@@ -45,7 +45,7 @@ export function HooksSection() {
     queryFn: () => hooksApi.get(),
   });
 
-  // Sync the draft from a fresh load/reload — never clobber a restored draft
+  // Sync the draft from a fresh load/reload, never clobber a restored draft
   // (a real unsaved edit that survived a remount) with server content.
   useEffect(() => {
     if (file.data && !syncedFromLoad.current) {
@@ -177,7 +177,7 @@ export function HooksSection() {
         open={confirmSave}
         action="Save hooks.json"
         target={file.data.path}
-        blastRadius="Overwrites the file on disk immediately. The daemon and TUI re-read it on their own schedule — hook behavior everywhere that reads this file changes as soon as they do."
+        blastRadius="Overwrites the file on disk immediately. The daemon and TUI re-read it on their own schedule; hook behavior everywhere that reads this file changes as soon as they do."
         confirmLabel="Save"
         onConfirm={() => save.mutate(draft)}
         onCancel={() => setConfirmSave(false)}

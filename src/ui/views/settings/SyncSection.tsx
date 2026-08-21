@@ -1,6 +1,6 @@
 // Settings-sync / storage posture (docs/FEATURES.md §19): GET settings.snapshot
-// returns the settings INTEGRATION snapshot — live key counts, profiles,
-// managed locks, sync conflicts, recent apply failures — not a config schema
+// returns the settings INTEGRATION snapshot, live key counts, profiles,
+// managed locks, sync conflicts, recent apply failures, not a config schema
 // (the schema ships pinned in config-schema.generated.ts). When the
 // integration is off the daemon says so with {available:false, reason}.
 
@@ -18,7 +18,7 @@ export function SyncSection() {
     queryKey: settingsKeys.syncSnapshot,
     queryFn: () => gv.invoke("settings.snapshot"),
     retry: false,
-    // No wire event for the settings integration — targeted poll.
+    // No wire event for the settings integration, targeted poll.
     refetchInterval: SETTINGS_POLL_MS,
   });
 

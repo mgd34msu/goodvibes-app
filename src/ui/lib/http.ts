@@ -1,5 +1,5 @@
 // Same-origin fetch wrapper. Every /api and /app request must carry the app
-// header (the proxy rejects requests without it — src/bun/ui-server.ts).
+// header (the proxy rejects requests without it, src/bun/ui-server.ts).
 
 import { APP_HEADER, APP_HEADER_VALUE } from "../../shared/app-contract.ts";
 

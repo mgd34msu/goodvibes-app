@@ -2,7 +2,7 @@
 // /api/watchers handlers actually read from the body (verified in
 // goodvibes-sdk system-routes.ts): label (required), kind, intervalMs, and
 // the optional source hints url / method / path / endpoint / address /
-// headers / metadata — every one tolerated as absent, so the form only sends
+// headers / metadata, every one tolerated as absent, so the form only sends
 // what the user filled in. All watcher mutations are admin-scoped.
 
 import { useId, useMemo, useState, type FormEvent } from "react";
@@ -24,7 +24,7 @@ export interface WatcherBody {
 
 const KIND_HINTS: Record<string, string> = {
   polling: "Checks a target on a fixed interval.",
-  webhook: "Receives pushes on the daemon's listener port — url/path describe the source.",
+  webhook: "Receives pushes on the daemon's listener port; url/path describe the source.",
   filesystem: "Watches a path for changes.",
   socket: "Listens on a socket address.",
   integration: "Bridges an external integration endpoint.",
@@ -35,7 +35,7 @@ function readMetaString(row: WatcherRow | null, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-// Keys the form surfaces through their own dedicated fields — everything
+// Keys the form surfaces through their own dedicated fields, everything
 // else in a watcher's merged metadata bag is a "custom" key this form must
 // still show and round-trip verbatim, or an edit silently drops it (the
 // metadata textarea below only ever sends what's IN it, so any key not

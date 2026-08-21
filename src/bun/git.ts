@@ -1,7 +1,7 @@
-// /app/git/* — workspace git operations for the Code views (docs/FEATURES.md
+// /app/git/*, workspace git operations for the Code views (docs/FEATURES.md
 // §15, docs/ARCHITECTURE.md §5). Runs the system `git` binary via Bun.spawn
 // (no native modules, no simple-git) against ONE workspace directory:
-// GOODVIBES_WORKING_DIR when set, else the app's launch cwd — the same
+// GOODVIBES_WORKING_DIR when set, else the app's launch cwd, the same
 // directory a co-located daemon treats as its workspace.
 //
 // Safety rails (desktop autopsy): NO force flags anywhere, no reset --hard,
@@ -464,7 +464,7 @@ async function handleCommit(workspaceDir: string, req: Request): Promise<Respons
   if (status.staged.length === 0) {
     return json(
       {
-        error: "Nothing is staged — stage changes first (no-op commits are refused).",
+        error: "Nothing is staged; stage changes first (no-op commits are refused).",
         code: "GIT_COMMIT_NOTHING_STAGED",
         guard: dirtyGuard(status),
       },
@@ -517,7 +517,7 @@ async function handleStashPush(workspaceDir: string, req: Request): Promise<Resp
     return gitError(result, "GIT_STASH_PUSH_FAILED", 409);
   }
   if (/no local changes to save/i.test(result.stdout + result.stderr)) {
-    return json({ ok: true, noop: true, note: "No local changes to save — nothing was stashed." });
+    return json({ ok: true, noop: true, note: "No local changes to save; nothing was stashed." });
   }
   return json({ ok: true, noop: false, summary: result.stdout.trim() });
 }
@@ -540,7 +540,7 @@ async function handleStashPop(workspaceDir: string, req: Request): Promise<Respo
         error: result.stderr.trim() || result.stdout.trim() || "stash pop failed",
         code: conflicted ? "GIT_STASH_POP_CONFLICT" : "GIT_STASH_POP_FAILED",
         note: conflicted
-          ? "The stash was NOT dropped — resolve the conflicts in the working tree, then drop it manually."
+          ? "The stash was NOT dropped; resolve the conflicts in the working tree, then drop it manually."
           : undefined,
       },
       409,
@@ -601,10 +601,10 @@ async function handleWorktrees(workspaceDir: string): Promise<Response> {
   return json({ worktrees });
 }
 
-// ─── checkout / branch-create (§15 row 2 — dirty-guarded, no force) ─────────
+// ─── checkout / branch-create (§15 row 2, dirty-guarded, no force) ─────────
 
 /** Switch branches. REFUSES when the working tree is dirty (reuses the same
- * porcelain-v2 guard as commit/stage) so the UI can explain before acting —
+ * porcelain-v2 guard as commit/stage) so the UI can explain before acting,
  * no `git checkout -f` path exists anywhere in this module. */
 async function handleCheckout(workspaceDir: string, req: Request): Promise<Response> {
   const body = await readJsonBody(req);
@@ -618,7 +618,7 @@ async function handleCheckout(workspaceDir: string, req: Request): Promise<Respo
     const dirtyCount = guard.stagedCount + guard.unstagedCount + guard.untrackedCount + guard.conflictedCount;
     return json(
       {
-        error: `Refusing to checkout '${branch}' — working tree has ${dirtyCount} dirty file(s). Commit or stash first.`,
+        error: `Refusing to checkout '${branch}': working tree has ${dirtyCount} dirty file(s). Commit or stash first.`,
         code: "GIT_CHECKOUT_DIRTY",
         guard,
       },
@@ -635,7 +635,7 @@ async function handleCheckout(workspaceDir: string, req: Request): Promise<Respo
 }
 
 /** Create a new local branch, optionally from a start point. Never switches
- * to it — checkout is a separate, explicitly confirmed call from the UI. */
+ * to it, checkout is a separate, explicitly confirmed call from the UI. */
 async function handleBranchCreate(workspaceDir: string, req: Request): Promise<Response> {
   const body = await readJsonBody(req);
   const name = typeof body["name"] === "string" ? body["name"] : "";
@@ -653,7 +653,7 @@ async function handleBranchCreate(workspaceDir: string, req: Request): Promise<R
   return json({ ok: true, name, from: from || undefined });
 }
 
-// ─── tags / remotes / reflog (§15 row 3 — read-only) ────────────────────────
+// ─── tags / remotes / reflog (§15 row 3, read-only) ────────────────────────
 
 async function handleTags(workspaceDir: string): Promise<Response> {
   const format = [
@@ -716,7 +716,7 @@ async function handleRemotes(workspaceDir: string): Promise<Response> {
 const REFLOG_LIMIT = 50;
 
 /** Bounded, read-only reflog for rescue browsing. No restore endpoint exists
- * yet — the UI labels that honestly rather than wiring a destructive reset. */
+ * yet, the UI labels that honestly rather than wiring a destructive reset. */
 async function handleReflog(workspaceDir: string): Promise<Response> {
   const format = `%H${US}%h${US}%gd${US}%gs${US}%cI${RS}`;
   const result = await runGit(workspaceDir, ["reflog", "show", `-n${REFLOG_LIMIT}`, `--format=${format}`, "HEAD"]);
@@ -743,7 +743,7 @@ async function handleReflog(workspaceDir: string): Promise<Response> {
 export function createGitRoutes(): AppRouteHandler {
   // NEVER default to process.cwd(): in the bundled app that is the launcher's
   // bin directory, so the Git view silently showed the app's own install repo
-  // (verified live). Home is the honest fallback — the view then reports
+  // (verified live). Home is the honest fallback, the view then reports
   // "not a git repository" instead of lying about which repo it's showing.
   const workspaceDir = process.env["GOODVIBES_WORKING_DIR"]?.trim() || homedir();
 
@@ -807,7 +807,7 @@ export function createGitRoutes(): AppRouteHandler {
 
       return json({ error: `Method ${method} not allowed`, code: "GIT_METHOD_NOT_ALLOWED" }, 405);
     } catch (err) {
-      // ENOENT here means the git binary itself is missing — name it honestly.
+      // ENOENT here means the git binary itself is missing, name it honestly.
       const detail = err instanceof Error ? err.message : String(err);
       const missingGit = /ENOENT|executable/i.test(detail);
       return json(

@@ -1,4 +1,4 @@
-// memory-wire.ts — types, defensive wire parsers, pure helpers, and local
+// memory-wire.ts, types, defensive wire parsers, pure helpers, and local
 // query keys for the Memory view (docs/FEATURES.md §7).
 //
 // Wire shapes are hand-checked against the SDK's own runtime schemas
@@ -7,7 +7,7 @@
 // MEMORY_RECORD_SEARCH_OUTPUT_SCHEMA, MEMORY_LINK_SCHEMA,
 // MEMORY_BUNDLE_SCHEMA, MEMORY_IMPORT_RESULT_SCHEMA,
 // MEMORY_VECTOR_STATS_SCHEMA, MEMORY_DOCTOR_REPORT_SCHEMA) but every reader
-// is defensive — a field missing on an older daemon degrades to a rendered
+// is defensive, a field missing on an older daemon degrades to a rendered
 // "—", never a crash.
 
 import { asArray, asRecord, firstNumber, firstString } from "../../lib/wire.ts";
@@ -33,11 +33,11 @@ export type MemoryScope = (typeof MEMORY_SCOPES)[number];
 export const MEMORY_REVIEW_STATES = ["fresh", "reviewed", "stale", "contradicted"] as const;
 export type MemoryReviewState = (typeof MEMORY_REVIEW_STATES)[number];
 
-/** Directed-relation suggestions for the link form (open vocabulary — the
+/** Directed-relation suggestions for the link form (open vocabulary, the
  * daemon accepts any string; these are the relations the TUI uses). */
 export const MEMORY_LINK_RELATIONS = ["supersedes", "caused", "relates-to", "duplicates", "refines"] as const;
 
-// ─── Local query keys — everything under the ["memory"] prefix so one
+// ─── Local query keys, everything under the ["memory"] prefix so one
 // invalidateQueries({queryKey: ["memory"]}) after a mutation refetches the
 // list, every open detail/links query, the review queue, and the admin
 // panels in one shot. Matches lib/queries.ts memoryList/memoryReviewQueue
@@ -365,7 +365,7 @@ export function isFlaggedReviewState(state: string): boolean {
 
 /** Below the store's recall floor a record is never injected into a prompt
  * even when unflagged. `recallFloor` is the LIVE wire value the search result
- * carried — when an older daemon omits it we make no below-floor claim. */
+ * carried, when an older daemon omits it we make no below-floor claim. */
 export function isBelowRecallFloor(record: MemoryRecord, recallFloor: number | undefined): boolean {
   return recallFloor !== undefined && record.confidence < recallFloor;
 }
@@ -374,12 +374,12 @@ export function formatConfidence(confidence: number): string {
   return `${Math.round(confidence)}%`;
 }
 
-// ─── Learning-review triage buckets (docs/GAPS.md §8 row 12 — the memory-side
+// ─── Learning-review triage buckets (docs/GAPS.md §8 row 12, the memory-side
 // half: client-side buckets over the SAME review-queue data, using the
 // review-state transitions memory.records.update-review already ships. No
 // new wire verb; this is purely a client-side lens over memory.review-queue). ─
 
-/** Below this, a record is "low confidence" for triage purposes — a fixed,
+/** Below this, a record is "low confidence" for triage purposes, a fixed,
  * documented threshold (matches the AddMemoryForm default of 60), NOT the
  * dynamic per-search recallFloor (the review queue response carries no
  * recallFloor of its own to compare against). */
@@ -394,13 +394,13 @@ export function isLowConfidenceRecord(record: MemoryRecord): boolean {
 }
 
 /** Normalize a summary for duplicate grouping: lowercase, collapse whitespace,
- * strip trailing punctuation — a heuristic, not a semantic match. */
+ * strip trailing punctuation, a heuristic, not a semantic match. */
 function normalizeSummary(summary: string): string {
   return summary.trim().toLowerCase().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
 }
 
 /** Ids of records that share a normalized summary + class with at least one
- * OTHER record in the same list — a cheap duplicate-candidate heuristic
+ * OTHER record in the same list, a cheap duplicate-candidate heuristic
  * (exact-ish text match, not embeddings) over whatever page of records the
  * review queue returned. */
 export function findDuplicateRecordIds(records: readonly MemoryRecord[]): ReadonlySet<string> {
@@ -446,7 +446,7 @@ export function formatTimestamp(value: number | undefined): string {
 }
 
 /** Build the search/export body from applied filters, dropping empties.
- * `includeRecall=false` for memory.records.export — `recall` is search-only
+ * `includeRecall=false` for memory.records.export, `recall` is search-only
  * on the wire (MEMORY_SEARCH_FILTER_FIELDS has no recall). */
 export function filtersToBody(filters: MemoryFilters, includeRecall: boolean): Record<string, unknown> {
   return {
@@ -480,7 +480,7 @@ export function extractBundle(
 // (merge exact duplicates, decay never-referenced aged records); anything
 // needing a human call (contradiction, cross-scope duplicate, stale-delete)
 // is emitted as a PROPOSAL instead. The records a proposal references are
-// already marked into the review queue by the consolidation pass itself —
+// already marked into the review queue by the consolidation pass itself,
 // this is purely a legibility layer (what kind, which records, why) with a
 // jump to the review queue below, never a second resolution path.
 
@@ -489,7 +489,7 @@ export type ConsolidationProposalKind = "contradiction" | "cross-scope-duplicate
 export interface ConsolidationProposal {
   kind: ConsolidationProposalKind | string;
   ids: string[];
-  /** An internal agent-tool invocation string on the wire — never a link. */
+  /** An internal agent-tool invocation string on the wire, never a link. */
   route: string;
   reason: string;
 }
@@ -516,7 +516,7 @@ export interface ConsolidationReceiptsResult {
 export const CONSOLIDATION_PROPOSAL_KIND_LABEL: Record<string, string> = {
   contradiction: "Contradiction",
   "cross-scope-duplicate": "Cross-scope duplicate",
-  "stale-delete": "Stale — propose delete",
+  "stale-delete": "Stale: propose delete",
 };
 
 function parseConsolidationProposal(value: unknown): ConsolidationProposal | null {
@@ -576,7 +576,7 @@ export function formatConsolidationRunAt(value: string): string {
 // ─── Standing-memory projections (memory.projections.list/get) ────────────────
 //
 // The live markdown projection of standing (project/team-scope) memory
-// records — computed from the store on EVERY call, never read from disk or
+// records, computed from the store on EVERY call, never read from disk or
 // cached. A projection entry is present even when expired (status:"expired"),
 // never silently dropped.
 

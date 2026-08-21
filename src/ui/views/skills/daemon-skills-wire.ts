@@ -1,12 +1,12 @@
-// Daemon-canonical skills store (skills.list/get/create/update/delete) — the
+// Daemon-canonical skills store (skills.list/get/create/update/delete), the
 // FIRST UI anywhere for this store (no webui/tui crib exists; built directly
 // from node_modules/@pellux/goodvibes-sdk's operator-contract.json). This is
 // a SEPARATE store from the app-local registry-based skills the rest of
-// SkillsView.tsx manages (routines/registries.ts, /app/registries/skills) —
+// SkillsView.tsx manages (routines/registries.ts, /app/registries/skills),
 // two independent skill catalogs that happen to share the name "skill".
 //
 // Progressive disclosure is the wire design, not an app choice: skills.list
-// returns only name/description/metadata (no body — cheap index rows), and
+// returns only name/description/metadata (no body, cheap index rows), and
 // skills.get is the only way to fetch one skill's full markdown body.
 
 import { asArray, asRecord, firstNumber, firstString } from "../../lib/wire.ts";
@@ -15,7 +15,7 @@ export interface DaemonSkillMetadata {
   [key: string]: unknown;
 }
 
-/** Index-row shape from skills.list — deliberately BODY-LESS. */
+/** Index-row shape from skills.list, deliberately BODY-LESS. */
 export interface DaemonSkillIndexEntry {
   name: string;
   description: string;
@@ -23,7 +23,7 @@ export interface DaemonSkillIndexEntry {
   updatedAt?: number;
 }
 
-/** Full shape from skills.get / skills.create / skills.update — includes body. */
+/** Full shape from skills.get / skills.create / skills.update, includes body. */
 export interface DaemonSkill extends DaemonSkillIndexEntry {
   body: string;
 }
@@ -78,7 +78,7 @@ export function parseDaemonSkill(value: unknown): DaemonSkill | null {
   };
 }
 
-/** Metadata rendered as short "key: value" chips — best-effort stringify,
+/** Metadata rendered as short "key: value" chips, best-effort stringify,
  * never crashes on an object/array value. */
 export function metadataEntries(metadata: DaemonSkillMetadata): Array<[string, string]> {
   return Object.entries(metadata).map(([key, value]) => {
@@ -105,7 +105,7 @@ export function metadataToText(metadata: DaemonSkillMetadata | undefined): strin
 
 export type MetadataParseResult = { ok: true; value: DaemonSkillMetadata } | { ok: false; error: string };
 
-/** Parse the editor's metadata textarea back to an object — blank text means
+/** Parse the editor's metadata textarea back to an object, blank text means
  * "no metadata" (undefined on the wire body), not an error. */
 export function parseMetadataText(text: string): MetadataParseResult {
   const trimmed = text.trim();

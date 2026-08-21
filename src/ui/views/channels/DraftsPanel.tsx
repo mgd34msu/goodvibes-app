@@ -1,10 +1,10 @@
-// Drafts (docs/FEATURES.md §13 "Drafts: list/get/save/delete — dangerous-
+// Drafts (docs/FEATURES.md §13 "Drafts: list/get/save/delete, dangerous-
 // flagged saves → confirm"): channels.drafts.list as a master list with a
 // detail peek (channels.drafts.get), a create/edit modal, and delete.
 // Both mutating verbs are dangerous+admin on the wire, so BOTH run through
 // ConfirmSurface; save carries confirm metadata in the body
 // (additionalProperties: true), delete is a bare DELETE on the path (its
-// input schema takes nothing else — the confirmation is this UI's gate).
+// input schema takes nothing else, the confirmation is this UI's gate).
 
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ import { channelsKeys } from "./keys.ts";
 import { QueryPanel } from "./QueryPanel.tsx";
 import { readDrafts, type DraftRecord } from "./channels-wire.ts";
 
-/** Detail peek — channels.drafts.get rendered verbatim (the look-something-up
+/** Detail peek, channels.drafts.get rendered verbatim (the look-something-up
  * surface; edit/delete stay on the list row). */
 function DraftDetailPeek({ draftId }: { draftId: string }) {
   const detail = useQuery({
@@ -71,7 +71,7 @@ export function DraftsPanel() {
   });
 
   const remove = useMutation({
-    // drafts.delete takes only the path param — the ConfirmSurface below is
+    // drafts.delete takes only the path param, the ConfirmSurface below is
     // the gate; there is no confirm field in its input schema to forward.
     mutationFn: (draft: DraftRecord) =>
       invoke("channels.drafts.delete", { params: { draftId: draft.id } }),
@@ -180,7 +180,7 @@ export function DraftsPanel() {
         open={deleting !== null}
         action="Delete draft"
         target={deleting?.title || deleting?.id || ""}
-        blastRadius="Removes the draft from the daemon store for every surface — this cannot be undone."
+        blastRadius="Removes the draft from the daemon store for every surface; this cannot be undone."
         danger
         requireTypedText="delete"
         confirmLabel="Delete draft"
@@ -208,7 +208,7 @@ function DraftEditModal({
 
   const base = editing?.draft;
   const [title, setTitle] = useState(base?.title ?? "");
-  // Message is the field worth persisting — this component remounts (key=
+  // Message is the field worth persisting, this component remounts (key=
   // editing.draft.id on the parent) each time the modal opens/closes, so the
   // draft key only needs to be stable for this instance's lifetime.
   const [message, setMessage, messageDraft] = useDraftState(`channels.draft.${base?.id ?? "new"}.message`, base?.message ?? "");

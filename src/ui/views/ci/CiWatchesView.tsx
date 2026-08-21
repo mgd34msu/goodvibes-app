@@ -1,4 +1,4 @@
-// CI Watches — ci.status one-shot lookups + persistent ci.watches.* that
+// CI Watches, ci.status one-shot lookups + persistent ci.watches.* that
 // notify (and optionally auto-start a fix session) when a repo/ref/PR's
 // checks finish. Crib: goodvibes-webui src/views/ci/CiWatchesView.tsx,
 // adapted onto this app's tolerant-parse idiom (./ci.ts, lib/wire.ts) instead
@@ -7,23 +7,23 @@
 // Wave: SDK-1.11 adoption (agent C owns this file).
 //
 // ci.* is plain HTTP end to end (ws:false on every row in
-// generated/operator-routes.ts) — there is no ws-bridge-down state to handle
+// generated/operator-routes.ts), there is no ws-bridge-down state to handle
 // here, unlike checkpoints.*/fleet.*.
 //
 // ci.* emits NO wire event (a standing gap shared with fleet.*/checkpoints.*/
-// memory.* — see queryKeys.ciWatches's comment in lib/queries.ts): freshness
-// is mutation-driven invalidation + manual refresh ONLY — deliberately no
+// memory.*, see queryKeys.ciWatches's comment in lib/queries.ts): freshness
+// is mutation-driven invalidation + manual refresh ONLY, deliberately no
 // poll here (unlike CheckpointsView's 30s poll), since nothing about a
 // standing watch changes on its own between explicit checks.
 //
 // Per this surface's honesty bar (docs/UX.md §4): the detail ALWAYS lists
-// every job with its own conclusion — never a bare rollup badge with no job
+// every job with its own conclusion, never a bare rollup badge with no job
 // list underneath. continue-on-error jobs get a distinct badge when the wire
 // reports them, and violations (the daemon's own reasons the verdict is not
 // a clean "passed") are listed verbatim, never summarized.
 //
 // Delivery channel is a free-text field with a hint, not a select: no view
-// in this app exports a reusable "list of channel identifiers" query — the
+// in this app exports a reusable "list of channel identifiers" query, the
 // Channels view's channel/account data (channels.status, channels.accounts.list)
 // is fetched under LOCAL query keys owned by that view
 // (src/ui/views/channels/keys.ts), not lib/queries.ts's shared registry, so
@@ -200,7 +200,7 @@ function CreateWatchForm({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-/** Ad hoc ci.status lookup — check any repo/ref/PR without creating a standing watch. */
+/** Ad hoc ci.status lookup, check any repo/ref/PR without creating a standing watch. */
 function AdHocStatusLookup({ repoInputRef }: { repoInputRef: RefObject<HTMLInputElement | null> }) {
   const { toast } = useToast();
   const [repo, setRepo] = useState("");
@@ -344,7 +344,7 @@ export function CiWatchesView() {
     },
   });
 
-  // Palette entries (docs/UX.md §2 — every user-invocable action gets one).
+  // Palette entries (docs/UX.md §2, every user-invocable action gets one).
   useEffect(() => {
     registerCommand({
       id: "ci.createWatch",
@@ -508,7 +508,7 @@ export function CiWatchesView() {
                   {runResult.fixSessionTriggered && runResult.fixSessionId && " A fix session was started."}
                   {runResult.fixSessionTriggered &&
                     runResult.fixSessionError &&
-                    ` The fix session could not start — ${runResult.fixSessionError}`}
+                    ` The fix session could not start: ${runResult.fixSessionError}`}
                 </p>
                 {runResult.fixSessionTriggered && runResult.fixSessionId && (
                   <button

@@ -1,5 +1,5 @@
 // Credentials snapshot (docs/FEATURES.md §19): GET credentials.get returns
-// STATUS METADATA ONLY (configured/usable/source/scope/secure flags) — no
+// STATUS METADATA ONLY (configured/usable/source/scope/secure flags), no
 // secret material ever crosses the wire, so nothing here needs masking. The
 // actual secrets manager (set/link/test) has no wire method on this daemon
 // pin; that gap renders honestly below.
@@ -45,7 +45,7 @@ export function CredentialsSection() {
     queryKey: settingsKeys.credentials,
     queryFn: () => gv.config.credentials(),
     retry: false,
-    // No wire event for credential-store churn — targeted poll.
+    // No wire event for credential-store churn, targeted poll.
     refetchInterval: SETTINGS_POLL_MS,
   });
 

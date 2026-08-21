@@ -2,7 +2,7 @@
 // per-row test button (resolves without ever returning the value), and a
 // delete confirm. Backed by src/bun/secrets.ts wrapping the SDK's
 // SecretsManager against the SAME shared ~/.goodvibes/tui/secrets.enc the
-// TUI/agent use — values NEVER reach this webview; every response here is
+// TUI/agent use, values NEVER reach this webview; every response here is
 // metadata + booleans only.
 
 import { useMemo, useState, type FormEvent } from "react";
@@ -128,7 +128,7 @@ export function SecretsSection() {
       {unavailable && (
         <UnavailableState
           capability="/app/secrets"
-          description="the secrets manager is not part of this build — no secrets can be listed, set, or tested."
+          description="the secrets manager is not part of this build; no secrets can be listed, set, or tested."
         />
       )}
 
@@ -140,7 +140,7 @@ export function SecretsSection() {
         <EmptyState
           icon={<KeyRound size={28} aria-hidden="true" />}
           title="No secrets stored"
-          description="Nothing in the shared secrets store yet — add one above, or set it from the TUI."
+          description="Nothing in the shared secrets store yet; add one above, or set it from the TUI."
         />
       )}
 

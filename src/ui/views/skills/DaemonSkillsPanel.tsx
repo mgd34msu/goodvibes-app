@@ -1,9 +1,9 @@
-// Daemon skills — skills.list/get/create/update/delete over the DAEMON's
+// Daemon skills, skills.list/get/create/update/delete over the DAEMON's
 // canonical skill store. This is the FIRST UI anywhere for this store (no
 // webui/tui crib exists to port; built directly from the operator contract:
 // node_modules/@pellux/goodvibes-sdk/dist/contracts/artifacts/
 // operator-contract.json). Distinct from the app-local registry-based
-// "Skills" section elsewhere on this view — two independent catalogs.
+// "Skills" section elsewhere on this view, two independent catalogs.
 //
 // Progressive disclosure is the WIRE's design, not a UI shortcut: skills.list
 // returns only name/description/metadata (no body) so the index stays cheap
@@ -33,7 +33,7 @@ import { DaemonSkillEditorModal, type DaemonSkillDraft } from "./DaemonSkillEdit
 
 type EditorTarget = { mode: "create" } | { mode: "edit"; skill: DaemonSkill } | null;
 
-/** One expandable index row — lazily fetches the full body via skills.get
+/** One expandable index row, lazily fetches the full body via skills.get
  * only once expanded, and only then (never on mount). */
 function DaemonSkillRow({
   entry,
@@ -145,7 +145,7 @@ export const DaemonSkillsPanel = forwardRef<DaemonSkillsPanelHandle>(function Da
   const list = useQuery({
     queryKey: daemonSkillKeys.list,
     queryFn: async () => parseDaemonSkillIndex(await gv.skills.list()),
-    // No wire event for skills.* — poll while the section is mounted, plus
+    // No wire event for skills.*, poll while the section is mounted, plus
     // refetch on every mutation.
     refetchInterval: 30_000,
     retry: false,
@@ -183,7 +183,7 @@ export const DaemonSkillsPanel = forwardRef<DaemonSkillsPanelHandle>(function Da
       toast({ title: target ? "Daemon skill updated" : "Daemon skill created", tone: "success" });
     },
     onError: (error: unknown) => {
-      // 409 name-conflict on create is an inline field error, not a toast —
+      // 409 name-conflict on create is an inline field error, not a toast,
       // the operator is still looking at the form that caused it.
       if (errorStatus(error) === 409) {
         setNameConflict(true);
@@ -199,7 +199,7 @@ export const DaemonSkillsPanel = forwardRef<DaemonSkillsPanelHandle>(function Da
       await invalidate();
       setDeleteTarget(null);
       // Delete-means-delete honesty: {deleted:false} means no such skill
-      // existed — never claim a phantom row was removed.
+      // existed, never claim a phantom row was removed.
       const deleted = asRecord(result)["deleted"];
       if (deleted === false) {
         toast({ title: "Already gone", description: `No daemon skill named "${entry.name}" existed.`, tone: "info" });
@@ -256,7 +256,7 @@ export const DaemonSkillsPanel = forwardRef<DaemonSkillsPanelHandle>(function Da
         <EmptyState
           icon={<ScrollText size={28} aria-hidden="true" />}
           title="No daemon skills yet"
-          description="A daemon skill is a markdown instruction block the daemon itself stores and serves — create one to add it to the canonical store."
+          description="A daemon skill is a markdown instruction block the daemon itself stores and serves; create one to add it to the canonical store."
           action={{ label: "New daemon skill", onClick: openCreate }}
         />
       )}

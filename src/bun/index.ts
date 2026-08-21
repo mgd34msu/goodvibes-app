@@ -1,6 +1,6 @@
 // goodvibes-app main process boot.
 // Order matters for UX: the window opens as early as possible; daemon adoption
-// happens concurrently and hydrates in (docs/UX.md §6 — never serialize window
+// happens concurrently and hydrates in (docs/UX.md §6, never serialize window
 // creation behind network calls).
 
 // Env normalization MUST come first: imports execute in order, and electrobun's
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   };
 
   // Status-tray icon + quick actions. Null when the platform/desktop has no
-  // system tray (electrobun's Tray creation fails gracefully — see setupTray).
+  // system tray (electrobun's Tray creation fails gracefully, see setupTray).
   const tray = setupTray(win, ui.url, quitApp);
 
   win.on("close", () => {
@@ -118,7 +118,7 @@ async function main(): Promise<void> {
 /**
  * Create the status-tray icon + menu. Returns null when the platform has no
  * usable system tray (electrobun's Tray swallows creation errors and leaves
- * `ptr` null; many GNOME setups need the AppIndicator extension — see
+ * `ptr` null; many GNOME setups need the AppIndicator extension, see
  * electrobun/dist/api/bun/proc/linux.md). Callers treat null as "no tray", which
  * preserves the exit-on-close behavior.
  */

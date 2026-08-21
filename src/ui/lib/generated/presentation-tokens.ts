@@ -1,17 +1,17 @@
 /**
- * GENERATED FILE — DO NOT EDIT BY HAND.
+ * GENERATED FILE: DO NOT EDIT BY HAND.
  * Produced by scripts/generate-presentation-tokens.ts from the SDK
  * presentation contract (the platform presentation subpath of
- * @pellux/goodvibes-sdk — the same tables the TUI, agent and webui render
+ * @pellux/goodvibes-sdk: the same tables the TUI, agent and webui render
  * through, so states look identical across surfaces).
  *
  * This is a layer SEPARATE from src/ui/styles/tokens.css: tokens.css owns
  * this app's own brand palette / layout / motion tokens; this file owns
- * only the values the SDK contract actually defines — status glyphs and
+ * only the values the SDK contract actually defines: status glyphs and
  * the state tone-color table.
  *
  * Regenerate: `bun run generate:presentation`.
- * Verify (no write): `bun run generate:check` — wired into `bun run verify`,
+ * Verify (no write): `bun run generate:check`, wired into `bun run verify`,
  * so a contract change that was not regenerated fails verification.
  *
  * Import from the UI's presentation bridge for the semantic mapping onto

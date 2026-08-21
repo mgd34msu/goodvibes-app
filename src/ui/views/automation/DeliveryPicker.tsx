@@ -1,6 +1,6 @@
 // Structured delivery-target picker for ScheduleForm's `delivery` field
 // (docs/GAPS.md §5 row 8). Surface options and per-surface directory entries
-// ride channels.status / channels.directory.query directly — the same wire
+// ride channels.status / channels.directory.query directly, the same wire
 // calls the Channels view uses, never that view's own files. Falls back to
 // the static AUTOMATION_SURFACE_KIND_SCHEMA enum and a free-text address
 // field whenever those calls are unavailable or come back empty, so the
@@ -27,7 +27,7 @@ import {
 } from "./delivery-targets.ts";
 
 const MODE_LABELS: Record<DeliveryMode, string> = {
-  none: "None — don't deliver anywhere",
+  none: "None: don't deliver anywhere",
   webhook: "Webhook",
   surface: "Channel / surface",
   integration: "Integration",
@@ -43,7 +43,7 @@ export function DeliveryPicker({
 }) {
   const uid = useId();
 
-  // channels.status: enabled surfaces this daemon actually has configured —
+  // channels.status: enabled surfaces this daemon actually has configured,
   // the fallback enum below covers a daemon where this call 404s or errors.
   const surfaces = useQuery({
     queryKey: ["automation", "deliverySurfaces"],
@@ -147,7 +147,7 @@ function DeliveryTargetRow({
   const problem = targetProblem(target);
 
   // channels.directory.query: real addressable targets (channels/contacts)
-  // for the chosen surface — the manual address input below is the fallback
+  // for the chosen surface, the manual address input below is the fallback
   // when this comes back empty (DM-only surfaces, or an older daemon).
   const directory = useQuery({
     queryKey: ["automation", "deliveryDirectory", target.surfaceKind],
@@ -227,7 +227,7 @@ function DeliveryTargetRow({
               Channel{" "}
               {directory.isFetching
                 ? "(loading directory…)"
-                : !hasDirectory && "(type the channel id/handle — directory came back empty or unavailable)"}
+                : !hasDirectory && "(type the channel id/handle; directory came back empty or unavailable)"}
             </span>
             {hasDirectory ? (
               <select id={`${uid}-address`} value={target.address} onChange={(e) => onChange({ address: e.target.value })}>

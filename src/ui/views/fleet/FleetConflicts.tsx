@@ -1,14 +1,14 @@
-// FleetConflicts — merge-conflict rows waiting on a human (fleet.conflicts.*,
+// FleetConflicts, merge-conflict rows waiting on a human (fleet.conflicts.*,
 // operator contract 1.11): a work item whose integration merge conflicted,
 // with the kept worktree path, branch, the STRUCTURED conflicting-file list,
 // and the resolution session id once one was spawned.
 //
 // useFleetConflicts polls alongside the fleet snapshot and degrades to an
-// empty list SILENTLY when this daemon has never heard of the verb — an
+// empty list SILENTLY when this daemon has never heard of the verb, an
 // older daemon simply predates the feature, not a failure.
 //
 // Resolve spawns a REAL resolution session inside the kept worktree
-// (fleet.conflicts.resolve) — this is the row's one action; the result's
+// (fleet.conflicts.resolve), this is the row's one action; the result's
 // sessionId is surfaced with a direct link into Sessions.
 
 import { useMutation, useQuery } from "@tanstack/react-query";

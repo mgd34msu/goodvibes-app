@@ -3,7 +3,7 @@
 // diagnostics posture) and `review.snapshot` (API-surface + counts). Neither
 // method has a wire event, so each tile polls gently while the Git view is
 // mounted, plus a manual refresh button (matches checkpoints/worktrees
-// idiom). No mutation surface — these are inspection-only per docs/FEATURES.md
+// idiom). No mutation surface, these are inspection-only per docs/FEATURES.md
 // ("read-only; full control room excluded").
 
 import { useQuery } from "@tanstack/react-query";

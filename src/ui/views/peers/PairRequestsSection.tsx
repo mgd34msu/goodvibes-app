@@ -1,4 +1,4 @@
-// Pair requests inbox — remote.pair.requests.list/approve/reject
+// Pair requests inbox, remote.pair.requests.list/approve/reject
 // (docs/FEATURES.md §21 row 3). Pending requests surface first with
 // approve/reject actions; resolved requests (approved/verified/rejected/
 // expired) stay visible below as a short history so an operator can see what

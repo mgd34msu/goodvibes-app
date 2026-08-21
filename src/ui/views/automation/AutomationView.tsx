@@ -1,13 +1,13 @@
-// Automation — jobs, schedules, runs, heartbeat (docs/FEATURES.md §5).
+// Automation, jobs, schedules, runs, heartbeat (docs/FEATURES.md §5).
 //
 // Layout: integration snapshot header (GET /api/automation → totals tiles),
 // then tabs. Jobs and Schedules are the SAME daemon store surfaced under two
-// method families (verified in goodvibes-sdk runtime-automation-routes.ts) —
+// method families (verified in goodvibes-sdk runtime-automation-routes.ts),
 // both tabs render through the shared JobsSection with their own method ids
 // so this client never invents a distinction the daemon doesn't have.
 //
 // Realtime: `automation` has no domain on the invalidation stream
-// (lib/realtime.ts DOMAIN_INVALIDATIONS) — every query here polls at 15s
+// (lib/realtime.ts DOMAIN_INVALIDATIONS), every query here polls at 15s
 // while the view is mounted (keepAlive:false → unmounts when hidden), plus
 // refetch-on-mutation via the ["automation"] prefix.
 
@@ -72,7 +72,7 @@ export function AutomationView() {
   // same cache entry the Jobs tab uses.
   const jobs = useQuery({
     queryKey: automationKeys.jobs,
-    // No automation domain on the invalidation stream — poll while visible.
+    // No automation domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke("automation.jobs.list"),
     refetchInterval: AUTOMATION_POLL_MS,
   });
@@ -99,7 +99,7 @@ export function AutomationView() {
     },
   });
 
-  // Palette commands — view-scoped, live only while the view is mounted.
+  // Palette commands, view-scoped, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "automation.refresh",
@@ -186,7 +186,7 @@ export function AutomationView() {
             delete: "automation.schedules.delete",
           }}
           onCreate={() => setCreateNoun("schedule")}
-          note="Schedules share the daemon's job store — the same entries appear under Jobs, where they can also be edited."
+          note="Schedules share the daemon's job store; the same entries appear under Jobs, where they can also be edited."
         />
       )}
 
@@ -215,14 +215,14 @@ export function AutomationView() {
   );
 }
 
-// ─── Integration snapshot header — GET /api/automation ──────────────────────
+// ─── Integration snapshot header, GET /api/automation ──────────────────────
 // { totals: { jobs, enabled, paused, runs }, jobs, recentRuns } (verified in
 // goodvibes-sdk integration helpers getAutomationSnapshot()).
 
 function SnapshotHeader() {
   const snapshot = useQuery({
     queryKey: automationKeys.snapshot,
-    // No automation domain on the invalidation stream — poll while visible.
+    // No automation domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke("automation.integration.snapshot"),
     refetchInterval: AUTOMATION_POLL_MS,
   });

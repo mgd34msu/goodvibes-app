@@ -1,4 +1,4 @@
-// provider-status.ts — honest per-provider health, derived from the real
+// provider-status.ts, honest per-provider health, derived from the real
 // per-route freshness the wire returns (ProviderAuthRouteDescriptor.freshness),
 // never a decorative fallback. Ported from goodvibes-webui
 // src/lib/provider-status.ts onto this app's lib/wire.ts readers.
@@ -132,7 +132,7 @@ export function deriveProviderStatus(record: unknown): ProviderStatus {
   };
 }
 
-/** Header text — matched to the real `configured` flag. */
+/** Header text, matched to the real `configured` flag. */
 export function providerHeaderLabel(status: ProviderStatus): string {
   if (!status.configured) return "not configured";
   return status.configuredVia ? `configured via ${status.configuredVia}` : "configured";
@@ -142,7 +142,7 @@ export function providerHeaderLabel(status: ProviderStatus): string {
 // Shared credential-status consumption (secret-free, honest-degrade)
 // ---------------------------------------------------------------------------
 
-/** One credential's status metadata from the daemon's shared store — never bytes. */
+/** One credential's status metadata from the daemon's shared store, never bytes. */
 export interface CredentialStatusEntry {
   readonly key: string;
   readonly configured: boolean;
@@ -158,7 +158,7 @@ export type CredentialAvailability =
 /**
  * Fold a `credentials.get` outcome into an honest availability value: a 503
  * CREDENTIAL_STORE_UNAVAILABLE, a METHOD_NOT_FOUND from an older daemon, or
- * any transport failure yields `available: false` with a plain reason —
+ * any transport failure yields `available: false` with a plain reason,
  * NEVER a fabricated "configured".
  */
 export function deriveCredentialAvailability(

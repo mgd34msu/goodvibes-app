@@ -1,4 +1,4 @@
-// View registry — the single map from ViewId to sidebar placement, icon,
+// View registry, the single map from ViewId to sidebar placement, icon,
 // title, keep-alive policy, and component. Later waves replace a view's
 // `Component` with `lazy(() => import("./<domain>/<View>.tsx"))` (the shell
 // already renders through Suspense); every unbuilt view renders an honest
@@ -48,7 +48,7 @@ export interface ViewGroupDef {
   views: ViewId[];
 }
 
-/** Sidebar information architecture — docs/UX.md §2, order is binding. */
+/** Sidebar information architecture, docs/UX.md §2, order is binding. */
 export const VIEW_GROUPS: readonly ViewGroupDef[] = [
   { id: "work", label: "Work", views: ["chat", "sessions", "fleet", "approvals"] },
   { id: "automate", label: "Automate", views: ["automation", "watchers", "channels"] },
@@ -63,7 +63,7 @@ export interface ViewDef {
   title: string;
   group: ViewGroupId;
   icon: LucideIcon;
-  /** Keep mounted (display:none) on view switch — holds drafts/scrollback. */
+  /** Keep mounted (display:none) on view switch, holds drafts/scrollback. */
   keepAlive: boolean;
   Component: ComponentType;
 }
@@ -75,7 +75,7 @@ function stub(title: string, wave: string, description?: string): ComponentType 
 }
 
 const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
-  // Work — Wave A
+  // Work, Wave A
   chat: {
     title: "Chat",
     icon: MessageSquare,
@@ -102,7 +102,7 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
       import("./approvals/ApprovalsTasksView.tsx").then((m) => ({ default: m.ApprovalsTasksView })),
     ),
   },
-  // Automate — Wave B
+  // Automate, Wave B
   automation: {
     title: "Automation",
     icon: CalendarClock,
@@ -121,7 +121,7 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     keepAlive: false,
     Component: lazy(() => import("./channels/ChannelsView.tsx").then((m) => ({ default: m.ChannelsView }))),
   },
-  // Know — Waves B/C
+  // Know, Waves B/C
   knowledge: {
     title: "Knowledge",
     icon: BookOpen,
@@ -152,7 +152,7 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     keepAlive: false,
     Component: lazy(() => import("./documents/DocumentsView.tsx").then((m) => ({ default: m.DocumentsView }))),
   },
-  // Assistant — Wave C
+  // Assistant, Wave C
   home: {
     title: "Home",
     icon: Home,
@@ -189,7 +189,7 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     keepAlive: false,
     Component: lazy(() => import("./checkin/CheckInView.tsx").then((m) => ({ default: m.CheckInView }))),
   },
-  // Code — Wave B
+  // Code, Wave B
   git: {
     title: "Git",
     icon: FolderGit2,
@@ -226,7 +226,7 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     keepAlive: true,
     Component: lazy(() => import("./terminal/TerminalView.tsx").then((m) => ({ default: m.TerminalView }))),
   },
-  // System — Waves B/D
+  // System, Waves B/D
   observability: {
     title: "Observability",
     icon: Zap,

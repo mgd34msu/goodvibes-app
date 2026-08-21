@@ -1,8 +1,8 @@
-// Personas — docs/FEATURES.md §8: list / create / edit / activate / delete
+// Personas, docs/FEATURES.md §8: list / create / edit / activate / delete
 // over /app/registries/personas, with SINGLE-ACTIVE enforced client-side
 // (activating one persona also writes active:false to every other active
-// record — the store itself is permissive). Right panel: the VIBE.md editor
-// (VibePanel — real disk writes). Discovery: parse persona-like sections out
+// record, the store itself is permissive). Right panel: the VIBE.md editor
+// (VibePanel, real disk writes). Discovery: parse persona-like sections out
 // of VIBE.md and offer them as candidates (VibeDiscoveryModal).
 
 import { useEffect, useMemo, useState } from "react";
@@ -42,7 +42,7 @@ export function PersonasView() {
   const list = useQuery({
     queryKey: regKeys.collection("personas"),
     queryFn: () => listRegistryItems("personas"),
-    // App-local file store — no wire event exists, so poll (cheap local read).
+    // App-local file store, no wire event exists, so poll (cheap local read).
     refetchInterval: REGISTRY_POLL_MS,
     retry: false,
   });
@@ -69,7 +69,7 @@ export function PersonasView() {
 
   // Single-active enforcement lives HERE: deactivate every other active
   // record first, then activate the target, so a mid-flight failure can only
-  // leave zero active personas — never two.
+  // leave zero active personas, never two.
   const activate = useMutation({
     mutationFn: async (persona: PersonaItem) => {
       const others = personas.filter((p) => p.active && p.id !== persona.id);
@@ -258,7 +258,7 @@ export function PersonasView() {
         target={deleteTarget?.name ?? ""}
         blastRadius={
           deleteTarget?.active
-            ? "This persona is currently ACTIVE — deleting it leaves no active persona. VIBE.md is not touched."
+            ? "This persona is currently ACTIVE; deleting it leaves no active persona. VIBE.md is not touched."
             : "Removes this persona from the app-local registry. VIBE.md is not touched."
         }
         danger

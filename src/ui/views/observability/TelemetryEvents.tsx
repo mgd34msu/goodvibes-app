@@ -1,6 +1,6 @@
-// Telemetry events browser — telemetry.events.list with the eight filters
+// Telemetry events browser, telemetry.events.list with the eight filters
 // FEATURES.md §17 calls out: domain/type/severity/trace/session/turn/agent/
-// task. Filters are local component state (not URL-synced) — dense filter
+// task. Filters are local component state (not URL-synced), dense filter
 // forms follow the McpView.toolSearch precedent rather than every keystroke
 // becoming a history entry.
 

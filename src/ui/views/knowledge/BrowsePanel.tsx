@@ -25,7 +25,7 @@ interface BrowseListProps {
   queryKey: readonly unknown[];
   listKey: string;
   active: boolean;
-  /** No wire event exists for this list — poll while the tab is visible. */
+  /** No wire event exists for this list, poll while the tab is visible. */
   pollMs?: number;
   empty: React.ReactNode;
   emptyOverride?: (items: unknown[]) => React.ReactNode | null;

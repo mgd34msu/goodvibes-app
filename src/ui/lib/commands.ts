@@ -1,6 +1,6 @@
-// Command registry — the single inventory of every user-invokable action.
+// Command registry, the single inventory of every user-invokable action.
 // Palette, hotkeys, and every displayed shortcut hint read from here (plus
-// lib/keybindings.ts for the combo — no hardcoded hint strings anywhere).
+// lib/keybindings.ts for the combo, no hardcoded hint strings anywhere).
 // Ported from goodvibes-webui src/lib/commands.ts + command-groups.ts, with a
 // `when` guard and keybinding-registry-resolved shortcuts instead of a
 // per-command `shortcut` string.
@@ -21,7 +21,7 @@ export interface CommandDef {
   title: string;
   group: CommandGroup;
   keywords?: readonly string[];
-  /** Availability guard — hidden from palette/hotkeys when it returns false. */
+  /** Availability guard, hidden from palette/hotkeys when it returns false. */
   when?: () => boolean;
   run: () => void;
 }
@@ -97,7 +97,7 @@ export function buildGroups(list: CommandDef[]): GroupedCommands[] {
 }
 
 // ---------------------------------------------------------------------------
-// Fuzzy matching (no deps — tiered score + subsequence fallback)
+// Fuzzy matching (no deps, tiered score + subsequence fallback)
 // ---------------------------------------------------------------------------
 
 export function filterCommands(list: CommandDef[], query: string): CommandDef[] {

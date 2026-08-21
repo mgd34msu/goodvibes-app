@@ -1,4 +1,4 @@
-// test/subscriptions.test.ts — unit coverage for src/bun/subscriptions.ts per
+// test/subscriptions.test.ts, unit coverage for src/bun/subscriptions.ts per
 // the task contract:
 //  1. GET /app/subscriptions never echoes accessToken/refreshToken/verifier
 //     for a stored subscription or a pending login (only safe metadata).
@@ -7,7 +7,7 @@
 //  3. An unknown/unconfigured, non-builtin provider is honestly refused
 //     (404) on login/start, login/finish, and refresh.
 // Every SubscriptionManager/ServiceRegistry instance here points at a fresh
-// temp directory — never ~/.goodvibes/tui — and nothing exercises real
+// temp directory, never ~/.goodvibes/tui, and nothing exercises real
 // network: the only code paths reached here never call
 // beginOpenAICodexLogin/exchangeOpenAICodexCode/beginOAuthLogin (they either
 // read local state or refuse before reaching the network).

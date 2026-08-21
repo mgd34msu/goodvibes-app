@@ -1,4 +1,4 @@
-// Error ledger — telemetry.errors.list.
+// Error ledger, telemetry.errors.list.
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -57,7 +57,7 @@ export function TelemetryErrors() {
       )}
 
       {errors.isSuccess && rows.length === 0 && (
-        <EmptyState title="No recorded errors" description="Nothing has been logged to the error ledger yet — that's good news." />
+        <EmptyState title="No recorded errors" description="Nothing has been logged to the error ledger yet; that's good news." />
       )}
 
       {errors.isSuccess && rows.length > 0 && (

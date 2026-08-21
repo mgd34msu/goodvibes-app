@@ -1,5 +1,5 @@
 // VIBE.md handling: reads and writes the REAL file <appHome>/VIBE.md
-// (default ~/.goodvibes/app/VIBE.md). Never a database row — the desktop
+// (default ~/.goodvibes/app/VIBE.md). Never a database row, the desktop
 // autopsy's Memory-view deception (a "file" editor that silently wrote to a
 // DB) is the named failure this module exists to avoid.
 

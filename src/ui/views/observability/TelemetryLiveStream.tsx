@@ -1,9 +1,9 @@
-// Live telemetry stream — telemetry.stream, a pausable live tail with a
+// Live telemetry stream, telemetry.stream, a pausable live tail with a
 // buffer cap. This is one of the sanctioned "render straight from SSE
 // frames" exceptions (docs/UX.md §4 / lib/realtime.ts docblock): the tail IS
 // the feature, not an invalidation signal. Pausing stops painting new frames
 // but keeps buffering (capped) so nothing is silently dropped, and the panel
-// says exactly how many are waiting — never a silent freeze.
+// says exactly how many are waiting, never a silent freeze.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pause, Play, Trash2 } from "lucide-react";
@@ -61,7 +61,7 @@ export function TelemetryLiveStream() {
       },
       onError: () => {
         setConnected(false);
-        setStreamError("Live stream disconnected — reconnecting.");
+        setStreamError("Live stream disconnected: reconnecting.");
       },
     });
     return () => {
@@ -103,7 +103,7 @@ export function TelemetryLiveStream() {
 
       {frames.length === 0 ? (
         <p className="obs-live-stream__empty">
-          {paused ? "Paused — no frames buffered yet." : "Waiting for the daemon to emit a telemetry frame…"}
+          {paused ? "Paused: no frames buffered yet." : "Waiting for the daemon to emit a telemetry frame…"}
         </p>
       ) : (
         <ul className="obs-live-stream__list" aria-label="Live telemetry frames" aria-live="off">

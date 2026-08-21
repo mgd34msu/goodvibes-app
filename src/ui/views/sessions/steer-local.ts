@@ -1,10 +1,10 @@
-// Per-session steer/follow-up composer draft — mirrors the chat composer's
+// Per-session steer/follow-up composer draft, mirrors the chat composer's
 // draft persistence (views/chat/chat-local.ts's readDraft/writeDraft): an
 // unsent steer/follow-up must survive a Sessions view switch (SessionsView
-// is NOT keep-alive — it fully unmounts, see registry.tsx) and must never
+// is NOT keep-alive, it fully unmounts, see registry.tsx) and must never
 // leak into a different session's box when the same SteerComposer instance
 // is reused across a session pick in the master/detail list (SteerComposer
-// isn't remounted on selection change — no `key` on it — so its local state
+// isn't remounted on selection change, no `key` on it, so its local state
 // otherwise carries over verbatim). Friction checklist item 1.
 
 function storage(): Storage | null {
@@ -38,7 +38,7 @@ export function readSteerDraft(sessionId: string): string {
 }
 
 /** Save (or, for empty text, clear) the steer/follow-up draft for a session.
- * Bounded to MAX_DRAFTS entries (checklist item 14) — the oldest-touched
+ * Bounded to MAX_DRAFTS entries (checklist item 14), the oldest-touched
  * entry is evicted first once the cap is exceeded. */
 export function writeSteerDraft(sessionId: string, text: string): void {
   if (!sessionId) return;

@@ -1,11 +1,11 @@
 // "Cancel/retry from the tree": correlates a selected fleet 'agent' node to
-// its RuntimeTask record (fleet.ts's taskForNode — the same owner:agentId
+// its RuntimeTask record (fleet.ts's taskForNode, the same owner:agentId
 // link the daemon's own AgentTaskAdapter establishes) and renders
 // tasks.cancel / tasks.retry against it. Shares queryKeys.tasks with the
 // Approvals & Tasks view's Tasks section, so an action here reflects there
 // instantly (the `tasks` realtime domain already invalidates that key).
 // Both actions are confirm-gated in this view (cancel styled as the
-// destructive one — work in progress is discarded; retry just requeues).
+// destructive one, work in progress is discarded; retry just requeues).
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,7 +97,7 @@ export function FleetTaskInline({ node }: { node: FleetNode }) {
         open={confirmCancel}
         action="Cancel task"
         target={task.title || task.id}
-        blastRadius="The underlying task stops immediately and any work in progress is discarded. This does not detach or delete the agent's session — only the task record backing it."
+        blastRadius="The underlying task stops immediately and any work in progress is discarded. This does not detach or delete the agent's session, only the task record backing it."
         danger
         confirmLabel="Cancel task"
         onConfirm={() => cancel.mutate(task.id)}

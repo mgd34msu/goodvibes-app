@@ -1,7 +1,7 @@
 // The ONE shared confirmation surface for confirm-gated daemon methods
 // (docs/UX.md §4): names the exact action, target, and blast radius, and
 // emits `confirm: true` + `explicitUserRequest` metadata for the caller to
-// pass through on the wire — no auto-confirm path exists. Never a native
+// pass through on the wire, no auto-confirm path exists. Never a native
 // confirm(). Optional typed-confirmation for destructive operations.
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -20,7 +20,7 @@ export interface ConfirmSurfaceProps {
   action: string;
   /** The exact target: name/id of what the action hits. */
   target: string;
-  /** What else is affected — plain words, no euphemisms. */
+  /** What else is affected, plain words, no euphemisms. */
   blastRadius: string;
   /** Marks an irreversible action (danger styling + stronger wording). */
   danger?: boolean;
@@ -92,7 +92,7 @@ export function ConfirmSurface({
             className={danger ? "confirm-surface__confirm confirm-surface__confirm--danger" : "confirm-surface__confirm"}
             disabled={!typedOk}
             onClick={() => {
-              announce(`Confirmed: ${action} — ${target}`, "assertive");
+              announce(`Confirmed: ${action}, ${target}`, "assertive");
               onConfirm({ confirm: true, explicitUserRequest: true });
             }}
           >

@@ -1,4 +1,4 @@
-// Routines — local recipes (docs/FEATURES.md §8): list / create / edit
+// Routines, local recipes (docs/FEATURES.md §8): list / create / edit
 // (name, ordered steps, tags, requirements, enabled) / delete over the
 // app-local /app/registries/routines store; "Start in chat" prints the steps
 // into the chat composer draft (documented localStorage handoff, see
@@ -121,12 +121,12 @@ function RoutinesTab() {
   const list = useQuery({
     queryKey: regKeys.collection("routines"),
     queryFn: () => listRegistryItems("routines"),
-    // App-local file store — no wire event exists, so poll (cheap local read).
+    // App-local file store, no wire event exists, so poll (cheap local read).
     refetchInterval: REGISTRY_POLL_MS,
     retry: false,
   });
 
-  // Promotion capability probe — daemon 1.0.0 may not serve every contract
+  // Promotion capability probe, daemon 1.0.0 may not serve every contract
   // method; honest quad-state like the sessions.delete pattern.
   const promoteCapability = useQuery({
     queryKey: ["capability", "automation.schedules.create"],
@@ -194,7 +194,7 @@ function RoutinesTab() {
     },
   });
 
-  // "Start in chat": bump startCount (agent semantics — starting a routine
+  // "Start in chat": bump startCount (agent semantics, starting a routine
   // records usage), hand the steps to the chat composer draft, jump to Chat.
   const startInChat = useMutation({
     mutationFn: async (routine: RoutineItem) => {

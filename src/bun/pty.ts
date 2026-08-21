@@ -1,11 +1,11 @@
-// /app/pty/* — embedded terminal PTY sessions (docs/FEATURES.md §15,
+// /app/pty/*, embedded terminal PTY sessions (docs/FEATURES.md §15,
 // docs/ARCHITECTURE.md §5). Real pseudo-terminals, no npm native modules.
 //
-// APPROACH (proven by scripted probe before building — see final agent notes):
+// APPROACH (proven by scripted probe before building, see final agent notes):
 // Bun ships no node-pty. We allocate a real PTY with the POSIX `openpty(3)`
 // from libutil via Bun's FFI, then spawn the shell through util-linux
 // `setsid -c <shell> -i` with the pty slave as stdin/stdout/stderr. `setsid -c`
-// makes the shell a session leader whose controlling terminal is that slave —
+// makes the shell a session leader whose controlling terminal is that slave,
 // which is what gives us WORKING job control: Ctrl+C (a 0x03 byte written to
 // the master) is turned into SIGINT by the line discipline and delivered to the
 // foreground process group, and the shell no longer prints "cannot set terminal
@@ -16,7 +16,7 @@
 //
 // If FFI/openpty or `setsid` are unavailable on the host, the feature degrades
 // honestly: session creation returns 501 with PTY_UNSUPPORTED and the UI shows
-// an UnavailableState — we never silently fall back to a no-TTY pipe pretending
+// an UnavailableState, we never silently fall back to a no-TTY pipe pretending
 // to be a terminal.
 
 import { dlopen, FFIType, ptr } from "bun:ffi";
@@ -72,7 +72,7 @@ const SCROLLBACK_CAP = 2_000_000; // bound reattach replay to ~2 MB, per §15
 const KILL_GRACE_MS = 2_000; // SIGHUP → SIGKILL escalation window
 const HEARTBEAT_MS = 8_000; // /app routes bypass the proxy heartbeat injector
 const READ_BUF = 65_536;
-const MAX_SESSIONS = 32;
+export const MAX_SESSIONS = 32; // exported so tests can size a fill-to-cap scenario exactly
 
 const DEFAULT_COLS = 80;
 const DEFAULT_ROWS = 24;
@@ -139,7 +139,7 @@ function exitFrame(s: PtySession): Uint8Array {
 // ─── spawn ───────────────────────────────────────────────────────────────────
 
 function resolveWorkspaceDir(): string {
-  // Same rule as git.ts: never process.cwd() — in the bundled app that is the
+  // Same rule as git.ts: never process.cwd(), in the bundled app that is the
   // launcher's bin directory (verified live). Home is the honest default.
   return process.env["GOODVIBES_WORKING_DIR"]?.trim() || homedir();
 }
@@ -164,7 +164,7 @@ const SIGNAL_NAMES: Record<number, string> = {
 
 /**
  * Normalize onExit's signal into a readable name. Bun's types say `number`, but
- * at runtime it hands back the string name (e.g. "SIGHUP") — handle both.
+ * at runtime it hands back the string name (e.g. "SIGHUP"), handle both.
  */
 function signalName(code: number | string | null | undefined): string | null {
   if (code === null || code === undefined || code === 0 || code === "") return null;
@@ -198,7 +198,7 @@ function createSession(native: PtyNative, opts: CreateOpts): PtySession {
   const id = shortId();
 
   // `setsid -c` puts the shell in its own session with the slave pty as its
-  // controlling terminal — the prerequisite for real job control / Ctrl+C.
+  // controlling terminal, the prerequisite for real job control / Ctrl+C.
   let proc: Bun.Subprocess;
   try {
     proc = Bun.spawn(["setsid", "-c", shell, "-i"], {
@@ -380,7 +380,7 @@ function streamResponse(s: PtySession): Response {
         },
       };
       self = sub;
-      // Register BEFORE snapshotting scrollback, all synchronously — the read
+      // Register BEFORE snapshotting scrollback, all synchronously, the read
       // loop's callback cannot interleave here (single-threaded, no await), so
       // the subscriber sees the full replay exactly once and no gap after it.
       s.subscribers.add(sub);
@@ -442,7 +442,14 @@ export function createPtyRoutes(): AppRouteHandler {
       if (sub === "/sessions" && method === "POST") {
         const native = loadNative();
         if (!native) return unsupported();
-        if (sessions.size >= MAX_SESSIONS) {
+        // A shell that exits on its own (typing `exit`) sets alive:false but
+        // stays in the map until an explicit DELETE prunes it (see the DELETE
+        // route below), window-close does not quit this process, so those
+        // dead records can accumulate for a long time. Count only live
+        // sessions against the cap so a pile of already-exited shells never
+        // blocks starting a new one.
+        const liveSessionCount = [...sessions.values()].filter((s) => s.alive).length;
+        if (liveSessionCount >= MAX_SESSIONS) {
           return json({ error: `Terminal session limit reached (${MAX_SESSIONS}).`, code: "PTY_LIMIT" }, 429);
         }
         const body = await readJsonBody(req);

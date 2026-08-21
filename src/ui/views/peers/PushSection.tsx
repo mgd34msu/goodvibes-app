@@ -1,10 +1,10 @@
-// Push panel — web-push subscriptions for PWA companions (docs/FEATURES.md
+// Push panel, web-push subscriptions for PWA companions (docs/FEATURES.md
 // §21 row 6, docs/GAPS.md top-10 gap #5). All five methods are ws-only;
-// gv.invoke handles that transparently over the /app/ws bridge (lib/gv.ts) —
+// gv.invoke handles that transparently over the /app/ws bridge (lib/gv.ts),
 // this panel degrades honestly (UnavailableState) when the bridge is down or
 // the daemon build lacks push.*, same as every other ws-only surface in this
 // view. push.subscriptions.create is deliberately NOT exposed here: it is
-// the PWA companion's own registration call, not an operator action — this
+// the PWA companion's own registration call, not an operator action, this
 // app uses native desktop notifications (docs/FEATURES.md §21 row 6 note).
 
 import { useState } from "react";
@@ -72,7 +72,7 @@ export function PushSection() {
       await invalidate();
       toast({
         title: `Verify: ${receipt.outcome}`,
-        description: receipt.detail || `${receipt.endpointOrigin || "endpoint"} — HTTP ${receipt.httpStatus ?? "?"}`,
+        description: receipt.detail || `${receipt.endpointOrigin || "endpoint"}: HTTP ${receipt.httpStatus ?? "?"}`,
         tone: receipt.outcome === "delivered" || receipt.outcome === "ok" ? "success" : "info",
       });
     },
@@ -129,7 +129,7 @@ export function PushSection() {
         {vapidUnavailable && (
           <UnavailableState
             capability={capabilityLabel("push.vapid.get", vapid.error)}
-            description="the VAPID public key cannot be read — PWA companions cannot register for push here."
+            description="the VAPID public key cannot be read; PWA companions cannot register for push here."
           />
         )}
         {vapid.isError && !vapidUnavailable && (

@@ -1,10 +1,10 @@
-// Research view data layer (docs/FEATURES.md §10) — three backends:
+// Research view data layer (docs/FEATURES.md §10), three backends:
 //  1. Daemon web search: web_search.providers.list + web_search.query via gv.invoke.
 //  2. Daemon runtime tasks: tasks.create/.get/.status/.list/.cancel/.retry via
-//     gv.tasks.* (docs/GAPS.md §10 row 3) — a run's live status/cancel/retry
+//     gv.tasks.* (docs/GAPS.md §10 row 3), a run's live status/cancel/retry
 //     ride the same RuntimeTask registry Approvals & Tasks and Fleet use.
 //  3. App-local research-runs registry: /app/registries/research-runs (the Bun
-//     side implements the collection contract; this module codes to it) — now
+//     side implements the collection contract; this module codes to it), now
 //     ANNOTATION ONLY (question, notes, findings, log, checkpoints) for
 //     task-backed runs. The daemon task is the source of truth for run state.
 // Records are superset-tolerant: parse defensively, mutate copies of the raw
@@ -19,7 +19,7 @@ import {
   type AnyRecord,
 } from "../../lib/wire.ts";
 
-/** Epoch millis from a numeric or ISO-string timestamp field — the app-local
+/** Epoch millis from a numeric or ISO-string timestamp field, the app-local
  * registry store writes ISO strings (src/bun/registries/store.ts nowIso), so
  * lib/wire.ts firstNumber alone would drop every createdAt. */
 export function firstTimestamp(value: unknown, keys: string[]): number | undefined {
@@ -35,7 +35,7 @@ export function firstTimestamp(value: unknown, keys: string[]): number | undefin
   return undefined;
 }
 
-// ─── Query keys (LOCAL, unique "research" prefix — not in lib/queries.ts) ────
+// ─── Query keys (LOCAL, unique "research" prefix, not in lib/queries.ts) ────
 
 export const researchKeys = {
   all: ["research"] as const,
@@ -96,7 +96,7 @@ export interface ResearchFinding {
   title: string;
   note: string;
   credibility: Credibility;
-  /** Raw finding record — unknown extra fields survive round-trips. */
+  /** Raw finding record, unknown extra fields survive round-trips. */
   raw: AnyRecord;
 }
 
@@ -107,26 +107,26 @@ export interface ResearchRun {
   findings: ResearchFinding[];
   reportArtifactId: string;
   createdAt: number | undefined;
-  /** Timestamped status/finding/checkpoint/report history — see the
+  /** Timestamped status/finding/checkpoint/report history, see the
    * "Findings log + checkpoints" section below. Superset field: absent on
    * runs created before this shipped, populated going forward. */
   log: RunLogEntry[];
   /** Named findings snapshots taken by the "Checkpoint" action. */
   checkpoints: RunCheckpoint[];
-  /** The RuntimeTask id backing this run (docs/GAPS.md §10 row 3) — the
+  /** The RuntimeTask id backing this run (docs/GAPS.md §10 row 3), the
    * daemon is the source of truth for status/cancel/retry once this is set.
-   * Absent on runs created before this shipped ("legacy" — see isLegacyRun). */
+   * Absent on runs created before this shipped ("legacy", see isLegacyRun). */
   taskId: string | undefined;
   /** The agentId `tasks.create` (POST /task) acknowledged with, kept until
-   * `taskId` resolves (owner === agentId in tasks.list — the same link
+   * `taskId` resolves (owner === agentId in tasks.list, the same link
    * AgentTaskAdapter/fleet.ts's taskForNode use). Present without taskId
-   * means "submitted, not yet linked" — see runLinkState. */
+   * means "submitted, not yet linked", see runLinkState. */
   agentId: string | undefined;
-  /** Raw item record — the PUT payload is built from this. */
+  /** Raw item record, the PUT payload is built from this. */
   raw: AnyRecord;
 }
 
-/** "legacy" = pre-task-era row (neither field — status/cancel is local-only,
+/** "legacy" = pre-task-era row (neither field, status/cancel is local-only,
  * never resumable, render read-only). "linking" = tasks.create acknowledged
  * but the RuntimeTask registry hasn't been observed to carry the link yet
  * (should self-resolve within a beat; offer a manual retry). "linked" = a
@@ -143,7 +143,7 @@ export function isLegacyRun(run: ResearchRun): boolean {
   return runLinkState(run) === "legacy";
 }
 
-/** The RuntimeTask id owned by this agentId, per tasks.list — the link
+/** The RuntimeTask id owned by this agentId, per tasks.list, the link
  * AgentTaskAdapter establishes server-side (owner: agentId) and fleet.ts's
  * taskForNode reads client-side for the Fleet view's agent nodes. */
 export function findRuntimeTaskIdForAgent(tasks: readonly TaskSummary[], agentId: string): string | undefined {
@@ -156,7 +156,7 @@ export function canRetryResearchTask(status: string): boolean {
   return status === "failed" || status === "cancelled";
 }
 
-/** tasks.create (POST /task) ack — only `agentId` is load-bearing here; the
+/** tasks.create (POST /task) ack, only `agentId` is load-bearing here; the
  * rest is display-only. */
 export interface TaskCreateAck {
   acknowledged: boolean;
@@ -175,7 +175,7 @@ export function taskCreateAckFrom(value: unknown): TaskCreateAck {
   };
 }
 
-/** The research prompt/spec carried by tasks.create — a real daemon agent
+/** The research prompt/spec carried by tasks.create, a real daemon agent
  * task, not just a label; its lifecycle is what backs this run's status. */
 export function composeResearchTaskPrompt(question: string): string {
   return (
@@ -194,7 +194,7 @@ export function researchTaskCreateBody(question: string): AnyRecord {
   };
 }
 
-/** Raw record for a freshly created task-backed run — annotation fields only;
+/** Raw record for a freshly created task-backed run, annotation fields only;
  * the daemon task (agentId, and taskId once linked) is the state source. */
 export function rawForNewTaskRun(question: string, ack: TaskCreateAck, taskId: string | undefined): AnyRecord {
   return {
@@ -205,8 +205,8 @@ export function rawForNewTaskRun(question: string, ack: TaskCreateAck, taskId: s
       makeLogEntry(
         "status",
         taskId
-          ? "Run created — backed by daemon task"
-          : `Run created — submitted to the daemon (agent ${ack.agentId}); linking task id…`,
+          ? "Run created: backed by daemon task"
+          : `Run created: submitted to the daemon (agent ${ack.agentId}); linking task id…`,
       ),
     ],
     agentId: ack.agentId,
@@ -262,12 +262,12 @@ export function rawWithFindings(run: ResearchRun, findings: ResearchFinding[], l
   };
 }
 
-// ─── Findings log + checkpoints (docs/GAPS.md §10 row 3 — resumable runs) ────
+// ─── Findings log + checkpoints (docs/GAPS.md §10 row 3, resumable runs) ────
 // The findings/notes/checkpoint history is always app-local annotation, on
 // top of the registry item, regardless of task backing: finding edits and
 // checkpoint snapshots are recorded as a timestamped, append-only log on the
 // item itself. For a task-backed run the daemon RuntimeTask is the source of
-// truth for run STATUS (queued/running/.../cancelled — see runLinkState);
+// truth for run STATUS (queued/running/.../cancelled, see runLinkState);
 // this log additionally records status transitions the app observes (created,
 // linked, cancelled, retried) so the run's own history stays readable even
 // though the live value lives on the daemon task. A "checkpoint" snapshots
@@ -291,7 +291,7 @@ export function logEntryFrom(value: unknown): RunLogEntry {
   };
 }
 
-/** A fresh log-entry record (ISO timestamp — matches the registry's own
+/** A fresh log-entry record (ISO timestamp, matches the registry's own
  * nowIso() convention so ordering survives round-trips through the store). */
 export function makeLogEntry(type: string, message: string): AnyRecord {
   return { at: new Date().toISOString(), type, message };
@@ -316,7 +316,7 @@ export function checkpointFrom(value: unknown): RunCheckpoint {
 }
 
 /** Append a log entry (and, optionally, apply other field patches) onto a
- * run's raw record in one shot — a single PUT for both, never a lost update
+ * run's raw record in one shot, a single PUT for both, never a lost update
  * from two separate mutations racing each other. */
 export function rawWithLog(run: ResearchRun, patch: AnyRecord, entry: AnyRecord): AnyRecord {
   const existingLog = Array.isArray(run.raw["log"]) ? run.raw["log"] : [];
@@ -349,7 +349,7 @@ export function rawWithCheckpoint(run: ResearchRun, label: string): AnyRecord {
 }
 
 // ─── URL inspection (docs/GAPS.md §10 row 7) ─────────────────────────────────
-// POST /app/local/fetch-preview (src/bun/local-tools.ts) — a read-only,
+// POST /app/local/fetch-preview (src/bun/local-tools.ts), a read-only,
 // server-side GET with a private-address guard. Refusals come back as a
 // normal HTTP error whose JSON body carries {error, code}; lib/errors.ts's
 // errorCode()/formatError() read that shape directly from the HttpError.
@@ -476,7 +476,7 @@ export function composeReportMarkdown(run: ResearchRun): string {
   lines.push("## Sources");
   lines.push("");
   run.findings.forEach((finding, index) => {
-    lines.push(`${index + 1}. [${finding.title}](${finding.url}) — credibility: ${finding.credibility}`);
+    lines.push(`${index + 1}. [${finding.title}](${finding.url}), credibility: ${finding.credibility}`);
   });
   lines.push("");
   return lines.join("\n");

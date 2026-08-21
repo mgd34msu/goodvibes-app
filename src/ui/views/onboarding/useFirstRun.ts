@@ -2,7 +2,7 @@
 // overlay appears automatically ONLY when the daemon was just spawned by this
 // app for the first time, or when no provider/model is configured. A machine
 // that already runs the TUI/agent with a configured provider sails straight
-// into the workspace and the flag is set silently — zero friction.
+// into the workspace and the flag is set silently, zero friction.
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ export function useFirstRunOnboarding(health: AppHealth | undefined, onAutoOpen:
 
     if (isOnboarded()) return;
     if (mode === "spawned") {
-      // Fresh daemon spawned by us — first time on this machine.
+      // Fresh daemon spawned by us, first time on this machine.
       onAutoOpen();
       return;
     }

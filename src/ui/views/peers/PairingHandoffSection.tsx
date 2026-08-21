@@ -1,17 +1,17 @@
-// Hand-off — mints a scoped pairing link (pairing.handoff.create) and
+// Hand-off, mints a scoped pairing link (pairing.handoff.create) and
 // renders it as a deep link plus a client-rendered QR computed locally by
-// generateQrMatrix (./qr-generator.ts — a same-algorithm mirror of the
+// generateQrMatrix (./qr-generator.ts, a same-algorithm mirror of the
 // pinned goodvibes SDK's "platform" pairing export; see that file's
 // docblock for why it is duplicated here rather than imported: scripts/
 // check-boundaries.ts forbids any import of that SDK's "platform" subpath
 // from src/ui, and this desktop app cannot ask its Bun main process to
 // compute one either, since that would mean editing src/bun/**, outside this
-// agent's file ownership — flagged for the integration gate). No extra
+// agent's file ownership, flagged for the integration gate). No extra
 // daemon round-trip either way: the matrix is pure client-side arithmetic.
 //
 // This app is always the pairing INITIATOR: pairing.handoff.complete is the
 // RECEIVING device's own WebAuthn/push/relay ceremony and has no surface
-// here (see pairing-model.ts's docblock) — no `offers` are requested when
+// here (see pairing-model.ts's docblock), no `offers` are requested when
 // minting, since this app doesn't complete any of them itself.
 
 import { useState } from "react";

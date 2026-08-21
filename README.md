@@ -1,6 +1,6 @@
 # goodvibes-app
 
-Desktop operator console for the GoodVibes daemon — chat, fleet, automation, knowledge,
+Desktop operator console for the GoodVibes daemon: chat, fleet, automation, knowledge,
 code, and observability in one native window. It unifies the capability of
 `goodvibes-tui` (coding, operations, automation, knowledge, channels, control plane) and
 `goodvibes-agent` (operator assistant: routines, personas, skills, personal ops, research,
@@ -36,7 +36,7 @@ the webview: it removes CORS entirely, keeps the bearer token out of the rendere
 gives daemon restarts/adoption one seam to hide behind instead of touching every fetch call
 in the UI.
 
-22 views across six groups (Work / Automate / Know / Assistant / Code / System) — see
+22 views span six groups (Work / Automate / Know / Assistant / Code / System). See
 `docs/UX.md` §2 for the full information architecture. Details, the process model diagram,
 security posture, and the reasoning behind each choice live in `docs/ARCHITECTURE.md`.
 The feature-completion bar (every capability, its backing daemon method or app-local
@@ -56,18 +56,18 @@ bun scripts/launch.ts  # or: bun run dev  (build + launch)
 `dev-linux-x64`, `canary-linux-x64`, `stable-linux-x64` in that order) and spawns it with a
 patched environment:
 
-- `WEBKIT_DISABLE_DMABUF_RENDERER=1` is set automatically — without it, WebKitGTK paints a
+- `WEBKIT_DISABLE_DMABUF_RENDERER=1` is set automatically. Without it, WebKitGTK paints a
   blank window on affected hardware (GBM buffer failures). This is a launcher-only fix; see
   Known limitations below for the gap in the production launcher.
 - `GDK_SCALE` / `GDK_DPI_SCALE` are stripped from the child process's environment (the
   user's own shell environment is untouched). An inherited `GDK_SCALE=2` doubles the whole
   UI on XWayland because GTK4 Wayland apps ignore the variable and only this app's
-  XWayland webview honors it — stripping it is the only fix that doesn't blur the UI or
+  XWayland webview honors it. Stripping it is the only fix that doesn't blur the UI or
   desync native control sizing.
 
 The daemon is adopted if something already answers `GET /status` on `127.0.0.1:3421`
 (version-band checked, 1.x major match), or spawned detached from the
-`goodvibes-daemon` binary bundled with `@pellux/goodvibes-tui`. It outlives the app —
+`goodvibes-daemon` binary bundled with `@pellux/goodvibes-tui`. It outlives the app:
 closing the window never kills in-flight agent work.
 
 ## Dev workflow
@@ -85,7 +85,7 @@ bun run verify           # typecheck + check:boundaries + generate:check + test
 
 **Dev eval driver.** Launching with `GOODVIBES_APP_DEV=1` (set automatically by
 `scripts/launch.ts`) enables a `/app/dev/eval` route that executes arbitrary JS inside the
-running webview and returns the result — the way to drive and inspect UI state without a
+running webview and returns the result, a way to drive and inspect UI state without a
 browser automation stack. It requires the same `X-GV-App` header the proxy checks
 everywhere else, and only exists when that env var is set; it is not present in a
 production build unless something explicitly opts in.
@@ -93,7 +93,7 @@ production build unless something explicitly opts in.
 ## Known limitations
 
 - **Linux-first.** Verified on Arch Linux + Hyprland (XWayland). macOS and Windows targets
-  are buildable through Electrobun but untested — treat them as unverified, not
+  are buildable through Electrobun but untested. Treat them as unverified, not
   unsupported.
 - **Voice input depends on WebKitGTK's permission model.** Mic access goes through the
   webview's `getUserMedia`, which behaves differently across WebKitGTK builds and desktop
@@ -102,7 +102,7 @@ production build unless something explicitly opts in.
 - **The `WEBKIT_DISABLE_DMABUF_RENDERER` and display-scale fixes only apply to
   `scripts/launch.ts`.** The packaged production launcher (the `.desktop` file / wrapper
   script produced by `electrobun build --release`-equivalent targets) does not yet carry
-  the same environment patching — this is an open gap, not a solved one. Until it's
+  the same environment patching. This is an open gap, not a solved one. Until it's
   closed, run via `scripts/launch.ts` on Linux rather than the packaged binary directly.
 - One benign `GLXBadWindow` X11 warning is expected at startup on Linux; it does not
   indicate a failure.

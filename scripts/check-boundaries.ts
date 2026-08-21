@@ -38,7 +38,7 @@ for (const rule of RULES) {
     lines.forEach((line, i) => {
       for (const pattern of rule.forbidden) {
         if (pattern.test(line)) {
-          console.error(`${file}:${i + 1} — forbidden in ${rule.label}: ${line.trim()}`);
+          console.error(`${file}:${i + 1}: forbidden in ${rule.label}: ${line.trim()}`);
           failures++;
         }
       }

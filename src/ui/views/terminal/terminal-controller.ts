@@ -1,5 +1,5 @@
 // Per-session controller: owns the emulator, the reconnecting output stream,
-// and resize plumbing for ONE terminal tab. Framework-agnostic and mutable — a
+// and resize plumbing for ONE terminal tab. Framework-agnostic and mutable, a
 // React component subscribes via useSyncExternalStore and re-reads
 // emulator.snapshot() on each bumped version. Controllers outlive view switches
 // (the Terminal view is keepAlive), so scrollback survives navigation.

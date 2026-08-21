@@ -32,7 +32,7 @@ export function SkillEditorModal({ open, skill, saving, onClose, onSave }: Skill
   const [requirementsText, setRequirementsText] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
-  // Closing a dirty form asks first instead of silently discarding it — item
+  // Closing a dirty form asks first instead of silently discarding it, item
   // 1 (closing warns) from the friction checklist's registry-editor callout.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 

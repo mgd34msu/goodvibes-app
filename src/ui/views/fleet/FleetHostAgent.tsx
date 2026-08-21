@@ -1,12 +1,12 @@
-// FleetHostAgent — the fleet toolbar's "Host agent" affordance
+// FleetHostAgent, the fleet toolbar's "Host agent" affordance
 // (acp.agents.list / acp.sessions.create, operator contract 1.11):
 // daemon-as-ACP-client hosting of a third-party coding agent (Claude Code,
 // Codex, opencode) as a long-lived daemon session that appears as a
 // steerable/stoppable fleet row (kind 'acp-agent').
 //
-// Working directory is picked from KNOWN CANDIDATES ONLY — the
+// Working directory is picked from KNOWN CANDIDATES ONLY, the
 // GOODVIBES_WORKING_DIR default (/app/git/workspace) plus every registered
-// workspace root (workspaces.registrations.list) — never a free-text path.
+// workspace root (workspaces.registrations.list), never a free-text path.
 // A structured spawn failure ({binary, stage, message}) is rendered
 // verbatim, never a hung row: the daemon bounds the handshake itself.
 
@@ -126,13 +126,13 @@ function FleetHostAgentModal({ onClose }: { onClose: () => void }) {
       if (hostedError) {
         toast({
           title: `Could not host ${title}`,
-          description: `${hostedError.stage} stage failed for ${hostedError.binary} — ${hostedError.message}`,
+          description: `${hostedError.stage} stage failed for ${hostedError.binary}: ${hostedError.message}`,
           tone: "danger",
           durationMs: 0,
         });
         return;
       }
-      toast({ title: `Hosting ${title}`, description: `Running in ${cwd} — appears as an acp-agent fleet row.`, tone: "success" });
+      toast({ title: `Hosting ${title}`, description: `Running in ${cwd}; appears as an acp-agent fleet row.`, tone: "success" });
       await queryClient.invalidateQueries({ queryKey: queryKeys.fleet });
       onClose();
     },

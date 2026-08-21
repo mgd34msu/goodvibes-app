@@ -27,7 +27,7 @@ done
 if [ -z "$BUNDLE" ]; then
   BUNDLE="$(find "$ROOT/build" -maxdepth 2 \( -name 'GoodVibes*' \) -not -path '*/artifacts/*' | head -1)"
 fi
-[ -n "$BUNDLE" ] || { echo "no built bundle under build/ — run: bun run build"; ls -R "$ROOT/build" | head -20; exit 1; }
+[ -n "$BUNDLE" ] || { echo "no built bundle under build/, run: bun run build"; ls -R "$ROOT/build" | head -20; exit 1; }
 echo "packaging bundle: $BUNDLE"
 
 STAGE="$(mktemp -d)/goodvibes-app-$VERSION"

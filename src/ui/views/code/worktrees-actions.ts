@@ -1,19 +1,19 @@
-// worktrees-actions.ts — per-worktree "Run setup" and "Discard" for
-// WorktreesView.tsx rows (crib: goodvibes-tui's /worktree setup|discard —
+// worktrees-actions.ts, per-worktree "Run setup" and "Discard" for
+// WorktreesView.tsx rows (crib: goodvibes-tui's /worktree setup|discard,
 // the sole reference; goodvibes-webui never shipped this surface).
 //
 // Both verbs are ws-only on the wire (see gv.ts's `worktrees.setupRun` /
-// `worktrees.discard` comments) — a down ws bridge degrades via
+// `worktrees.discard` comments), a down ws bridge degrades via
 // isWsBridgeUnavailableError, the same treatment CheckpointsView.tsx gives
 // its own all-ws-only checkpoints.* verbs.
 //
 // worktrees.discard's declared inputSchema (operator-contract.json) lists
-// only `path` with additionalProperties:false — it does not enumerate
+// only `path` with additionalProperties:false, it does not enumerate
 // confirm/explicitUserRequest the way checkpoints.restore does. The app-wide
 // convention for every OTHER dangerous-flagged verb (WatchersView.tsx's
 // watchers.delete, HomeGraphPanel.tsx's *.reset/*.import, ...) is to forward
 // the ConfirmSurface metadata on the wire regardless of whether the static
-// contract enumerates it — the daemon's runtime accepts it even where the
+// contract enumerates it, the daemon's runtime accepts it even where the
 // generated schema doc doesn't list it. Followed here for consistency rather
 // than inventing a new pattern for this one verb.
 
@@ -45,7 +45,7 @@ const SETUP_STATES: readonly WorktreeSetupState[] = ["skipped", "succeeded", "fa
 /** Defensive wire parse for worktrees.setup.run's `setup` object AND the
  * identically-shaped `setup` field persisted per-record on
  * worktrees.snapshot's `records[]`. Null when the answer does not actually
- * carry a setup result — never a fabricated state. */
+ * carry a setup result, never a fabricated state. */
 export function parseWorktreeSetupResult(value: unknown): WorktreeSetupResult | null {
   const record = asRecord(value);
   const state = SETUP_STATES.find((s) => s === record["state"]);
@@ -65,7 +65,7 @@ export function parseWorktreeSetupResult(value: unknown): WorktreeSetupResult | 
   return { state, steps, ...(error ? { error } : {}) };
 }
 
-/** Compact row-tag label — "succeeded (N steps)" / "skipped" / "FAILED". A
+/** Compact row-tag label, "succeeded (N steps)" / "skipped" / "FAILED". A
  * failed setup is a visible persistent row state (never silently absorbed). */
 export function formatSetupSummary(result: WorktreeSetupResult): string {
   if (result.state === "succeeded") {
@@ -97,8 +97,8 @@ export interface WorktreeDiscardReceipt {
 }
 
 /** Defensive wire parse for the discard receipt. branch/preservedCommit stay
- * empty strings when the daemon genuinely didn't report one — callers render
- * an honest "(unknown)" / "(none — nothing to preserve)" label for the
+ * empty strings when the daemon genuinely didn't report one, callers render
+ * an honest "(unknown)" / "(none, nothing to preserve)" label for the
  * empty case rather than treating it as a parse failure (crib: goodvibes-tui
  * worktree-runtime.ts's exact wording for the same receipt). */
 export function parseDiscardReceipt(value: unknown, fallbackPath: string): WorktreeDiscardReceipt {
@@ -112,7 +112,7 @@ export function parseDiscardReceipt(value: unknown, fallbackPath: string): Workt
   };
 }
 
-/** Remove a worktree per the eviction-preserving rules — the branch is KEPT,
+/** Remove a worktree per the eviction-preserving rules, the branch is KEPT,
  * any dirty state is committed onto it first. Confirm-gated client-side; see
  * this module's header comment on why ConfirmMetadata is still forwarded on
  * the wire despite the narrower declared inputSchema. */

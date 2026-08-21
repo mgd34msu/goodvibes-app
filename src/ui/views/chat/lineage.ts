@@ -31,7 +31,7 @@ export function revisionOf(message: unknown): string {
 
 export interface LineageNode {
   readonly message: ChatMessage;
-  /** Superseded messages retained behind the fork this node heads — oldest first. */
+  /** Superseded messages retained behind the fork this node heads, oldest first. */
   readonly priorMessages: readonly ChatMessage[];
   readonly reason?: SupersededReason;
   readonly revisionOf?: string;
@@ -40,8 +40,8 @@ export interface LineageNode {
 /**
  * Active messages become nodes in order; a contiguous superseded run is
  * attached to the next active node (the fork head). A trailing run with no
- * following active message is merged into the last node — or surfaced as its
- * own history-only node — so retained history is never dropped.
+ * following active message is merged into the last node, or surfaced as its
+ * own history-only node, so retained history is never dropped.
  */
 export function buildLineage(messages: readonly ChatMessage[]): LineageNode[] {
   const nodes: LineageNode[] = [];
@@ -94,9 +94,9 @@ export function lineageNodeKey(node: LineageNode, index: number): string {
 
 export function retainedHistoryLabel(reason: SupersededReason | undefined, count: number): string {
   const plural = count === 1 ? "" : "s";
-  if (reason === "edit") return count <= 1 ? "Edited — view original" : `Edited — view ${count} retained message${plural}`;
+  if (reason === "edit") return count <= 1 ? "Edited: view original" : `Edited: view ${count} retained message${plural}`;
   if (reason === "regenerate") {
-    return count <= 1 ? "Regenerated — view previous response" : `Regenerated — view ${count} previous message${plural}`;
+    return count <= 1 ? "Regenerated: view previous response" : `Regenerated: view ${count} previous message${plural}`;
   }
   return `View ${count} retained message${plural}`;
 }

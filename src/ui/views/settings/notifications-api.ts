@@ -1,6 +1,6 @@
 // Typed client for the /app/notifications/* contract (implemented Bun-side by
 // the notifications agent; this settings agent codes only against the HTTP
-// contract — no cross-imports of src/bun/notifications.ts). Local query keys
+// contract, no cross-imports of src/bun/notifications.ts). Local query keys
 // use a unique prefix, per project convention.
 
 import { appJson } from "../../lib/http.ts";
@@ -10,7 +10,7 @@ export type NotificationBatching = "off" | "30s" | "5m";
 export type DomainVerbosity = "all" | "important" | "off";
 
 /** The app's real realtime-domain taxonomy (lib/realtime.ts DOMAIN_INVALIDATIONS
- *  keys) — the per-domain grid rides the same vocabulary as everywhere else. */
+ *  keys), the per-domain grid rides the same vocabulary as everywhere else. */
 export const NOTIFICATION_DOMAINS: readonly string[] = [
   "tasks",
   "permissions",

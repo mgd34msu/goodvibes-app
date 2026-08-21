@@ -1,7 +1,7 @@
 // "While you were away" (docs/FEATURES.md §8): on load, query
 // automation.runs.list + tasks.list + deliveries.list, filter client-side to
 // activity since the app-local lastSeen timestamp, render a grouped digest,
-// THEN bump lastSeen — the bump waits until at least one source loaded so a
+// THEN bump lastSeen, the bump waits until at least one source loaded so a
 // dead daemon never eats the window. "Nothing happened while you were away"
 // is a valid, rendered state, not a blank.
 
@@ -91,7 +91,7 @@ export function AwayDigest() {
   });
   const tasksQuery = useTasksSnapshot({ enabled: !firstVisit });
   const deliveriesQuery = useQuery({
-    // Nested under the shared 'deliveries' prefix — the deliveries SSE domain
+    // Nested under the shared 'deliveries' prefix, the deliveries SSE domain
     // invalidation fans out here.
     queryKey: [...queryKeys.deliveries, "away"],
     queryFn: () => gv.invoke("deliveries.list"),
@@ -99,7 +99,7 @@ export function AwayDigest() {
     enabled: !firstVisit,
   });
 
-  // First ever visit: nothing to diff against — record now and say so.
+  // First ever visit: nothing to diff against, record now and say so.
   useEffect(() => {
     if (firstVisit && !bumpedRef.current) {
       bumpedRef.current = true;

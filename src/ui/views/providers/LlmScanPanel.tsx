@@ -1,9 +1,9 @@
-// Local LLM server scan (docs/GAPS.md §14 row 9, MISSING): strictly opt-in —
+// Local LLM server scan (docs/GAPS.md §14 row 9, MISSING): strictly opt-in,
 // nothing here ever probes localhost until the user clicks "Scan". Hits
 // /app/local/llm-scan (Bun-side, 1.5s timeout per port, Ollama/LM
 // Studio/llama.cpp/vLLM only) and renders a results table with a
 // "use as custom provider" helper that prefills CustomProvidersPanel's
-// create-new form — it does not write anything itself.
+// create-new form, it does not write anything itself.
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -61,7 +61,7 @@ export function LlmScanPanel({
           <EmptyState
             icon={<Radar size={24} aria-hidden="true" />}
             title="No local LLM servers found"
-            description={`Checked ${servers.length} known ports — none answered.`}
+            description={`Checked ${servers.length} known ports; none answered.`}
           />
         ) : (
           <div className="providers-model-grid" role="list" aria-label="Discovered local LLM servers">

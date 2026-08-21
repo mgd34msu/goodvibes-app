@@ -27,7 +27,7 @@ export interface AppHealth {
      * unset). When >1 the webview's devicePixelRatio is multiplied by it even
      * on a 1.0-scale monitor, so the UI applies a compensating zoom at boot
      * (src/ui/main.tsx). Unsetting the variable instead crashes WebKitGTK on
-     * this stack — do not "fix" it that way again.
+     * this stack, do not "fix" it that way again.
      */
     gdkScale: number;
   };

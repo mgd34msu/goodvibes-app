@@ -2,7 +2,7 @@
 // share (docs/GAPS.md §11 rows 4-6). Third Documents tab, alongside Drafts
 // and Model compare. Packets/presets persist via packets-data.ts (the
 // /app/registries "notes" collection); ZIP export via zip-writer.ts
-// (store-only, no dependency — see that file's header for why); channel
+// (store-only, no dependency, see that file's header for why); channel
 // share reuses the exact invoke shape views/channels/CatalogPanel.tsx uses
 // (channels.actions.invoke), gated by the shared ConfirmSurface.
 
@@ -60,7 +60,7 @@ function slug(text: string): string {
 export interface PacketsPanelProps {
   /** Note id to scroll to + highlight (from the /note toast's jump link). */
   highlightNoteId?: string;
-  /** Whether the Packets & notes tab is the one currently showing — this
+  /** Whether the Packets & notes tab is the one currently showing, this
    * panel stays mounted-but-hidden on the other Documents tabs, so its polls
    * gate on this instead of running forever in the background (item 18). */
   active: boolean;
@@ -174,7 +174,7 @@ function PacketWizard({
       }
       if (items.length === 0) throw new Error("Pick at least one document with a saved version.");
       return createPacket({
-        title: title.trim() || `Review packet — ${new Date().toLocaleDateString()}`,
+        title: title.trim() || `Review packet: ${new Date().toLocaleDateString()}`,
         context: context.trim(),
         items,
       });
@@ -244,7 +244,7 @@ function PacketWizard({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={`Review packet — ${new Date().toLocaleDateString()}`}
+            placeholder={`Review packet: ${new Date().toLocaleDateString()}`}
           />
         </label>
 
@@ -369,7 +369,7 @@ function PacketsList({
       })),
     ]);
     downloadBlob(`${slug(packet.title)}-packet.zip`, blob);
-    toast({ title: "ZIP exported", description: "Store-only archive (no compression) — opens in any unzip tool.", tone: "success" });
+    toast({ title: "ZIP exported", description: "Store-only archive (no compression): opens in any unzip tool.", tone: "success" });
   }
 
   if (packets.length === 0) {
@@ -591,7 +591,7 @@ function SharePacketModal({ packet, onClose }: { packet: ReviewPacket | null; on
         target={`${recipient || "(no recipient)"} via ${selectedRow?.surface ?? ""} · ${selectedRow?.label ?? ""}`}
         blastRadius={
           selectedRow?.dangerous
-            ? "Marked dangerous by the daemon — this sends a real message to a real recipient on a live channel surface."
+            ? "Marked dangerous by the daemon; this sends a real message to a real recipient on a live channel surface."
             : "Sends a real message to a real recipient on a live channel surface."
         }
         danger

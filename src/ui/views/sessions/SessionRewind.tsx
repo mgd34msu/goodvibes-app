@@ -1,22 +1,22 @@
-// SessionRewind — the session-detail "Rewind" section (rewind.plan /
+// SessionRewind, the session-detail "Rewind" section (rewind.plan /
 // rewind.apply, contract 1.11).
 //
 // A dry-run/apply flow: pick a recent turn anchor (derived from the
-// transcript SessionDetail already loaded — no second query) plus a scope
+// transcript SessionDetail already loaded, no second query) plus a scope
 // (files / conversation / both) -> rewind.plan previews EXACTLY what
 // restoring would change, naming each part's `available` flag VERBATIM (a
-// part can be unavailable on this runtime — say so, never fake it), and mints
+// part can be unavailable on this runtime, say so, never fake it), and mints
 // a single-use confirm token -> a danger ConfirmSurface -> rewind.apply
 // consumes the token and returns a receipt whose `undo` block records how to
 // reverse it.
 //
 // TRAP (contract 1.11): both rewind.apply and checkpoints.restore answer 200
 // with {receipt:null, refused:true, refusal} / {result:null, refused:true,
-// refusal} when unconfirmed — refused is checked BEFORE trusting a receipt.
+// refusal} when unconfirmed, refused is checked BEFORE trusting a receipt.
 //
-// Undo: the file restore is reversible from the browser — its own
+// Undo: the file restore is reversible from the browser, its own
 // restorePreview -> confirmToken -> restore flow, behind its own confirm.
-// The conversation rewind has NO browser-side undo verb — that is stated
+// The conversation rewind has NO browser-side undo verb, that is stated
 // honestly, never a fabricated button.
 //
 // Ported in spirit from goodvibes-webui src/views/sessions/SessionRewind.tsx.
@@ -34,7 +34,7 @@ import { turnAnchorsFromMessages } from "./rewind-model.ts";
 export interface SessionRewindProps {
   sessionId: string;
   /** Raw session message records (SessionDetail already loaded them for the
-   * transcript) — turn anchors are derived from these, never a second query. */
+   * transcript), turn anchors are derived from these, never a second query. */
   rawMessages: readonly unknown[];
 }
 
@@ -68,7 +68,7 @@ function parsePlanPart(value: unknown): PlanPart | null {
     messagesRemaining: typeof record["messagesRemaining"] === "number" ? (record["messagesRemaining"] as number) : 0,
   };
 }
-/** The "this rewind would change" detail — rendered both in the plan preview
+/** The "this rewind would change" detail, rendered both in the plan preview
  * and again inside the confirm dialog itself (checklist item 3: the full
  * consequence has to be visible at the moment of consent, not just above a
  * modal that may cover it). */
@@ -81,7 +81,7 @@ function RewindPlanDetail({ scope, planResult }: { scope: RewindScope; planResul
             <strong>Files:</strong>{" "}
             {planResult.files?.available
               ? `restore ${planResult.files.affectedFileCount} file${planResult.files.affectedFileCount === 1 ? "" : "s"} from checkpoint "${planResult.files.checkpointLabel ?? planResult.files.checkpointId ?? "nearest"}"`
-              : "unavailable on this runtime — no workspace checkpoint store is wired."}
+              : "unavailable on this runtime: no workspace checkpoint store is wired."}
           </li>
         )}
         {(scope === "conversation" || scope === "both") && (
@@ -89,7 +89,7 @@ function RewindPlanDetail({ scope, planResult }: { scope: RewindScope; planResul
             <strong>Conversation:</strong>{" "}
             {planResult.conversation?.available
               ? `drop ${planResult.conversation.messagesToDrop} message${planResult.conversation.messagesToDrop === 1 ? "" : "s"}, keep ${planResult.conversation.messagesRemaining}`
-              : "unavailable on this runtime — no conversation store is wired for a rewind here."}
+              : "unavailable on this runtime: no conversation store is wired for a rewind here."}
           </li>
         )}
       </ul>
@@ -233,7 +233,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
     mutationFn: (token: string) =>
       gv.rewind.apply({ sessionId, scope, ...(anchorTurnId ? { turnId: anchorTurnId } : {}), confirmToken: token }),
   });
-  // Refused is checked BEFORE trusting a receipt — a 200 refusal is not a
+  // Refused is checked BEFORE trusting a receipt, a 200 refusal is not a
   // success just because the HTTP call succeeded.
   const applyResult = apply.data ? parseRewindApply(apply.data) : null;
 
@@ -361,7 +361,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
           )}
           {applyResult?.refused && (
             <p className="session-rewind__error" role="alert">
-              {applyResult.refusalReason ?? "The rewind was refused — preview it again to mint a fresh confirmation."}
+              {applyResult.refusalReason ?? "The rewind was refused; preview it again to mint a fresh confirmation."}
             </p>
           )}
 

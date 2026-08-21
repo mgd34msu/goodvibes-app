@@ -1,13 +1,13 @@
 // Per-device pairing tokens (pairing.tokens.*, SDK ≥1.8). A token's secret is
-// never re-served after mint — this list only ever shows name/created/last
+// never re-served after mint, this list only ever shows name/created/last
 // seen. migrate() is the one affordance here that mints a fresh secret, for a
 // device still relying on the legacy shared token: it renders exactly once,
 // with an explicit reveal + copy, then is gone from this app's memory for
 // good (kept in local state only, never in the query cache).
 //
 // Unlike a browser client, this desktop app cannot swap its OWN live auth
-// token client-side (the bearer token lives in the Bun main process — see
-// lib/gv.ts's docblock — the webview never holds credentials), so migrate()
+// token client-side (the bearer token lives in the Bun main process, see
+// lib/gv.ts's docblock, the webview never holds credentials), so migrate()
 // here is purely "mint a token to hand to some other device", not a
 // self-upgrade ceremony.
 

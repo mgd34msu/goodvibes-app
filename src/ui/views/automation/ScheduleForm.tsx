@@ -1,4 +1,4 @@
-// Create/edit forms for automation jobs & schedules. One shared create form —
+// Create/edit forms for automation jobs & schedules. One shared create form,
 // the daemon serves POST /api/automation/jobs and POST /api/automation/schedules
 // with the SAME handler and body schema (verified in goodvibes-sdk
 // runtime-automation-routes.ts): { prompt (required), kind cron|every|at,
@@ -44,7 +44,7 @@ export interface ScheduleCreateBody {
 }
 
 export interface ScheduleFormProps {
-  /** "job" or "schedule" — wording only; the wire body is identical. */
+  /** "job" or "schedule", wording only; the wire body is identical. */
   noun: string;
   submitting: boolean;
   onSubmit: (body: ScheduleCreateBody) => void;
@@ -61,7 +61,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
   const uid = useId();
   const [name, setName] = useState("");
   // Prompt and raw delivery JSON are the fields a user would grieve losing to
-  // an accidental modal close — persisted as drafts; cleared by the caller on
+  // an accidental modal close, persisted as drafts; cleared by the caller on
   // successful create (see AutomationView's `create` mutation onSuccess).
   const [prompt, setPrompt] = useDraftState(`automation.schedule-form.${noun}.prompt`, "");
   const [kind, setKind] = useState<ScheduleKind>("cron");
@@ -382,7 +382,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
   );
 }
 
-// ─── Edit (PATCH) — name + prompt only; enable/disable and schedule changes
+// ─── Edit (PATCH), name + prompt only; enable/disable and schedule changes
 // have dedicated daemon verbs (enable/disable) or a delete+recreate path. ────
 
 export interface JobEditBody {
@@ -398,7 +398,7 @@ export function EditJobForm({
   onSubmit,
   onCancel,
 }: {
-  /** The job/schedule id — scopes the persisted prompt draft to this entity. */
+  /** The job/schedule id, scopes the persisted prompt draft to this entity. */
   entityId: string;
   initialName: string;
   initialPrompt: string;

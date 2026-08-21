@@ -1,5 +1,5 @@
 // Companion QR pairing entry point (docs/GAPS.md §22 row 9). The pairing
-// surface itself is owned by the Channels view; this view only links to it —
+// surface itself is owned by the Channels view; this view only links to it,
 // cross-directory IMPORT of the modal is allowed, editing it is not.
 
 import { useState } from "react";

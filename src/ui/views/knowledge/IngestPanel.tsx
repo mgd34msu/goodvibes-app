@@ -1,7 +1,7 @@
 // Ingest tab (docs/FEATURES.md §6): single URL, URL batch file, artifact,
 // bookmark export file, browser history, and connector-driven imports, plus
 // the connectors browser (list / detail / doctor). File-based ingest methods
-// (urls/bookmarks) take a DAEMON-side filesystem path on the wire — the form
+// (urls/bookmarks) take a DAEMON-side filesystem path on the wire, the form
 // says so explicitly instead of pretending to upload. All ingest verbs are
 // admin-access on the daemon; failures surface verbatim.
 
@@ -353,7 +353,7 @@ function ConnectorsSection({ active }: { active: boolean }) {
   const connectors = useQuery({
     queryKey: kKeys.connectors,
     queryFn: () => invoke("knowledge.connectors.list"),
-    // Connector registry has no wire event — slow poll while visible.
+    // Connector registry has no wire event, slow poll while visible.
     refetchInterval: active ? 60_000 : false,
   });
 
@@ -372,7 +372,7 @@ function ConnectorsSection({ active }: { active: boolean }) {
   });
 
   const openDoctor = (id: string, title: string) =>
-    peek.open({ title: `Doctor — ${title}`, content: <ConnectorDoctorPeek connectorId={id} /> });
+    peek.open({ title: `Doctor: ${title}`, content: <ConnectorDoctorPeek connectorId={id} /> });
 
   const items = knowledgeList(connectors.data, "connectors");
 

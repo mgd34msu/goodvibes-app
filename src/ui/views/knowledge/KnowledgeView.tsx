@@ -1,4 +1,4 @@
-// Knowledge view — wiki + graph + ingestion + planning (docs/FEATURES.md §6,
+// Knowledge view, wiki + graph + ingestion + planning (docs/FEATURES.md §6,
 // all 25 rows). Sub-navigation is a tab rail (progressive disclosure: pages
 // are observability, modals/confirms are configuration); the active tab is
 // URL-addressable via ?filter[ktab]=… so palette jumps and deep links
@@ -7,13 +7,13 @@
 // their polls gate on the `active` flag.
 //
 // Realtime: the `knowledge` SSE domain already invalidates the status/
-// sources/issues keys (lib/realtime.ts). Everything else has NO wire event —
+// sources/issues keys (lib/realtime.ts). Everything else has NO wire event,
 // each panel polls narrowly while visible and every mutation invalidates the
 // ["knowledge"] prefix.
 //
 // Store scope (agent-scoped knowledge row): the Overview tab carries an
 // Operator/Agent store switcher; the agent store rides the
-// /api/goodvibes-agent/knowledge/* routes, probed at runtime — absent routes
+// /api/goodvibes-agent/knowledge/* routes, probed at runtime, absent routes
 // render UnavailableState, never a blank.
 
 import { useEffect, useMemo, useState } from "react";
@@ -128,11 +128,11 @@ export function KnowledgeView() {
       setTabState(urlTab);
       setMounted((current) => (current.has(urlTab) ? current : new Set(current).add(urlTab)));
     }
-    // Intentionally NOT depending on `tab` — this effect only ingests URL edits.
+    // Intentionally NOT depending on `tab`, this effect only ingests URL edits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab]);
 
-  // Palette commands — view-scoped, unregistered on unmount.
+  // Palette commands, view-scoped, unregistered on unmount.
   useEffect(() => {
     registerCommand({
       id: "knowledge.refresh",
@@ -216,7 +216,7 @@ export function KnowledgeView() {
                 />
               ) : scope === "agent" && agentScopeState === "uncertain" ? (
                 <ErrorState
-                  error={new Error("The agent knowledge probe failed — availability is unknown, not absent.")}
+                  error={new Error("The agent knowledge probe failed; availability is unknown, not absent.")}
                   onRetry={() => void queryClient.refetchQueries({ queryKey: kKeys.agentScopeProbe })}
                   title="Agent store availability unknown"
                 />

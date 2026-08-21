@@ -1,15 +1,15 @@
 // Shared data layer for the Personal Ops surface (docs/FEATURES.md §9) and the
-// Home assistant cockpit (§8/§22 rows) — both view dirs are owned by the same
+// Home assistant cockpit (§8/§22 rows), both view dirs are owned by the same
 // wave agent, so Home imports from here rather than duplicating parsers.
 //
 // HONESTY CONTRACT (ported from goodvibes-webui CalendarView's three-way
 // refusal taxonomy, applied to every optional personal surface):
-//  1. UNCONFIGURED — the daemon's *_NOT_CONFIGURED / *_CREDENTIALS_MISSING
+//  1. UNCONFIGURED, the daemon's *_NOT_CONFIGURED / *_CREDENTIALS_MISSING
 //     refusal (412 on newer daemons, 400 + code on the pinned 1.0.0 build).
 //     Rendered as a neutral pointer to the exact config keys, never a fault.
-//  2. NOT AVAILABLE — 404 "unknown gateway method" / 501 "not invokable":
+//  2. NOT AVAILABLE, 404 "unknown gateway method" / 501 "not invokable":
 //     the CAPABILITY itself is missing from this daemon build.
-//  3. GENUINE ERROR — everything else: ErrorState with cause + retry.
+//  3. GENUINE ERROR, everything else: ErrorState with cause + retry.
 // Never fold any of these into a fourth "it's just empty" reading.
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
@@ -22,7 +22,7 @@ import {
 } from "../../lib/errors.ts";
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 
-// ─── Query keys (LOCAL to this surface — lib/queries.ts is not edited) ──────
+// ─── Query keys (LOCAL to this surface, lib/queries.ts is not edited) ──────
 // email.* / calendar.* have NO wire events (pinned upstream, see
 // lib/realtime.ts header) → their queries poll. automation.* keys are nested
 // under the shared `queryKeys.automation` prefix so a future automation-domain
@@ -79,7 +79,7 @@ export function emailRefusal(error: unknown, capability: string): SurfaceRefusal
   return null;
 }
 
-/** Calendar refusal triage — config keys from the webui CalendarView contract. */
+/** Calendar refusal triage, config keys from the webui CalendarView contract. */
 export function calendarRefusal(error: unknown, capability: string): SurfaceRefusal {
   if (!error) return null;
   if (isUnconfiguredError(error)) {
@@ -200,7 +200,7 @@ export interface ScheduleJob {
   name: string;
   enabled: boolean;
   status: string;
-  /** "at" | "cron" | "every" — daemon vocabulary rendered verbatim. */
+  /** "at" | "cron" | "every", daemon vocabulary rendered verbatim. */
   kind: string;
   /** kind:"at" fire time, epoch ms. */
   at: number | undefined;
@@ -231,7 +231,7 @@ export function parseScheduleJobs(value: unknown): ScheduleJob[] {
 // ─── Shared queries ───────────────────────────────────────────────────────────
 
 /**
- * @param active Gates the 30 s poll (item 18 — no polling while the tab that
+ * @param active Gates the 30 s poll (item 18, no polling while the tab that
  * owns this panel is hidden behind another Personal Ops tab). Defaults to
  * true so call sites outside the tab shell (Home, briefing chips) keep
  * polling exactly as before.
@@ -239,7 +239,7 @@ export function parseScheduleJobs(value: unknown): ScheduleJob[] {
 export function useEmailInbox(enabled = true, active = true): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.emailInbox,
-    // No wire event exists for email.* — a targeted 30 s poll keeps the inbox
+    // No wire event exists for email.*, a targeted 30 s poll keeps the inbox
     // fresh without hammering the IMAP endpoint.
     queryFn: () => gv.invoke("email.inbox.list", { query: { limit: 50 } }),
     refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
@@ -258,7 +258,7 @@ export function useCalendarEvents(
 ): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.calendarEvents(fromIso, toIso),
-    // calendar.* has NO wire events (pinned upstream) — targeted 30 s poll.
+    // calendar.* has NO wire events (pinned upstream), targeted 30 s poll.
     queryFn: () => gv.invoke("calendar.events.list", { query: { from: fromIso, to: toIso, limit: 100 } }),
     refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
     retry: false,
@@ -270,7 +270,7 @@ export function useCalendarEvents(
 export function useScheduleJobs(enabled = true, active = true): UseQueryResult<unknown> {
   return useQuery({
     queryKey: poKeys.schedules,
-    // automation.* is not in DOMAIN_INVALIDATIONS (no wire event) — 30 s poll.
+    // automation.* is not in DOMAIN_INVALIDATIONS (no wire event), 30 s poll.
     queryFn: () => gv.invoke("automation.schedules.list"),
     refetchInterval: active ? PERSONAL_OPS_POLL_MS : false,
     retry: false,

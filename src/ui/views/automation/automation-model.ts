@@ -1,4 +1,4 @@
-// Automation view data layer — local query keys, defensive wire normalizers,
+// Automation view data layer, local query keys, defensive wire normalizers,
 // and time/duration formatting (docs/FEATURES.md §5).
 //
 // Wire shapes verified against the daemon implementation
@@ -11,7 +11,7 @@
 //   POST cancel → { run } · retry → 202 { run } · delete → { removed, id }
 //   GET  /api/automation/heartbeat             → { pending: [] }
 // Statuses are daemon-defined open vocabularies (enabled|paused|error|archived,
-// queued|running|completed|failed|cancelled) — rendered VERBATIM, never mapped.
+// queued|running|completed|failed|cancelled), rendered VERBATIM, never mapped.
 
 import {
   asArray,
@@ -23,7 +23,7 @@ import {
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
 // All prefixed ["automation"] to align with queryKeys.automation in
-// lib/queries.ts (defined locally here — lib/queries.ts is not ours to edit).
+// lib/queries.ts (defined locally here, lib/queries.ts is not ours to edit).
 // There is NO `automation` domain in DOMAIN_INVALIDATIONS (lib/realtime.ts),
 // so these keys are refreshed by a 15s visible-only poll + refetch-on-mutation.
 
@@ -37,7 +37,7 @@ export const automationKeys = {
   heartbeat: ["automation", "heartbeat"] as const,
 } as const;
 
-/** No wire event exists for automation.* — poll while the view is mounted
+/** No wire event exists for automation.*, poll while the view is mounted
  * (views without keepAlive unmount on switch, so this only runs while visible). */
 export const AUTOMATION_POLL_MS = 15_000;
 
@@ -220,7 +220,7 @@ export function formatAbsolute(epochMs: number): string {
   });
 }
 
-/** "in 5m" / "3h ago" — paired with the absolute form, never alone
+/** "in 5m" / "3h ago", paired with the absolute form, never alone
  * (docs/UX.md: every number has a frame of reference). */
 export function formatRelative(epochMs: number, now: number = Date.now()): string {
   const diff = epochMs - now;

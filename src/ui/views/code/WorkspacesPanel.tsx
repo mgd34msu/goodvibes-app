@@ -1,9 +1,9 @@
-// WorkspacesPanel — "Registered workspaces" section nested in WorktreesView
+// WorkspacesPanel, "Registered workspaces" section nested in WorktreesView
 // (docs brief: workspaces.* has no dedicated view yet; the worktrees domain
 // is its natural home since coverage is inherited through a git worktree's
-// link to its main repo — see workspaces.resolve's viaWorktreeLink). Three
+// link to its main repo, see workspaces.resolve's viaWorktreeLink). Three
 // wire verbs: registrations.list (read), registrations.add/.remove (write),
-// resolve (read-only probe). No wire events for any of them — fetch-once +
+// resolve (read-only probe). No wire events for any of them, fetch-once +
 // invalidate-on-mutation, no poll (this is registry/config data, not an
 // active operation).
 
@@ -211,7 +211,7 @@ export function WorkspacesPanel() {
           disabled={add.isPending}
           aria-label="Workspace label"
         />
-        <label className="workspaces-add-form__checkbox" title="Leave unchecked to re-register an existing root without changing its current eligibility — this never strips an existing stamp.">
+        <label className="workspaces-add-form__checkbox" title="Leave unchecked to re-register an existing root without changing its current eligibility; this never strips an existing stamp.">
           <input
             type="checkbox"
             checked={eligibleDraft}

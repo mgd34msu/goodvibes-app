@@ -1,9 +1,9 @@
 // Reasoning-effort picker step (docs/GAPS.md §22 row 4, PARTIAL → closed).
-// docs/FEATURES.md: "Default model pick (+ effort)" — the model half already
+// docs/FEATURES.md: "Default model pick (+ effort)", the model half already
 // ships in OnboardingChecks' ProviderFix; this closes the "+ effort" half.
 // The key is real and pinned on this daemon build: `provider.reasoningEffort`
 // (config-schema.generated.ts, enum instant/low/medium/high, default
-// "medium") — the same key §1's chat composer effort control writes, so no
+// "medium"), the same key §1's chat composer effort control writes, so no
 // live per-daemon audit is needed the way PermissionsStep needs
 // security.settings (that key can vary by build; this one is a fixed part of
 // the pinned SDK schema this app ships against).
@@ -25,7 +25,7 @@ const REASONING_EFFORT_KEY = "provider.reasoningEffort";
 const EFFORT_HINTS: Record<string, string> = {
   instant: "Fastest responses, minimal deliberation.",
   low: "Quick, light reasoning for straightforward asks.",
-  medium: "Balanced — the daemon's own default.",
+  medium: "Balanced: the daemon's own default.",
   high: "Slower, more deliberate reasoning for hard problems.",
 };
 

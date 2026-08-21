@@ -2,7 +2,7 @@
 // knowledge"): the operator store is the daemon's shared knowledge base;
 // the agent store is the isolated per-agent store behind the
 // /api/goodvibes-agent/knowledge/* routes, which MAY be absent on this
-// daemon — availability is probed at runtime, never assumed.
+// daemon, availability is probed at runtime, never assumed.
 
 export type KnowledgeScope = "operator" | "agent";
 

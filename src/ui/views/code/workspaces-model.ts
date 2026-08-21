@@ -1,15 +1,15 @@
-// workspaces-model.ts — parse helpers + hooks for the "Registered workspaces"
+// workspaces-model.ts, parse helpers + hooks for the "Registered workspaces"
 // panel (WorkspacesPanel.tsx), backing workspaces.registrations.list/add/
 // remove and workspaces.resolve. All four are dual http+ws transport
 // (operator-contract.json), unlike worktrees.setup.run/discard's ws-only pair
-// in worktrees-actions.ts — no isWsBridgeUnavailableError handling needed
+// in worktrees-actions.ts, no isWsBridgeUnavailableError handling needed
 // here specifically, but the generic capability-gap check still applies for
 // a daemon build old enough not to carry workspaces.* at all.
 //
 // checkpointEligible distinction (crib: goodvibes-agent's
 // config/workspace-registration.ts + cli/workspaces-command.ts): the field
 // is a plain optional boolean on the wire. Its ABSENCE means "not eligible",
-// not "unknown" — and re-registering the same root without the field must
+// not "unknown", and re-registering the same root without the field must
 // never be read as "strip the stamp" by a client that already saw it set.
 // Rendered as its own explicit badge (present+true vs. anything else) rather
 // than folded into a general status line, per this round's brief.
@@ -26,7 +26,7 @@ export interface WorkspaceRegistration {
   readonly registeredAt: string;
   readonly label: string;
   readonly origin: string;
-  /** Explicit boolean — undefined (field absent) reads as "not eligible",
+  /** Explicit boolean, undefined (field absent) reads as "not eligible",
    * never as "unknown"/error. See this module's header comment. */
   readonly checkpointEligible: boolean;
 }

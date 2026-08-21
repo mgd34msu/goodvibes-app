@@ -1,7 +1,7 @@
-// Flags graduation — flags.graduation.report (WS-only, read-only reporting;
+// Flags graduation, flags.graduation.report (WS-only, read-only reporting;
 // no reference implementation exists anywhere for this contract shape, so
 // this is built directly from the wire schema). releaseBlockers is the loud,
-// danger-toned surface — the release policy (bun run flags:graduation) fails
+// danger-toned surface, the release policy (bun run flags:graduation) fails
 // while it is non-empty. Evidence is real-only: "no evidence collected" is an
 // honest state, never a fabricated readiness signal.
 

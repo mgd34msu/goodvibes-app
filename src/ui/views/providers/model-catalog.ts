@@ -1,15 +1,15 @@
-// model-catalog.ts — multi-target model routing over the real wire shapes,
+// model-catalog.ts, multi-target model routing over the real wire shapes,
 // ported from goodvibes-webui src/lib/model-catalog.ts and adapted to THIS
 // SDK pin (docs/FEATURES.md §14 / src/ui/lib/generated/operator-routes.ts):
 //
 //   - This pin has NO models.* routes (no models.list / models.current /
-//     models.select — verified against the generated route table). The model
+//     models.select, verified against the generated route table). The model
 //     inventory comes from providers.list/providers.get records, which
 //     genuinely carry per-model `tier` and `pricing` when the provider
 //     registry's pricing catalog has the data.
 //   - The "current model" (main chat) is therefore the shared config key
 //     `provider.model` (a provider-qualified registry key, "provider:model"),
-//     read via config.get and written via config.set — exactly what
+//     read via config.get and written via config.set, exactly what
 //     views/onboarding/OnboardingChecks.tsx already writes. The webui's
 //     models.select validation path does not exist here; the write is honest
 //     but unvalidated by the daemon beyond config-schema checks.
@@ -19,7 +19,7 @@
 //       helper     -> helper.globalProvider + helper.globalModel (+ helper.enabled)
 //       tool       -> tools.llmProvider + tools.llmModel (+ tools.llmEnabled)
 //       tts        -> tts.llmProvider + tts.llmModel
-//       embeddings -> provider.embeddingProvider (provider id only — no model
+//       embeddings -> provider.embeddingProvider (provider id only, no model
 //                     concept on this wire)
 //   - Capability flags and quality tiers are NOT projected onto any HTTP
 //     response this client can reach; hasAnyCapabilityData /
@@ -28,15 +28,11 @@
 
 import { asRecord, firstArrayAtPath, firstString, readPath } from "../../lib/wire.ts";
 
-// ---------------------------------------------------------------------------
-// Targets
-// ---------------------------------------------------------------------------
-
 export type ModelTarget = "main" | "helper" | "tool" | "tts" | "embeddings";
 
 export const MODEL_TARGETS: readonly ModelTarget[] = ["main", "helper", "tool", "tts", "embeddings"];
 
-/** Exact labels from the TUI's model-workspace.ts targetLabelFor() — naming parity. */
+/** Exact labels from the TUI's model-workspace.ts targetLabelFor(), naming parity. */
 export const TARGET_LABELS: Record<ModelTarget, string> = {
   main: "Main Chat",
   helper: "Helper Model",
@@ -45,13 +41,13 @@ export const TARGET_LABELS: Record<ModelTarget, string> = {
   embeddings: "Embeddings",
 };
 
-/** True for the one target with no per-model concept — only a provider id. */
+/** True for the one target with no per-model concept, only a provider id. */
 export function targetHasNoModelConcept(target: ModelTarget): boolean {
   return target === "embeddings";
 }
 
 // ---------------------------------------------------------------------------
-// Config reading — tolerant of the shapes config.get actually returns
+// Config reading, tolerant of the shapes config.get actually returns
 // ({ config: { "dotted.key": v } } flat map, nested objects, or bare).
 // Same tolerance set views/onboarding/checks.ts configuredModelFrom uses.
 // ---------------------------------------------------------------------------
@@ -71,10 +67,6 @@ export function readConfigString(response: unknown, dotted: string): string {
   const value = readConfigKey(response, dotted);
   return typeof value === "string" ? value.trim() : "";
 }
-
-// ---------------------------------------------------------------------------
-// Catalog model shape
-// ---------------------------------------------------------------------------
 
 export interface ModelPricing {
   readonly inputPerMillionTokens: number;
@@ -155,7 +147,7 @@ export function modelsFromProviderRecord(providerRaw: unknown): CatalogModel[] {
 }
 
 /**
- * Read models from a providers.list() response — the source that genuinely
+ * Read models from a providers.list() response, the source that genuinely
  * carries tier/pricing on this pin. Tolerant of the list envelope
  * ({ providers: [...] } / {items} / bare array) and a single provider record.
  */
@@ -198,7 +190,7 @@ export function configuredProviderIdsFromProvidersResponse(value: unknown): Set<
 }
 
 // ---------------------------------------------------------------------------
-// Family detection — mirrors the TUI's model-picker-types.ts FAMILY_PATTERNS
+// Family detection, mirrors the TUI's model-picker-types.ts FAMILY_PATTERNS
 // exactly, for cross-surface grouping parity. Purely a label/id heuristic.
 // ---------------------------------------------------------------------------
 
@@ -241,7 +233,7 @@ export function detectFamily(model: CatalogModel): ModelFamily {
 }
 
 // ---------------------------------------------------------------------------
-// Filters — TUI vocabulary. Price/tier are backed by real per-model tier data
+// Filters, TUI vocabulary. Price/tier are backed by real per-model tier data
 // where the wire serves it; capability/quality-tier have no wire data on this
 // pin and callers must honest-disable those controls.
 // ---------------------------------------------------------------------------
@@ -262,14 +254,14 @@ export function hasAnyTierData(models: readonly CatalogModel[]): boolean {
   return models.some((model) => Boolean(model.tier));
 }
 
-/** Always false today — capability flags are not projected onto any reachable
+/** Always false today, capability flags are not projected onto any reachable
  * response on this pin. Kept as a function so a future daemon that starts
  * serving them is picked up here without call-site changes. */
 export function hasAnyCapabilityData(_models: readonly CatalogModel[]): boolean {
   return false;
 }
 
-/** Always false today — see hasAnyCapabilityData. */
+/** Always false today, see hasAnyCapabilityData. */
 export function hasAnyQualityTierData(_models: readonly CatalogModel[]): boolean {
   return false;
 }
@@ -303,7 +295,7 @@ export interface ModelGroup {
 }
 
 /** Honest for 'provider'/'family'/'pricingTier'; 'qualityTier' has no wire data
- * so callers disable that mode — passed through as one "Ungrouped" bucket if forced. */
+ * so callers disable that mode, passed through as one "Ungrouped" bucket if forced. */
 export function groupModels(models: readonly CatalogModel[], groupBy: GroupByMode): ModelGroup[] {
   const buckets = new Map<string, CatalogModel[]>();
   const order: string[] = [];
@@ -329,7 +321,7 @@ export function groupModels(models: readonly CatalogModel[], groupBy: GroupByMod
 }
 
 // ---------------------------------------------------------------------------
-// Target routing — read the current selection for a target, and build the
+// Target routing, read the current selection for a target, and build the
 // config.set entries a "Use" action should write.
 // ---------------------------------------------------------------------------
 
@@ -397,7 +389,7 @@ export function readTargetRouting(target: ModelTarget, config: unknown): TargetR
         !provider || !model ? "Empty uses the active chat provider/model for spoken-output turns." : undefined,
     };
   }
-  // embeddings — no model concept.
+  // embeddings, no model concept.
   const provider = readConfigString(config, "provider.embeddingProvider") || "hashed-local";
   return {
     target,
@@ -406,13 +398,13 @@ export function readTargetRouting(target: ModelTarget, config: unknown): TargetR
     unset: false,
     provider,
     model: "",
-    configuredNote: "Embedding provider only — this target has no model selection.",
+    configuredNote: "Embedding provider only; this target has no model selection.",
   };
 }
 
 /**
  * The config.set entries a "Use <model> for <target>" action writes. On this
- * pin EVERY target routes through config.set (there is no models.select) —
+ * pin EVERY target routes through config.set (there is no models.select),
  * main writes the provider-qualified `provider.model` registry key.
  */
 export function buildTargetWriteEntries(
@@ -444,7 +436,7 @@ export function buildTargetWriteEntries(
       ["tts.llmModel", modelId],
     ];
   }
-  // embeddings — provider id only, no model.
+  // embeddings, provider id only, no model.
   return [["provider.embeddingProvider", providerId]];
 }
 

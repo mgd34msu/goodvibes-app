@@ -1,4 +1,4 @@
-// One check-in receipt row. Every field renders verbatim and plainly — the
+// One check-in receipt row. Every field renders verbatim and plainly, the
 // UX bar's honesty rule: no outcome is ever collapsed to a bare status dot.
 
 import { formatCheckinTimestamp, receiptOutcomeLabel, outcomeTone, type CheckinReceipt } from "./checkin-wire.ts";

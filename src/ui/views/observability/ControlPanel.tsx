@@ -1,4 +1,4 @@
-// Daemon control snapshot + connected clients + recent messages —
+// Daemon control snapshot + connected clients + recent messages,
 // control.snapshot / control.clients.list / control.messages.list.
 
 import { useMemo } from "react";

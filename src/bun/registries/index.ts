@@ -79,7 +79,7 @@ export function createRegistriesRoutes(options: RegistriesRoutesOptions = {}): A
         .filter((part) => part !== "")
         .map(decodeURIComponent);
 
-      // GET /app/registries — collection index (introspection convenience).
+      // GET /app/registries, collection index (introspection convenience).
       if (segments.length === 0) {
         if (req.method !== "GET") return errorResponse(405, "REGISTRY_METHOD", "Method not allowed");
         return json({ collections: [...REGISTRY_COLLECTIONS] });

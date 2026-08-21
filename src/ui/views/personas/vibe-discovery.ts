@@ -1,7 +1,7 @@
 // Client-side persona discovery over VIBE.md content: markdown heading
 // sections become persona candidates (heading → name, section body → prompt).
 // Sections whose heading or body mention persona-ish vocabulary are ranked
-// "likely"; everything else is still offered, just unranked — the user picks.
+// "likely"; everything else is still offered, just unranked, the user picks.
 
 export interface PersonaCandidate {
   name: string;
@@ -13,7 +13,7 @@ const PERSONA_HINTS = /\b(persona|personality|voice|tone|character|identity|role
 
 /**
  * Split markdown into `##`/`###` heading sections. The preamble before the
- * first heading is offered as a "VIBE preamble" candidate when non-trivial —
+ * first heading is offered as a "VIBE preamble" candidate when non-trivial,
  * many VIBE.md files are one continuous personality block with no headings.
  */
 export function discoverPersonaCandidates(markdown: string): PersonaCandidate[] {
@@ -40,7 +40,7 @@ export function discoverPersonaCandidates(markdown: string): PersonaCandidate[] 
   for (const section of sections) {
     const body = section.body.join("\n").trim();
     if (!body) continue;
-    // Skip trivially short bodies — a one-liner is not a persona prompt.
+    // Skip trivially short bodies, a one-liner is not a persona prompt.
     if (body.length < 40) continue;
     let name = section.name || "VIBE preamble";
     // Duplicate headings get a numeric suffix so names (used as keys and

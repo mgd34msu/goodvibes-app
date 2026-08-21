@@ -1,11 +1,11 @@
-// checkin-wire.ts — types, defensive wire parsers, and pure helpers for the
+// checkin-wire.ts, types, defensive wire parsers, and pure helpers for the
 // Check-in view (checkin.config.get/set, checkin.receipts.list, checkin.run).
 //
 // TRAP (do not conflate): checkin.receipts.list's outcome enum includes
 // skipped-disabled / skipped-quiet-hours (two DISTINCT reasons a scheduled
 // run declined to contact), while checkin.run's outcome enum collapses both
 // into a single generic "skipped" (a manual run-now either goes through the
-// judge or is refused outright — there's no quiet-hours window to skip on a
+// judge or is refused outright, there's no quiet-hours window to skip on a
 // deliberate manual trigger the same way). The wordings below are kept
 // deliberately separate per source so a manual run's "Skipped" is never
 // mistaken for the specific enums a scheduled receipt reports.
@@ -100,17 +100,17 @@ export function parseCheckinRunResult(value: unknown): CheckinRunResult {
   };
 }
 
-/** Receipt-list wording — keep distinct from runOutcomeLabel (the TRAP). */
+/** Receipt-list wording, keep distinct from runOutcomeLabel (the TRAP). */
 export function receiptOutcomeLabel(outcome: string): string {
   switch (outcome) {
     case "delivered":
       return "Delivered";
     case "quiet":
-      return "Ran quiet — nothing worth surfacing";
+      return "Ran quiet: nothing worth surfacing";
     case "skipped-disabled":
-      return "Skipped — check-in was disabled";
+      return "Skipped: check-in was disabled";
     case "skipped-quiet-hours":
-      return "Skipped — within quiet hours";
+      return "Skipped: within quiet hours";
     case "error":
       return "Error";
     default:
@@ -118,14 +118,14 @@ export function receiptOutcomeLabel(outcome: string): string {
   }
 }
 
-/** Manual run-now wording — the generic "skipped" is intentionally vaguer
+/** Manual run-now wording, the generic "skipped" is intentionally vaguer
  * than the receipt-list enums; never borrow their specific phrasing here. */
 export function runOutcomeLabel(outcome: string): string {
   switch (outcome) {
     case "delivered":
       return "Delivered";
     case "quiet":
-      return "Ran quiet — nothing worth surfacing";
+      return "Ran quiet: nothing worth surfacing";
     case "skipped":
       return "Skipped";
     case "error":

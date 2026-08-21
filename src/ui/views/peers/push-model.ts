@@ -1,12 +1,12 @@
 // Web-push subscriptions for PWA companions (docs/FEATURES.md §21 row 6,
 // docs/GAPS.md top-10 gap #5). Five ws-only methods with zero prior UI:
 // push.vapid.get, push.subscriptions.list/.verify/.delete (push.subscriptions
-// .create is the PWA's own registration call, not an operator action — the
+// .create is the PWA's own registration call, not an operator action, the
 // app itself uses native desktop notifications per the FEATURES note, so no
 // "add subscription" affordance belongs here).
 //
 // Wire shapes verified against the generated operator contract
-// (operator-contract.json, methods push.*) — every field below is read
+// (operator-contract.json, methods push.*), every field below is read
 // straight off that schema, parsed defensively per the wire.ts convention
 // (additionalProperties may still grow on daemon builds).
 

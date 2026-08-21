@@ -1,5 +1,5 @@
 // Reports tab: knowledge reports (knowledge.reports.list / report.get peek),
-// usage records (knowledge.usage.list — where knowledge actually got used),
+// usage records (knowledge.usage.list, where knowledge actually got used),
 // and extraction records (knowledge.extractions.list / extraction.get peek).
 
 import { useState } from "react";
@@ -115,7 +115,7 @@ function RecordSection({
 export function ReportsPanel({ active }: { active: boolean }) {
   const peek = usePeek();
 
-  // None of these have wire events — slow polls while the tab is visible.
+  // None of these have wire events, slow polls while the tab is visible.
   const reports = useQuery({
     queryKey: kKeys.reports,
     queryFn: () => invoke("knowledge.reports.list", { query: { limit: 100 } }),

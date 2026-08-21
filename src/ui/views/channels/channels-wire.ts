@@ -1,9 +1,9 @@
 // Defensive readers for channels.* wire payloads. Shapes follow the pinned
-// operator contract (sdk 1.3.1 — see the outputSchema of each method in
+// operator contract (sdk 1.3.1, see the outputSchema of each method in
 // contracts/artifacts/operator-contract.json), read defensively so a 1.0.0
 // daemon with slightly older field sets degrades to honest blanks instead of
 // crashes. Status/state strings are rendered VERBATIM (presentation-bridge
-// classifies tone) — this module never invents vocabulary.
+// classifies tone), this module never invents vocabulary.
 
 import { asArray, asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 
@@ -518,7 +518,7 @@ export function readAllowlistResolution(data: unknown): AllowlistResolution {
   };
 }
 
-/** allowlist.edit echoes the updated policy — surface the new allowlist sizes. */
+/** allowlist.edit echoes the updated policy, surface the new allowlist sizes. */
 export interface AllowlistEditResult {
   surface: string;
   userCount: number;
@@ -617,7 +617,7 @@ export function readRouting(data: unknown): { routes: RoutingAssignment[]; total
 // methods[108]/[109]: deliveries.get takes {deliveryId} and returns
 // {delivery}; deliveries.list takes no input and returns {totals, attempts}.
 // There is NO deliveries.retry (or any deliveries.* mutating verb) anywhere
-// in the generated route table — this surface is read-only on this pin;
+// in the generated route table, this surface is read-only on this pin;
 // DeliveriesPanel.tsx renders that as an honest note, never a fabricated
 // button. `status`/`target.kind`/`target.surfaceKind` are closed enums on the
 // wire but read as open strings here anyway (same posture as fleet.ts) so an
@@ -639,7 +639,7 @@ export interface DeliveryRecord {
   status: string;
   startedAt: number | undefined;
   endedAt: number | undefined;
-  /** The daemon's own failure reason, verbatim — never summarized/truncated here. */
+  /** The daemon's own failure reason, verbatim, never summarized/truncated here. */
   error: string;
   responseId: string;
 }
@@ -746,7 +746,7 @@ export function readPrincipals(data: unknown): PrincipalRecord[] {
   return asArray(asRecord(data)["principals"]).map(readPrincipal);
 }
 
-/** principals.resolve's honest {principal, known} pair — `known:false` means
+/** principals.resolve's honest {principal, known} pair, `known:false` means
  * no principal maps to this channel:value, never an error. */
 export function readPrincipalResolution(data: unknown): { principal: PrincipalRecord | null; known: boolean } {
   const record = asRecord(data);
@@ -787,10 +787,10 @@ export function readChannelProfiles(data: unknown): ChannelProfileBinding[] {
   return asArray(asRecord(data)["bindings"]).map(readChannelProfileBinding);
 }
 
-// ── channels.test.send (contract 1.11 — first UI surface for this method) ───
+// ── channels.test.send (contract 1.11, first UI surface for this method) ───
 // delivered:false with `error` set in an otherwise-200 response is the NORMAL
 // failure path (a real send attempt that the surface rejected/couldn't
-// place) — never treated as a thrown error here.
+// place), never treated as a thrown error here.
 
 export interface TestSendResult {
   surface: string;

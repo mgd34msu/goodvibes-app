@@ -1,13 +1,13 @@
 // GitHub panel model (docs/FEATURES.md §15 rows 5-7; docs/GAPS.md §15 rows
 // 5-7): typed client for the app-local /app/github/* routes the app itself
-// now serves (src/bun/github.ts, built in parallel — this file is coded
+// now serves (src/bun/github.ts, built in parallel, this file is coded
 // against its contract verbatim, not against that module's source).
 //
 // Two shape families live behind this one client:
 //  - auth/* responses are app-normalized camelCase JSON the Bun module
 //    produces itself (authenticated, tokenSource, clientIdConfigured, …).
 //  - user / repos / pulls / issues / rate-limit / pr-comment / pr-review /
-//    issue-comment are STRAIGHT PROXIES of GitHub's REST API — the raw
+//    issue-comment are STRAIGHT PROXIES of GitHub's REST API, the raw
 //    snake_case shapes GitHub returns (html_url, created_at, user.login, …).
 // Same idiom as git-api.ts: this is a fixed app-local contract, not a
 // variable-shape daemon wire route, so plain typed fetches are used rather
@@ -17,7 +17,7 @@ import { appFetch, appJson, HttpError } from "../../lib/http.ts";
 import { errorStatus } from "../../lib/errors.ts";
 import type { GitRemote } from "./git-api.ts";
 
-// ─── query keys (own "githubApp" prefix — never codeKeys.git) ───────────────
+// ─── query keys (own "githubApp" prefix, never codeKeys.git) ───────────────
 
 export const githubAppKeys = {
   root: ["githubApp"] as const,
@@ -99,7 +99,7 @@ export interface GitHubIssue {
   created_at: string;
   updated_at: string;
   comments: number;
-  /** Present when the issues endpoint is echoing back a PR — filter these out. */
+  /** Present when the issues endpoint is echoing back a PR, filter these out. */
   pull_request?: unknown;
 }
 
@@ -116,7 +116,7 @@ export interface GitHubRateLimit {
 }
 
 // The three write endpoints wrap SDK GitHubIntegration.post* methods, which
-// return void — the app-local routes answer with a plain {ok:true} rather than
+// return void, the app-local routes answer with a plain {ok:true} rather than
 // the created comment/review object, so callers key off resolution only.
 export interface GitHubWriteAck {
   ok: true;
@@ -193,7 +193,7 @@ export function isTokenRejectedError(error: unknown): boolean {
 
 // ─── display helpers ─────────────────────────────────────────────────────────
 
-/** Issues endpoints echo PRs back too — real issue rows never carry this key. */
+/** Issues endpoints echo PRs back too, real issue rows never carry this key. */
 export function isRealIssue(issue: GitHubIssue): boolean {
   return issue.pull_request === undefined;
 }
@@ -217,7 +217,7 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 /**
  * Picks the "origin" remote first (falling back to any other configured
  * remote) and parses owner/repo out of its fetch or push URL. Returns null
- * when there are no remotes, or none of them point at github.com — an honest
+ * when there are no remotes, or none of them point at github.com, an honest
  * "no repo context" state the panel renders as a placeholder, not an error.
  */
 export function githubRepoFromRemotes(remotes: GitRemote[]): { owner: string; repo: string } | null {

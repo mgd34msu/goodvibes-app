@@ -1,4 +1,4 @@
-// System section — subtabs: Health, Control, Routes, Surfaces, Continuity,
+// System section, subtabs: Health, Control, Routes, Surfaces, Continuity,
 // Scheduler, OTLP. Subtab selection is URL-addressable
 // (?filter[obs-system]=…).
 

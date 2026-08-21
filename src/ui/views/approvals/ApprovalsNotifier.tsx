@@ -1,10 +1,10 @@
 // Global approvals bridge, mounted once in AppShell: watches the shared
 // approvals query for NEWLY pending approvals and raises an actionable toast
-// ("answer from anywhere" — toast → jump, docs/UX.md §4), and registers the
+// ("answer from anywhere", toast → jump, docs/UX.md §4), and registers the
 // approvals/tasks palette commands so they exist without the view mounted.
 //
 // Honest gap: the native desktop-notification RPC path does not exist yet in
-// src/bun (FEATURES §24) — until it lands, the in-app toast is the whole
+// src/bun (FEATURES §24), until it lands, the in-app toast is the whole
 // notification surface. Renders nothing.
 
 import { useEffect, useRef } from "react";
@@ -25,7 +25,7 @@ export function ApprovalsNotifier({ enabled }: { enabled: boolean }) {
   // the `permissions` domain invalidation is the fast path.
   const approvals = useApprovalsSnapshot({ enabled, refetchInterval: 60_000 });
 
-  // Baseline on the first successful load — never toast the backlog.
+  // Baseline on the first successful load, never toast the backlog.
   const knownPendingRef = useRef<ReadonlySet<string> | null>(null);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 // OS service card (docs/GAPS.md §20 row 8, the section's last MISSING row):
 // services.status/.install/.start/.stop/.restart/.uninstall are declared in
-// the route table (`/api/service/*`) but were never invoked from src/ui —
+// the route table (`/api/service/*`) but were never invoked from src/ui,
 // this section is that first caller. Every action is admin-scoped on the
 // wire; install/stop/restart/uninstall additionally change what's running on
 // the host (a systemd/launchd unit that manages the daemon process), so they
@@ -10,7 +10,7 @@
 // again. Rendering is wire-shape-defensive: the input schemas for every
 // services.* method are additionalProperties:false (no body to send), and
 // the output schema only *requires* platform/serviceName/path/installed/
-// autostart/running/commandPreview/suggestedCommands — pid/logPath/contents/
+// autostart/running/commandPreview/suggestedCommands, pid/logPath/contents/
 // lastAction/actionError/network are all optional, so each is read with
 // firstString/firstNumber and rendered only when present.
 
@@ -72,7 +72,7 @@ const ACTION_METHOD: Record<ServiceAction, string> = {
 
 const ACTION_BLAST_RADIUS: Record<ServiceAction, string> = {
   install:
-    "Writes and enables a systemd (or launchd on macOS) unit that manages this machine's GoodVibes daemon process outside of this app — the daemon can then start on login/boot even when the app itself isn't open.",
+    "Writes and enables a systemd (or launchd on macOS) unit that manages this machine's GoodVibes daemon process outside of this app; the daemon can then start on login/boot even when the app itself isn't open.",
   start: "Starts the installed unit now, launching the daemon process it manages if it isn't already running.",
   stop: "Stops the installed unit now. The daemon process it manages exits; anything talking to this daemon (this app, other clients) loses its connection until it is started again.",
   restart: "Stops and immediately restarts the installed unit's daemon process. Any in-flight requests or open sessions against this daemon are interrupted.",
@@ -107,7 +107,7 @@ export function OsServiceSection() {
     queryKey: settingsKeys.osService,
     queryFn: () => gv.invoke("services.status"),
     retry: false,
-    // No wire event covers service-unit churn — targeted poll, same cadence
+    // No wire event covers service-unit churn, targeted poll, same cadence
     // as the rest of this view's unwired domains.
     refetchInterval: SETTINGS_POLL_MS,
   });
@@ -215,7 +215,7 @@ export function OsServiceSection() {
             {info.lastAction && (
               <span>
                 Last action: <code>{info.lastAction}</code>
-                {info.actionError && ` — failed: ${info.actionError}`}
+                {info.actionError && `, failed: ${info.actionError}`}
               </span>
             )}
           </div>

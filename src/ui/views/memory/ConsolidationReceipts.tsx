@@ -1,20 +1,20 @@
-// Consolidation — makes memory consolidation's judgment proposals actionable
+// Consolidation, makes memory consolidation's judgment proposals actionable
 // (memory.consolidation.receipts). Crib: goodvibes-webui
 // src/views/memory/ConsolidationReceipts.tsx.
 //
 // Idle/scheduled consolidation performs only REVERSIBLE operations on its
 // own (merge exact duplicates into a survivor, decay never-referenced aged
-// records) — anything needing a human call (a contradiction, a cross-scope
+// records), anything needing a human call (a contradiction, a cross-scope
 // duplicate, a long-stale delete) is emitted as a PROPOSAL instead of applied
 // automatically. The records a proposal references are already marked into
 // the review queue by the consolidation pass itself, so this panel's job is
 // to make those proposals legible (what kind, which records, why) and
-// ONE-TAP jumpable to the review queue below — a scroll + highlight, never a
+// ONE-TAP jumpable to the review queue below, a scroll + highlight, never a
 // second resolution path and never a filter that hides anything else.
 //
 // A daemon build with no memory.consolidation.receipts id at all (404) and a
 // build that HAS the id but no consolidation scheduler wired (501) both
-// render the same honest "not available" state — isMethodUnavailableError
+// render the same honest "not available" state, isMethodUnavailableError
 // already covers both status codes (lib/errors.ts). Zero runs ever having
 // happened is a genuinely different, honest empty state.
 
@@ -37,7 +37,7 @@ function proposalKey(proposal: ConsolidationProposal, index: number): string {
 
 export interface ConsolidationReceiptsProps {
   /** Jump to the review queue below, scrolling to it and highlighting exactly
-   * these record ids — never filters the queue down to just them. */
+   * these record ids, never filters the queue down to just them. */
   onReviewIds: (ids: readonly string[]) => void;
 }
 
@@ -45,7 +45,7 @@ export function ConsolidationReceipts({ onReviewIds }: ConsolidationReceiptsProp
   const receipts = useQuery({
     queryKey: memoryKeys.consolidation,
     queryFn: async () => parseConsolidationReceipts(await gv.memory.consolidationReceipts()),
-    // No wire event for memory.* — poll while mounted, same as the review queue.
+    // No wire event for memory.*, poll while mounted, same as the review queue.
     refetchInterval: 30_000,
     retry: false,
   });

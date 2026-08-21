@@ -3,7 +3,7 @@
 // Two modules own disjoint top-level keys in this one file: secrets.ts owns
 // "app" (app-own settings) and notifications.ts owns "notifications". Before
 // this store they each did an independent read-modify-write; the atomic rename
-// prevented corruption but NOT lost updates — a concurrent write from the other
+// prevented corruption but NOT lost updates, a concurrent write from the other
 // module (each reading the pre-write object) could silently revert the other's
 // key. Both now route their RMW through mutateAppSettings(), which serializes on
 // a single process-wide chain so cross-module writes can never lose each other.
@@ -51,7 +51,7 @@ export async function readAppSettings(): Promise<Record<string, unknown>> {
     console.warn(
       `[settings-store] CORRUPT settings.json at ${APP_SETTINGS_PATH}: ${
         err instanceof Error ? err.message : String(err)
-      } — renaming to ${aside} and starting with defaults.`,
+      }; renaming to ${aside} and starting with defaults.`,
     );
     await rename(APP_SETTINGS_PATH, aside).catch(() => undefined);
     return {};

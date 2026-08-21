@@ -1,6 +1,6 @@
 // Session rail data: daemon list (TanStack Query, queryKeys.chatSessions)
 // merged over the localStorage warm-start cache and local optimistic
-// creations. Mutations: create / rename / close / delete — delete runs the
+// creations. Mutations: create / rename / close / delete, delete runs the
 // webui "proof-of-gone" reconcile: after the verb, refetch the list and only
 // treat the session as gone when the daemon stops listing it (delete-means-
 // delete; a lying success surfaces as an honest error instead).
@@ -41,7 +41,7 @@ export interface UseChatSessionsReturn {
 
 export interface UseChatSessionsOptions {
   /** Gate the fallback poll below on the caller's own visibility signal
-   * (ChatView is a keep-alive view — this hook stays mounted, and React
+   * (ChatView is a keep-alive view, this hook stays mounted, and React
    * Query's refetchInterval only pauses for document/window visibility, not
    * an ancestor's display:none, so the caller has to say so explicitly;
    * checklist item 18). Defaults to true so other callers are unaffected. */
@@ -58,7 +58,7 @@ export function useChatSessions(options: UseChatSessionsOptions = {}): UseChatSe
     queryFn: () => gv.chat.sessions.list(),
     // Companion-chat emits NO wire event for external mutations (verified
     // against the live daemon 2026-07-07): sessions created by other surfaces
-    // never invalidate. Honest fallback poll, same rationale as fleet — but
+    // never invalidate. Honest fallback poll, same rationale as fleet, but
     // only while the caller says this is actually visible.
     refetchInterval: pollingEnabled ? 15_000 : false,
   });

@@ -1,5 +1,5 @@
 // Small shared pieces for the Knowledge view: the four-state list wrapper
-// (loading / error-with-retry / unavailable-naming-the-capability / empty —
+// (loading / error-with-retry / unavailable-naming-the-capability / empty,
 // docs/UX.md §4 binding), a raw-JSON disclosure block, a pager, and a
 // copyable monospace value (URIs never navigate the app webview).
 
@@ -15,7 +15,7 @@ import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSu
 
 export interface QueryStatesProps {
   query: UseQueryResult<unknown, unknown>;
-  /** The daemon method behind this list — named in the unavailable state. */
+  /** The daemon method behind this list, named in the unavailable state. */
   capability: string;
   /** What the user loses when the capability is missing. */
   unavailableDescription: string;
@@ -132,7 +132,7 @@ export function CopyValue({ value, label }: { value: string; label?: string }) {
 // methods (docs/FEATURES.md §6 rows 21-24). Rather than one ConfirmSurface
 // instance per action, callers hold ONE `PendingAction | null` and render one
 // <PendingConfirmSurface>; this still emits confirm:true + explicitUserRequest
-// per docs/UX.md §4 — it just shares the modal shell.
+// per docs/UX.md §4, it just shares the modal shell.
 
 export interface PendingAction {
   action: string;
@@ -172,7 +172,7 @@ export function PendingConfirmSurface({
 // generation) accept daemon-side object shapes richer than this view can
 // enumerate as named fields. Rather than hardcode a guessed field name and
 // silently drop what the user actually wanted, this exposes exactly what the
-// route accepts — a JSON object merged into the request body — wired to the
+// route accepts, a JSON object merged into the request body, wired to the
 // real method, capability-honest about what it does.
 
 export function parseJsonParams(value: string): Record<string, unknown> {

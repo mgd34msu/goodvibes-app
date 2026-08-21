@@ -2,12 +2,12 @@
 // "observability" (or reuses the already-shared "telemetry"/"health"/
 // "control" prefixes from lib/queries.ts where this view legitimately reads
 // the same data those prefixes already cover) so a targeted invalidation
-// fans out correctly. Defined locally per the wave ownership rules — do NOT
+// fans out correctly. Defined locally per the wave ownership rules, do NOT
 // edit lib/queries.ts.
 //
 // None of telemetry/control-plane/health/routes/surfaces/continuity/
 // scheduler/panels carry a realtime wire event (lib/realtime.ts
-// DOMAIN_INVALIDATIONS has no entry for any of them) — every read here is a
+// DOMAIN_INVALIDATIONS has no entry for any of them), every read here is a
 // poll-or-refetch-on-demand query, never SSE-invalidated. Live freshness for
 // telemetry specifically comes from the dedicated pausable tail
 // (telemetry.stream via lib/sse.ts), not from this polling.

@@ -1,14 +1,14 @@
-// model-dev-catalog.ts — the real model catalog (docs/FEATURES.md §14 row 5 /
+// model-dev-catalog.ts, the real model catalog (docs/FEATURES.md §14 row 5 /
 // docs/GAPS.md top-10 gap #8): a plain `fetch` of https://models.dev/api.json
-// (a public, static, CORS-open JSON document — no daemon/wire involvement),
+// (a public, static, CORS-open JSON document, no daemon/wire involvement),
 // cached in localStorage with a 24h TTL, browsable by provider/modality/price
 // tier. This is DELIBERATELY separate from model-catalog.ts (the config-write
-// routing model over providers.list/config.get) — this file only ever reads
+// routing model over providers.list/config.get), this file only ever reads
 // and never writes daemon config; the two catalogs are cross-referenced by
 // registryKey in ModelCatalogPanel.tsx, never merged into one type, since
 // their fields (and their honesty caveats) differ.
 //
-// Shape read here (models.dev's own root object, tolerant of drift — never
+// Shape read here (models.dev's own root object, tolerant of drift, never
 // cast): `{ [providerId]: { name, models: { [modelId]: { id, name, cost:
 // {input,output,cache_read,cache_write}, limit: {context,output}, modalities:
 // {input:[],output:[]}, reasoning, tool_call, open_weights, knowledge } } } }`.
@@ -64,8 +64,8 @@ export interface CatalogFetchResult {
 
 /**
  * Fetch models.dev's catalog, honoring the 24h cache unless `force` (manual
- * refresh) is set. A network failure falls back to whatever is cached — even
- * stale — so a transient offline blip never blanks the panel; only a missing
+ * refresh) is set. A network failure falls back to whatever is cached, even
+ * stale, so a transient offline blip never blanks the panel; only a missing
  * cache PLUS a failed fetch throws, and the caller (ModelCatalogPanel) is the
  * one that degrades further, to the daemon's own providers.list.
  */
@@ -86,10 +86,6 @@ export async function fetchModelsDevCatalog(force: boolean): Promise<CatalogFetc
     throw error;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Normalization
-// ---------------------------------------------------------------------------
 
 export interface RemoteModel {
   readonly id: string;
@@ -157,7 +153,7 @@ export function remoteModelsFromCatalog(raw: unknown): RemoteModel[] {
 }
 
 // ---------------------------------------------------------------------------
-// Price tiers — models.dev has no named tier field; this is a display-only
+// Price tiers, models.dev has no named tier field; this is a display-only
 // bucket derived from the actual $/M-token cost it does report. Absent when
 // neither input nor output price is reported (never fabricated as "free").
 // ---------------------------------------------------------------------------

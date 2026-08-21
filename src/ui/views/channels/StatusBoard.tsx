@@ -1,5 +1,5 @@
 // Status board (docs/FEATURES.md §13 "Status overview (all 17 surfaces)"):
-// master/detail over channels.status — the daemon's surface rows render
+// master/detail over channels.status, the daemon's surface rows render
 // VERBATIM (id/label/state/enabled straight off the wire, tones via the
 // presentation bridge's classifyBadgeTone → StatusBadge; no invented
 // vocabulary, no hardcoded surface list). Selecting a surface opens the
@@ -8,7 +8,7 @@
 //
 // Repairs: the contract exposes repair actions per surface
 // (channels.repairs.list / doctor.repairActions) but names no dedicated
-// "run repair" method — the documented lifecycle-action path is
+// "run repair" method, the documented lifecycle-action path is
 // channels.accounts.action.default (POST /accounts/{surface}/actions/{action}).
 // Running a repair goes through ConfirmSurface (admin verb) and sends the
 // repair action id down that path with confirm metadata.
@@ -60,7 +60,7 @@ export function StatusBoard() {
           isEmpty={(rows) => rows.length === 0}
           emptyIcon={<Radio size={28} aria-hidden="true" />}
           emptyTitle="No channel surfaces reported"
-          emptyDescription="The daemon reported an empty surface list — no channel plugins or provider-backed channels are registered."
+          emptyDescription="The daemon reported an empty surface list; no channel plugins or provider-backed channels are registered."
           skeletonLines={8}
         >
           {(rows) => (
@@ -216,7 +216,7 @@ function RepairsSection({ surface }: { surface: string }) {
   );
 }
 
-/** Repair execution — confirm-gated lifecycle action on the surface's default account. */
+/** Repair execution, confirm-gated lifecycle action on the surface's default account. */
 function RepairButtons({
   surface,
   actions,
@@ -280,7 +280,7 @@ function RepairButtons({
         target={`${surface} (default account)`}
         blastRadius={
           pending?.dangerous
-            ? "Marked dangerous by the daemon — it may reset credentials or restart this channel surface."
+            ? "Marked dangerous by the daemon; it may reset credentials or restart this channel surface."
             : "Runs a lifecycle action on this surface's default channel account."
         }
         danger={pending?.dangerous ?? false}
@@ -332,10 +332,10 @@ function LifecycleSection({ surface }: { surface: string }) {
   );
 }
 
-/** Setup guide — read-only render of the daemon's ordered field list. Writing
+/** Setup guide, read-only render of the daemon's ordered field list. Writing
  * values happens through config/secrets flows the guide references; this panel
  * shows exactly what each field needs and never prints secret values (there
- * are none on this wire — only field descriptors). */
+ * are none on this wire, only field descriptors). */
 function SetupSection({ surface }: { surface: string }) {
   const setup = useQuery({
     queryKey: channelsKeys.surfaceSection(surface, "setup"),

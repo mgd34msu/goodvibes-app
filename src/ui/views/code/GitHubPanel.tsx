@@ -2,7 +2,7 @@
 // device-flow + token auth, repo context derived from the existing git
 // remotes, and PR/issue list + comment + review against the app-local
 // /app/github/* routes the app itself now serves (src/bun/github.ts, built
-// in parallel to the contract this file codes against — see github-model.ts
+// in parallel to the contract this file codes against, see github-model.ts
 // for the grounding note). Every write action (comment, review) is
 // outward-facing and publishes to GitHub, so every one of them is gated
 // behind ConfirmSurface, no exceptions.
@@ -168,7 +168,7 @@ function DeviceFlowRunner() {
     onError: (error: unknown) => {
       setPhase("error");
       setErrorMessage(
-        isClientNotConfiguredError(error) ? "No client id saved — reload this section and save one first." : formatError(error),
+        isClientNotConfiguredError(error) ? "No client id saved; reload this section and save one first." : formatError(error),
       );
     },
   });
@@ -280,7 +280,7 @@ function TokenTab() {
       toast({
         title: "Token rejected",
         description: isTokenRejectedError(error)
-          ? "GitHub rejected this token — check it hasn't expired or been revoked."
+          ? "GitHub rejected this token; check it hasn't expired or been revoked."
           : formatError(error),
         tone: "danger",
         durationMs: 0,
@@ -349,7 +349,7 @@ function SignedInPanel({ status }: { status: GitHubAuthStatus }) {
         <dt>Scopes</dt>
         <dd>
           {noReportedScopes
-            ? "(none reported — expected for fine-grained PATs)"
+            ? "(none reported: expected for fine-grained PATs)"
             : (status.scopes ?? []).length > 0
               ? status.scopes!.join(", ")
               : "(none)"}
@@ -402,7 +402,7 @@ function RepoActivitySection({ authenticated }: { authenticated: boolean }) {
     return (
       <EmptyState
         title="No GitHub remote"
-        description="None of this repository's remotes point at github.com — add one to see pull requests and issues here."
+        description="None of this repository's remotes point at github.com; add one to see pull requests and issues here."
       />
     );
   }
@@ -614,7 +614,7 @@ function CommentBox({ itemLabel, postComment }: { itemLabel: string; postComment
         open={confirming}
         action={`Comment on ${itemLabel}`}
         target={itemLabel}
-        blastRadius={`Posts a public comment on ${itemLabel} on GitHub — visible to anyone with access to the repo.`}
+        blastRadius={`Posts a public comment on ${itemLabel} on GitHub, visible to anyone with access to the repo.`}
         confirmLabel={comment.isPending ? "Posting…" : "Post comment"}
         onConfirm={() => comment.mutate(body.trim())}
         onCancel={() => setConfirming(false)}
@@ -635,9 +635,9 @@ function reviewActionLabel(event: GitHubReviewEvent | null): string {
 }
 
 function reviewBlastRadius(event: GitHubReviewEvent | null): string {
-  if (event === "APPROVE") return "Approves this pull request on GitHub — a public, outward-facing review visible to every collaborator.";
+  if (event === "APPROVE") return "Approves this pull request on GitHub: a public, outward-facing review visible to every collaborator.";
   if (event === "REQUEST_CHANGES")
-    return "Requests changes on this pull request on GitHub — blocks merge until addressed, visible to every collaborator.";
+    return "Requests changes on this pull request on GitHub: blocks merge until addressed, visible to every collaborator.";
   return "Posts a review comment on this pull request on GitHub without approving or requesting changes.";
 }
 

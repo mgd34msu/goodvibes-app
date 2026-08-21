@@ -1,18 +1,18 @@
-# goodvibes-app — Feature Parity Matrix
+# goodvibes-app: feature parity matrix
 
 **This file is the completion bar.** Every user-facing capability of goodvibes-tui v1.10 and goodvibes-agent v1.6 appears below, mapped to the app surface that owns it and the exact backing that implements it. Ground truth for the enumerations: `docs/research/tui-features.md`, `docs/research/agent-map.md`, `docs/research/tui-daemon-architecture.md` (§5 method catalog), `docs/research/sdk-map.md`.
 
 **How to read:**
-- **Source** — where the feature comes from: `tui`, `agent`, `both`, `desktop` (goodvibes-desktop prior art worth carrying), `new` (app-original).
-- **Backing** — what implements it: an operator method id (e.g. `sessions.steer`), an SSE **domain** (e.g. `turn` events), `app-local` (implemented in this repo: UI state, file registries, Bun main process), `app-bun:<sdk subpath>` (Bun main process importing a Bun-only SDK platform subpath), or `RPC` (Electrobun native bridge: dialogs/tray/clipboard/notifications/PTY/shell).
-- **Status** — `planned` → `wired` → `verified`, or `excluded` (moved to §25 with justification). **Wire-or-delete is the law**: at ship time no row may remain `planned`.
-- `[ws]` — WS-only `call` transport method (no HTTP path); reach it over the daemon WebSocket or note the degradation.
+- **Source.** Where the feature comes from: `tui`, `agent`, `both`, `desktop` (goodvibes-desktop prior art worth carrying), `new` (app-original).
+- **Backing.** What implements it: an operator method id (e.g. `sessions.steer`), an SSE **domain** (e.g. `turn` events), `app-local` (implemented in this repo: UI state, file registries, Bun main process), `app-bun:<sdk subpath>` (Bun main process importing a Bun-only SDK platform subpath), or `RPC` (Electrobun native bridge: dialogs/tray/clipboard/notifications/PTY/shell).
+- **Status.** `planned` → `wired` → `verified`, or `excluded` (moved to §25 with justification). **Wire-or-delete is the law**: at ship time no row may remain `planned`.
+- `[ws]`: WS-only `call` transport method (no HTTP path); reach it over the daemon WebSocket or note the degradation.
 
 Statuses start at `planned`. The final audit (task #8) checks every row.
 
 ---
 
-## 1. Chat (companion chat — the primary surface)
+## 1. Chat (companion chat, the primary surface)
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -58,7 +58,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Conversation branches (fork a chat) | tui | app-local: create session + replay seed from history | planned | wire fork doesn't exist for companion chat; honest "forked from" marker |
 | Long-turn desktop notification | both | stream timing + RPC (native notification) | planned | `behavior.notifyAfterSeconds` |
 
-## 2. Sessions (operator sessions union — all surfaces)
+## 2. Sessions (operator sessions union, all surfaces)
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -85,14 +85,14 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Detach (never kills) | tui | `sessions.detach` | planned | |
 | Watcher start/stop/run from fleet | tui | `watchers.start/.stop/.run` | planned | |
 | Task cancel/retry from fleet | tui | `tasks.cancel/.retry` | planned | where node maps to a task |
-| Interrupt / kill / pause / resume of agents | tui | — | planned | gap: no wire method — ship honest capability notes (webui pattern); revisit if contract grows |
+| Interrupt / kill / pause / resume of agents | tui | — | planned | gap: no wire method, ship honest capability notes (webui pattern); revisit if contract grows |
 | Inline approval cards on correlated nodes | tui | `approvals.list` + `permissions` domain | planned | |
 | Workstream view (phases / work-items) | tui | `fleet.snapshot` filtered to workstream kinds | planned | usage/cost where reported |
 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | tui | fleet node metadata + `workflows` domain | planned | render what the wire reports; no fabrication |
 | Worktree detail per agent | tui | `worktrees.snapshot` | planned | |
 | Deep links into fleet nodes | tui | app-local routing | planned | |
 
-## 4. Approvals & Tasks (human-in-the-loop)
+## 4. Approvals & tasks (human-in-the-loop)
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -119,7 +119,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Watchers: list/create/update/delete/start/stop/run | both | `watchers.*` | planned | admin-scoped; webhook/email/event triggers |
 | Delivery targets on schedules (16 surface kinds) | agent | schedule payload fields | planned | slack/discord/telegram/…/webhook |
 | Reminders (one-shot `at` schedules) | agent | `automation.schedules.create` kind=at | planned | Personal Ops integration |
-| Hooks file editor (`.goodvibes/hooks.json`) | tui | app-local file editor + schema validation | planned | gap: no wire method — app-local editor with event-path/type reference docs |
+| Hooks file editor (`.goodvibes/hooks.json`) | tui | app-local file editor + schema validation | planned | gap: no wire method, app-local editor with event-path/type reference docs |
 | Workflow runs visibility (wrfc/fix_loop/…) | tui | `workflows` domain + fleet | planned | read-only; execution stays daemon/tui-side |
 | Scheduler capacity | tui | `scheduler.capacity` | planned | observability hub tile |
 
@@ -167,7 +167,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Scope + confidence faceting (session/project/team) | both | list filters + app-local facets | planned | |
 | Promote note → durable memory | both | `memory.records.add` + review flow | planned | |
 
-## 8. Agent Brain (routines, personas, skills, profiles, VIBE)
+## 8. Agent brain (routines, personas, skills, profiles, VIBE)
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -212,7 +212,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Promote research → Knowledge | agent | `knowledge.ingest.url/.artifact` | planned | explicit, confirm-gated |
 | URL inspection (read-only fetch preview) | agent | app-bun fetch + app-local viewer | planned | config-gated for private hosts |
 
-## 11. Documents & Compare
+## 11. Documents & compare
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -258,7 +258,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Notification targets (ntfy/webhook) manage + test | both | config + `channels.actions.invoke` test | planned | |
 | Realtime channel events | both | `communication` + `deliveries` domains | planned | |
 
-## 14. Providers & Models
+## 14. Providers & models
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -276,7 +276,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Reasoning effort defaults | both | `config.set provider.reasoningEffort` | planned | |
 | Pin/unpin favorite models | both | app-local favorites (shared-store conventions) | planned | |
 
-## 15. Coding / Dev
+## 15. Coding / dev
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -329,7 +329,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Remote-open TUI panels | tui | `panels.list`, `panels.open` | planned | delightful cross-surface trick |
 | OTLP ingest endpoints info | tui | `telemetry.otlp.*` (display endpoints/status) | planned | display-only |
 
-## 18. Voice & Media
+## 18. Voice & media
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -350,17 +350,17 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Full schema-driven settings workspace (all SDK config keys, categories, defaults diamond, live edit) | both | `config.get/.set` + `settings.snapshot` + app-bun `CONFIG_SCHEMA` from `platform/config` | planned | one-key-at-a-time set; secret-shaped masking |
 | Settings search (fuzzy, cross-category) | new | app-local | planned | zero-friction: find any key in <2s |
 | Feature flags | both | `config.set` flags | planned | |
-| Secrets manager: set/link/get(test)/list/delete + providers (env/file/exec/1Password/Bitwarden/Vaultwarden/BWS) | both | app-bun `platform/config` SecretsManager (shared stores) | planned | gap: no wire method — Bun-side via SDK against shared `secrets.enc` |
+| Secrets manager: set/link/get(test)/list/delete + providers (env/file/exec/1Password/Bitwarden/Vaultwarden/BWS) | both | app-bun `platform/config` SecretsManager (shared stores) | planned | gap: no wire method, Bun-side via SDK against shared `secrets.enc` |
 | Keybindings editor (conflict detection, single source of truth for hints) | both+desktop | app-local `~/.goodvibes/app/keybindings.json` | planned | every displayed hint reads the registry |
 | Profiles + profile-sync bundles | both | app-local | planned | |
 | Settings import from tui/agent (preview→confirm, redacted) | agent | app-local bridge | planned | |
 | Theme: dark default / light / density / reduced-motion | both | app-local (tokens) | planned | persisted; instant apply, no restart |
-| Service registry inspect/test/doctor (`/services`) | tui | app-bun `platform/config` ServiceRegistry | planned | gap: no wire method — Bun-side via SDK |
+| Service registry inspect/test/doctor (`/services`) | tui | app-bun `platform/config` ServiceRegistry | planned | gap: no wire method, Bun-side via SDK |
 | Storage posture (`/storage`) | tui | `settings.snapshot` + app-local | planned | |
 | Daemon settings (host/port/TLS/trust-proxy) read+edit | tui | `config.get/.set` controlPlane.* | planned | edits flagged "requires daemon restart" honestly |
 | App-own settings (window, launch-at-login posture, notifications) | new | app-local `~/.goodvibes/app/settings.json` | planned | |
 
-## 20. Security & Auth
+## 20. Security & auth
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -399,20 +399,20 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Import from existing tui/agent installs | agent | app-local bridge | planned | detects `~/.goodvibes/{tui,agent}` |
 | QR pairing display for mobile companions | both | app-local QR render | planned | |
 
-## 23. Command Palette & Keyboard
+## 23. Command palette & keyboard
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
 | Command palette (⌘/Ctrl+K, fuzzy, every action registered) | both+desktop | app-local registry | planned | actions-first navigation; nothing exists outside the registry |
 | Chord hotkeys (`g c` style) + customizable bindings | both | app-local + keybindings registry | planned | conflict detection |
-| Shortcut cheatsheet overlay | both | app-local (reads registry — never hardcoded) | planned | |
+| Shortcut cheatsheet overlay | both | app-local (reads registry, never hardcoded) | planned | |
 | Quick switcher (sessions/chats/views) | desktop | app-local | planned | |
 | Global focus management + focus traps in modals | both | app-local | planned | |
-| ARIA announcer wired to real events | both | app-local | planned | desktop audit: useAnnounce had zero callers — ours must announce |
+| ARIA announcer wired to real events | both | app-local | planned | desktop audit: useAnnounce had zero callers, ours must announce |
 | Reduced-motion support | both | app-local tokens | planned | |
 | Keyboard shortcuts work regardless of focused pane | desktop-audit | app-local (explicit terminal-focus escape hatch) | planned | fixes desktop audit theme 2 |
 
-## 24. Notifications & Tray
+## 24. Notifications & tray
 
 | Feature | Source | Backing | Status | Notes |
 |---|---|---|---|---|
@@ -432,8 +432,8 @@ Rows here are **excluded from v1 scope with justification** or carry a named ups
 | TUI panel/layout commands (`/panel open|split|width|…`, Alt+1..9 terminal tabs) | Terminal-specific layout system; the GUI has its own IA (sidebar/views/peek), which covers the same content surfaces. |
 | Alt-screen / `--no-alt-screen`, raw-ANSI renderer options, bracketed-paste/kill-ring internals | Terminal rendering mechanics; GUI composer implements equivalent behaviors natively. |
 | Shell completions, `goodvibes run/exec` print modes, CLI flag surface | CLI-specific; the daemon `tasks.create` covers scripted execution, and the TUI remains available for terminal workflows. |
-| Plugin runtime hosting (registerCommand/registerTool/registerProvider…), marketplace install/publish | Plugin API is TUI-process-local with no wire methods. gap: no wire method — v1 shows `plugins` domain events read-only; MCP is the app's extension path. Revisit if the SDK exposes plugin management. |
-| Eval harness (`/eval`), deterministic replay (`/replay`), incident/forensics bundles | TUI-process engines, no wire methods. gap: no wire method — telemetry errors/traces views cover the observability need; exclude authoring. |
+| Plugin runtime hosting (registerCommand/registerTool/registerProvider…), marketplace install/publish | Plugin API is TUI-process-local with no wire methods. gap: no wire method, v1 shows `plugins` domain events read-only; MCP is the app's extension path. Revisit if the SDK exposes plugin management. |
+| Eval harness (`/eval`), deterministic replay (`/replay`), incident/forensics bundles | TUI-process engines, no wire methods. gap: no wire method, telemetry errors/traces views cover the observability need; exclude authoring. |
 | QEMU sandbox bootstrap / guest-bundle management | No wire methods; deep host mutation. App shows sandbox posture read-only from `settings.snapshot`. |
 | LSP/tree-sitter intelligence control room detail (server mgmt, per-language ops) | Engine-internal; only `intelligence.snapshot` exists on the wire. Read-only tile ships. |
 | Fleet interrupt/kill/pause/resume of in-process agents | gap: no wire method (only steer/detach/watcher-stop/task-cancel are wire-backed). Ship honest capability notes like webui; upstream contract request noted. |
@@ -442,7 +442,7 @@ Rows here are **excluded from v1 scope with justification** or carry a named ups
 | ACP (Agent Client Protocol) delegate management | Engine-internal delegation plumbing; invisible to end users. |
 | Cloudflare batch/tunnel/teleport bundles, `/bootstrap`, runner-pool authoring | Config keys shown in Settings; dedicated flows excluded v1 (deep infra workflows, low GUI value now). Remote peers view covers inspection. |
 | `goodvibes://` deep links on Linux | Electrobun `urlSchemes` is macOS-only today. In-app deep links (palette + internal routes) ship; OS-level scheme registration deferred. |
-| Hosting inbound channel webhooks in-app | The daemon owns listener ports (3421/3422); app controls and observes via `channels.*`/`watchers.*` — correct architecture, not a gap. |
+| Hosting inbound channel webhooks in-app | The daemon owns listener ports (3421/3422); app controls and observes via `channels.*`/`watchers.*`, correct architecture, not a gap. |
 | Home Assistant Assist conversation proxy endpoints | HA-device-facing routes (`/api/homeassistant/conversation*`); app covers the home-graph + channel surfaces instead. |
 | Model benchmarks store authoring (`benchmarks.json`) | Display tiers from catalog; authoring benchmarks stays tui-side. |
 | Peer-mode execution (app as work-pulling peer via peer-sdk) | The app is an operator surface; executing daemon work is the TUI/node-host role. |

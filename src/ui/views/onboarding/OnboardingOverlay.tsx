@@ -1,13 +1,13 @@
-// First-run onboarding / Doctor overlay — rendered OVER the still-mounted
+// First-run onboarding / Doctor overlay, rendered OVER the still-mounted
 // shell (drafts and view state survive, docs/UX.md §1.2). One screen, three
 // live checks (OnboardingChecks), every check repairable inline and skippable
 // to a degraded-but-honest workspace. Re-runnable anytime via the "Doctor"
-// palette command. "Start chatting" enables the moment all checks pass — that
+// palette command. "Start chatting" enables the moment all checks pass, that
 // gate and its outcome are unchanged by everything below it.
 //
 // Below the checks: skippable, purely additive sections closing docs/GAPS.md
 // §22 rows 4/5/6/8/9 (reasoning effort, permissions posture, dependency
-// doctor, import bridge, companion pairing) — none of them affect the
+// doctor, import bridge, companion pairing), none of them affect the
 // finish() gate above. On first run only,
 // finishing (skip or start-chat) hands off to a one-time coach-mark tour
 // (row 7) before the overlay actually closes; Doctor mode can replay that
@@ -33,7 +33,7 @@ export interface OnboardingOverlayProps {
   mode: OnboardingMode;
   /** Close the overlay (both "Start chatting" and skip/close land here). */
   onClose: () => void;
-  /** Jump to the chat view — wired to "Start chatting". */
+  /** Jump to the chat view, wired to "Start chatting". */
   onStartChat: () => void;
 }
 
@@ -86,7 +86,7 @@ export function OnboardingOverlay({ mode, onClose, onStartChat }: OnboardingOver
     if (pending) onStartChat();
   }, [onClose, onStartChat]);
 
-  // Escape skips — the overlay never blocks the workspace hostage-style.
+  // Escape skips, the overlay never blocks the workspace hostage-style.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || touring) return; // WelcomeTour owns Escape while touring
@@ -108,8 +108,8 @@ export function OnboardingOverlay({ mode, onClose, onStartChat }: OnboardingOver
             <h2 className="onboarding-panel__title">{title}</h2>
             <p className="onboarding-panel__subtitle">
               {firstRun
-                ? "Three checks stand between you and a working chat. Everything is repairable inline — or skip and fix later from the Doctor."
-                : "The same three live checks as first run — re-run any time. Failures name their next action."}
+                ? "Three checks stand between you and a working chat. Everything is repairable inline, or skip and fix later from the Doctor."
+                : "The same three live checks as first run, re-run any time. Failures name their next action."}
             </p>
           </div>
         </div>

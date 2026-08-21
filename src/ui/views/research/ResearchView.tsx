@@ -1,8 +1,8 @@
-// Research — docs/FEATURES.md §10. Two halves:
+// Research, docs/FEATURES.md §10. Two halves:
 //  · Web search: web_search.query with a provider picker fed by
 //    web_search.providers.list; ranked, source-labeled results.
 //  · Research runs (docs/GAPS.md §10 row 3): starting a run submits a real
-//    daemon task via tasks.create — the RuntimeTask id becomes the run's
+//    daemon task via tasks.create, the RuntimeTask id becomes the run's
 //    identity, with live status + cancel/retry riding tasks.get/.list/
 //    .cancel/.retry. The app-local /app/registries/research-runs collection
 //    is now ANNOTATION ONLY on top of that (question, collected findings +
@@ -10,13 +10,13 @@
 //    markdown report generated via artifacts.create → reportArtifactId).
 //    Sources can also be promoted to Knowledge via confirm-gated
 //    knowledge.ingest.url (admin). Rows created before this shipped have no
-//    task id ("legacy") — they render read-only in a separate section below,
+//    task id ("legacy"), they render read-only in a separate section below,
 //    never resumable and never silently converted.
 //
-// Realtime: the runs registry itself is app-local with no wire events — a
+// Realtime: the runs registry itself is app-local with no wire events, a
 // 30s refetchInterval keeps other-window edits visible. The daemon task
 // status shown per run rides the shared `tasks` SSE domain (lib/realtime.ts)
-// via lib/queries.ts's queryKeys.tasks/taskDetail — the same cache entries
+// via lib/queries.ts's queryKeys.tasks/taskDetail, the same cache entries
 // Approvals & Tasks and Fleet use. Web search is on-demand.
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -67,7 +67,7 @@ import {
 } from "./research-data.ts";
 
 /** The app-local registry service answering 404/501 means the collection is
- * not wired on this build — honest UnavailableState, never a blank. */
+ * not wired on this build, honest UnavailableState, never a blank. */
 function isRegistryUnavailable(error: unknown): boolean {
   const status = errorStatus(error);
   return status === 404 || status === 501;
@@ -106,7 +106,7 @@ function InspectContent({
       <div className="research-inspect">
         <p className="research-inspect__error" role="alert">
           {code === "LOCAL_FETCH_PRIVATE"
-            ? "Refused — this points at a localhost / private / link-local address, so the app will not fetch it."
+            ? "Refused: this points at a localhost / private / link-local address, so the app will not fetch it."
             : formatError(previewQuery.error)}
         </p>
         {code && <span className="badge bad">{code}</span>}
@@ -180,7 +180,7 @@ export function ResearchView() {
   const [promoteTarget, setPromoteTarget] = useState<{ url: string; title: string } | null>(null);
   const [lastQuery, setLastQuery] = useState("");
 
-  // App-local registry: no wire events — poll every 30s (comment rule).
+  // App-local registry: no wire events, poll every 30s (comment rule).
   const runsQuery = useQuery({
     queryKey: researchKeys.runs,
     queryFn: listRuns,
@@ -188,7 +188,7 @@ export function ResearchView() {
   });
   const runs = useMemo(() => (runsQuery.data ?? []).map(runFrom).filter((r) => r.id), [runsQuery.data]);
   // Legacy (pre-task-era) rows are read-only/non-resumable (docs/GAPS.md §10
-  // row 3 migration) — they never appear as a "collect into run" target and
+  // row 3 migration), they never appear as a "collect into run" target and
   // never render through the interactive RunDetail below.
   const activeRuns = useMemo(() => runs.filter((r) => !isLegacyRun(r)), [runs]);
   const legacyRuns = useMemo(() => runs.filter(isLegacyRun), [runs]);
@@ -203,7 +203,7 @@ export function ResearchView() {
   });
   const canPromote = ingestCapability.isSuccess ? ingestCapability.data : undefined;
 
-  // URL inspection (docs/GAPS.md §10 row 7) — a shared peek-panel drawer,
+  // URL inspection (docs/GAPS.md §10 row 7), a shared peek-panel drawer,
   // wired from both the search results list and any run's findings list.
   // Its "Add as finding" shortcut feeds the same CollectModal used by
   // "Collect into run" below.
@@ -357,7 +357,7 @@ function WebSearchSection({
               {providers.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
-                  {p.status ? ` — ${p.status}` : ""}
+                  {p.status ? `, ${p.status}` : ""}
                 </option>
               ))}
             </select>
@@ -487,7 +487,7 @@ function CollectModal({
       };
       if (runChoice === NEW_RUN_VALUE) {
         // Same tasks.create backing as "Start run" in the runs composer
-        // (docs/GAPS.md §10 row 3) — a run created from here is exactly as
+        // (docs/GAPS.md §10 row 3), a run created from here is exactly as
         // resumable/cancellable as one created there, never a second-class
         // local-only row.
         const runQuestion = question.trim() || result.title;
@@ -694,7 +694,7 @@ function RunsSection({
     await queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
   };
 
-  // tasks.create backs every new run (docs/GAPS.md §10 row 3) — probed the
+  // tasks.create backs every new run (docs/GAPS.md §10 row 3), probed the
   // same way the confirm-gated promote verb is (sessions.delete pattern), so
   // the composer degrades honestly instead of failing silently per-submit.
   const createCapability = useQuery({
@@ -709,7 +709,7 @@ function RunsSection({
     mutationFn: async (question: string) => {
       const ack = taskCreateAckFrom(await gv.tasks.create(researchTaskCreateBody(question)));
       if (!ack.agentId) throw new Error("The daemon acknowledged the task but returned no agent id");
-      // Resolve the RuntimeTask id from tasks.list (owner === agentId) — the
+      // Resolve the RuntimeTask id from tasks.list (owner === agentId), the
       // same agentId<->taskId link AgentTaskAdapter establishes server-side
       // and fleet.ts's taskForNode reads client-side. Registration happens
       // inside the same request that answered tasks.create, so this should
@@ -729,8 +729,8 @@ function RunsSection({
       toast({
         title: "Run created",
         description: linked
-          ? "Backed by a daemon task — cancellable and retryable from this run."
-          : "Submitted to the daemon — linking the task id, retry from the run if it doesn't appear.",
+          ? "Backed by a daemon task, cancellable and retryable from this run."
+          : "Submitted to the daemon, linking the task id, retry from the run if it doesn't appear.",
         tone: linked ? "success" : "info",
       });
       onSelect(id);
@@ -756,7 +756,7 @@ function RunsSection({
   const unavailable = runsQuery.isError && isRegistryUnavailable(runsQuery.error);
   const createDisabled = unavailable || canCreateTask === false;
 
-  // Live status for the run-card badges — the SAME queryKeys.tasks cache
+  // Live status for the run-card badges, the SAME queryKeys.tasks cache
   // entry Approvals & Tasks / Fleet read (lib/realtime.ts's `tasks` domain
   // keeps it fresh), not a second per-run poller.
   const tasksSnapshot = useQuery({
@@ -816,7 +816,7 @@ function RunsSection({
       {!unavailable && canCreateTask === false && (
         <UnavailableState
           capability="tasks.create"
-          description="new research runs cannot be submitted as daemon tasks on this build — existing runs below still work."
+          description="new research runs cannot be submitted as daemon tasks on this build; existing runs below still work."
         />
       )}
       {runsQuery.isError && !unavailable && (
@@ -880,7 +880,7 @@ function RunsSection({
         target={deleteTarget?.question ?? ""}
         blastRadius={
           deleteTarget?.taskId
-            ? `Removes the run's annotation (${deleteTarget.findings.length} collected finding(s), notes, log) from the app registry. Report artifacts already created are kept. This does NOT cancel the underlying daemon task — cancel it first if it is still running.`
+            ? `Removes the run's annotation (${deleteTarget.findings.length} collected finding(s), notes, log) from the app registry. Report artifacts already created are kept. This does NOT cancel the underlying daemon task; cancel it first if it is still running.`
             : `Removes the run and its ${deleteTarget?.findings.length ?? 0} collected finding(s) from the app registry. Report artifacts already created are kept.`
         }
         danger
@@ -929,7 +929,7 @@ function RunDetail({
   });
 
   // Re-resolve the RuntimeTask id for a "linking" run (docs/GAPS.md §10 row
-  // 3) — this normally resolves on the very first tasks.list after creation
+  // 3), this normally resolves on the very first tasks.list after creation
   // (the daemon registers it within the same request tasks.create answers);
   // this is the honest manual fallback if that lookup ever lags.
   const linkTask = useMutation({
@@ -937,7 +937,7 @@ function RunDetail({
       if (!run.agentId) throw new Error("This run has no agent id to link");
       const snapshot = parseTasksSnapshot(await gv.tasks.list());
       const taskId = findRuntimeTaskIdForAgent(snapshot.tasks, run.agentId);
-      if (!taskId) throw new Error("No matching runtime task found yet — the daemon may still be registering it");
+      if (!taskId) throw new Error("No matching runtime task found yet; the daemon may still be registering it");
       await updateRun(run.id, rawWithLog(run, { taskId }, makeLogEntry("status", "Linked to daemon task")));
     },
     onSuccess: async () => {
@@ -947,7 +947,7 @@ function RunDetail({
     onError: (error: unknown) => toast({ title: "Link failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Cancel/retry (docs/GAPS.md §10 row 3) — same ConfirmSurface-gated pattern
+  // Cancel/retry (docs/GAPS.md §10 row 3), same ConfirmSurface-gated pattern
   // as Fleet's FleetTaskInline; the wire call is the source of truth, this
   // just also appends a readable line to the run's own local history.
   const cancelTask = useMutation({
@@ -978,7 +978,7 @@ function RunDetail({
     onError: (error: unknown) => toast({ title: "Retry failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Checkpoint — snapshots the current findings into run.checkpoints without
+  // Checkpoint, snapshots the current findings into run.checkpoints without
   // touching the live findings, so the run stays resumable from a known-good
   // point even if later triage goes sideways.
   const checkpoint = useMutation({
@@ -1026,7 +1026,7 @@ function RunDetail({
       await invalidate();
       toast({
         title: "Report generated",
-        description: `Artifact ${artifactId} — view it in the Artifacts view.`,
+        description: `Artifact ${artifactId}: view it in the Artifacts view.`,
         tone: "success",
       });
     },
@@ -1240,7 +1240,7 @@ function RunDetail({
   );
 }
 
-/** Live daemon task status for a linked run — Cancel/Retry ride the same
+/** Live daemon task status for a linked run, Cancel/Retry ride the same
  * ConfirmSurface-gated pattern as Fleet's FleetTaskInline / Approvals &
  * Tasks' TaskRow (docs/GAPS.md §10 row 3). */
 function RunTaskStatus({
@@ -1308,9 +1308,9 @@ function RunTaskStatus({
   );
 }
 
-// ─── Legacy runs (pre-task era) — read-only migration ────────────────────────
+// ─── Legacy runs (pre-task era), read-only migration ────────────────────────
 // docs/GAPS.md §10 row 3 migration: rows created before this shipped have
-// neither taskId nor agentId (isLegacyRun) — no daemon task ever backed
+// neither taskId nor agentId (isLegacyRun), no daemon task ever backed
 // them, so there is nothing to resume, cancel, or retry. Kept visible and
 // deletable, never silently dropped and never auto-converted into a fake
 // task-backed run (there is no real task to link one to).

@@ -3,7 +3,7 @@
 // confidence, and linked objects; Search renders scored results that peek
 // into knowledge.item.get. Honors the store scope switcher: agent scope
 // routes ask/search/status to /api/goodvibes-agent/knowledge/* (probed at
-// runtime — docs/FEATURES.md §6 agent-scoped knowledge row).
+// runtime, docs/FEATURES.md §6 agent-scoped knowledge row).
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";

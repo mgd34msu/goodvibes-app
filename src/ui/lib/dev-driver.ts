@@ -1,7 +1,7 @@
 // Webview half of the dev-only driver (src/bun/dev-driver.ts). Activated by
 // main.tsx ONLY when /app/health reports devDriver: true (never in release).
 // Evals arrive over SSE, results return over POST. `js` runs in an async
-// function scope — `return` a JSON-serializable value; promises are awaited.
+// function scope, `return` a JSON-serializable value; promises are awaited.
 
 import { appFetch } from "./http.ts";
 import { openSse } from "./sse.ts";

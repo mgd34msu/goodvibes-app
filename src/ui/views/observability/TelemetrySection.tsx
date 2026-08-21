@@ -1,4 +1,4 @@
-// Telemetry section — subtabs: Dashboard, Events, Errors, Traces, Metrics,
+// Telemetry section, subtabs: Dashboard, Events, Errors, Traces, Metrics,
 // Live stream. Subtab selection is URL-addressable (?filter[obs-telemetry]=…)
 // so palette jumps / notifications / deep links compose (docs/UX.md §2).
 

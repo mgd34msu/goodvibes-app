@@ -1,11 +1,11 @@
-// SubscriptionsPanel — OAuth-backed provider subscriptions (docs/GAPS.md §14
+// SubscriptionsPanel, OAuth-backed provider subscriptions (docs/GAPS.md §14
 // row 11), driven entirely against the app-local /app/subscriptions/* routes
 // (src/bun/subscriptions.ts), which are themselves built on
 // @pellux/goodvibes-sdk's SubscriptionManager and subscription-provider
-// helpers — the same SDK primitives the TUI uses in-process, sharing the same
+// helpers, the same SDK primitives the TUI uses in-process, sharing the same
 // storage file (~/.goodvibes/tui/subscriptions.json) so a login made in
 // either surface shows up in both. This is an app-local Bun route, not a
-// daemon wire method, so isMethodUnavailableError doesn't apply here —
+// daemon wire method, so isMethodUnavailableError doesn't apply here,
 // network/transport failures just get an honest ErrorState.
 
 import { useState } from "react";
@@ -52,7 +52,7 @@ interface SubscriptionsListResponse {
   available: AvailableProvider[];
 }
 
-// ─── query keys ("subscriptionsApp" prefix — never queryKeys.*) ────────────
+// ─── query keys ("subscriptionsApp" prefix, never queryKeys.*) ────────────
 
 const subscriptionsAppKeys = {
   root: ["subscriptionsApp"] as const,
@@ -92,7 +92,7 @@ export function SubscriptionsPanel() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [pendingLogout, setPendingLogout] = useState<string | null>(null);
-  // authorizationUrl for a just-started login, keyed by provider — carried
+  // authorizationUrl for a just-started login, keyed by provider, carried
   // across the transition from "available" to "pending" so the "Open sign-in
   // page" link doesn't vanish the moment the pending record shows up.
   const [authUrls, setAuthUrls] = useState<Record<string, string>>({});
@@ -101,7 +101,7 @@ export function SubscriptionsPanel() {
     queryKey: subscriptionsAppKeys.list,
     queryFn: subscriptionsApi.list,
     // A loopback listener may complete a login server-side between user
-    // actions — poll gently while any login is pending so the panel notices.
+    // actions, poll gently while any login is pending so the panel notices.
     refetchInterval: (query) => ((query.state.data?.pending.length ?? 0) > 0 ? PENDING_POLL_MS : false),
   });
 
@@ -249,7 +249,7 @@ export function SubscriptionsPanel() {
         open={pendingLogout !== null}
         action="Sign out"
         target={pendingLogout ?? ""}
-        blastRadius="Removes this provider's stored OAuth tokens from ~/.goodvibes/tui/subscriptions.json — shared with the TUI, so it signs out there too. Any override of ambient API keys for this provider stops applying."
+        blastRadius="Removes this provider's stored OAuth tokens from ~/.goodvibes/tui/subscriptions.json, shared with the TUI, so it signs out there too. Any override of ambient API keys for this provider stops applying."
         danger
         confirmLabel={logout.isPending ? "Signing out…" : "Sign out"}
         onCancel={() => setPendingLogout(null)}
@@ -386,7 +386,7 @@ function AvailableProviderRow({
         <strong>{provider.displayName || provider.provider}</strong>
         <span>
           {provider.builtin
-            ? "Built in — works out of the box, no setup required."
+            ? "Built in: works out of the box, no setup required."
             : "Needs an OAuth service config registered under Settings > Secrets & Services."}
         </span>
       </div>

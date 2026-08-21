@@ -1,7 +1,7 @@
-// Skills — docs/FEATURES.md §8: list / create / edit (markdown body editor) /
+// Skills, docs/FEATURES.md §8: list / create / edit (markdown body editor) /
 // enable / disable / delete over /app/registries/skills, plus a static
 // readiness rendering of each skill's DECLARED requirements (the record's
-// requirements strings, rendered verbatim — no probe pretends to verify them).
+// requirements strings, rendered verbatim, no probe pretends to verify them).
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export function SkillsView() {
   const [importOpen, setImportOpen] = useState(false);
   const [filterText, setFilterText] = useState("");
   // Two independent skill catalogs share this view: the app-local registry
-  // (below, ported from webui) and the daemon-canonical store (new — no crib
+  // (below, ported from webui) and the daemon-canonical store (new, no crib
   // exists). A section switcher, not a route, keeps them one view.
   const [section, setSection] = useState<SkillsSection>("registry");
   const daemonPanelRef = useRef<DaemonSkillsPanelHandle>(null);
@@ -45,7 +45,7 @@ export function SkillsView() {
   const list = useQuery({
     queryKey: regKeys.collection("skills"),
     queryFn: () => listRegistryItems("skills"),
-    // App-local file store — no wire event exists, so poll (cheap local read).
+    // App-local file store, no wire event exists, so poll (cheap local read).
     refetchInterval: REGISTRY_POLL_MS,
     retry: false,
   });
@@ -244,7 +244,7 @@ export function SkillsView() {
                         <span
                           key={requirement}
                           className="badge info"
-                          title="Declared by the skill — not verified by the app"
+                          title="Declared by the skill, not verified by the app"
                         >
                           {requirement}
                         </span>

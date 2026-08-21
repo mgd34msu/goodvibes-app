@@ -1,4 +1,4 @@
-// Status badge — tone classified by lib/presentation-bridge.ts; the leading
+// Status badge, tone classified by lib/presentation-bridge.ts; the leading
 // glyph comes from the SDK presentation contract (same vocabulary the
 // TUI/agent render) and is painted via a data-attribute + ::before rule
 // (styles/components.css) so `.textContent` stays exactly the label.

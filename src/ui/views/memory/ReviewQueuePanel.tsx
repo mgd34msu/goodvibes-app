@@ -1,5 +1,5 @@
 // Review queue (memory.review-queue → memory.records.update-review).
-// Each row keeps its own DRAFT reviewState/confidence/staleReason — nothing
+// Each row keeps its own DRAFT reviewState/confidence/staleReason, nothing
 // is committed until the operator explicitly saves. Approve/stale/contradicted
 // quick actions preset the draft; stale/contradicted require a reason before
 // save enables (flagging a record excludes it from prompt recall outright, so
@@ -133,7 +133,7 @@ interface ReviewQueuePanelProps {
   savingId: string | null;
   onSave: (id: string, input: MemoryReviewDraft) => void;
   onOpen: (record: MemoryRecord) => void;
-  /** Ids to visually highlight — the consolidation "Review" jump lands here
+  /** Ids to visually highlight, the consolidation "Review" jump lands here
    * via scroll + highlight, never a filter. */
   highlightedIds?: ReadonlySet<string>;
 }

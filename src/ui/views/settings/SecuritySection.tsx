@@ -1,5 +1,5 @@
 // Security settings read (docs/FEATURES.md §20 "Security settings snapshot"):
-// GET security.settings — the daemon's own audit of security-relevant flags
+// GET security.settings, the daemon's own audit of security-relevant flags
 // (default vs current state, what enabling each one does, when it is
 // insecure). Read-only here; edits go through the config editor's key rows.
 
@@ -53,7 +53,7 @@ export function SecuritySection() {
     queryKey: settingsKeys.security,
     queryFn: () => gv.invoke("security.settings"),
     retry: false,
-    // No wire event for security-settings churn — targeted poll.
+    // No wire event for security-settings churn, targeted poll.
     refetchInterval: SETTINGS_POLL_MS,
   });
 

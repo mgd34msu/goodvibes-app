@@ -1,10 +1,10 @@
-// Refine tab: gap-refinement runs (knowledge.refinement.run — admin, kicks
+// Refine tab: gap-refinement runs (knowledge.refinement.run, admin, kicks
 // off daemon-side search + ingest, so it is confirm-gated), the refinement
 // task list with per-task cancel PLUS a single-task detail peek that polls
 // every 4s while the fetched task is still active
-// (knowledge.refinement.task.get — docs/GAPS.md §6 row 17), and the
+// (knowledge.refinement.task.get, docs/GAPS.md §6 row 17), and the
 // consolidation candidates review surface (knowledge.candidates.list /
-// candidate.decide) — accept / reject / supersede are explicit per-row
+// candidate.decide), accept / reject / supersede are explicit per-row
 // decisions, never auto-applied. `CandidatesSection` is exported for reuse
 // by the Memory view's combined "Learning review" curator (§8 row 12).
 
@@ -37,7 +37,7 @@ function RefinementSection({ active }: { active: boolean }) {
   const tasks = useQuery({
     queryKey: kKeys.refinementTasks,
     queryFn: () => invoke("knowledge.refinement.tasks.list", { query: { limit: 100 } }),
-    // Refinement tasks progress in the background with no wire event — 15s poll.
+    // Refinement tasks progress in the background with no wire event, 15s poll.
     refetchInterval: active ? 15_000 : false,
   });
 
@@ -161,7 +161,7 @@ function RefinementSection({ active }: { active: boolean }) {
         open={confirmOpen}
         action="Run knowledge refinement"
         target={`up to ${limit || "all"} knowledge gaps`}
-        blastRadius="The daemon searches for and may INGEST new sources to repair gaps — this writes to the knowledge store."
+        blastRadius="The daemon searches for and may INGEST new sources to repair gaps; this writes to the knowledge store."
         confirmLabel="Run refinement"
         onConfirm={(meta) => run.mutate(meta)}
         onCancel={() => setConfirmOpen(false)}
@@ -176,7 +176,7 @@ function RefinementTaskDetailPeek({ taskId }: { taskId: string }) {
   const task = useQuery({
     queryKey: kKeys.refinementTaskDetail(taskId),
     queryFn: () => invoke("knowledge.refinement.task.get", { params: { id: taskId } }),
-    // Refreshable while the task is in flight — poll every 4s as long as the
+    // Refreshable while the task is in flight, poll every 4s as long as the
     // fetched state is still active, stop once it settles (docs/GAPS.md §6
     // row 17: "refreshable while a task runs").
     refetchInterval: (query) => {
@@ -212,7 +212,7 @@ export function CandidatesSection({ active }: { active: boolean }) {
   const candidates = useQuery({
     queryKey: kKeys.candidates,
     queryFn: () => invoke("knowledge.candidates.list", { query: { limit: 50 } }),
-    // Candidates are produced by background consolidation — 30s poll while visible.
+    // Candidates are produced by background consolidation, 30s poll while visible.
     refetchInterval: active ? 30_000 : false,
   });
 

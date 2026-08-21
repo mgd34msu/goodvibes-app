@@ -1,5 +1,5 @@
 // Honest-lineage disclosure: retained (superseded) history behind a
-// regenerate/edit fork is folded, never hidden — the daemon retains it and so
+// regenerate/edit fork is folded, never hidden, the daemon retains it and so
 // does the UI. Ported from goodvibes-webui src/views/chat/MessageLineage.tsx.
 
 import { ChevronDown, ChevronRight, History, Paperclip } from "lucide-react";

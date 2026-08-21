@@ -52,7 +52,7 @@ function frameByteLength(frame: string | Uint8Array): number {
 }
 
 /**
- * True for any {type:"auth"} frame the webview might send — in either text or
+ * True for any {type:"auth"} frame the webview might send, in either text or
  * binary encoding. The Bun side owns auth (open() sends it exactly once), so the
  * webview must never be able to (re-)auth or de-auth the bridged connection. We
  * decode and JSON-parse rather than substring-match: a substring pre-filter is
@@ -154,7 +154,7 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
           daemonWs.close();
           return;
         }
-        // Auth first, always bun-side; empty domains — the UI subscribes itself.
+        // Auth first, always bun-side; empty domains, the UI subscribes itself.
         daemonWs.send(JSON.stringify({ type: "auth", token: daemon.token, domains: [] }));
         for (const frame of conn.pending) daemonWs.send(frame);
         conn.pending = [];
@@ -207,7 +207,7 @@ export function createWsBridge(daemon: DaemonHandle): WsBridge {
         conn.pending.push(frame);
         return;
       }
-      // CLOSING/CLOSED: the daemon-side close handler races us — make sure the
+      // CLOSING/CLOSED: the daemon-side close handler races us, make sure the
       // webview learns either way.
       closeBoth(ws, conn, WS_CLOSE_DAEMON_DISCONNECTED, "daemon websocket disconnected");
     },

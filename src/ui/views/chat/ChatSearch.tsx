@@ -1,4 +1,4 @@
-// Chat search: in-transcript mode (Ctrl+F semantics — Enter next, Shift+Enter
+// Chat search: in-transcript mode (Ctrl+F semantics, Enter next, Shift+Enter
 // previous, wrap marker, match counter, error-jump buttons) and an all-chats
 // mode that tries the WS-only sessions.search and degrades honestly to a
 // client-side scan of recent companion sessions when the bridge or method is
@@ -174,7 +174,7 @@ export function ChatSearch({
       setAllState({
         status: "done",
         hits,
-        note: "sessions.search is unavailable on this daemon transport — scanned the 12 most recent chats client-side",
+        note: "sessions.search is unavailable on this daemon transport; scanned the 12 most recent chats client-side",
       });
     } catch (error) {
       setAllState({ status: "error", hits: [], note: "", error });

@@ -4,14 +4,14 @@
 // It does NOT open its own SSE connection. lib/realtime.ts already runs the one
 // multiplexed stream and turns every frame into a TanStack Query invalidation;
 // this bridge watches that shared query cache for the state transitions worth a
-// desktop notification — a new approval prompt, a task/turn completing (with a
-// distinct "long" variant past 60s) — and POSTs /app/notifications/notify.
+// desktop notification, a new approval prompt, a task/turn completing (with a
+// distinct "long" variant past 60s), and POSTs /app/notifications/notify.
 //
-// Privacy rule (binding): notifications carry METADATA ONLY — a title like
+// Privacy rule (binding): notifications carry METADATA ONLY, a title like
 // "Approval needed" and a viewId deep-link. Message bodies are never sent.
 //
 // Suppression: nothing fires while the window is visible AND focused (you would
-// see the event in-app), and — when the quietWhileTyping pref is on — nothing
+// see the event in-app), and, when the quietWhileTyping pref is on, nothing
 // fires within 10s of a keystroke in a text field.
 //
 // Honest limitation: the native side (notify-send on Linux) has no click-to-focus
@@ -91,7 +91,7 @@ function countPendingApprovals(data: unknown): number {
 export function useNotifyBridge(): void {
   const queryClient = useQueryClient();
 
-  // quietWhileTyping pref (client-enforced — the server can't know typing state).
+  // quietWhileTyping pref (client-enforced, the server can't know typing state).
   const prefsQuery = useQuery({
     queryKey: ["notify-bridge", "prefs"] as const,
     queryFn: () => appJson<PrefsResponse>(PREFS_PATH),
@@ -180,7 +180,7 @@ export function useNotifyBridge(): void {
     };
 
     // Seed from whatever is already cached, then subscribe for changes. The
-    // cache is fed by lib/realtime.ts's single stream (plus poll fallbacks) —
+    // cache is fed by lib/realtime.ts's single stream (plus poll fallbacks),
     // we add no second connection.
     const readAndHandle = (key: readonly unknown[]): void => {
       const head = Array.isArray(key) ? key[0] : undefined;

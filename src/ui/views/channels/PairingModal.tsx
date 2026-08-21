@@ -1,5 +1,5 @@
 // "Pair companion" modal (docs/FEATURES.md §13 Companion pairing (QR)).
-// Fetches GET /app/pairing/connection (Bun-side src/bun/pairing.ts — the SDK
+// Fetches GET /app/pairing/connection (Bun-side src/bun/pairing.ts, the SDK
 // pairing helpers are platform-only, so the QR matrix arrives pre-computed)
 // and renders it as an SVG QR. The raw payload embeds the daemon bearer token,
 // so it is masked by default with an explicit reveal + copy (docs/UX.md
@@ -65,7 +65,7 @@ export function PairingModal({ open, onClose }: { open: boolean; onClose: () => 
     queryKey: channelsKeys.pairing,
     queryFn: () => appJson<PairingConnection>("/app/pairing/connection"),
     enabled: open,
-    // The payload embeds a live token — never keep it warm in the cache.
+    // The payload embeds a live token, never keep it warm in the cache.
     gcTime: 0,
     staleTime: 0,
     retry: false,

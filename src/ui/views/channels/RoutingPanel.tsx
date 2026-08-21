@@ -2,7 +2,7 @@
 // channels.routing.list as a table of profile↔route assignments; assign is a
 // modal form and both mutating verbs (dangerous+admin on the wire) run
 // through ConfirmSurface. Assign carries confirm metadata in the body
-// (additionalProperties: true); delete is a bare DELETE on the path — the
+// (additionalProperties: true); delete is a bare DELETE on the path, the
 // ConfirmSurface is the gate, its input schema takes nothing else.
 
 import { useState, type FormEvent } from "react";

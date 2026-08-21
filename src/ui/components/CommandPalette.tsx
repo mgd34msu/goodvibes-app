@@ -1,6 +1,6 @@
 // Command palette (Ctrl+K) + shortcut cheatsheet. Ported from goodvibes-webui
 // src/components/command/*. Shortcut hints are resolved live from the
-// keybinding registry (lib/keybindings.ts) — never hardcoded strings.
+// keybinding registry (lib/keybindings.ts), never hardcoded strings.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import {
@@ -184,7 +184,7 @@ interface ShortcutCheatsheetProps {
 
 export function ShortcutCheatsheet({ open, onClose }: ShortcutCheatsheetProps) {
   const allCommands = useRegisteredCommands();
-  // Tab-cycling focus trap (identical contract to Modal/PeekPanel) — without
+  // Tab-cycling focus trap (identical contract to Modal/PeekPanel), without
   // it, a second Tab press from the lone close button escapes into the
   // sidebar/topbar behind this "modal" overlay.
   const overlayRef = useFocusTrap<HTMLDivElement>(open);

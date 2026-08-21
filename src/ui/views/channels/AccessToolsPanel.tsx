@@ -4,10 +4,10 @@
 // directory (pure evaluation, no confirm), apply mutates the surface policy
 // via channels.allowlist.edit behind ConfirmSurface with confirm +
 // explicitUserRequest in the body (additionalProperties: true).
-// Authorize (channels.authorize) is a dry-run policy probe — read-only, no
+// Authorize (channels.authorize) is a dry-run policy probe, read-only, no
 // confirm. Target resolve (channels.targets.resolve) is read-only UNLESS
 // "create if missing" is checked, which can mint a conversation on the live
-// surface — that path is confirm-gated.
+// surface, that path is confirm-gated.
 //
 // Results are one-shot mutations (operator submits a form), so no query keys;
 // the surface picker reuses the channels.status query (same daemon vocabulary
@@ -64,7 +64,7 @@ function SurfaceSelect({
 }
 
 export function AccessToolsPanel() {
-  // Surface vocabulary comes from channels.status — shared cache with StatusBoard.
+  // Surface vocabulary comes from channels.status, shared cache with StatusBoard.
   const status = useQuery({
     queryKey: channelsKeys.status,
     queryFn: () => invoke("channels.status"),
@@ -101,7 +101,7 @@ function AllowlistSection({ surfaces }: { surfaces: string[] }) {
   const hasEntries = splitIds(addText).length > 0 || splitIds(removeText).length > 0;
 
   const resolve = useMutation({
-    // Pure evaluation — resolves candidate handles into stable ids, writes nothing.
+    // Pure evaluation, resolves candidate handles into stable ids, writes nothing.
     mutationFn: () => invoke("channels.allowlist.resolve", { params: { surface }, body: body() }),
     onSuccess: (data) => setPreview(readAllowlistResolution(data)),
     onError: (error: unknown) =>
@@ -223,7 +223,7 @@ function AllowlistSection({ surfaces }: { surfaces: string[] }) {
         open={confirming}
         action="Edit channel allowlist"
         target={surface}
-        blastRadius="Changes who this surface will answer — allowlist edits take effect immediately for every agent replying on this channel."
+        blastRadius="Changes who this surface will answer; allowlist edits take effect immediately for every agent replying on this channel."
         confirmLabel="Apply edit"
         onConfirm={(meta) => apply.mutate(meta)}
         onCancel={() => setConfirming(false)}
@@ -351,7 +351,7 @@ function TargetResolveSection({ surfaces }: { surfaces: string[] }) {
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     if (!surface || !input.trim() || resolve.isPending) return;
-    // create-if-missing can mint a conversation on the live surface — confirm it.
+    // create-if-missing can mint a conversation on the live surface, confirm it.
     if (createIfMissing) setConfirming(true);
     else resolve.mutate(undefined);
   }
@@ -423,7 +423,7 @@ function TargetResolveSection({ surfaces }: { surfaces: string[] }) {
         open={confirming}
         action="Resolve target with create-if-missing"
         target={`${input} on ${surface}`}
-        blastRadius="If no conversation exists for this target, the surface CREATES one — visible to the recipient on the real channel."
+        blastRadius="If no conversation exists for this target, the surface CREATES one, visible to the recipient on the real channel."
         danger
         confirmLabel="Resolve and create"
         onConfirm={(meta) => resolve.mutate(meta)}

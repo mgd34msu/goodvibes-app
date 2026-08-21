@@ -1,20 +1,20 @@
-// Compact permission-mode selector for the composer toolbar — sessions
+// Compact permission-mode selector for the composer toolbar, sessions
 // .permissionMode.get/set (contract 1.11). Self-contained (fetches/mutates on
 // its own, same pattern as MicButton/VoiceSettingsButton beside it in
 // Composer.tsx) so ChatView doesn't have to thread yet another query through
 // props. Crib: goodvibes-webui src/components/confirm/PermissionModeSheet.tsx
-// — that version is a full modal sheet; this one is the "near the composer"
+//, that version is a full modal sheet; this one is the "near the composer"
 // compact form the brief asks for, same popover shape as Composer.tsx's own
 // ModelPicker.
 //
-// 'custom' is read-only wire state (a bespoke rule set) — SETTABLE_PERMISSION_
+// 'custom' is read-only wire state (a bespoke rule set), SETTABLE_PERMISSION_
 // MODES never includes it as an offered choice, and when the daemon reports
 // the session is currently in custom mode, no option in the list is marked
-// current (none of them IS the current mode — highlighting one would lie).
+// current (none of them IS the current mode, highlighting one would lie).
 //
 // TRAP: sessions.permissionMode.get/set answers ONLY for the daemon's own
-// live local runtime session — any other session id (including, quite
-// possibly, every companion-chat session — see session-runtime.ts's header
+// live local runtime session, any other session id (including, quite
+// possibly, every companion-chat session, see session-runtime.ts's header
 // comment) is an honest 404 SESSION_NOT_LOCAL. This control hides entirely
 // rather than rendering broken chrome for a session it can never read.
 
@@ -120,7 +120,7 @@ export function PermissionModeControl({ sessionId }: { sessionId: string }) {
         >
           {SETTABLE_PERMISSION_MODES.map((option) => {
             // None of the settable options is "selected" while the session
-            // reports custom — none of them truthfully IS the current mode.
+            // reports custom, none of them truthfully IS the current mode.
             const selected = currentMode !== "custom" && option === currentMode;
             return (
               <button

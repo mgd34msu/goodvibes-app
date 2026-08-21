@@ -1,12 +1,12 @@
-// GENERATED FILE — pinned snapshot of CONFIG_SCHEMA from
+// GENERATED FILE, pinned snapshot of CONFIG_SCHEMA from
 // @pellux/goodvibes-sdk@1.11.2 (platform/config, Bun-only subpath the
-// webview must not import — docs/ARCHITECTURE.md §5). Pure data: key, type,
+// webview must not import, docs/ARCHITECTURE.md §5). Pure data: key, type,
 // default, description, enum values, validation hint. The runtime `validate`
 // functions cannot cross the boundary and are intentionally dropped; the
 // daemon re-validates every config.set anyway, so client-side hints are
 // advisory only. Regenerate with a one-off Bun snippet that dynamically
 // imports the SDK's platform config subpath (the same one named in the first
-// line of this header) and re-serializes CONFIG_SCHEMA — see
+// line of this header) and re-serializes CONFIG_SCHEMA, see
 // scripts/generate-operator-routes.ts for the sibling pattern.
 
 export interface ConfigSettingMeta {

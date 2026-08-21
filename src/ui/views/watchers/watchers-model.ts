@@ -1,4 +1,4 @@
-// Watchers view data layer — local query keys and defensive wire readers.
+// Watchers view data layer, local query keys and defensive wire readers.
 //
 // Wire shape verified against the daemon implementation (goodvibes-sdk
 // packages/daemon-sdk/src/system-routes.ts + the SDK watcher domain store):
@@ -10,20 +10,20 @@
 // Record: { id, label, kind (webhook|polling|filesystem|socket|integration|manual),
 //   state (stopped|starting|running|degraded|failed), source { kind, label,
 //   enabled, metadata }, intervalMs?, lastHeartbeatAt?, sourceStatus?,
-//   degradedReason?, lastError?, lastCheckpoint?, metadata } — read
+//   degradedReason?, lastError?, lastCheckpoint?, metadata }, read
 // defensively; the registry boundary types the list as unknown[].
 
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 
 // Prefixed ["watchers"] to match queryKeys.watchers in lib/queries.ts (defined
-// locally — lib/queries.ts is not ours to edit). No `watchers` domain exists on
+// locally, lib/queries.ts is not ours to edit). No `watchers` domain exists on
 // the invalidation stream (lib/realtime.ts), so the list polls while visible.
 export const watchersKeys = {
   all: ["watchers"] as const,
   list: ["watchers", "list"] as const,
 } as const;
 
-/** No wire event for watchers.* — poll while the view is mounted. */
+/** No wire event for watchers.*, poll while the view is mounted. */
 export const WATCHERS_POLL_MS = 15_000;
 
 /** Daemon-accepted kinds on create/update (system-routes WATCHER_KIND_VALUES). */

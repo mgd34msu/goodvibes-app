@@ -118,16 +118,16 @@ export function isSessionActiveError(error: unknown): boolean {
 
 /**
  * True when a gateway method id is not registered on the connected daemon at
- * all — the honest "capability not available on this daemon" signal, distinct
+ * all, the honest "capability not available on this daemon" signal, distinct
  * from a normal 404 on a known resource (e.g. SESSION_NOT_FOUND,
- * MEMORY_RECORD_NOT_FOUND, REMOTE_PEER_NOT_FOUND — all resource-specific
+ * MEMORY_RECORD_NOT_FOUND, REMOTE_PEER_NOT_FOUND, all resource-specific
  * codes, never this generic pair). Two shapes both mean "no such capability
  * on this daemon build", both code-first:
- *   - METHOD_NOT_FOUND — the gateway dispatcher recognized the route but the
+ *   - METHOD_NOT_FOUND, the gateway dispatcher recognized the route but the
  *     methodId itself isn't cataloged (daemon handlers/register.ts's 404).
- *   - NOT_FOUND — the generic HTTP router's 404 for a path that was never
+ *   - NOT_FOUND, the generic HTTP router's 404 for a path that was never
  *     wired up at all (body `{error:"Route not found", code:"NOT_FOUND",
- *     category:"not_found"}` — what email.inbox.list / calendar.events.list
+ *     category:"not_found"}`, what email.inbox.list / calendar.events.list
  *     get back from a daemon build with no email/calendar surface routed).
  * Message-sniff fallback for pre-1.0 daemons that omit the code entirely.
  */
@@ -144,7 +144,7 @@ export function isMethodUnavailableError(error: unknown): boolean {
 }
 
 /**
- * 501 "cataloged but not invokable" — the daemon's contract knows the id but
+ * 501 "cataloged but not invokable", the daemon's contract knows the id but
  * this build has no live handler wired for it.
  */
 export function isMethodNotInvokableError(error: unknown): boolean {
@@ -166,13 +166,13 @@ export function isDaemonUnreachableError(error: unknown): boolean {
   if (category === "network") return true;
   const status = errorStatus(error);
   if (status === 0) return true;
-  // fetch() rejections carry no status at all — a TypeError with no HTTP shape.
+  // fetch() rejections carry no status at all, a TypeError with no HTTP shape.
   if (status === undefined && error instanceof TypeError) return true;
   return false;
 }
 
 /**
- * 401 / authentication category — the daemon answered and says the injected
+ * 401 / authentication category, the daemon answered and says the injected
  * token is no longer valid. With the token proxy-side this signals a pairing
  * store problem, not a webview sign-in flow.
  */
@@ -193,7 +193,7 @@ export function isUnconfiguredError(error: unknown): boolean {
 }
 
 /**
- * The WS bridge (/app/ws) is not connected — WS-only methods degrade to an
+ * The WS bridge (/app/ws) is not connected, WS-only methods degrade to an
  * honest "not reachable over this transport" state, not a scary failure.
  */
 export function isWsBridgeUnavailableError(error: unknown): boolean {

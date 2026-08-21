@@ -1,4 +1,4 @@
-// Pure, tolerant readers for the cross-surface session union — ported from
+// Pure, tolerant readers for the cross-surface session union, ported from
 // goodvibes-webui src/lib/sessions-union.ts. kind/status/project are read as
 // OPEN STRINGS even though the wire enum is closed: a daemon newer than the
 // pinned contract can return a kind we have never seen and we render it
@@ -6,7 +6,7 @@
 
 import { asArray, asRecord, firstString, readPath } from "../../lib/wire.ts";
 
-/** This surface's participant identity — stamped on steer/followUp/create,
+/** This surface's participant identity, stamped on steer/followUp/create,
  * and the surfaceId sessions.detach removes. */
 export const APP_SURFACE_KIND = "app";
 export const APP_SURFACE_ID = "goodvibes-app";
@@ -22,7 +22,7 @@ export const KNOWN_SESSION_KINDS = [
   "automation",
 ] as const;
 
-/** GET /api/sessions ignores ?limit/?cursor — the daemon caps the union at 50. */
+/** GET /api/sessions ignores ?limit/?cursor, the daemon caps the union at 50. */
 export const SESSIONS_SNAPSHOT_CAP = 50;
 
 export interface UnionSessionRecord {
@@ -34,13 +34,13 @@ export interface UnionSessionRecord {
   createdAt: number;
   updatedAt: number;
   messageCount: number;
-  /** null when the wire omitted it — absence means FULLY RETAINED, never inferred loss. */
+  /** null when the wire omitted it, absence means FULLY RETAINED, never inferred loss. */
   retainedMessageCount: number | null;
   pendingInputCount: number;
   surfaceKinds: string[];
   activeAgentId: string;
   lastError: string;
-  /** metadata.closeReason ('idle-reaped' | 'user' | 'surface') — empty when absent. */
+  /** metadata.closeReason ('idle-reaped' | 'user' | 'surface'), empty when absent. */
   closeReason: string;
   raw: unknown;
 }
@@ -119,7 +119,7 @@ export function kindLabel(kind: string): string {
   return kind.trim() || "unknown";
 }
 
-/** 'unknown' for home-scoped / absent projects — never a blank badge. */
+/** 'unknown' for home-scoped / absent projects, never a blank badge. */
 export function projectLabel(project: string): string {
   return project.trim() || "unknown";
 }
@@ -134,7 +134,7 @@ export function statusLabel(status: string): string {
 
 /**
  * An idle-reaped closed session auto-reopens on the next heartbeat from any
- * participant — GC housekeeping, not a deliberate close, so it gets its own
+ * participant, GC housekeeping, not a deliberate close, so it gets its own
  * badge instead of folding into "closed · history".
  */
 export function isReapedStatus(record: Pick<UnionSessionRecord, "status" | "closeReason">): boolean {
@@ -165,7 +165,7 @@ export function sortUnionSessions(records: UnionSessionRecord[]): UnionSessionRe
 }
 
 // ---------------------------------------------------------------------------
-// sessions.search [ws] — result readers (same record field names as the union
+// sessions.search [ws], result readers (same record field names as the union
 // list, so unionSessionFromRecord applies to each entry).
 // ---------------------------------------------------------------------------
 

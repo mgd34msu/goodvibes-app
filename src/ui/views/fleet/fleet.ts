@@ -3,7 +3,7 @@
 // bridge returns `unknown`, so the snapshot is NORMALIZED field-by-field
 // (never cast) against the installed contract artifact's fleet.snapshot
 // output schema. kind/state/costState are read as OPEN STRINGS even though
-// the wire enum is closed — a daemon newer than this client may introduce a
+// the wire enum is closed, a daemon newer than this client may introduce a
 // value we have never seen; render it verbatim, never drop it.
 
 import { asArray, asRecord, firstString, readPath } from "../../lib/wire.ts";
@@ -12,7 +12,7 @@ import type { TaskSummary } from "../../lib/approvals.ts";
 /** PROCESS_KIND_SCHEMA at the time of writing (contract v1, operator 1.3.1).
  * 'acp-agent' (a third-party coding agent hosted via acp.sessions.create) and
  * 'observed-external' (a foreign coding-agent session goodvibes did not spawn
- * — visibility only, see isObservedKind below) arrived in operator contract
+ *, visibility only, see isObservedKind below) arrived in operator contract
  * 1.11. */
 export const KNOWN_PROCESS_KINDS = [
   "agent",
@@ -31,7 +31,7 @@ export const KNOWN_PROCESS_KINDS = [
   "code-index",
 ] as const;
 
-/** No wire event exists for fleet.* — poll while visible (docs/UX.md §6).
+/** No wire event exists for fleet.*, poll while visible (docs/UX.md §6).
  * Shared by every fleet-domain query (snapshot, attempts, conflicts) so they
  * stay on the same cadence. */
 export const FLEET_POLL_INTERVAL_MS = 5_000;
@@ -83,7 +83,7 @@ export interface FleetNodeCapabilities {
   steerable: boolean;
 }
 
-/** ProcessAttention (contract 1.11) — every way a node can be waiting on a
+/** ProcessAttention (contract 1.11), every way a node can be waiting on a
  * human is a first-class reason here: 'approval' | 'input' | 'pick' |
  * 'conflict'. Read as an open string (see attentionReasonLabel). */
 export interface FleetAttentionMarker {
@@ -91,7 +91,7 @@ export interface FleetAttentionMarker {
   detail: string;
 }
 
-/** ProcessAttemptGroup (contract 1.11) — present only on a work-item node
+/** ProcessAttemptGroup (contract 1.11), present only on a work-item node
  * that is one sibling of a best-of-N group; lets FleetView collapse the N
  * siblings into one group entry driven by fleet.attempts.list. */
 export interface FleetAttemptGroupRef {
@@ -104,14 +104,14 @@ export interface FleetAttemptGroupRef {
 }
 
 export interface FleetObservedLiveness {
-  /** 'active' | 'quiet' (open string) — 'quiet' is NOT proof of idleness,
+  /** 'active' | 'quiet' (open string), 'quiet' is NOT proof of idleness,
    * only that no CPU was burned in the interval; `detail` says so verbatim. */
   state: string;
   cpuSeconds: number;
   detail: string;
 }
 
-/** ObservedSteerChannel (contract 1.11) — a genuine channel carries what a
+/** ObservedSteerChannel (contract 1.11), a genuine channel carries what a
  * surface needs to dispatch through it (kind 'tmux'); kind 'none' carries
  * the plain reason there is no channel. Read tolerantly: an unrecognized/
  * absent shape reads as kind "" (render as "no channel", never a dead
@@ -123,7 +123,7 @@ export interface FleetObservedSteerChannel {
   reason: string;
 }
 
-/** ProcessObserved (contract 1.11) — present only on an 'observed-external'
+/** ProcessObserved (contract 1.11), present only on an 'observed-external'
  * node (a foreign coding-agent session goodvibes did not spawn). Visibility
  * only: never killable/interruptible/pausable/resumable, steer only via the
  * row's own drill-in detail and only over a genuine channel. */
@@ -147,7 +147,7 @@ export interface FleetNode {
   elapsedMs: number | null;
   model: string;
   provider: string;
-  /** null when the wire sent null/omitted it — costState says why. */
+  /** null when the wire sent null/omitted it, costState says why. */
   costUsd: number | null;
   costState: string;
   usage: FleetNodeUsage | null;
@@ -155,11 +155,11 @@ export interface FleetNode {
   capabilities: FleetNodeCapabilities;
   sessionId: string;
   agentId: string;
-  /** Derived "blocked on a human" marker — null when the node needs nothing. */
+  /** Derived "blocked on a human" marker, null when the node needs nothing. */
   attention: FleetAttentionMarker | null;
-  /** Best-of-N sibling grouping — null on every ordinary (single-attempt) node. */
+  /** Best-of-N sibling grouping, null on every ordinary (single-attempt) node. */
   attemptGroup: FleetAttemptGroupRef | null;
-  /** Foreign-agent facts — null on every node goodvibes owns/hosts. */
+  /** Foreign-agent facts, null on every node goodvibes owns/hosts. */
   observed: FleetObserved | null;
   raw: unknown;
 }
@@ -290,7 +290,7 @@ export function isKnownProcessKind(kind: string): boolean {
   return (KNOWN_PROCESS_KINDS as readonly string[]).includes(kind);
 }
 
-/** The one fleet kind goodvibes did not spawn or host — a foreign coding-
+/** The one fleet kind goodvibes did not spawn or host, a foreign coding-
  * agent session detected read-only. Never counted in "own agent" totals,
  * never killable/interruptible/pausable/resumable, steerable only via the
  * row's own drill-in detail over a genuine channel. */
@@ -323,7 +323,7 @@ export function isAwaitingApprovalState(state: string): boolean {
 }
 
 /**
- * Honest cost label. costState ∈ 'priced' | 'unpriced' | 'estimated' —
+ * Honest cost label. costState ∈ 'priced' | 'unpriced' | 'estimated',
  * never show $0.00 for a node the daemon could not price.
  */
 export function costLabel(node: Pick<FleetNode, "costUsd" | "costState">): string {
@@ -402,7 +402,7 @@ export function buildFleetRows(nodes: readonly FleetNode[]): FleetRow[] {
   return rows;
 }
 
-/** "N active" — an OWN-agent count. Observed foreign agents are excluded
+/** "N active", an OWN-agent count. Observed foreign agents are excluded
  * outright: goodvibes did not spawn them, so counting them would overstate
  * its own workload. Their liveness is a separate, honestly-rendered signal
  * per row (ObservedBadge), never folded into this total. */
@@ -410,7 +410,7 @@ export function activeCount(nodes: readonly FleetNode[]): number {
   return nodes.filter((n) => !isTerminalState(n.state) && !isObservedKind(n.kind)).length;
 }
 
-/** Total nodes goodvibes actually owns/hosts — observed rows excluded. */
+/** Total nodes goodvibes actually owns/hosts, observed rows excluded. */
 export function ownNodeCount(nodes: readonly FleetNode[]): number {
   return nodes.filter((n) => !isObservedKind(n.kind)).length;
 }
@@ -423,10 +423,10 @@ export function observedNodeCount(nodes: readonly FleetNode[]): number {
 // ─── Attention (needs-a-human) ────────────────────────────────────────────────
 //
 // fleet.snapshot nodes carry a DERIVED `needsAttention` marker (contract
-// 1.11) — a projection of the node's blocked-on-a-human state, recomputed on
+// 1.11), a projection of the node's blocked-on-a-human state, recomputed on
 // every snapshot and never persisted. 'pick' (a ready best-of-N group) and
 // 'conflict' (a merge conflict) are the newest two reasons, alongside the
-// pre-existing 'approval'/'input' — ONE waiting-on-human class; only the
+// pre-existing 'approval'/'input', ONE waiting-on-human class; only the
 // human-facing label is reason-specific.
 
 /** Human-facing label for the attention reason. Verbatim for an unknown future reason. */
@@ -447,11 +447,11 @@ export function attentionCount(nodes: readonly FleetNode[]): number {
 //
 // A fleet node that is one attempt of a best-of-N group carries an
 // `attemptGroup` marker. This only lets the view collapse the sibling nodes
-// into one group node and know which group they belong to — the
+// into one group node and know which group they belong to, the
 // authoritative candidate/diff/judgment data lives in fleet.attempts.list.
 
 /** The set of best-of-N group ids present among these nodes as attempt-
- * sibling markers — FleetView excludes these siblings from the main tree so
+ * sibling markers, FleetView excludes these siblings from the main tree so
  * a group renders as ONE collapsible entry (driven by fleet.attempts.list)
  * rather than N loose rows. */
 export function attemptGroupIds(nodes: readonly FleetNode[]): ReadonlySet<string> {
@@ -465,38 +465,38 @@ export function attemptGroupIds(nodes: readonly FleetNode[]): ReadonlySet<string
 // ─── Actions this app can genuinely back over the wire ───────────────────────
 //
 // fleet.snapshot's per-node `capabilities` describe what the underlying
-// process CAN do — but the daemon performs interrupt/kill/pause/resume with
+// process CAN do, but the daemon performs interrupt/kill/pause/resume with
 // direct in-process calls; only PART of that is an operator wire verb today:
 //   - steer: sessions.steer, for an 'agent' node with a live sessionRef.sessionId.
-//   - detach: sessions.detach — a session-level action, any node with a sessionId.
+//   - detach: sessions.detach, a session-level action, any node with a sessionId.
 //   - stop/start/run: watchers.{stop,start,run}, for a 'watcher' node only
 //     (WatcherRecord.id IS the node id; no other kind's node id maps to a
 //     verb-addressable entity). start/run are offered unconditionally, same
 //     as the Watchers view itself (adaptWatcher's `killable` flag only says
-//     "currently alive", not "may be started/run" — the daemon is the one
+//     "currently alive", not "may be started/run", the daemon is the one
 //     that accepts or rejects an invalid transition).
 //   - AGENT CONTROL (GAPS.md §3 row 7, was EXCLUDED): any node with a live
 //     sessionRef.sessionId also gets a real, session-level control surface,
-//     rendered by FleetAgentControl.tsx —
+//     rendered by FleetAgentControl.tsx,
 //       * steer / follow-up: sessions.steer / sessions.followUp (mid-turn
 //         guidance vs. queuing the next instruction on a busy agent).
-//       * interrupt: sessions.inputs.list + sessions.inputs.cancel — cancels
+//       * interrupt: sessions.inputs.list + sessions.inputs.cancel, cancels
 //         a still-queued instruction before it is ever delivered.
 //       * stop: sessions.close (ends the session) or the gentler
 //         sessions.detach (keeps it running unattended).
 //       * resume: sessions.reopen, once the session's own status is 'closed'.
-//     None of this is driven by the capability flags below — closing/
+//     None of this is driven by the capability flags below, closing/
 //     reopening/queuing an input isn't described by any FleetNodeCapabilities
 //     field, it is a plain fact of whether the node carries a sessionId.
-//     There is still NO wire verb for a true freeze-and-thaw PAUSE anywhere —
+//     There is still NO wire verb for a true freeze-and-thaw PAUSE anywhere,
 //     never render a control labeled "Pause".
 // Every other true capability flag (kill on a non-session process, pause
-// anywhere) is real but UNBACKED — the honest note below says so instead of
+// anywhere) is real but UNBACKED, the honest note below says so instead of
 // a button that would no-op or 404.
 export type FleetWireAction = "steer" | "detach" | "stop" | "start" | "run";
 
 // Local query-key namespace for the session-level Agent Control surface
-// (FleetAgentControl.tsx) — deliberately NOT in lib/queries.ts's shared
+// (FleetAgentControl.tsx), deliberately NOT in lib/queries.ts's shared
 // registry; these mirror queryKeys.sessionInputs/sessionDetail in shape but
 // stay fleet-local so this view can invalidate/refetch them without reaching
 // into another view's key space.
@@ -507,7 +507,7 @@ export const fleetControlKeys = {
 
 export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction> {
   const actions = new Set<FleetWireAction>();
-  // Observed foreign agents are visibility-only — steer is a SEPARATE
+  // Observed foreign agents are visibility-only, steer is a SEPARATE
   // drill-in verb (fleet.observed.steer, gated on node.observed.steer.kind),
   // never one of these session-level actions, even if a sessionId happened
   // to ride the node.
@@ -525,14 +525,14 @@ export function wireBackedActions(node: FleetNode): ReadonlySet<FleetWireAction>
 
 /**
  * The honest note for capabilities the daemon reports but this app cannot act
- * on over the wire — null when every true flag is wire-backed. Never silently
+ * on over the wire, null when every true flag is wire-backed. Never silently
  * drops the gap; never fabricates a button.
  *
  * Stop/interrupt/resume are now genuinely wire-backed for any node with a
  * live sessionId (FleetAgentControl.tsx: sessions.close/detach,
- * sessions.inputs.cancel, sessions.reopen) — so those flags only surface here
+ * sessions.inputs.cancel, sessions.reopen), so those flags only surface here
  * for a session-less node (e.g. a bare background-process). Pause has NO
- * wire verb anywhere, session or not — it always surfaces here when true.
+ * wire verb anywhere, session or not, it always surfaces here when true.
  */
 export function unbackedCapabilityNote(node: FleetNode): string | null {
   const backed = wireBackedActions(node);
@@ -550,7 +550,7 @@ export function unbackedCapabilityNote(node: FleetNode): string | null {
   ].filter((v): v is string => Boolean(v));
   return (
     `The daemon reports this ${kindLabel(node.kind)} process as ${verbs.join("/")}-able, ` +
-    `but no operator wire verb exists for '${node.kind}' processes yet — use the TUI for those controls.`
+    `but no operator wire verb exists for '${node.kind}' processes yet; use the TUI for those controls.`
   );
 }
 
@@ -593,7 +593,7 @@ export function approvalsFromListResponse(value: unknown): FleetApproval[] {
 }
 
 /**
- * Correlate a fleet node to pending approvals — the SAME two signals the
+ * Correlate a fleet node to pending approvals, the SAME two signals the
  * daemon's own fleet registry uses to derive 'awaiting-approval':
  * approval.sessionId === node.sessionId, or (agent nodes) metadata.agentId ===
  * node.id. Not a guess.
@@ -610,19 +610,19 @@ export function approvalsForNode(node: FleetNode, approvals: readonly FleetAppro
 // ─── Worktree label (GAPS.md §3 row 11) ───────────────────────────────────────
 //
 // AgentRecord.workingDirectory (goodvibes-sdk platform/tools/agent/manager)
-// is the per-agent tool working-directory override — set to the agent's
+// is the per-agent tool working-directory override, set to the agent's
 // isolated git worktree path when the orchestrator spawned it into one.
 // fleet's agent adapter puts the WHOLE AgentRecord onto ProcessNode.raw, so
 // the field rides the wire honestly; this reads it defensively (never cast)
 // and renders NOTHING when the daemon didn't set it (main-tree agents, or an
-// older daemon that predates the field) — never a fabricated label.
+// older daemon that predates the field), never a fabricated label.
 
 /** The agent's worktree directory, or "" when the node/daemon doesn't report one. */
 export function agentWorkingDirectory(node: FleetNode): string {
   return firstString(asRecord(node.raw), ["workingDirectory"]);
 }
 
-/** Last path segment of the working directory — a short, glanceable label; "" when absent. */
+/** Last path segment of the working directory, a short, glanceable label; "" when absent. */
 export function worktreeLabel(node: FleetNode): string {
   const dir = agentWorkingDirectory(node);
   if (!dir) return "";
@@ -633,17 +633,17 @@ export function worktreeLabel(node: FleetNode): string {
 // ─── WRFC chain badges (GAPS.md §3 row 10) ────────────────────────────────────
 //
 // Neither WrfcChain nor WrfcSubtask (goodvibes-sdk platform/agents/wrfc-types)
-// carries a ready-made "c:N/M" or SAT/UNS/UNV field — those are DERIVED here
+// carries a ready-made "c:N/M" or SAT/UNS/UNV field, those are DERIVED here
 // from real arrays the wire does send on ProcessNode.raw (the raw WrfcChain /
 // WrfcSubtask), never fabricated:
-//   - "c:N/M" — subtask completion progress on a compound chain: N of M
+//   - "c:N/M", subtask completion progress on a compound chain: N of M
 //     entries in chain.subtasks have reached a terminal state (passed/failed).
 //     A chain with no subtasks array (a simple, non-compound chain) has
-//     nothing to count — renders nothing, not "c:0/0".
-//   - SAT/UNS/UNV — reviewer constraintFindings tallied by
+//     nothing to count, renders nothing, not "c:0/0".
+//   - SAT/UNS/UNV, reviewer constraintFindings tallied by
 //     ConstraintFinding.satisfied, with any constraintId present in the
 //     chain's own systemUnsatisfiableConstraintIds (constraints the fan-out
-//     collapse made impossible for any fix agent to ever satisfy — see
+//     collapse made impossible for any fix agent to ever satisfy, see
 //     WrfcChain.systemUnsatisfiableConstraintIds) reclassified out of
 //     UNS into UNV. Absent constraintFindings (no review has run yet) → null,
 //     never a zeroed-out tally.
@@ -704,13 +704,13 @@ export function wrfcConstraintTally(node: FleetNode): WrfcConstraintTally | null
 
 // ─── Task correlation (GAPS.md §3 row 6) ──────────────────────────────────────
 //
-// fleet.snapshot never emits a 'task' node kind — tasks.* is a separate
+// fleet.snapshot never emits a 'task' node kind, tasks.* is a separate
 // runtime registry (goodvibes-sdk platform/runtime/tasks). The one genuine,
 // provable link between a fleet node and a RuntimeTask is the 'agent' kind:
 // AgentTaskAdapter.wrapAgent (platform/runtime/tasks/adapters/agent-adapter)
 // creates every kind:'agent' RuntimeTask with `owner: agentId`, and an
 // 'agent' fleet node's id IS that agentId. No other node kind's id maps to a
-// task field at all — never fabricate a task action for one.
+// task field at all, never fabricate a task action for one.
 
 /** The RuntimeTask backing this 'agent' node, or null when there isn't one (no task, or a non-agent node). */
 export function taskForNode(node: FleetNode, tasks: readonly TaskSummary[]): TaskSummary | null {

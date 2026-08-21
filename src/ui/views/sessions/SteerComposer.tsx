@@ -1,4 +1,4 @@
-// Steer/follow-up composer — the hero flow of the Sessions view. Injects a
+// Steer/follow-up composer, the hero flow of the Sessions view. Injects a
 // mid-turn steer (sessions.steer) while an agent is bound, or queues a
 // follow-up turn (sessions.followUp) otherwise. Fire-and-optimistic: the
 // dispatched text reflects locally with an explicit queued → delivered/failed
@@ -28,12 +28,12 @@ export interface LocalDispatch {
 
 interface SteerComposerProps {
   sessionId: string;
-  /** True while an agent is bound and the session is open — steer is available. */
+  /** True while an agent is bound and the session is open, steer is available. */
   canSteer: boolean;
-  /** True when the session is closed — dispatch disabled with an honest note. */
+  /** True when the session is closed, dispatch disabled with an honest note. */
   closed: boolean;
   /** True while the session-update stream is paused: the send still goes over
-   * HTTP, but the delivered/failed confirmation may lag — say so. */
+   * HTTP, but the delivered/failed confirmation may lag, say so. */
   streamPaused: boolean;
 }
 
@@ -57,7 +57,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
 
   // This component is reused across a session pick in the master/detail list
   // (no `key`, so it never remounts on selection change) and SessionsView
-  // itself unmounts on a view switch — load the newly-selected session's own
+  // itself unmounts on a view switch, load the newly-selected session's own
   // draft, and flush the outgoing one first so it isn't lost (the cleanup
   // below runs with the OLD sessionId still closed over, right before this
   // effect re-runs with the new one, and on unmount).
@@ -69,7 +69,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     setText(value);
-    // Debounced persistence for an abrupt app close mid-typing — targets the
+    // Debounced persistence for an abrupt app close mid-typing, targets the
     // sessionId in scope at keystroke time, so a session switch mid-debounce
     // can never write into the wrong slot.
     if (debounceTimerRef.current !== null) window.clearTimeout(debounceTimerRef.current);
@@ -89,7 +89,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
   };
 
   const mutation = useMutation({
-    // The daemon steer/follow-up routes read the canonical `body` field only —
+    // The daemon steer/follow-up routes read the canonical `body` field only,
     // a `{ message }` envelope 400s with "Missing shared session steer body".
     mutationFn: ({ body }: { id: string; body: string }) => {
       const payload = { body, surfaceKind: APP_SURFACE_KIND, surfaceId: APP_SURFACE_ID };
@@ -102,8 +102,8 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
     onError: (error, variables) => {
       if (isSessionClosedError(error)) {
         // The chrome (badge, composer enablement) is driven by the sessions
-        // query — refresh it so the user cannot keep firing 409s.
-        setState(variables.id, "failed", "This session is closed — reopen it to continue.");
+        // query, refresh it so the user cannot keep firing 409s.
+        setState(variables.id, "failed", "This session is closed; reopen it to continue.");
         void queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
         return;
       }

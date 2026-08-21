@@ -3,11 +3,11 @@
 //
 // PARITY CONTRACT (webui/TUI agreement): this module never computes a
 // modified-edit result. It only reads hunks for display and packages a
-// selected-index array for `approvals.approve` — the daemon's
+// selected-index array for `approvals.approve`, the daemon's
 // buildModifiedEditArgs is the single source of the applied result.
 //
 // Statuses, categories, and risk levels are OPEN strings rendered verbatim: a
-// daemon newer than this client may report a value we have never seen —
+// daemon newer than this client may report a value we have never seen,
 // render it, never drop it.
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
@@ -71,7 +71,7 @@ export interface ApprovalRecord {
   readonly resolvedAt?: number;
   readonly resolvedBy?: string;
   readonly decision?: ApprovalDecision;
-  /** Absent on a mixed-version/pre-audit record — "not reported here", never an error. */
+  /** Absent on a mixed-version/pre-audit record, "not reported here", never an error. */
   readonly audit?: readonly ApprovalAuditRecord[];
 }
 
@@ -85,7 +85,7 @@ export interface TaskSummary {
   readonly id: string;
   readonly kind: string;
   readonly title: string;
-  /** Verbatim daemon status — no invented progress, no synthesized ETA. */
+  /** Verbatim daemon status, no invented progress, no synthesized ETA. */
   readonly status: string;
   readonly owner: string;
   readonly cancellable?: boolean;
@@ -106,7 +106,7 @@ export interface TasksSnapshot {
 
 export interface TaskDetail {
   readonly task: TaskSummary | null;
-  /** The unparsed wire payload — the peek renders it verbatim for honesty. */
+  /** The unparsed wire payload, the peek renders it verbatim for honesty. */
   readonly raw: unknown;
 }
 
@@ -285,7 +285,7 @@ export function readApprovalEditHunks(record: ApprovalRecord): ApprovalEditHunk[
 /**
  * For a resolved, approved edit approval: was it a per-hunk subset? The
  * daemon's `decision.modifiedArgs.edits` carries the filtered hunk list only
- * when a `selectedHunks` subset was sent — comparing lengths is enough for a
+ * when a `selectedHunks` subset was sent, comparing lengths is enough for a
  * "partial (2/5 hunks)" label from data already on the record.
  */
 export function partialApprovalLabel(record: ApprovalRecord): string | null {

@@ -1,9 +1,9 @@
-// Test send — the FIRST surface anywhere for channels.test.send (contract
+// Test send, the FIRST surface anywhere for channels.test.send (contract
 // 1.11): a live probe through the REAL delivery router for one surface, with
 // an optional address/body override. TRAP (see gv.ts's channelTest.send
 // comment): `delivered:false` with an `error` string in an otherwise-200
-// response is the NORMAL failure path — a real attempt the surface rejected
-// — never a thrown exception. This renders the real result verbatim either
+// response is the NORMAL failure path, a real attempt the surface rejected
+//, never a thrown exception. This renders the real result verbatim either
 // way: no try/catch-expect-throw, no invented success.
 
 import { useState, type FormEvent } from "react";
@@ -20,7 +20,7 @@ export function TestSendPanel() {
   const [body, setBody] = useState("");
   const [result, setResult] = useState<TestSendResult | null>(null);
 
-  // Best-effort suggestions only — a surface that has never been onboarded
+  // Best-effort suggestions only, a surface that has never been onboarded
   // can still be tested by typing its id, so this list is a convenience, not
   // a validation gate.
   const status = useQuery({

@@ -1,10 +1,10 @@
 // Embedded terminal tabs (docs/FEATURES.md §15). Real PTYs via the /app/pty
-// Bun service (openpty + `setsid -c` — see src/bun/pty.ts). Reduced terminal
+// Bun service (openpty + `setsid -c`, see src/bun/pty.ts). Reduced terminal
 // emulation (emulator.ts) rendered by TerminalScreen. keepAlive view: each tab
 // owns a TerminalController whose stream + scrollback survive view switches.
 //
 // Honest degradation: if the host can't allocate a pty the create call returns
-// PTY_UNSUPPORTED and we render an UnavailableState naming the capability —
+// PTY_UNSUPPORTED and we render an UnavailableState naming the capability,
 // never a blank screen, never a fake terminal. Exit codes are always surfaced.
 // Closing a tab with a live child goes through ConfirmSurface (busy = alive).
 
@@ -187,7 +187,7 @@ export function TerminalView(): React.ReactElement {
             <EmptyState
               icon={<SquareTerminal size={28} />}
               title="No terminal sessions"
-              description="Open a shell in the workspace directory. Reduced terminal emulation — full-screen apps (vim, htop) may render imperfectly."
+              description="Open a shell in the workspace directory. Reduced terminal emulation; full-screen apps (vim, htop) may render imperfectly."
               action={{ label: "New session", onClick: () => void newSession() }}
             />
           )

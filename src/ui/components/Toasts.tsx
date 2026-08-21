@@ -1,5 +1,5 @@
 // Toast card + viewport + overflow drawer. Max 3 floating cards; older
-// toasts move to the drawer behind a "+N more" button — the drawer is a real
+// toasts move to the drawer behind a "+N more" button, the drawer is a real
 // notification list, nothing silently dropped (docs/UX.md §4).
 
 import { useEffect } from "react";
@@ -95,7 +95,7 @@ export function ToastViewport() {
             type="button"
             className="toast-overflow"
             onClick={() => setDrawerOpen(true)}
-            aria-label={`${overflow.length} more notifications — open notification drawer`}
+            aria-label={`${overflow.length} more notifications: open notification drawer`}
           >
             +{overflow.length} more
           </button>

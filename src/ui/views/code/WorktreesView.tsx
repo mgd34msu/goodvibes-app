@@ -1,12 +1,12 @@
-// Worktrees view — merges TWO independent sources into one table with honest
+// Worktrees view, merges TWO independent sources into one table with honest
 // per-source labels (docs/FEATURES.md §15):
-//   1. worktrees.snapshot — the daemon's agent-worktree awareness (HTTP GET
+//   1. worktrees.snapshot, the daemon's agent-worktree awareness (HTTP GET
 //      /api/worktrees per the generated route table; payload shape read
-//      defensively — daemon 1.0.0 may 404 the method entirely).
-//   2. /app/git/worktrees — `git worktree list --porcelain` on the app's own
+//      defensively, daemon 1.0.0 may 404 the method entirely).
+//   2. /app/git/worktrees, `git worktree list --porcelain` on the app's own
 //      workspace repo (src/bun/git.ts).
 // Rows are merged by normalized path; each row shows which source(s) know it.
-// Neither source has wire events — targeted 30s poll.
+// Neither source has wire events, targeted 30s poll.
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,7 @@ interface DaemonWorktree {
 function parseDaemonWorktrees(data: unknown): DaemonWorktree[] {
   // worktrees.snapshot's real wire shape (operator-contract.json) is
   // {summary, records:[...]}. "worktrees"/"items"/"entries" are defensive
-  // fallbacks kept for daemon builds that serialize differently — "records"
+  // fallbacks kept for daemon builds that serialize differently, "records"
   // is the confirmed-live key and must come first.
   return listFrom(data, ["records", "worktrees", "items", "entries"]).map((item) => {
     const record = asRecord(item);
@@ -64,7 +64,7 @@ function parseDaemonWorktrees(data: unknown): DaemonWorktree[] {
   });
 }
 
-/** Capability-gap check shared by the setup-rerun and discard actions —
+/** Capability-gap check shared by the setup-rerun and discard actions,
  * either a plain method-missing daemon or (both verbs are ws-only) a
  * disconnected ws bridge, same treatment CheckpointsView.tsx gives its own
  * all-ws-only checkpoints.* verbs. */
@@ -113,7 +113,7 @@ export function WorktreesView() {
     void queryClient.invalidateQueries({ queryKey: codeKeys.localWorktrees });
   };
 
-  // Palette command — view-scoped, live only while mounted (matches
+  // Palette command, view-scoped, live only while mounted (matches
   // GitView's git.refresh / CheckpointsView's checkpoints.snapshot idiom).
   useEffect(() => {
     registerCommand({
@@ -168,7 +168,7 @@ export function WorktreesView() {
         toast({
           title: isActionCapabilityGap(error) ? "Setup not available" : "Setup failed",
           description: isActionCapabilityGap(error)
-            ? `${actionCapabilityLabel(error, "worktrees.setup.run")} — ${path}`
+            ? `${actionCapabilityLabel(error, "worktrees.setup.run")}: ${path}`
             : formatError(error),
           tone: "danger",
         });
@@ -188,10 +188,10 @@ export function WorktreesView() {
           void queryClient.invalidateQueries({ queryKey: codeKeys.localWorktrees });
           const receipt = parseDiscardReceipt(raw, path);
           if (receipt.ok) {
-            // The reassurance IS the feature — never a bare "discarded" toast.
+            // The reassurance IS the feature, never a bare "discarded" toast.
             toast({
               title: "Worktree discarded",
-              description: `Branch kept: ${receipt.branch || "(unknown)"} · Preserved commit: ${receipt.preservedCommit || "(none — nothing to preserve)"}${receipt.detail ? ` · ${receipt.detail}` : ""}`,
+              description: `Branch kept: ${receipt.branch || "(unknown)"} · Preserved commit: ${receipt.preservedCommit || "(none: nothing to preserve)"}${receipt.detail ? ` · ${receipt.detail}` : ""}`,
               tone: "success",
               durationMs: 10_000,
             });
@@ -208,7 +208,7 @@ export function WorktreesView() {
           toast({
             title: isActionCapabilityGap(error) ? "Discard not available" : "Discard failed",
             description: isActionCapabilityGap(error)
-              ? `${actionCapabilityLabel(error, "worktrees.discard")} — ${path}`
+              ? `${actionCapabilityLabel(error, "worktrees.discard")}: ${path}`
               : formatError(error),
             tone: "danger",
           });
@@ -405,7 +405,7 @@ export function WorktreesView() {
         danger
         action="Discard worktree"
         target={discardTarget}
-        blastRadius="The branch is KEPT — any dirty (uncommitted) state is first committed onto that branch as a preservation commit — then the worktree directory is removed. A preservation failure refuses the removal rather than losing work."
+        blastRadius="The branch is KEPT; any dirty (uncommitted) state is first committed onto that branch as a preservation commit, then the worktree directory is removed. A preservation failure refuses the removal rather than losing work."
         requireTypedText="discard"
         confirmLabel={discard.isPending ? "Discarding…" : "Discard worktree"}
         onConfirm={confirmDiscard}

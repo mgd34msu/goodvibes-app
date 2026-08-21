@@ -1,5 +1,5 @@
 // Semantic bridge from this app's status vocabulary onto the SDK presentation
-// contract's glyphs — the same glyph vocabulary the TUI/agent/webui render
+// contract's glyphs, the same glyph vocabulary the TUI/agent/webui render
 // through. Ported from goodvibes-webui src/lib/presentation-bridge.ts. The
 // mappings are RULINGS: a state with no honest contract analogue maps to the
 // contract's own "not a fault" bucket (info), never force-fit to bad.
@@ -32,7 +32,7 @@ const BADGE_TONE_TO_CONTRACT_STATE: Record<BadgeTone, ContractStatusState> = {
 };
 
 /** Classify an arbitrary status string into a BadgeTone. 'unconfigured' and
- * 'status unavailable' intentionally fall through to neutral — neither is a
+ * 'status unavailable' intentionally fall through to neutral, neither is a
  * fault. */
 export function classifyBadgeTone(value: string): BadgeTone {
   const normalized = value.toLowerCase();

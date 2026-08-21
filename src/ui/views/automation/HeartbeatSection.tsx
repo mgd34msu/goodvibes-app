@@ -1,6 +1,6 @@
 // Heartbeat (docs/FEATURES.md §5 "Heartbeat: list/run"). The daemon's
 // GET /api/automation/heartbeat answers { pending: [...] } (verified in
-// goodvibes-sdk runtime-automation-routes.ts — often an empty list);
+// goodvibes-sdk runtime-automation-routes.ts, often an empty list);
 // POST triggers a heartbeat sweep and returns the manager's result verbatim.
 
 import { useMemo } from "react";
@@ -20,7 +20,7 @@ export function HeartbeatSection() {
 
   const list = useQuery({
     queryKey: automationKeys.heartbeat,
-    // No automation domain on the invalidation stream — poll while visible.
+    // No automation domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke("automation.heartbeat.list"),
     refetchInterval: AUTOMATION_POLL_MS,
   });

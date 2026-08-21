@@ -1,7 +1,7 @@
 // Realtime invalidation over the daemon's multiplexed SSE feed.
 // Doctrine (webui useRealtimeInvalidation): frames only INVALIDATE query keys,
-// they are never rendered directly. The sanctioned exceptions — chat token
-// streaming and terminal turn events — open their own per-session streams.
+// they are never rendered directly. The sanctioned exceptions, chat token
+// streaming and terminal turn events, open their own per-session streams.
 // EventSource cannot carry the x-gv-app header, so this rides lib/sse.ts's
 // fetch-based parser (Last-Event-ID resume + backoff built in).
 
@@ -18,11 +18,11 @@ import type { SseState } from "./daemon-health.ts";
  * (`normalizeRuntimeDomains` → `isRuntimeEventDomain` filter), so every key here
  * MUST name a real domain from goodvibes-contracts' RUNTIME_EVENT_DOMAINS or it
  * is inert. checkpoints/memory/calendar still have NO wire events (pinned
- * upstream) — their views poll; do not add their keys here without a real event.
+ * upstream), their views poll; do not add their keys here without a real event.
  *
  * `ops` and `workspace` are real 1.11 event domains (confirmed against
  * RUNTIME_EVENT_DOMAINS): `ops` carries OPS_POWER_STATE_CHANGED / OPS_MEMORY_PRESSURE
- * (integration gate wiring for the observability Ops/Power panels — Agent 5's
+ * (integration gate wiring for the observability Ops/Power panels, Agent 5's
  * flagged gap), `workspace` carries the rewind/hunk-revert receipts so a
  * rewind/revert applied from another surface (TUI, webui) live-updates the
  * Sessions "Changes"/"Rewind" panels here (Agent 1's flagged gap). Both were
@@ -55,10 +55,10 @@ const SESSION_UPDATE_WIRE_EVENT = "session-update";
  * error bodies (raw daemon JSON) are never painted into a banner.
  */
 export const REALTIME_PAUSED_MESSAGE =
-  "Live updates paused — reconnecting. Views fall back to periodic refresh until the stream returns.";
+  "Live updates paused, reconnecting. Views fall back to periodic refresh until the stream returns.";
 
 // ---------------------------------------------------------------------------
-// Module-level SSE status store — StatusStrip reads this without prop drilling.
+// Module-level SSE status store, StatusStrip reads this without prop drilling.
 // Tracks the state AND the epoch-ms deadline of the next reconnect attempt so
 // the strip can render an honest "retry in Ns" countdown while paused.
 // ---------------------------------------------------------------------------
@@ -100,10 +100,6 @@ export function useSseState(): SseState {
 export function useSseRetryAt(): number | null {
   return useSyncExternalStore(subscribeSseState, () => _sseRetryAt, () => _sseRetryAt);
 }
-
-// ---------------------------------------------------------------------------
-// Hooks
-// ---------------------------------------------------------------------------
 
 /**
  * Open the single multiplexed invalidation stream. Returns the operator-facing
@@ -156,7 +152,7 @@ export interface SessionRealtimeState {
 
 // Module-level mirror of the session-update stream health so views (Sessions,
 // Fleet) can thread "live updates paused" honesty into composers without
-// opening a second stream — AppShell owns the ONE useSessionRealtime mount.
+// opening a second stream, AppShell owns the ONE useSessionRealtime mount.
 let _sessionStreamPaused = true;
 const _sessionStreamListeners = new Set<() => void>();
 

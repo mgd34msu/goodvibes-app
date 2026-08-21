@@ -1,7 +1,7 @@
-// Projections — the LIVE markdown projection of standing (project/team-scope)
+// Projections, the LIVE markdown projection of standing (project/team-scope)
 // memory records (memory.projections.list/get). This is the same standing
 // memory the file projection writes as markdown, computed from the store on
-// every call — never read from disk, never cached — so opening one always
+// every call, never read from disk, never cached, so opening one always
 // shows the current record, not a stale snapshot.
 
 import { useState } from "react";
@@ -62,7 +62,7 @@ export function ProjectionsPanel() {
   const list = useQuery({
     queryKey: memoryKeys.projections,
     queryFn: async () => parseMemoryProjections(await gv.memory.projections.list()),
-    // No wire event for memory.* — poll while mounted.
+    // No wire event for memory.*, poll while mounted.
     refetchInterval: 30_000,
     retry: false,
   });

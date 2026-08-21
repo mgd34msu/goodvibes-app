@@ -1,6 +1,6 @@
-// Channel profiles — per-channel intake defaults (channels.profiles.*,
+// Channel profiles, per-channel intake defaults (channels.profiles.*,
 // contract 1.11): the model/provider/permission-mode a channel's originated
-// sessions inherit. set() is an upsert keyed on (surfaceKind, channelId?) —
+// sessions inherit. set() is an upsert keyed on (surfaceKind, channelId?),
 // the same form handles create and edit, with the key fields locked once a
 // binding is being edited (the key IS the identity; changing it would create
 // a new binding, not rename this one). Delete is behind a danger confirm

@@ -1,6 +1,6 @@
 // Channel accounts (docs/FEATURES.md §13 "Accounts: list / per-surface / get
 // + actions"): channels.accounts.list rendered as cards with configured/
-// linked/auth badges and the secret CHECKLIST (field + configured flag — the
+// linked/auth badges and the secret CHECKLIST (field + configured flag, the
 // wire carries no secret values, so nothing needs masking here). Account
 // lifecycle actions are admin-gated on the daemon and confirm-gated here:
 // every invoke goes through ConfirmSurface and sends confirm +
@@ -103,7 +103,7 @@ export function AccountsPanel() {
         target={`${pending?.account.label ?? ""} (${pending?.account.surface ?? ""}${
           pending?.account.accountId ? ` · ${pending.account.accountId}` : " · default account"
         })`}
-        blastRadius="Admin lifecycle action on this channel account — it can connect, disconnect, or re-authenticate the surface for every consumer of this daemon."
+        blastRadius="Admin lifecycle action on this channel account; it can connect, disconnect, or re-authenticate the surface for every consumer of this daemon."
         confirmLabel={pending?.action.label ?? "Run"}
         onConfirm={() => {
           if (pending) runAction.mutate(pending);

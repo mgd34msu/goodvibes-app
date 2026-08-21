@@ -1,15 +1,15 @@
-// Watchers — daemon-side event sources (docs/FEATURES.md §5 "Watchers:
+// Watchers, daemon-side event sources (docs/FEATURES.md §5 "Watchers:
 // list/create/update/delete/start/stop/run"). Master list + right detail
 // column (fleet idiom), selection deep-linked as ?filter[watcher]=<id>.
 //
-// Listing is authenticated; every mutation is ADMIN-scoped on the wire — a
+// Listing is authenticated; every mutation is ADMIN-scoped on the wire, a
 // 403 surfaces verbatim in a toast, and the toolbar carries the scope note.
 // Delete is dangerous-flagged → ConfirmSurface forwarding confirm:true +
 // explicitUserRequest. Secret-looking metadata (headers, tokens, keys) is
 // masked by default with an explicit per-view reveal toggle.
 //
 // Realtime: no `watchers` domain exists on the invalidation stream
-// (lib/realtime.ts DOMAIN_INVALIDATIONS) — the list polls at 15s while the
+// (lib/realtime.ts DOMAIN_INVALIDATIONS), the list polls at 15s while the
 // view is mounted (keepAlive:false → unmounts when hidden).
 
 import { useEffect, useMemo, useState } from "react";
@@ -58,7 +58,7 @@ export function WatchersView() {
 
   const list = useQuery({
     queryKey: watchersKeys.list,
-    // No watchers domain on the invalidation stream — poll while visible.
+    // No watchers domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke("watchers.list"),
     refetchInterval: WATCHERS_POLL_MS,
   });
@@ -131,7 +131,7 @@ export function WatchersView() {
     },
   });
 
-  // Palette commands — view-scoped, live only while the view is mounted.
+  // Palette commands, view-scoped, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "watchers.refresh",

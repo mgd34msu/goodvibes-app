@@ -1,19 +1,19 @@
-// FleetAttempts — best-of-N attempt groups (fleet.attempts.*, operator
+// FleetAttempts, best-of-N attempt groups (fleet.attempts.*, operator
 // contract 1.11): passing siblings run in isolated worktrees and park
 // HELD instead of auto-merging; a human (or autoAccept) picks the winner.
 //
 // useFleetAttemptGroups polls alongside the fleet snapshot and degrades to
-// an empty group list — SILENTLY — when this daemon has never heard of the
+// an empty group list, SILENTLY, when this daemon has never heard of the
 // verb (isMethodUnavailableError): an older daemon simply has no best-of-N
 // feature, not a failure to report.
 //
 // FleetAttemptsSection collapses the groups into one "Best-of-N (N)" list
 // entry per group; AttemptComparisonModal is the detail surface where every
 // candidate is compared (diff stat + usage/cost side by side) and picked.
-// fleet.attempts.judge PROPOSES a winner with reasons — rendered clearly
+// fleet.attempts.judge PROPOSES a winner with reasons, rendered clearly
 // labeled as model judgment, never an auto-pick; a not-invokable judge
 // (no judge model configured) renders "pick manually", not an error.
-// fleet.attempts.pick's result.applied is the ONLY success signal — an HTTP
+// fleet.attempts.pick's result.applied is the ONLY success signal, an HTTP
 // ok with applied:false (the group went stale) is NOT a completed merge.
 
 import { useMemo, useState } from "react";
@@ -48,7 +48,7 @@ export interface AttemptCandidateDiff {
 export interface AttemptCandidate {
   readonly itemId: string;
   readonly attemptIndex: number;
-  /** 'held-merge' | 'failed' (open string — render verbatim if ever unknown). */
+  /** 'held-merge' | 'failed' (open string, render verbatim if ever unknown). */
   readonly state: string;
   readonly title: string;
   readonly worktreePath: string | null;
@@ -135,7 +135,7 @@ function normalizeGroup(value: unknown): AttemptGroup {
 
 /** Polls fleet.attempts.list alongside the fleet snapshot; a daemon that has
  * never heard of best-of-N degrades to an empty group list SILENTLY (no
- * error state — it simply has no feature, not a failure). */
+ * error state, it simply has no feature, not a failure). */
 export function useFleetAttemptGroups(enabled: boolean) {
   const query = useQuery({
     queryKey: queryKeys.fleetAttempts,
@@ -244,7 +244,7 @@ export function AttemptComparisonModal({
     onSuccess: (result) => {
       const applied = asRecord(result)["applied"] === true;
       if (!applied) {
-        setStaleNote("The daemon did not apply this pick — the group may no longer be ready. Refresh the fleet and try again.");
+        setStaleNote("The daemon did not apply this pick; the group may no longer be ready. Refresh the fleet and try again.");
         return;
       }
       onPicked();
@@ -252,7 +252,7 @@ export function AttemptComparisonModal({
     },
     onError: (error: unknown) => {
       if (errorStatus(error) === 409) {
-        setStaleNote("This group is no longer ready to pick — refresh the fleet and try again.");
+        setStaleNote("This group is no longer ready to pick; refresh the fleet and try again.");
       }
     },
   });
@@ -261,7 +261,7 @@ export function AttemptComparisonModal({
   const selectedCandidate = group.candidates.find((c) => c.itemId === selectedId);
 
   return (
-    <Modal open={open} onClose={onClose} title={`Compare attempts — ${group.sourceTitle || group.groupId}`} size="lg">
+    <Modal open={open} onClose={onClose} title={`Compare attempts: ${group.sourceTitle || group.groupId}`} size="lg">
       <div className="attempt-cmp">
         <p className="attempt-cmp__intro">
           {heldCandidates.length} held candidate{heldCandidates.length === 1 ? "" : "s"} of {group.candidates.length}.
@@ -393,7 +393,7 @@ export function AttemptComparisonModal({
         action="Pick this attempt as the winner"
         target={selectedCandidate?.title ?? selectedId}
         danger
-        blastRadius="Merges the winner through the integration lane and cleans every losing worktree — cannot be undone."
+        blastRadius="Merges the winner through the integration lane and cleans every losing worktree, cannot be undone."
         confirmLabel="Pick winner"
         onConfirm={() => {
           setConfirmPick(false);

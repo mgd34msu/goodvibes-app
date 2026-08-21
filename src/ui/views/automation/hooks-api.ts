@@ -1,11 +1,11 @@
 // Typed client for the app-local /app/local/hooks route (src/bun/local-tools.ts
-// §/hooks — docs/GAPS.md §5 row 10). No wire method backs this — it reads and
+// §/hooks, docs/GAPS.md §5 row 10). No wire method backs this, it reads and
 // writes ~/.goodvibes/hooks.json verbatim on the machine this app runs on, so
 // freshness is mutation-driven invalidation only (no wire event, no poll).
 //
 // PUT validates JSON.parse + top-level object shape before an atomic write and
 // 400s with { error, code, detail, position? } when the content isn't valid
-// JSON — parseHooksSaveError surfaces that verbatim, never re-deriving a
+// JSON, parseHooksSaveError surfaces that verbatim, never re-deriving a
 // position client-side.
 
 import { appJson } from "../../lib/http.ts";
@@ -58,7 +58,7 @@ export const hooksApi = {
     }),
 } as const;
 
-// ─── Reference sidebar content (docs/research/tui-features.md — honest,
+// ─── Reference sidebar content (docs/research/tui-features.md, honest,
 // documented-only; no fabricated event names) ───────────────────────────────
 //
 // Source line (docs/research/tui-features.md, "Automation" section):
@@ -68,7 +68,7 @@ export const hooksApi = {
 // command/prompt/agent/http/ts, hook chains with time windows/conditions,
 // managed hook scaffold/simulate/import/export."
 // The research notes document the Phase/Category axes and hook types, but
-// never enumerate every "Specific" leaf or the wildcard syntax itself — this
+// never enumerate every "Specific" leaf or the wildcard syntax itself, this
 // reference stops exactly where the source does, rather than guessing the rest.
 
 export const HOOK_EVENT_PHASES = ["Pre", "Post", "Fail", "Change", "Lifecycle"] as const;

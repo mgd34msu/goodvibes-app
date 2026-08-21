@@ -1,5 +1,5 @@
 // Contract explorer (docs/FEATURES.md §17): control.contract +
-// control.methods.list/.get + control.events.catalog — the
+// control.methods.list/.get + control.events.catalog, the
 // observability-of-the-API surface. Every method row links its admin/confirm
 // (dangerous) flags so an operator can tell what a palette action or a
 // ConfirmSurface-gated button actually requires before invoking it.

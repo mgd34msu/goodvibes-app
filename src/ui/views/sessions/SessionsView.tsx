@@ -1,4 +1,4 @@
-// SessionsView — the cross-surface session union (docs/FEATURES.md §2).
+// SessionsView, the cross-surface session union (docs/FEATURES.md §2).
 //
 // Master/detail over sessions.list (GET /api/sessions → {totals, sessions}),
 // the spine union over every surface kind, with honest badges: kind (verbatim
@@ -7,9 +7,9 @@
 // retainedMessageCount truncation marker where the wire reports it.
 //
 // Freshness is the raw session-update SSE stream (AppShell mounts it; every
-// frame invalidates the 'sessions' prefix) — never rendered from frames.
+// frame invalidates the 'sessions' prefix), never rendered from frames.
 // Honest limits: GET /api/sessions ignores ?limit/?cursor and the daemon caps
-// the union at 50 — the view says "50 most recent", never fakes completeness.
+// the union at 50, the view says "50 most recent", never fakes completeness.
 // Full-history search is sessions.search [ws]: it rides the /app/ws bridge and
 // degrades honestly when the bridge is down.
 // Ported from goodvibes-webui src/views/sessions/SessionsView.tsx.
@@ -68,7 +68,7 @@ function KindBadge({ kind }: { kind: string }) {
   return (
     <span
       className={`badge ${known ? "neutral" : "warning"}`}
-      title={known ? undefined : "Kind not known to this client — shown verbatim"}
+      title={known ? undefined : "Kind not known to this client, shown verbatim"}
     >
       {kindLabel(kind)}
     </span>
@@ -76,7 +76,7 @@ function KindBadge({ kind }: { kind: string }) {
 }
 
 /** Reaped-as-reaped: an idle-reaped close is GC housekeeping (auto-reopens on
- * the next heartbeat), not a deliberate close — its own tone and wording. */
+ * the next heartbeat), not a deliberate close, its own tone and wording. */
 function SessionStatusBadge({ record }: { record: Pick<UnionSessionRecord, "status" | "closeReason"> }) {
   const reaped = isReapedStatus(record);
   const closed = isClosedStatus(record.status);
@@ -85,7 +85,7 @@ function SessionStatusBadge({ record }: { record: Pick<UnionSessionRecord, "stat
   return (
     <span
       className={`badge ${tone}`}
-      title={reaped ? "Closed by the idle-session sweep — reopens automatically on the next activity" : undefined}
+      title={reaped ? "Closed by the idle-session sweep, reopens automatically on the next activity" : undefined}
     >
       {label}
     </span>
@@ -124,7 +124,7 @@ function SessionRow({
   );
 }
 
-/** Diagnostics peek content — sessions.integration.snapshot rendered verbatim. */
+/** Diagnostics peek content, sessions.integration.snapshot rendered verbatim. */
 function IntegrationSnapshotPeek() {
   const snapshot = useQuery({
     queryKey: queryKeys.sessionDetail("integration-snapshot"),
@@ -138,7 +138,7 @@ function IntegrationSnapshotPeek() {
 }
 
 /** Persist master/detail selection into ?session= so deep links compose.
- * replaceState (not pushState) — selection is not a history-worthy step. */
+ * replaceState (not pushState), selection is not a history-worthy step. */
 function writeSelectionToUrl(sessionId: string): void {
   const current = getCurrentUrlState();
   if (current.session === sessionId) return;
@@ -177,7 +177,7 @@ export function SessionsView() {
 
   // DELETE-MEANS-DELETE capability probe, honest quad-state: 'available' /
   // 'unavailable' (the daemon genuinely lacks the verb) / 'uncertain' (the
-  // probe itself failed — never claim absence off a network blip) / 'checking'.
+  // probe itself failed, never claim absence off a network blip) / 'checking'.
   const deleteCapability = useQuery({
     queryKey: ["capability", "sessions.delete"],
     queryFn: () => gv.probeMethod("sessions.delete"),
@@ -192,7 +192,7 @@ export function SessionsView() {
       ? "uncertain"
       : "checking";
 
-  // Re-probe when the session-update stream recovers — the daemon is reachable
+  // Re-probe when the session-update stream recovers, the daemon is reachable
   // again (or was upgraded) at exactly that moment.
   const { refetch: refetchDeleteCapability } = deleteCapability;
   const prevPausedRef = useRef(streamPaused);
@@ -245,7 +245,7 @@ export function SessionsView() {
     writeSelectionToUrl(id);
   };
 
-  // Palette commands — view-scoped, live only while the view is mounted.
+  // Palette commands, view-scoped, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "sessions.refresh",
@@ -395,7 +395,7 @@ export function SessionsView() {
           <EmptyState
             icon={<ListTodo size={28} />}
             title="No sessions in the union yet"
-            description="Sessions from every surface — TUI, agent, webui, this app, automations — appear here as they run."
+            description="Sessions from every surface: TUI, agent, webui, this app, automations, appear here as they run."
             action={{ label: "New operator session", onClick: () => setCreateOpen(true) }}
           />
         )}
@@ -422,7 +422,7 @@ export function SessionsView() {
             {searching && search.isSuccess && (
               <div className="sessions-cap-note" role="status">
                 {filtered.length} search result{filtered.length === 1 ? "" : "s"}
-                {searchPage.nextCursor ? " — more pages exist; refine the query to narrow further" : ""}
+                {searchPage.nextCursor ? ", more pages exist; refine the query to narrow further" : ""}
               </div>
             )}
             {groups.map(([project, bucket]) => (
@@ -570,7 +570,7 @@ function SessionDetail({
 
   const invalidateSessions = () => queryClient.invalidateQueries({ queryKey: queryKeys.sessions });
 
-  // Close/Reopen: distinct, reversible, history-preserving actions — both
+  // Close/Reopen: distinct, reversible, history-preserving actions, both
   // idempotent on the daemon.
   const closeSession = useMutation({
     mutationFn: (sessionId: string) => gv.sessions.close(sessionId),
@@ -600,7 +600,7 @@ function SessionDetail({
       const reconciled = await gv.sessions.list();
       const stillPresent = unionSessionsFromListResponse(reconciled).some((r) => r.id === sessionId);
       if (stillPresent) {
-        throw Object.assign(new Error("Delete did not complete — the record still exists"), {
+        throw Object.assign(new Error("Delete did not complete; the record still exists"), {
           code: "DELETE_INCOMPLETE",
         });
       }
@@ -612,14 +612,14 @@ function SessionDetail({
     },
   });
 
-  // Detach: remove THIS APP's participant entry — never closes, never kills,
+  // Detach: remove THIS APP's participant entry, never closes, never kills,
   // other attached surfaces are unaffected. Idempotent when not attached.
   const detach = useMutation({
     mutationFn: (sessionId: string) =>
       invoke("sessions.detach", { params: { sessionId }, body: { sessionId, surfaceId: APP_SURFACE_ID } }),
     onSuccess: async () => {
       await invalidateSessions();
-      toast({ title: "Detached — this app stops following this session; the session keeps running", tone: "info" });
+      toast({ title: "Detached: this app stops following this session; the session keeps running", tone: "info" });
     },
     onError: (error: unknown) => toast({ title: "Detach failed", description: formatError(error), tone: "danger" }),
   });
@@ -635,7 +635,7 @@ function SessionDetail({
     onError: (error: unknown) => toast({ title: "Cancel failed", description: formatError(error), tone: "danger" }),
   });
 
-  // App-local transcript export — a JSON file built from what the daemon
+  // App-local transcript export, a JSON file built from what the daemon
   // retained (the retention badge already discloses any truncation).
   function exportTranscript() {
     const payload = { exportedAt: new Date().toISOString(), session: record.raw, messages: items.map((m) => m.raw) };
@@ -687,7 +687,7 @@ function SessionDetail({
               type="button"
               className="sessions-action"
               disabled={closeSession.isPending}
-              title="Close — keeps history, reopenable"
+              title="Close: keeps history, reopenable"
               onClick={() => closeSession.mutate(record.id)}
             >
               {closeSession.isPending ? "Closing…" : "Close"}
@@ -708,7 +708,7 @@ function SessionDetail({
             type="button"
             className="sessions-action"
             disabled={detach.isPending}
-            title="Stop this app from following this session — never stops the session itself"
+            title="Stop this app from following this session; never stops the session itself"
             onClick={() => detach.mutate(record.id)}
           >
             <Unlink size={13} aria-hidden="true" /> {detach.isPending ? "Detaching…" : "Detach"}

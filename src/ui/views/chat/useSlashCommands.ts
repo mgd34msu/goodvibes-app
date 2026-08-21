@@ -1,14 +1,14 @@
 // The three extra composer slash commands (docs/GAPS.md §1 row 31/36):
-//  · /note <text>   — save text to the app-local notes registry (chat-local.ts
+//  · /note <text>  , save text to the app-local notes registry (chat-local.ts
 //    saveChatNote), toast with a jump link into Documents → Packets & notes.
-//  · /keep           — promote the last assistant reply to durable memory
+//  · /keep          , promote the last assistant reply to durable memory
 //    (memory.records.add), gated by the shared ConfirmSurface ("admin
-//    confirm" per the task brief — memory.records.add is not daemon-flagged
+//    confirm" per the task brief, memory.records.add is not daemon-flagged
 //    dangerous, so this is a UI-side confirmation step, same idiom the
 //    channels catalog uses for every invoke regardless of its dangerous flag).
-//  · /imagine <prompt> — media.generate, then an inline preview appended to
+//  · /imagine <prompt>, media.generate, then an inline preview appended to
 //    the transcript as a LOCAL message (never sent to the daemon as a real
-//    chat turn — there is nothing for the model to do with an image prompt
+//    chat turn, there is nothing for the model to do with an image prompt
 //    in a text turn). Honest limitation: this local message does not survive
 //    reload/other clients, same as this app's other client-only affordances
 //    (bookmarks, input history).
@@ -38,7 +38,7 @@ function splitSlashCommand(body: string): { command: string; rest: string } {
 }
 
 /** True when `body` (already known to start with "/") is one of this hook's
- * three commands — callers should check this BEFORE their own new/clear/help
+ * three commands, callers should check this BEFORE their own new/clear/help
  * handling so an unrecognized "/foo" still falls through to a normal send. */
 export function isExtraSlashCommand(body: string): boolean {
   return RECOGNIZED_COMMANDS.has(splitSlashCommand(body).command);
@@ -69,7 +69,7 @@ export interface UseSlashCommandsOptions {
 
 export interface UseSlashCommandsResult {
   /** Handles /note, /keep, /imagine; returns true when `body` matched one of
-   * them (the caller should stop — nothing more to send as a chat message). */
+   * them (the caller should stop, nothing more to send as a chat message). */
   tryHandle: (body: string) => boolean;
   keepConfirmOpen: boolean;
   keepPreview: string;
@@ -126,7 +126,7 @@ export function useSlashCommands({
       const result = await invoke("media.generate", { body: { prompt: vars.prompt } });
       const artifactId = artifactIdFromGenerateResult(result);
       if (!artifactId) {
-        throw new Error("media.generate did not return an artifact id — nothing to preview.");
+        throw new Error("media.generate did not return an artifact id; nothing to preview.");
       }
       const path = gv.artifacts.contentPath(artifactId);
       const res = await appFetch(path);
@@ -142,7 +142,7 @@ export function useSlashCommands({
           id: localMessageId("assistant"),
           sessionId: activeSessionId,
           role: "assistant",
-          content: `![${vars.prompt.replace(/[[\]]/g, "")}](${url})\n\n_Generated via \`/imagine\` — local preview only, not sent to this chat's daemon session. Artifact id \`${artifactId}\`; open Artifacts to keep it._`,
+          content: `![${vars.prompt.replace(/[[\]]/g, "")}](${url})\n\n_Generated via \`/imagine\`, local preview only, not sent to this chat's daemon session. Artifact id \`${artifactId}\`; open Artifacts to keep it._`,
           createdAt: Date.now(),
           deliveryState: "sent",
         },

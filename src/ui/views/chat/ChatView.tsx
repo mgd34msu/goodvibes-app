@@ -1,10 +1,10 @@
-// ChatView — the Wave A assembly of the chat modules in this directory:
+// ChatView, the Wave A assembly of the chat modules in this directory:
 // session rail (useChatSessions) + transcript (MessageList over honest
 // lineage) + live stream (useChatStream) + Composer (useChatSend). Ported
 // from goodvibes-webui src/views/ChatView.tsx and re-shaped for this app's
 // single-view layout (the webui kept the session rail in its global sidebar;
 // here the rail is part of the view). Active session id persists via
-// localStorage (companion-chat.ts) — not the URL — so the keep-alive view
+// localStorage (companion-chat.ts), not the URL, so the keep-alive view
 // survives shell navigation without cross-hook URL-state races.
 
 import {
@@ -53,6 +53,7 @@ import {
   messageInReplyTo,
   messageText,
   messageTone,
+  type TurnState,
 } from "./message-utils.ts";
 import { buildLineage } from "./lineage.ts";
 import { providerOptionsFromResponse } from "./provider-models.ts";
@@ -116,7 +117,7 @@ export function ChatView() {
 
   // This view is keep-alive (AppShell mounts it with display:none + inert
   // while another view is active, never unmounts it) so its own polling
-  // needs its own visibility signal — React Query's refetchInterval only
+  // needs its own visibility signal, React Query's refetchInterval only
   // pauses on document/window visibility, not on an ancestor's display:none
   // (checklist item 18: no polling loops while a view is hidden).
   const [viewVisible, setViewVisible] = useState(true);
@@ -134,7 +135,7 @@ export function ChatView() {
   const activeSessionIdRef = useRef(activeSessionId);
   activeSessionIdRef.current = activeSessionId;
   // Composer draft persists per session across an app restart, not just a
-  // view switch inside the keep-alive tree (checklist item 1) —
+  // view switch inside the keep-alive tree (checklist item 1),
   // chat-local.ts's readDraft/writeDraft key on the session id ("" for the
   // not-yet-created new-chat draft) so switching sessions never leaks one
   // session's unsent text into another's box either.
@@ -143,7 +144,7 @@ export function ChatView() {
   draftRef.current = draft;
   const draftHistory = useDraftHistory(draft);
 
-  // Debounced persistence while typing — the session id is captured at the
+  // Debounced persistence while typing, the session id is captured at the
   // time of the change (schedule time), not when the timer fires, so a
   // session switch mid-debounce can never write a stale draft into the new
   // session's slot.
@@ -156,7 +157,7 @@ export function ChatView() {
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [artifactRefs, setArtifactRefs] = useState<AttachedArtifactRef[]>([]);
   const [liveText, setLiveText] = useState("");
-  const [turnState, setTurnState] = useState("idle");
+  const [turnState, setTurnState] = useState<TurnState>("idle");
   const [turnError, setTurnError] = useState("");
   const [localMessages, setLocalMessages] = useState<LocalCompanionMessage[]>([]);
   const [pendingUserMessageId, setPendingUserMessageId] = useState("");
@@ -176,7 +177,7 @@ export function ChatView() {
     // Flush the outgoing session's draft immediately (the debounce effect
     // above would eventually do it too, but not before the incoming
     // session's own saved draft below needs to load) and load the
-    // incoming session's own saved draft — never the outgoing session's.
+    // incoming session's own saved draft, never the outgoing session's.
     writeDraft(activeSessionIdRef.current, draftRef.current);
     setActiveSessionIdState(sessionId);
     writeStoredActiveSessionId(sessionId);
@@ -212,7 +213,7 @@ export function ChatView() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.chatMessages(sessionId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.chatSessions }),
-        // ContextUsageChip's fetch-once cache — this is every place a turn
+        // ContextUsageChip's fetch-once cache, this is every place a turn
         // settles (completed/cancelled/error) or the stream resyncs after a
         // drop, so the chip refreshes "after each completed turn", never on
         // an interval (A2 brief).
@@ -229,8 +230,8 @@ export function ChatView() {
     queryFn: () => gv.chat.messages.list(activeSessionId),
     retry: (failureCount, error) => !isSessionNotFoundError(error) && failureCount < 2,
     // An active or syncing turn polls as the fallback for anything the live
-    // stream misses (this port's stream reconnects forever — no paused
-    // state) — but only while this keep-alive view is actually the one on
+    // stream misses (this port's stream reconnects forever, no paused
+    // state), but only while this keep-alive view is actually the one on
     // screen (checklist item 18).
     refetchInterval:
       (ACTIVE_TURN_STATES.includes(turnState) || turnState === "syncing") && viewVisible ? 1000 : false,
@@ -263,7 +264,7 @@ export function ChatView() {
     }
     // Long-turn desktop notification (docs/UX.md §4, docs/GAPS.md §1 row 41).
     // lib/notify-bridge.ts only watches the approvals/tasks query caches, so
-    // companion-chat turns need their own hook — this is it, metadata-only
+    // companion-chat turns need their own hook, this is it, metadata-only
     // (title + viewId, never the reply text) same as that bridge's contract.
     if (shouldNotifyLongTurn(elapsedMs)) {
       void appJson("/app/notifications/notify", {
@@ -313,7 +314,7 @@ export function ChatView() {
     setPendingUserMessageId,
     invalidateChatState,
     turnState,
-    // 'idle'/'connecting' are not drops — only a lost stream demotes the send.
+    // 'idle'/'connecting' are not drops, only a lost stream demotes the send.
     streamHealthy: streamHealth !== "reconnecting",
     createDefaults,
     notifySteerFallback: (message) => toast({ title: "Steer unavailable", description: message, tone: "warning" }),
@@ -370,15 +371,15 @@ export function ChatView() {
   // --- fork a chat (docs/GAPS.md §1 row 40) ----------------------------------
   // companion.chat.sessions.create's inputSchema only accepts title/model/
   // provider/systemPrompt (verified against the pinned SDK's operator
-  // contract — no messages/seed field), and companion.chat.messages.create
-  // always posts a real user turn with no "seed without replying" mode — so
+  // contract, no messages/seed field), and companion.chat.messages.create
+  // always posts a real user turn with no "seed without replying" mode, so
   // there is no wire path to replay the source transcript into the new
   // session. This creates the new session (carrying over provider/model) and
   // is honest about the rest: a local-only note explains the fork starts
   // fresh, matching FEATURES.md's own documented caveat for this row.
   const forkChat = useMutation({
     mutationFn: async () => {
-      if (!activeSessionId) throw new Error("Open a chat first — there is nothing to fork.");
+      if (!activeSessionId) throw new Error("Open a chat first; there is nothing to fork.");
       const sourceTitle = activeSessionTitle;
       const created = await gv.chat.sessions.create({
         title: `Fork of ${sourceTitle}`.slice(0, 120),
@@ -412,12 +413,12 @@ export function ChatView() {
           id: `fork-note-${Date.now()}`,
           sessionId: newSessionId,
           role: "assistant",
-          content: `_Forked from "${sourceTitle}". Companion chat has no wire-level transcript replay, so this chat starts fresh — nothing from the original is sent to the model here._`,
+          content: `_Forked from "${sourceTitle}". Companion chat has no wire-level transcript replay, so this chat starts fresh; nothing from the original is sent to the model here._`,
           createdAt: Date.now(),
           deliveryState: "sent",
         },
       ]);
-      toast({ title: "Forked chat", description: "New chat starts fresh — see the note at the top.", tone: "success" });
+      toast({ title: "Forked chat", description: "New chat starts fresh; see the note at the top.", tone: "success" });
       void queryClient.invalidateQueries({ queryKey: queryKeys.chatSessions });
     },
     onError: (error: unknown) => toast({ title: "Fork failed", description: formatError(error), tone: "danger" }),
@@ -457,8 +458,8 @@ export function ChatView() {
       // Prefer the daemon's explicit pairing when it carries one: queue-
       // when-busy sends and steer jumping the queue both break the "any
       // LATER assistant message is this one's reply" positional heuristic
-      // below (a queued send's own reply can land after — or a steer's
-      // reply can land before — an unrelated turn's). Fall back to the
+      // below (a queued send's own reply can land after, or a steer's
+      // reply can land before, an unrelated turn's). Fall back to the
       // timestamp heuristic only when the daemon sends no inReplyTo at all.
       if (inReplyTo) return inReplyTo === pendingUserMessageId;
       return messageCreatedAt(message) >= pendingCreatedAt;
@@ -549,7 +550,7 @@ export function ChatView() {
           return;
         }
         // /image (docs/GAPS.md §1 row 35): alias into the existing attachment
-        // flow — opens the file picker filtered to images, same chip path as
+        // flow, opens the file picker filtered to images, same chip path as
         // drag-drop/paste-image (row 10) once a file is chosen.
         if (slash === "image") {
           setDraft("");
@@ -629,7 +630,7 @@ export function ChatView() {
   );
 
   const submitSteer = useCallback(() => {
-    // Slash commands are app-local (never a real turn to interrupt) — a
+    // Slash commands are app-local (never a real turn to interrupt), a
     // steer of "/help" makes no sense, so those still go through the plain
     // send path, which already special-cases them.
     if (draft.trim().startsWith("/")) {
@@ -943,7 +944,7 @@ export function ChatView() {
               aria-label="Fork this chat"
               title={
                 activeSessionId
-                  ? "Fork this chat: creates a new chat (same provider/model); starts fresh — no wire replay of this transcript"
+                  ? "Fork this chat: creates a new chat (same provider/model); starts fresh; no wire replay of this transcript"
                   : "Open a chat first"
               }
               disabled={!activeSessionId || forkChat.isPending}

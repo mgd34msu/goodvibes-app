@@ -1,5 +1,5 @@
 // Call multiplexer over the /app/ws bridge (src/bun side bridges to the
-// daemon's /api/control-plane/ws and sends the auth frame itself — the token
+// daemon's /api/control-plane/ws and sends the auth frame itself, the token
 // never enters the webview). UI wire protocol = daemon protocol minus auth:
 //   send    {type:'call', id, methodId, body?, query?}
 //           {type:'subscribe'|'unsubscribe', domains}
@@ -7,10 +7,10 @@
 //           {type:'event', event, payload}
 //           {type:'auth', ok} (informational)
 // WebSocket upgrades cannot carry the x-gv-app header, so we first fetch a
-// one-shot ticket from WS_TICKET_PATH (GET /app/ws-ticket — a normal appFetch
+// one-shot ticket from WS_TICKET_PATH (GET /app/ws-ticket, a normal appFetch
 // request that CAN carry it) and pass it as ?ticket=. The bun side REQUIRES
 // the ticket (ws-bridge.ts handleUpgrade 403s without one), so a failed
-// ticket fetch is a failed connect — surfaced as bridge-unavailable.
+// ticket fetch is a failed connect, surfaced as bridge-unavailable.
 
 import { appFetch } from "./http.ts";
 import { HttpError } from "./http.ts";
@@ -41,7 +41,7 @@ const eventListeners = new Set<EventListener>();
 const subscribedDomains = new Set<string>();
 
 function bridgeUnavailable(detail: string): HttpError {
-  // Shaped so errors.ts classifiers see a code — never a bare string.
+  // Shaped so errors.ts classifiers see a code, never a bare string.
   return new HttpError(
     503,
     "/app/ws",
@@ -105,7 +105,7 @@ function handleMessage(raw: unknown): void {
     for (const listener of eventListeners) listener(event, record["payload"]);
     return;
   }
-  // 'auth' frames are informational — the bridge already authenticated.
+  // 'auth' frames are informational, the bridge already authenticated.
 }
 
 function connect(): Promise<WebSocket> {
@@ -232,7 +232,7 @@ export function wsSubscribe(domains: string[], listener: EventListener): () => v
 
   return () => {
     eventListeners.delete(listener);
-    // Domains stay subscribed for the session — other listeners may share them
+    // Domains stay subscribed for the session, other listeners may share them
     // and re-subscription churn on the daemon is worse than a few spare frames.
   };
 }

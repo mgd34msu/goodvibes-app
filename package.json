@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "GoodVibes desktop app — the unified GUI for the GoodVibes ecosystem (tui + agent feature set) on Bun + Electrobun.",
+  "description": "GoodVibes desktop app: the unified GUI for the GoodVibes ecosystem (tui + agent feature set) on Bun + Electrobun.",
   "license": "MIT",
   "packageManager": "bun@1.3.14",
   "engines": {

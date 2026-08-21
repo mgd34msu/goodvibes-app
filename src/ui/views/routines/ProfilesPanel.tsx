@@ -1,4 +1,4 @@
-// Profiles — docs/FEATURES.md §8 row 7. Named app-level preset bundles over
+// Profiles, docs/FEATURES.md §8 row 7. Named app-level preset bundles over
 // the existing "profiles" registry collection (server-side store already
 // generic across collections; no bun-side work needed here). A profile
 // stores a persona snapshot + an informational skills list + a VIBE.md
@@ -6,12 +6,12 @@
 // defaults so a user does not start from a blank form.
 //
 // HONEST SCOPE (the row's own ask, answered directly in the UI copy):
-// activating a profile does exactly two things — (1) makes its embedded
+// activating a profile does exactly two things, (1) makes its embedded
 // persona the single active persona in the Personas registry (creating or
 // updating a persona named after the profile), and (2) overwrites the real
 // VIBE.md file with the profile's saved content. That is the full blast
 // radius. "Isolated app homes" (separate GOODVIBES_APP_HOME roots) are a
-// goodvibes-tui/daemon concept this app does not implement — the skills list
+// goodvibes-tui/daemon concept this app does not implement, the skills list
 // is shown for reference only and is NOT auto-enabled/disabled on activate.
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -54,7 +54,7 @@ const TEMPLATES: ProfileTemplate[] = [
     label: "Dev",
     icon: <Code2 size={14} aria-hidden="true" />,
     description: "Heads-down implementation: read the diff, make the smallest correct change, run the checks.",
-    personaDescription: "Focused implementation persona — terse, code-first, verifies before claiming done.",
+    personaDescription: "Focused implementation persona: terse, code-first, verifies before claiming done.",
     personaPrompt:
       "You are a focused software engineer. Prefer the smallest correct change over a rewrite. Read existing code and conventions before writing new code. Run typecheck/tests/build before declaring anything done. State assumptions and open questions plainly instead of guessing silently.",
     skills: ["repo-search", "test-runner", "diff-review"],
@@ -66,7 +66,7 @@ const TEMPLATES: ProfileTemplate[] = [
     label: "Research",
     icon: <FlaskConical size={14} aria-hidden="true" />,
     description: "Wide-scan investigation: gather sources, cross-check claims, write up findings with citations.",
-    personaDescription: "Research persona — skeptical, source-grounded, distinguishes fact from inference.",
+    personaDescription: "Research persona: skeptical, source-grounded, distinguishes fact from inference.",
     personaPrompt:
       "You are a careful researcher. Gather multiple independent sources before asserting a claim as fact. Always separate what a source says from your own inference. Cite sources for every non-obvious claim. Flag contradictions between sources instead of silently picking one.",
     skills: ["web-search", "source-credibility", "citation-formatting"],
@@ -78,7 +78,7 @@ const TEMPLATES: ProfileTemplate[] = [
     label: "Writing",
     icon: <PenLine size={14} aria-hidden="true" />,
     description: "Prose drafting and editing: clear structure, plain language, consistent voice.",
-    personaDescription: "Writing persona — plain language, active voice, cuts filler.",
+    personaDescription: "Writing persona: plain language, active voice, cuts filler.",
     personaPrompt:
       "You are a clear, concise writer. Prefer plain language and active voice. Cut filler words and hedging. Structure long output with headings or lists when it helps a reader scan. Match the requested tone exactly rather than defaulting to a formal register.",
     skills: ["editing", "style-consistency"],
@@ -149,7 +149,7 @@ export function ProfilesPanel() {
   const [editor, setEditor] = useState<EditorTarget>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProfileItem | null>(null);
 
-  // Palette command scoped to this panel's own mount — only registered while
+  // Palette command scoped to this panel's own mount, only registered while
   // the Profiles tab is actually showing (item 19: keyboard access).
   useEffect(() => {
     registerCommand({
@@ -410,7 +410,7 @@ function ProfileEditorModal({
   const [draft, setDraft] = useState<ProfileDraft>(
     initialDraft ?? { name: "", description: "", template: "custom", personaDescription: "", personaPrompt: "", skillsText: "", vibeContent: "" },
   );
-  // Closing a dirty form asks first instead of silently discarding it — item
+  // Closing a dirty form asks first instead of silently discarding it, item
   // 1 (closing warns) from the friction checklist's registry-editor callout.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 

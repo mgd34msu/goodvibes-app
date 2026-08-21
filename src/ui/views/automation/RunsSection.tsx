@@ -1,5 +1,5 @@
 // Automation run history (docs/FEATURES.md §5 "Runs: list/get/cancel/retry").
-// Statuses are rendered VERBATIM (queued|running|completed|failed|cancelled —
+// Statuses are rendered VERBATIM (queued|running|completed|failed|cancelled,
 // an open daemon vocabulary); the status filter chips are derived from the
 // statuses actually present, never a hardcoded enum. Duration comes from the
 // daemon's durationMs when present, else endedAt - startedAt.
@@ -25,7 +25,7 @@ import {
   type RunRecord,
 } from "./automation-model.ts";
 
-/** Affordance heuristics only — the daemon remains the judge; a rejected
+/** Affordance heuristics only, the daemon remains the judge; a rejected
  * cancel/retry surfaces its verbatim error in a toast. */
 const CANCELLABLE = new Set(["queued", "running"]);
 const RETRIABLE = new Set(["failed", "cancelled", "completed"]);
@@ -72,7 +72,7 @@ export function RunsSection({ jobNames }: { jobNames: ReadonlyMap<string, string
 
   const list = useQuery({
     queryKey: automationKeys.runs,
-    // No automation domain on the invalidation stream — poll while visible.
+    // No automation domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke("automation.runs.list"),
     refetchInterval: AUTOMATION_POLL_MS,
   });
@@ -217,7 +217,7 @@ export function RunsSection({ jobNames }: { jobNames: ReadonlyMap<string, string
   );
 }
 
-// ─── Detail peek — GET /api/automation/runs/{id} → { run, deliveries } ───────
+// ─── Detail peek, GET /api/automation/runs/{id} → { run, deliveries } ───────
 
 function RunDetailPanel({ runId, jobNames }: { runId: string; jobNames: ReadonlyMap<string, string> }) {
   const detail = useQuery({

@@ -10,11 +10,11 @@
 // doesn't (wire-or-delete: every method is invoked for real).
 //
 // `state.upsert` and `language.upsert` accept a rich partial-object shape
-// (ProjectPlanningState / ProjectPlanningLanguageArtifact — goal, scope,
+// (ProjectPlanningState / ProjectPlanningLanguageArtifact, goal, scope,
 // assumptions, constraints, risks, tasks, dependencies, verification gates,
 // agent assignments, terms, ambiguities…) too large to hand-author a
 // dedicated field per key. Rather than lock the UI to a guessed subset, both
-// editors are a JSON textarea prefilled with the current record — every
+// editors are a JSON textarea prefilled with the current record, every
 // field the daemon accepts is reachable, not just the ones this view picked.
 // Work-plan tasks, by contrast, have small well-typed CRUD bodies, so those
 // get real structured forms (the "kanban-ish checklist UI" docs/UX.md calls
@@ -175,7 +175,7 @@ function StateSection({ requestConfirm }: { requestConfirm: (action: PendingActi
           </>
         ) : (
           <div className="knowledge-form">
-            <JsonParamsField value={draft} onChange={setDraft} label="State (JSON — replaces the fields you include)" />
+            <JsonParamsField value={draft} onChange={setDraft} label="State (JSON: replaces the fields you include)" />
             <div className="knowledge-form__split">
               <button
                 type="button"
@@ -866,7 +866,7 @@ export function PlanningPanel() {
     return (
       <UnavailableState
         capability={`${PP}.status`}
-        description="this daemon has no project-planning surface configured — state, language, decisions, evaluate, and the work plan all depend on it."
+        description="this daemon has no project-planning surface configured; state, language, decisions, evaluate, and the work plan all depend on it."
       />
     );
   }

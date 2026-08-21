@@ -1,4 +1,4 @@
-// Documents view data layer (docs/FEATURES.md §11) — app-local registries:
+// Documents view data layer (docs/FEATURES.md §11), app-local registries:
 //  · documents collection ({id,title,headVersion,…}) with the versions
 //    sub-endpoint (GET → {versions:[{v,createdAt,content}]}, POST {content,
 //    label?} appends a version and updates the head item).
@@ -28,7 +28,7 @@ export const docKeys = {
   allNotes: ["documents-registry", "all-notes"] as const,
 };
 
-/** Epoch millis from a numeric or ISO-string timestamp field — the app-local
+/** Epoch millis from a numeric or ISO-string timestamp field, the app-local
  * registry store writes ISO strings (src/bun/registries/store.ts nowIso), so
  * lib/wire.ts firstNumber alone would drop every createdAt/updatedAt. */
 export function firstTimestamp(value: unknown, keys: string[]): number | undefined {
@@ -132,9 +132,9 @@ export interface DocComment {
    * the draft as a new version; Reject just resolves the comment without
    * applying it. Absent on plain comments (imported or hand-entered). */
   suggestion: string;
-  /** Opaque range descriptor — carried through verbatim, never parsed here. */
+  /** Opaque range descriptor, carried through verbatim, never parsed here. */
   range: unknown;
-  /** "accepted" | "rejected" | "" — set once a suggestion is actioned. */
+  /** "accepted" | "rejected" | "", set once a suggestion is actioned. */
   resolution: string;
   raw: AnyRecord;
 }
@@ -235,7 +235,7 @@ export function exportFilename(title: string): string {
   return `${slug}.md`;
 }
 
-/** UTF-8 safe base64 (btoa alone corrupts non-Latin-1 text) — used by the
+/** UTF-8 safe base64 (btoa alone corrupts non-Latin-1 text), used by the
  * export-to-artifact flow (docs/GAPS.md §11 row 3). */
 export function base64FromText(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -249,7 +249,7 @@ export function base64FromText(text: string): string {
 
 // ─── Upload (docs/GAPS.md §11 row 3) ─────────────────────────────────────────
 
-/** Read a File's contents as text client-side — no wire round-trip. */
+/** Read a File's contents as text client-side, no wire round-trip. */
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

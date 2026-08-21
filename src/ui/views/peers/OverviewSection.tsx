@@ -1,7 +1,7 @@
-// Overview — remote.snapshot (docs/FEATURES.md §21 row 1). Renders the
+// Overview, remote.snapshot (docs/FEATURES.md §21 row 1). Renders the
 // runtime health snapshot honestly: daemon transport, the ACP bridge, the
 // sandbox/runner registry, the local supervisor, and the distributed
-// counts (peers/pair requests/work) plus a recent-audit trail — there is no
+// counts (peers/pair requests/work) plus a recent-audit trail, there is no
 // dedicated `remote.audit.*` list method, so this is the only place the
 // audit trail is visible at all.
 

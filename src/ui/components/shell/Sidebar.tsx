@@ -1,4 +1,4 @@
-// Left sidebar — six groups (docs/UX.md §2), collapsible to a 60px icon
+// Left sidebar, six groups (docs/UX.md §2), collapsible to a 60px icon
 // rail, lucide icons, aria-labels on every icon-only control. Collapse state
 // persists to localStorage.
 
@@ -20,7 +20,7 @@ export function writeSidebarCollapsed(collapsed: boolean): void {
   try {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
   } catch {
-    // localStorage unavailable — collapse state just won't persist.
+    // localStorage unavailable, collapse state just won't persist.
   }
 }
 

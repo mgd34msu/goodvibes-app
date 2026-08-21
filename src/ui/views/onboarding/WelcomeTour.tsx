@@ -1,5 +1,5 @@
 // Coach-mark renderer for the first-run UI tour (docs/GAPS.md §22 row 7).
-// Renders OVER the real, still-mounted shell (no dark full-screen backdrop —
+// Renders OVER the real, still-mounted shell (no dark full-screen backdrop,
 // that would hide the very sidebar/status-strip it's pointing at): a small
 // spotlight ring around the target element plus a positioned card. Pure
 // client-side; the "seen" flag is the only persistence (tour.ts).

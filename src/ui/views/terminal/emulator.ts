@@ -1,6 +1,6 @@
-// Compact ANSI/VT terminal emulator — a deliberately REDUCED implementation
+// Compact ANSI/VT terminal emulator, a deliberately REDUCED implementation
 // (docs/FEATURES.md §15). It is not a full vt100: it covers the sequences an
-// interactive shell and common tools actually emit — printable text with
+// interactive shell and common tools actually emit, printable text with
 // auto-wrap, CR/LF/BS/TAB, SGR colors (16 / 256 / truecolor, bold/dim/underline/
 // inverse), cursor addressing (CUP/CUU/CUD/CUF/CUB/CHA/VPA), erase display/line,
 // insert/delete lines & chars, scroll region, save/restore cursor, alt-screen
@@ -126,7 +126,7 @@ export class TerminalEmulator {
       if (code === 0x1b) {
         const consumed = this.parseEscape(text, i);
         if (consumed === -1) {
-          // Incomplete sequence — stash the tail for the next write.
+          // Incomplete sequence, stash the tail for the next write.
           this.pending = text.slice(i);
           return;
         }
@@ -249,7 +249,7 @@ export class TerminalEmulator {
     if (kind === "[") return this.parseCsi(text, start);
     if (kind === "]") return this.parseOsc(text, start);
     if (kind === "(" || kind === ")" || kind === "*" || kind === "+") {
-      // Charset designation — consume selector byte, ignore.
+      // Charset designation, consume selector byte, ignore.
       if (start + 2 >= text.length) return -1;
       return start + 3;
     }

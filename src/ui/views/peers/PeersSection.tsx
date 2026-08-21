@@ -1,11 +1,11 @@
-// Peers — remote.peers.list/disconnect/token.rotate/token.revoke (docs/FEATURES.md
+// Peers, remote.peers.list/disconnect/token.rotate/token.revoke (docs/FEATURES.md
 // §21 row 2). Master list + right detail peek (fleet/approvals idiom). All
 // four mutations are admin-scoped on the wire; disconnect gets a plain admin
 // confirm, token rotate/revoke get a DANGER confirm because both immediately
 // break the peer's ability to reconnect (rotate invalidates the OLD token the
 // instant the NEW one is issued; revoke has no automatic replacement).
 //
-// No `remote.peers.get` exists — the detail peek reads the same cached
+// No `remote.peers.get` exists, the detail peek reads the same cached
 // `remote.peers.list` query via TanStack Query's `select`, so it updates
 // live on every 20s poll and immediately after any mutation invalidates the
 // shared "peers" prefix, without a second network call.
@@ -72,7 +72,7 @@ export function PeersSection() {
     onSuccess: async () => {
       setRotateTarget(null);
       await invalidate();
-      toast({ title: "Token rotated — the peer's previous token no longer works", tone: "success" });
+      toast({ title: "Token rotated; the peer's previous token no longer works", tone: "success" });
     },
     onError: (error: unknown) => {
       toast({ title: "Token rotation failed (admin scope required)", description: formatError(error), tone: "danger" });
@@ -85,7 +85,7 @@ export function PeersSection() {
     onSuccess: async () => {
       setRevokeTarget(null);
       await invalidate();
-      toast({ title: "Token revoked — the peer can no longer authenticate", tone: "info" });
+      toast({ title: "Token revoked; the peer can no longer authenticate", tone: "info" });
     },
     onError: (error: unknown) => {
       toast({ title: "Token revocation failed (admin scope required)", description: formatError(error), tone: "danger" });
@@ -142,7 +142,7 @@ export function PeersSection() {
         <EmptyState
           icon={<Network size={28} aria-hidden="true" />}
           title="No peers connected"
-          description="Peers are other goodvibes nodes or companion devices paired to this daemon over the network — they can send status updates and pull queued work. On a single-node install there are none by default; approve a pairing request below to connect one."
+          description="Peers are other goodvibes nodes or companion devices paired to this daemon over the network; they can send status updates and pull queued work. On a single-node install there are none by default; approve a pairing request below to connect one."
         />
       )}
 
@@ -206,7 +206,7 @@ export function PeersSection() {
         open={rotateTarget !== null}
         action="Rotate peer token"
         target={rotateTarget ? `${rotateTarget.label} (${rotateTarget.id})` : ""}
-        blastRadius="A new token is issued for this peer and its current token is invalidated in the same action. The peer must adopt the new token to reconnect — anything still using the old token starts failing immediately."
+        blastRadius="A new token is issued for this peer and its current token is invalidated in the same action. The peer must adopt the new token to reconnect; anything still using the old token starts failing immediately."
         danger
         confirmLabel="Rotate token"
         onConfirm={(meta) => {
@@ -218,8 +218,8 @@ export function PeersSection() {
       <ConfirmSurface
         open={revokeTarget !== null}
         action="Revoke peer token"
-        target={revokeTarget ? `${revokeTarget.tokenLabel} — ${revokeTarget.peer.label}` : ""}
-        blastRadius="This token stops authenticating immediately and permanently — there is no automatic replacement. The peer loses access until an operator rotates a new token for it."
+        target={revokeTarget ? `${revokeTarget.tokenLabel}: ${revokeTarget.peer.label}` : ""}
+        blastRadius="This token stops authenticating immediately and permanently; there is no automatic replacement. The peer loses access until an operator rotates a new token for it."
         danger
         confirmLabel="Revoke token"
         onConfirm={(meta) => {
@@ -231,7 +231,7 @@ export function PeersSection() {
   );
 }
 
-// ─── Detail peek — reads the same cached list query, no extra request ──────
+// ─── Detail peek, reads the same cached list query, no extra request ──────
 
 function PeerDetailContent({
   peerId,

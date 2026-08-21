@@ -1,13 +1,13 @@
-// Cost analytics — docs/FEATURES.md §17: app-local 4-bucket token accounting
+// Cost analytics, docs/FEATURES.md §17: app-local 4-bucket token accounting
 // (input/output/cache-read/cache-write) + an "Ephemeral" project-rollup
 // bucket, dated pricing (cost-engine.ts), dedup, per-project/session/provider
 // rollups, a budget-threshold banner reading config key
 // GOODVIBES_COST_BUDGET_USD, and a token/context console. Sources:
 // providers.usage.get per known provider + telemetry.events.list (usage-
-// shaped events) — merged, deduped by messageId|requestId, then rolled up.
+// shaped events), merged, deduped by messageId|requestId, then rolled up.
 //
 // Every total is FRAMED (docs/UX.md Principle #2: "every number has a label
-// and a frame of reference") — never a bare digit. Unpriced-model usage is
+// and a frame of reference"), never a bare digit. Unpriced-model usage is
 // called out explicitly rather than silently costed at $0.
 
 import { useMemo } from "react";
@@ -40,7 +40,7 @@ const BUDGET_CONFIG_KEY = "GOODVIBES_COST_BUDGET_USD";
 
 function readBudgetUsd(configPayload: unknown): number | undefined {
   const record = asRecord(configPayload);
-  // Try flat top-level, then a couple of plausible nested shapes — config.get's
+  // Try flat top-level, then a couple of plausible nested shapes, config.get's
   // exact envelope isn't pinned for this daemon build.
   const direct = firstNumber(record, [BUDGET_CONFIG_KEY]);
   if (direct !== undefined) return direct;
@@ -72,7 +72,7 @@ function RollupTable({ title, rows, labelHeader }: { title: string; rows: Rollup
                 <td>
                   {row.key}
                   {row.key === EPHEMERAL_PROJECT_LABEL && (
-                    <span className="obs-cost-rollup__note" title="Sessions with no stable project identity — grouped here instead of inflating a named project.">
+                    <span className="obs-cost-rollup__note" title="Sessions with no stable project identity, grouped here instead of inflating a named project.">
                       {" "}
                       (no stable project id)
                     </span>
@@ -81,7 +81,7 @@ function RollupTable({ title, rows, labelHeader }: { title: string; rows: Rollup
                 <td>{formatTokenCount(bucketsTotal(row.tokens))}</td>
                 <td>
                   {formatUsd(row.costUsd)}
-                  {row.hasUnpriced && <span title="Includes usage from an unrecognized model — true cost may be higher.">*</span>}
+                  {row.hasUnpriced && <span title="Includes usage from an unrecognized model; true cost may be higher.">*</span>}
                 </td>
                 <td>{row.recordCount}</td>
               </tr>
@@ -113,7 +113,7 @@ export function CostSection() {
   const events = useQuery({
     queryKey: obsKeys.telemetryEvents({}),
     queryFn: () => gv.invoke("telemetry.events.list"),
-    // No wire event for telemetry — floor poll while cost analytics is visible.
+    // No wire event for telemetry, floor poll while cost analytics is visible.
     refetchInterval: 30_000,
     retry: false,
   });
@@ -181,7 +181,7 @@ export function CostSection() {
       {eventsUnavailable && providerIds.length === 0 && (
         <UnavailableState
           capability="telemetry.events.list"
-          description="neither telemetry usage events nor any provider usage summary are available — cost analytics has nothing to compute from."
+          description="neither telemetry usage events nor any provider usage summary are available; cost analytics has nothing to compute from."
         />
       )}
 
@@ -219,7 +219,7 @@ export function CostSection() {
 
           {total.hasUnpriced && (
             <p className="obs-cost__unpriced-note">
-              * Some usage used a model this app's pricing table doesn't recognize — its contribution is counted as
+              * Some usage used a model this app's pricing table doesn't recognize, its contribution is counted as
               $0, so the true total may be higher.
             </p>
           )}

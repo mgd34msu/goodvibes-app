@@ -1,10 +1,10 @@
-// Cost attribution — cost.attribution.get (WS-only). Distinct from the Cost
+// Cost attribution, cost.attribution.get (WS-only). Distinct from the Cost
 // & tokens tab's app-local 4-bucket engine (cost-engine.ts): this reads the
 // daemon's own windowed (24h/7d) cost attribution, grouped by dimension
 // (agent/tool/hook/mcp/model/provider/session), with cache-aware pricing.
 // Honest-unpriced per the contract: totalCostUsd is null when every
-// contributor is unpriced — never rendered as $0.00. costSource/pricingAsOf
-// ABSENT on pre-1.7 daemon records is an honest absence — the provenance
+// contributor is unpriced, never rendered as $0.00. costSource/pricingAsOf
+// ABSENT on pre-1.7 daemon records is an honest absence, the provenance
 // line renders nothing for it rather than guessing.
 
 import { useState } from "react";

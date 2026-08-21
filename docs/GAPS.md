@@ -1,14 +1,14 @@
-# goodvibes-app — Parity Gap Audit
+# goodvibes-app: parity gap audit
 
 Row-by-row audit of `docs/FEATURES.md` against the code. Original audit at commit
 `b2ca124`; refreshed after the Wave E gap-closure pass, after the Wave F pass, then
-**refreshed again after the Wave G pass** (five agents + integration gate) — Wave G
+**refreshed again after the Wave G pass** (five agents + integration gate). Wave G
 closures are marked `(Wave G)` in their evidence cell and the counts below reflect the
 post-Wave-G working tree (SDK upgraded to `@pellux/goodvibes-sdk@1.3.3`), verified against
 the tree by the integration gate (not trusted from agent reports).
 Wave F also fixed two arithmetic errors in the prior summary table (§14 was listed 8/1/4
-but its rows count 9/1/3; §15 was listed 6/3/3 but its rows count 7/3/2 — the section-text
-tallies were right, the summary table was not). Method: for each row, the Backing method id was checked against
+but its rows count 9/1/3; §15 was listed 6/3/3 but its rows count 7/3/2. The section-text
+tallies were right, the summary table was not. Method: for each row, the Backing method id was checked against
 every literal string passed to `invoke(...)` / `streamPath(...)` in `src/ui`
 (220 unique method ids actually called, out of 327 known in
 `src/ui/lib/generated/operator-routes.ts`), then the calling component was
@@ -17,8 +17,8 @@ in `gv.ts`'s convenience wrapper, which wraps some methods that no view ends
 up calling). `app-local`/`RPC` rows were checked against the actual Bun route
 (`src/bun/app-routes.ts` and its handlers) and the UI module implementing them.
 
-Legend: **SHIPPED** — wired end-to-end with cited evidence. **PARTIAL** — some
-of the row exists, the rest doesn't (both halves cited). **MISSING** — no
+Legend: **SHIPPED.** Wired end-to-end with cited evidence. **PARTIAL.** Some
+of the row exists, the rest doesn't (both halves cited). **MISSING.** No
 evidence found; stated plainly, no inference.
 
 ---
@@ -128,7 +128,7 @@ zero app-side changes, as designed — live-verified 2026-07-09: `fleet.snapshot
 nodes, `fleet.archiveFinished` answers with an honest zero-count toast, the Archived scope renders
 the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-11; Wave F closed row 5 (watcher start/run from fleet) and row 6 (task cancel/retry via `FleetTaskInline`). Wave G closed row 7 — the former "interrupt/kill/pause/resume" exclusion — by composing steer/interrupt(cancel queued input)/stop(close|detach)/resume(reopen) out of `sessions.*` verbs in `FleetAgentControl`, while stating plainly that no true freeze-and-thaw *pause* verb exists on the wire (nothing in the panel is ever labeled "Pause"). The section no longer carries an excluded row.
 
-## 4. Approvals & Tasks (9 rows)
+## 4. Approvals & tasks (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -211,7 +211,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 7 tally: 9 shipped, 0 partial, 0 missing.**
 
-## 8. Agent Brain (14 rows)
+## 8. Agent brain (14 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -262,7 +262,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 10 tally: 7 shipped, 0 partial, 0 missing.** Wave F closed row 7 (URL inspection over new `/app/local/fetch-preview` Bun route). Row 3 is now closed too: research runs are rebuilt on `tasks.create`-backed daemon tasks with real cancel/retry, and pre-task-era rows migrate into a read-only legacy section rather than being dropped or faked as task-backed.
 
-## 11. Documents & Compare (9 rows)
+## 11. Documents & compare (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -314,7 +314,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 13 tally: 15 shipped, 0 partial, 0 missing.** Wave E closed row 12; Wave F closed row 14 (dedicated per-target manage + test-send via `NotificationTargetsSection`). (Row 6 `agent_tools.invoke` remains list-only, as originally noted, folded into the shipped count as before.)
 
-## 14. Providers & Models (13 rows)
+## 14. Providers & models (13 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -334,7 +334,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 14 tally: 13 shipped, 0 partial, 0 missing.** Wave F closed all three provider holes around the (Wave-E) catalog: row 6 (failover posture, honest-degrade display), row 8 (custom-provider JSON CRUD over `/app/local/providers`), and row 9 (opt-in local-LLM scan over `/app/local/llm-scan`). The Wave G follow-up closed row 11 (subscription OAuth served app-side from `src/bun/subscriptions.ts` on the SDK's `SubscriptionManager` machinery, sharing the TUI's `subscriptions.json`). (Note: the prior summary table listed this section as 8/1/4 — an arithmetic error; the rows count 9/1/3 pre-Wave-F, 12/1/0 post-Wave-G, now 13/0/0.)
 
-## 15. Coding / Dev (12 rows)
+## 15. Coding / dev (12 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -392,7 +392,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 17 tally: 18 shipped, 0 partial, 0 missing.** The best-covered section in the audit — every row wired end-to-end.
 
-## 18. Voice & Media (9 rows)
+## 18. Voice & media (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -427,7 +427,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 19 tally: 12 shipped, 0 partial, 0 missing.**
 
-## 20. Security & Auth (9 rows)
+## 20. Security & auth (9 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -472,7 +472,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 22 tally: 9 shipped, 0 partial, 0 missing.** Wave E expanded onboarding into a first-run flow (welcome tour, permissions pick, import-bridge, QR pairing). Wave F closed the two remaining partials: row 4 (reasoning-effort step) and row 6 (gtk/webkit dependency check over new `/app/local/deps` Bun route).
 
-## 23. Command Palette & Keyboard (8 rows)
+## 23. Command palette & keyboard (8 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -487,7 +487,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 **Section 23 tally: 8 shipped, 0 partial, 0 missing.** Wave F closed row 3 (shortcut cheatsheet overlay) and row 4 (quick switcher).
 
-## 24. Notifications & Tray (4 rows)
+## 24. Notifications & tray (4 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -500,7 +500,7 @@ the empty archive, and `sessions.search` serves cleanly. Wave E closed rows 10-1
 
 ---
 
-## 25. Deliberate exclusions & honest gaps — accuracy check
+## 25. Deliberate exclusions & honest gaps: accuracy check
 
 Spot-checked every falsifiable claim in this section against the actual route table (`operator-routes.ts`, 327 methods) and the app's own code. Most entries are architectural/qualitative judgments that aren't independently checkable (and read as reasonable); three make **specific factual claims about what ships**, and those were verified directly:
 
@@ -598,27 +598,27 @@ wave + integration gate, live-verified against a spawned daemon 1.19.3.
 | — | **Total** | **319** | **2** | **0** | **2** | **323** |
 
 Section 3 gained row 13 (fleet archive) when SDK 1.6.1 / operator contract 1.6 added the
-`fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` verbs (2026-07-09) —
+`fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` verbs (2026-07-09),
 adopted same-day, so the total moved 288 → 289 with the row born SHIPPED.
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291 — a minor overcount, see §1 note). After Wave G, its subscriptions follow-up, and the companion-turn-cancel/steer close-out, **99.3% shipped, 0.7% partial, 0% missing** of audited rows (was 99.0% / 1.0% post-Wave-G-and-subscriptions, 98.6% / 1.4% post-Wave-G-proper, 96.5% / 3.1% / 0% post-Wave-F, 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave G closed six rows, verified against the tree by the integration gate (not trusted from agent reports): §15 row 11 (GitHub — device-flow + PAT auth, proxied reads, and SDK-backed PR/issue writes served app-locally from `src/bun/github.ts` on the SDK's `beginDeviceCodeFlow`/`pollDeviceCodeFlow` + `GitHubIntegration`, with `GitHubPanel` wired live to it), §3 row 7 (agent interrupt/stop/resume composed from `sessions.*` verbs in `FleetAgentControl`, with an honest note that no freeze-and-thaw *pause* verb exists — flipping the section's last EXCLUDED entry to shipped), §6 rows 15 and 17 (dedicated single-item `knowledge.schedule.get` / `knowledge.refinement.task.get` fetches), §8 row 12 (single combined "Learning review" curator in `MemoryView`), and §18 row 1 (one-shot `voice.tts` wired as the live streaming-TTS fallback). A new Bun surface `src/bun/github.ts` (registered `/app/github`, unit-covered by `test/github.test.ts`) backs the GitHub panel. **No MISSING rows remain, and no EXCLUDED rows remain.** A same-day follow-up closed §14 row 11 the same app-side way (subscription OAuth via `src/bun/subscriptions.ts` on the SDK's `SubscriptionManager`, sharing the TUI's `subscriptions.json`; `test/subscriptions.test.ts`). A further same-day close-out flipped §1 row 39 (companion-turn cancel) once daemon 1.11.0 served the app's own spec (`docs/turn-cancel-request.md`) for `companion.chat.turns.cancel` + `companion.chat.messages.steer`. The 2 remaining partials are each a named deliberate design choice, owner-confirmed 2026-07-07 (§15 row 3 read-only tags/remotes/reflog; §20 row 2 no in-chrome login form) — no partial remains wire-blocked. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
+288 rows audited against actual code (FEATURES.md's own row-count table claims 291, a minor overcount, see §1 note). After Wave G, its subscriptions follow-up, and the companion-turn-cancel/steer close-out, **99.3% shipped, 0.7% partial, 0% missing** of audited rows (was 99.0% / 1.0% post-Wave-G-and-subscriptions, 98.6% / 1.4% post-Wave-G-proper, 96.5% / 3.1% / 0% post-Wave-F, 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`). Wave G closed six rows, verified against the tree by the integration gate (not trusted from agent reports): §15 row 11 (GitHub, device-flow + PAT auth, proxied reads, and SDK-backed PR/issue writes served app-locally from `src/bun/github.ts` on the SDK's `beginDeviceCodeFlow`/`pollDeviceCodeFlow` + `GitHubIntegration`, with `GitHubPanel` wired live to it), §3 row 7 (agent interrupt/stop/resume composed from `sessions.*` verbs in `FleetAgentControl`, with an honest note that no freeze-and-thaw *pause* verb exists, flipping the section's last EXCLUDED entry to shipped), §6 rows 15 and 17 (dedicated single-item `knowledge.schedule.get` / `knowledge.refinement.task.get` fetches), §8 row 12 (single combined "Learning review" curator in `MemoryView`), and §18 row 1 (one-shot `voice.tts` wired as the live streaming-TTS fallback). A new Bun surface `src/bun/github.ts` (registered `/app/github`, unit-covered by `test/github.test.ts`) backs the GitHub panel. **No MISSING rows remain, and no EXCLUDED rows remain.** A same-day follow-up closed §14 row 11 the same app-side way (subscription OAuth via `src/bun/subscriptions.ts` on the SDK's `SubscriptionManager`, sharing the TUI's `subscriptions.json`; `test/subscriptions.test.ts`). A further same-day close-out flipped §1 row 39 (companion-turn cancel) once daemon 1.11.0 served the app's own spec (`docs/turn-cancel-request.md`) for `companion.chat.turns.cancel` + `companion.chat.messages.steer`. The 2 remaining partials are each a named deliberate design choice, owner-confirmed 2026-07-07 (§15 row 3 read-only tags/remotes/reflog; §20 row 2 no in-chrome login form). No partial remains wire-blocked. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
 
 ## Remaining gaps by user impact (post-Wave-G)
 
-Wave G closed six more rows — GitHub is now a live app-local surface, agent interrupt/stop/resume
+Wave G closed six more rows. GitHub is now a live app-local surface, agent interrupt/stop/resume
 is composed from `sessions.*` verbs, the two knowledge single-item fetches and the combined
 learning-review curator landed, and the one-shot TTS method is now a real fallback. A same-day
 follow-up closed subscription OAuth (§14 row 11) app-side. A further same-day close-out landed
 companion-turn cancel + steer (§1 row 39) once daemon 1.11.0 served the verbs the app's own spec
 asked for (`docs/turn-cancel-request.md`). **Nothing app-side remains MISSING, and no row is
 EXCLUDED any longer.** What is left is a short tail of two partials, each a named **deliberate
-design choice** confirmed by the owner on 2026-07-07 — no partial remains wire-blocked. Ranked by
+design choice** confirmed by the owner on 2026-07-07. No partial remains wire-blocked. Ranked by
 how much a real user would notice:
 
-1. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations are deliberately not wired to keep the panel non-destructive — owner-confirmed. (If one more git feature is ever wanted, the recorded recommendation is non-destructive rescue-branch-from-reflog: `git branch rescue/<name> <hash>`.)
-2. **No in-chrome interactive login form (§20 row 2).** The app is single-user-local by design (companion-token bootstrap is the only auth path); owner-confirmed unbuilt unless multi-user/shared-remote-daemon ever becomes a goal — and the right shape then is remote-daemon-connect (daemon picker + login + permission model), not a lone form.
+1. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations are deliberately not wired to keep the panel non-destructive, owner-confirmed. (If one more git feature is ever wanted, the recorded recommendation is non-destructive rescue-branch-from-reflog: `git branch rescue/<name> <hash>`.)
+2. **No in-chrome interactive login form (§20 row 2).** The app is single-user-local by design (companion-token bootstrap is the only auth path); owner-confirmed unbuilt unless multi-user/shared-remote-daemon ever becomes a goal, and the right shape then is remote-daemon-connect (daemon picker + login + permission model), not a lone form.
 
-GitHub integration (§15 row 11) closed in Wave G: rather than wait on a `github.*` daemon wire, GitHub is served from the app process itself (`src/bun/github.ts` on the SDK's device-flow + `GitHubIntegration` machinery), so `GitHubPanel` now talks to a live surface on every daemon — it no longer appears above. Learning-review (§8 row 12), the two knowledge single-item fetches (§6 rows 15/17), agent interrupt/stop/resume (§3 row 7), and one-shot TTS (§18 row 1) likewise closed in Wave G. Companion-turn Stop/Steer (§1 row 39) closed the same way once the daemon served the verb — it no longer appears above either.
+GitHub integration (§15 row 11) closed in Wave G: rather than wait on a `github.*` daemon wire, GitHub is served from the app process itself (`src/bun/github.ts` on the SDK's device-flow + `GitHubIntegration` machinery), so `GitHubPanel` now talks to a live surface on every daemon. It no longer appears above. Learning-review (§8 row 12), the two knowledge single-item fetches (§6 rows 15/17), agent interrupt/stop/resume (§3 row 7), and one-shot TTS (§18 row 1) likewise closed in Wave G. Companion-turn Stop/Steer (§1 row 39) closed the same way once the daemon served the verb. It no longer appears above either.
 
 
 

@@ -1,14 +1,14 @@
 // Tolerant readers + display helpers for ci.status / ci.watches.* (contract
-// 1.11, all plain HTTP — see generated/operator-routes.ts, ws:false on every
+// 1.11, all plain HTTP, see generated/operator-routes.ts, ws:false on every
 // ci.* row, so none of the ws-bridge-down handling FleetView/CheckpointsView
 // need applies here). Shapes below are read field-by-field against the
 // installed contract artifact's ci.* schemas (operator-contract.json),
-// never cast — an older/newer daemon that omits or renames a field degrades
+// never cast, an older/newer daemon that omits or renames a field degrades
 // to the honest fallback ("" / 0 / []), not a crash.
 //
 // Per this view's honesty bar (docs/UX.md §4): a CI report's `overall` is
 // the DAEMON's own rollup (never re-derived client-side), but the detail
-// still renders every job individually — the daemon's rollup is shown
+// still renders every job individually, the daemon's rollup is shown
 // alongside the per-job list, never instead of it.
 
 import { asArray, asRecord, firstNumber, firstString } from "../../lib/wire.ts";
@@ -29,7 +29,7 @@ export interface CiReport {
   overall: string;
   jobs: CiJob[];
   violations: string[];
-  // undefined = not reported — never a fabricated epoch date; formatRelative
+  // undefined = not reported, never a fabricated epoch date; formatRelative
   // renders an honest "unknown" for undefined, never 1/1/1970.
   checkedAt: number | undefined;
 }
@@ -41,9 +41,9 @@ export interface CiWatch {
   prNumber: number | undefined;
   deliveryChannel: string;
   triggerFixSession: boolean;
-  /** "" when the watch has never been checked yet — never fabricate a verdict. */
+  /** "" when the watch has never been checked yet, never fabricate a verdict. */
   lastOverall: string;
-  // undefined = not reported — same "never a fabricated epoch date" rule as
+  // undefined = not reported, same "never a fabricated epoch date" rule as
   // CiReport.checkedAt above.
   createdAt: number | undefined;
   updatedAt: number | undefined;
@@ -55,13 +55,13 @@ export interface CiWatchRunResult {
   notificationId: string;
   fixSessionTriggered: boolean;
   /** fixSessionId / fixSessionError are mutually exclusive on the wire when
-   * fixSessionTriggered is true — a real attachable session, or an honest
+   * fixSessionTriggered is true, a real attachable session, or an honest
    * failure reason, never both and never a dead id. */
   fixSessionId: string;
   fixSessionError: string;
   fixSessionOffered: boolean;
   /** True once this watch has been auto-retired (e.g. the PR closed/merged)
-   * — the daemon's own signal that no further checks will run for it. */
+   *, the daemon's own signal that no further checks will run for it. */
   retired: boolean;
 }
 
@@ -135,7 +135,7 @@ export function parseCiWatchDeleteResult(value: unknown): { deleted: boolean } {
   return { deleted: record["deleted"] === true };
 }
 
-/** "owner/repo #123" | "owner/repo@ref" | "owner/repo" — the compact row label. */
+/** "owner/repo #123" | "owner/repo@ref" | "owner/repo", the compact row label. */
 export function watchLabel(watch: Pick<CiWatch, "repo" | "ref" | "prNumber">): string {
   if (watch.prNumber !== undefined) return `${watch.repo} #${watch.prNumber}`;
   if (watch.ref) return `${watch.repo}@${watch.ref}`;

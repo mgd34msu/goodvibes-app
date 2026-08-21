@@ -4,7 +4,7 @@
 // preview next-run times in an IANA timezone.
 //
 // HONESTY NOTE: this is a client-side PREVIEW helper only. The daemon's
-// scheduler is authoritative — persisted jobs surface their real `nextRunAt`.
+// scheduler is authoritative, persisted jobs surface their real `nextRunAt`.
 // Around DST transitions the preview's day-boundary skip may differ from the
 // daemon by up to an hour; the preview is labeled as an estimate in the UI.
 
@@ -284,7 +284,7 @@ const EVERY_PATTERN = /^(\d+(?:\.\d+)?)(ms|s|m|h|d)$/;
 /** Parse "30s" / "5m" / "1h" / "1d" to ms; throws with a plain-words reason. */
 export function parseEveryInterval(input: string): number {
   const match = input.trim().match(EVERY_PATTERN);
-  if (!match) throw new Error(`Invalid interval "${input}" — use values like 30s, 5m, 1h, or 1d.`);
+  if (!match) throw new Error(`Invalid interval "${input}": use values like 30s, 5m, 1h, or 1d.`);
   const amount = Number.parseFloat(match[1] ?? "");
   if (!Number.isFinite(amount) || amount <= 0) throw new Error(`Invalid interval amount "${input}"`);
   switch (match[2]) {

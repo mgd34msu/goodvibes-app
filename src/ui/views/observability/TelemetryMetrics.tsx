@@ -1,4 +1,4 @@
-// Metrics — telemetry.metrics.get. Shape is not pinned, so this renders
+// Metrics, telemetry.metrics.get. Shape is not pinned, so this renders
 // whatever key/value or key/series structure comes back as a generic
 // metric-tile grid (numeric leaf values) plus the raw payload for anything
 // deeper (histograms, series arrays) that a tile can't represent honestly.

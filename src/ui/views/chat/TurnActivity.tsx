@@ -1,5 +1,5 @@
 // Live-turn chrome: the thinking strip (turn state machine + elapsed + token
-// throughput — estimated from streamed chars and labelled "~"; wire-reported
+// throughput, estimated from streamed chars and labelled "~"; wire-reported
 // usage supersedes it) and collapsible tool-call blocks with contract status
 // glyphs (docs/UX.md §4 streaming rules).
 
@@ -14,7 +14,7 @@ import type { ToolCallBlock, TurnMetrics } from "./types.ts";
 
 interface ToolCallItemProps {
   block: ToolCallBlock;
-  /** sessions.toolCalls.cancel(sessionId, callId) — omitted entirely once
+  /** sessions.toolCalls.cancel(sessionId, callId), omitted entirely once
    * useChatStream reports the daemon has never heard of the verb. */
   onCancel?: (callId: string) => void;
   cancelling: boolean;
@@ -31,7 +31,7 @@ function ToolCallItem({ block, onCancel, cancelling }: ToolCallItemProps) {
         className="tool-call__header"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        aria-label={`Tool call ${block.toolName} — ${statusLabel}`}
+        aria-label={`Tool call ${block.toolName}, ${statusLabel}`}
       >
         {open ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
         <span className="tool-call__name">{block.toolName}</span>
@@ -43,7 +43,7 @@ function ToolCallItem({ block, onCancel, cancelling }: ToolCallItemProps) {
           className="tool-call__cancel"
           disabled={cancelling}
           aria-label={`Cancel tool call ${block.toolName}`}
-          title="Cancel this tool call — the turn and any other running calls keep going"
+          title="Cancel this tool call; the turn and any other running calls keep going"
           onClick={(event) => {
             event.stopPropagation();
             onCancel?.(block.toolCallId);
@@ -78,7 +78,7 @@ function ToolCallItem({ block, onCancel, cancelling }: ToolCallItemProps) {
 
 export interface ToolCallBlocksProps {
   blocks: ToolCallBlock[];
-  /** sessions.toolCalls.cancel — undefined once the daemon build has proven
+  /** sessions.toolCalls.cancel, undefined once the daemon build has proven
    * it doesn't support the verb, so no call ever offers a cancel button. */
   onCancel?: (callId: string) => void;
   cancellingIds?: ReadonlySet<string>;
@@ -107,7 +107,7 @@ interface ThinkingStripProps {
   metrics: TurnMetrics | null;
   streaming: boolean;
   /** False while ChatView is the keep-alive view sitting behind another
-   * (display:none — see ChatView's own `viewVisible` MutationObserver). Chat
+   * (display:none, see ChatView's own `viewVisible` MutationObserver). Chat
    * never unmounts on a view switch, so without this the 500ms tick would
    * keep ticking, invisibly, for as long as a turn runs in the background. */
   viewVisible: boolean;
@@ -150,7 +150,7 @@ export function ThinkingStrip({ turnState, metrics, streaming, viewVisible, onSt
   );
 }
 
-// ─── Context usage meter (wire-reported only — honest-hidden otherwise) ──────
+// ─── Context usage meter (wire-reported only, honest-hidden otherwise) ──────
 
 export function ContextMeter({ metrics }: { metrics: TurnMetrics | null }) {
   const usage = metrics?.usage;
@@ -166,7 +166,7 @@ export function ContextMeter({ metrics }: { metrics: TurnMetrics | null }) {
     <div
       className="context-meter"
       role="status"
-      title={`Context usage reported by the daemon${fresh ? ` — ${fresh}` : ""}`}
+      title={`Context usage reported by the daemon${fresh ? `, ${fresh}` : ""}`}
     >
       <span className="context-meter__label">
         context {used.toLocaleString()} tok{max ? ` / ${max.toLocaleString()}` : ""}

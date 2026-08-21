@@ -6,7 +6,7 @@
 // the daemon's default model via confirm-gated config.set provider.model.
 //
 // Replies are POLLED off companion.chat.messages.list every 2.5s while a
-// compare is in flight — this view deliberately does not open chat's
+// compare is in flight, this view deliberately does not open chat's
 // per-session SSE streams (that is the chat surface's machinery; a short
 // poll is honest and self-contained here).
 
@@ -127,7 +127,7 @@ export function CompareLab({ active }: { active: boolean }) {
     let sessionId = "";
     try {
       const created = await gv.chat.sessions.create({
-        title: `Blind compare — response ${slot.toUpperCase()}`,
+        title: `Blind compare: response ${slot.toUpperCase()}`,
         provider: option.providerId,
         model: option.modelId,
       });
@@ -149,7 +149,7 @@ export function CompareLab({ active }: { active: boolean }) {
       setSlot(token, slot, {
         phase: "failed",
         sessionId,
-        message: `No reply within ${REPLY_DEADLINE_MS / 1000}s — the model may still be running; check the Chat view.`,
+        message: `No reply within ${REPLY_DEADLINE_MS / 1000}s: the model may still be running; check the Chat view.`,
       });
     } catch (error) {
       setSlot(token, slot, { phase: "failed", sessionId, message: formatError(error) });
@@ -161,7 +161,7 @@ export function CompareLab({ active }: { active: boolean }) {
     const right = modelOptions.find((o) => o.registryKey === rightKey);
     const trimmed = prompt.trim();
     if (!left || !right || !trimmed) return;
-    // Randomize which model becomes A vs B — the whole point of "blind".
+    // Randomize which model becomes A vs B, the whole point of "blind".
     const flip = Math.random() < 0.5;
     const assignments: Record<SlotId, CompareModelOption> = flip
       ? { a: right, b: left }
@@ -184,7 +184,7 @@ export function CompareLab({ active }: { active: boolean }) {
           ? `Blind compare tie between ${run.assignments.a.registryKey} and ${run.assignments.b.registryKey}`
           : `Blind compare: ${winner?.registryKey} beat ${loser?.registryKey}`;
       await createNote({
-        text: `${summary} — prompt: "${run.prompt.slice(0, 200)}"`,
+        text: `${summary}, prompt: "${run.prompt.slice(0, 200)}"`,
         tags: ["model-compare"],
         verdict: picked === "tie" ? "tie" : "winner",
         winner: winner?.registryKey ?? "",
@@ -203,7 +203,7 @@ export function CompareLab({ active }: { active: boolean }) {
         title: "Judgment not recorded",
         description:
           status === 404 || status === 501
-            ? "The app-local notes registry is not served by this build — the verdict is shown but not stored."
+            ? "The app-local notes registry is not served by this build; the verdict is shown but not stored."
             : formatError(error),
         tone: "warning",
       });
@@ -214,7 +214,7 @@ export function CompareLab({ active }: { active: boolean }) {
     if (!run || verdict) return;
     setVerdict(picked);
     recordJudgment.mutate(picked);
-    // Hygiene: close both compare sessions best-effort — they served their turn.
+    // Hygiene: close both compare sessions best-effort, they served their turn.
     for (const slot of ["a", "b"] as const) {
       const state = slots[slot];
       if (state.phase === "done" || state.phase === "waiting") {
@@ -234,9 +234,9 @@ export function CompareLab({ active }: { active: boolean }) {
       toast({ title: "config.set failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Past judgments — app-local registry, no wire events: 30s poll while this
+  // Past judgments, app-local registry, no wire events: 30s poll while this
   // tab is the one showing (stays mounted-but-hidden on the other Documents
-  // tabs, so the poll itself must gate — item 18).
+  // tabs, so the poll itself must gate, item 18).
   const notesQuery = useQuery({
     queryKey: docKeys.compareNotes,
     queryFn: listNotes,
@@ -247,7 +247,7 @@ export function CompareLab({ active }: { active: boolean }) {
     () =>
       (notesQuery.data ?? [])
         .filter((note) => Array.isArray(note["tags"]) && note["tags"].includes("model-compare"))
-        // The registry stamps ISO-string createdAt — parse tolerant of both shapes.
+        // The registry stamps ISO-string createdAt, parse tolerant of both shapes.
         .sort(
           (x, y) =>
             (firstTimestamp(asRecord(y), ["createdAt", "judgedAt"]) ?? 0) -
@@ -400,7 +400,7 @@ export function CompareLab({ active }: { active: boolean }) {
         <EmptyState
           icon={<Scale size={28} aria-hidden="true" />}
           title="No comparison running"
-          description="Model names stay hidden until you pick a winner — judgments are recorded to the notes registry tagged model-compare."
+          description="Model names stay hidden until you pick a winner; judgments are recorded to the notes registry tagged model-compare."
         />
       )}
 
@@ -434,7 +434,7 @@ export function CompareLab({ active }: { active: boolean }) {
         open={promoteTarget !== null}
         action="Set default model"
         target={promoteTarget?.registryKey ?? ""}
-        blastRadius="Writes provider.model in the daemon config (admin) — every surface that uses the default model route (TUI, agent, new chats) switches to this model."
+        blastRadius="Writes provider.model in the daemon config (admin); every surface that uses the default model route (TUI, agent, new chats) switches to this model."
         confirmLabel="Set as default"
         onCancel={() => setPromoteTarget(null)}
         onConfirm={() => {

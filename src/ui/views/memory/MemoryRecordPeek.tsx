@@ -1,7 +1,7 @@
 // Record detail peek (FEATURES.md §7: detail with confidence, provenance,
 // links, review state; update + review-state transitions; links add/list).
 //
-// Every field renders verbatim — a provenance `ref` that looks like a file
+// Every field renders verbatim, a provenance `ref` that looks like a file
 // path is plain text exactly like any other ref, never turned into a link or
 // fetched. The peek re-queries memory.records.get keyed under the ["memory"]
 // prefix, so any memory mutation's invalidation refreshes an open peek too.
@@ -30,7 +30,7 @@ import {
   type MemoryScope,
 } from "./memory-wire.ts";
 
-/** Copyable id — linking two records (below) needs the target's raw id, and
+/** Copyable id, linking two records (below) needs the target's raw id, and
  * this is the only place that id is ever shown, so it must be selectable
  * without retyping (item 12: never make the operator retype what the app
  * just displayed). */
@@ -204,7 +204,7 @@ export function MemoryRecordPeek({ initial }: { initial: MemoryRecord }) {
   );
 }
 
-// ─── Edit (memory.records.update — content fields, distinct from review) ─────
+// ─── Edit (memory.records.update, content fields, distinct from review) ─────
 
 function EditRecordSection({ record }: { record: MemoryRecord }) {
   const queryClient = useQueryClient();
@@ -351,7 +351,7 @@ function LinksSection({ record }: { record: MemoryRecord }) {
         });
         return;
       }
-      // The daemon 404s when either endpoint record does not exist — honest,
+      // The daemon 404s when either endpoint record does not exist, honest,
       // never a 200 pretending a link was made.
       toast({ title: "Could not add link", description: formatError(error), tone: "danger" });
     },

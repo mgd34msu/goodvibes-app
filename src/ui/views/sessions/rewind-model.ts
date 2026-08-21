@@ -1,4 +1,4 @@
-// Turn-anchor derivation for the Rewind section — ported from
+// Turn-anchor derivation for the Rewind section, ported from
 // goodvibes-webui src/lib/rewind.ts. Anchors come from a session's OWN
 // already-loaded message list (the same sessions.messages.list SessionDetail
 // already fetches for the transcript), so rewind targets a real turn
@@ -11,7 +11,7 @@ import { firstString } from "../../lib/wire.ts";
 
 export interface TurnAnchor {
   readonly turnId: string;
-  /** A short, human label for the turn — the first non-empty message body in it. */
+  /** A short, human label for the turn, the first non-empty message body in it. */
   readonly label: string;
 }
 

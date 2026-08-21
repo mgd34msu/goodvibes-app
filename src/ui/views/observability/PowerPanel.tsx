@@ -1,13 +1,13 @@
-// Power — power.status.get / power.keepAwake.set (docs/FEATURES.md §17;
-// owner ruling: ONE keep-awake toggle, no timer, no AC-only sub-option — the
+// Power, power.status.get / power.keepAwake.set (docs/FEATURES.md §17;
+// owner ruling: ONE keep-awake toggle, no timer, no AC-only sub-option, the
 // always-visible status-strip chip is the safety mechanism, not a timeout).
 // Danger-toned block whenever the daemon's own automatic work inhibitor is
-// held, naming its live reasons/heldSince/cap verbatim — never papered over.
+// held, naming its live reasons/heldSince/cap verbatim, never papered over.
 //
 // power.status.get carries a wire event (OPS_POWER_STATE_CHANGED via
 // power.keepAwake.set's `events` list) but lib/realtime.ts's
 // DOMAIN_INVALIDATIONS has no "ops"/"power" domain entry yet (verified: not
-// in the events path this app subscribes to) — this polls sparsely as a
+// in the events path this app subscribes to), this polls sparsely as a
 // fallback and always refreshes on the mutation's own response instead of
 // waiting on a wire frame that never arrives. Noted for the integration gate.
 
@@ -108,7 +108,7 @@ export function PowerPanel() {
                     <dd>
                       {snapshot.workCapMinutes} min
                       {snapshot.workCapExpiresAt !== null
-                        ? ` — expires ${new Date(snapshot.workCapExpiresAt).toLocaleString()}`
+                        ? `, expires ${new Date(snapshot.workCapExpiresAt).toLocaleString()}`
                         : ""}
                       {snapshot.workCapExpired ? " (expired)" : ""}
                     </dd>

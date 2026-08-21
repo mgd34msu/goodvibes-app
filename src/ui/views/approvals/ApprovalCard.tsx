@@ -1,5 +1,5 @@
 // One approval's full interactive card: category × risk × status badges,
-// per-hunk edit selection with REAL diffs (docs/UX.md §4 — not just a
+// per-hunk edit selection with REAL diffs (docs/UX.md §4, not just a
 // summary line), approve/deny/claim/cancel, decision trail, "why" reasons,
 // and session correlation. Ported from goodvibes-webui
 // src/views/approvals/ApprovalCard.tsx; exported standalone so FleetView can
@@ -8,7 +8,7 @@
 // A claimed approval is NOT actionable here: `claimedBy` under shared
 // bearer-token auth cannot distinguish "this window" from "another surface
 // with the same token", and two surfaces must never both resolve one
-// approval. Deny always requires a note (docs/UX.md §4) — the parent owns
+// approval. Deny always requires a note (docs/UX.md §4), the parent owns
 // the note modal and passes onDeny as its opener.
 
 import { useMemo } from "react";
@@ -34,11 +34,11 @@ export interface ApprovalCardProps {
   onToggleHunk: (index: number) => void;
   /** Omitting selectedHunks approves the whole request (back-compat). */
   onApprove: (selectedHunks?: readonly number[]) => void;
-  /** Opens the deny-with-note modal — the note is required, never optional. */
+  /** Opens the deny-with-note modal, the note is required, never optional. */
   onDeny: () => void;
   approving: boolean;
   denying: boolean;
-  /** Optional — omit to hide Claim/Cancel (e.g. a read-only surface). */
+  /** Optional, omit to hide Claim/Cancel (e.g. a read-only surface). */
   onClaim?: () => void;
   onCancel?: () => void;
   claiming?: boolean;
@@ -168,7 +168,7 @@ export function ApprovalCard({
           {record.status}
           {record.resolvedAt ? ` ${formatRelative(record.resolvedAt)}` : ""}
           {record.resolvedBy ? ` by ${record.resolvedBy}` : ""}
-          {partialLabel ? ` — ${partialLabel}` : ""}
+          {partialLabel ? `, ${partialLabel}` : ""}
         </p>
       )}
 
@@ -213,7 +213,7 @@ export function ApprovalCard({
               className="approval-card__btn approval-card__btn--approve"
               disabled={selected.size === 0 || busy}
               onClick={() => onApprove([...selected])}
-              title="Approve only the checked hunks — the daemon computes the modified edit"
+              title="Approve only the checked hunks; the daemon computes the modified edit"
             >
               <Check size={14} aria-hidden="true" /> Approve selected ({selected.size})
             </button>

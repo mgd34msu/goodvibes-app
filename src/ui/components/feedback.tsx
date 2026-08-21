@@ -51,7 +51,7 @@ export interface ErrorStateProps {
 export const ErrorState: FC<ErrorStateProps> = ({ error, onRetry, title = "Failed to load", className }) => {
   // Systemic capability honesty (docs/UX.md §4): a daemon 404 meaning "this
   // route/method does not exist on this daemon build" is not a failure to
-  // retry — render the UnavailableState instead, wherever the view forgot to
+  // retry, render the UnavailableState instead, wherever the view forgot to
   // triage it (verified live: memory search on daemon v1.0.0). Views that
   // classify refusals themselves branch before ever reaching ErrorState.
   if (isMethodUnavailableError(error)) {
@@ -108,7 +108,7 @@ export interface UnavailableStateProps {
   className?: string;
 }
 
-/** Honest "not available on this daemon" state — distinct from error AND
+/** Honest "not available on this daemon" state, distinct from error AND
  * empty (wire-or-delete rule: never a silent stub). */
 export const UnavailableState: FC<UnavailableStateProps> = ({ capability, description, action, className }) => (
   <div
@@ -135,7 +135,7 @@ export const UnavailableState: FC<UnavailableStateProps> = ({ capability, descri
       <span className="feedback-unavailable-state__title">Not available on this daemon</span>
       <span className="feedback-unavailable-state__message">
         The connected daemon does not serve <code>{capability}</code>
-        {description ? ` — ${description}` : "."}
+        {description ? `, ${description}` : "."}
       </span>
     </div>
     {action && (

@@ -1,11 +1,11 @@
-// Diff view — pickers for working-tree vs staged vs arbitrary-ref
+// Diff view, pickers for working-tree vs staged vs arbitrary-ref
 // comparisons over /app/git/diff, a per-file list with add/del counts, and
 // unified-diff rendering with syntax highlight (lib/highlight.ts "diff"
 // grammar) plus intra-view search: a query filters file sections to those
 // containing it and renders matches with <mark> emphasis (plain-text lines
 // while searching, so marks never fight the highlighter's HTML).
 //
-// Deep links: ?filter[mode]=working|staged|ref&filter[ref]=… — the Git view's
+// Deep links: ?filter[mode]=working|staged|ref&filter[ref]=…, the Git view's
 // commit peek jumps here via jumpToDiff (diff-model.ts module store).
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -63,7 +63,7 @@ export function DiffView() {
     queryFn: () => gitApi.diff(mode, mode === "ref" ? ref : undefined),
     enabled: refReady,
     retry: false,
-    // App-local git — no wire events; diffs can be large, so refresh is manual
+    // App-local git, no wire events; diffs can be large, so refresh is manual
     // (button / mode switch) rather than an interval poll.
   });
 
@@ -86,7 +86,7 @@ export function DiffView() {
     fileAnchors.current.get(path)?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
-  // Palette command — view-scoped, live only while mounted.
+  // Palette command, view-scoped, live only while mounted.
   const refetchDiff = diff.refetch;
   useEffect(() => {
     registerCommand({
@@ -183,7 +183,7 @@ export function DiffView() {
             <EmptyState
               icon={<GitCompare size={28} aria-hidden="true" />}
               title="Not a git repository"
-              description="The workspace directory is not inside a git repository — see the Git view for details."
+              description="The workspace directory is not inside a git repository; see the Git view for details."
             />
           ) : (
             <ErrorState error={diff.error} onRetry={() => void diff.refetch()} title="Failed to load diff" />
@@ -197,9 +197,9 @@ export function DiffView() {
           title="No differences"
           description={
             mode === "working"
-              ? "The working tree matches the index — nothing unstaged."
+              ? "The working tree matches the index; nothing unstaged."
               : mode === "staged"
-                ? "The index matches HEAD — nothing staged."
+                ? "The index matches HEAD; nothing staged."
                 : `No differences for ${ref}.`
           }
         />

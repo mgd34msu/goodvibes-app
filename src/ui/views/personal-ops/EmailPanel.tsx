@@ -2,7 +2,7 @@
 // email.draft.create + email.send writes. Both writes are dangerous-flagged
 // and go through ConfirmSurface; email.send additionally echoes the exact
 // recipient in the confirm facts (the spec's "explicit recipient echo") and
-// forwards confirm:true + explicitUserRequest on the wire — the daemon's
+// forwards confirm:true + explicitUserRequest on the wire, the daemon's
 // register wrapper enforces both before the SMTP handler runs.
 
 import { useEffect, useState, type FormEvent } from "react";
@@ -47,8 +47,8 @@ export function EmailPanel({
   onComposeSignalConsumed,
 }: {
   /** False while this tab is hidden behind another Personal Ops tab (the
-   * panel stays mounted so a compose draft survives the switch — item 1 —
-   * but its poll pauses while hidden — item 18). */
+   * panel stays mounted so a compose draft survives the switch, item 1,
+   * but its poll pauses while hidden, item 18). */
   active?: boolean;
   /** >0 = a pending palette "Compose email" intent; consumed on mount/change. */
   composeSignal: number;
@@ -80,10 +80,10 @@ export function EmailPanel({
   }, [composeSignal, active]);
 
   // Auto-close any open overlay when this tab is hidden behind another
-  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Personal Ops tab, an invisible Modal would otherwise keep trapping
   // Tab/Escape globally even though nothing is on screen. The draft text
   // itself is untouched, so reopening after switching back restores exactly
-  // what was typed (item 1 — nothing expires on a tab switch).
+  // what was typed (item 1, nothing expires on a tab switch).
   useEffect(() => {
     if (!active) {
       setComposeOpen(false);
@@ -95,7 +95,7 @@ export function EmailPanel({
 
   const createDraft = useMutation({
     // email.draft.create is admin + dangerous-flagged but its SDK contract has
-    // no body.confirm field — the ConfirmSurface gates the UI, and only the
+    // no body.confirm field, the ConfirmSurface gates the UI, and only the
     // contract fields go on the wire (an unknown key could fail validation).
     mutationFn: (input: ComposeDraft) =>
       gv.invoke("email.draft.create", {
@@ -114,7 +114,7 @@ export function EmailPanel({
       const draftId = firstString(asRecord(result), ["draftId"]);
       toast({
         title: "Draft saved to mailbox",
-        description: draftId ? `Draft id ${draftId} — nothing was sent.` : "Nothing was sent.",
+        description: draftId ? `Draft id ${draftId}: nothing was sent.` : "Nothing was sent.",
         tone: "success",
       });
     },
@@ -228,7 +228,7 @@ export function EmailPanel({
         <EmptyState
           icon={<Inbox size={28} aria-hidden="true" />}
           title="No unread mail"
-          description="The daemon's inbox read defaults to unread messages — nothing is waiting for you."
+          description="The daemon's inbox read defaults to unread messages; nothing is waiting for you."
         />
       )}
 
@@ -319,7 +319,7 @@ export function EmailPanel({
       <ConfirmSurface
         open={confirming === "draft"}
         action="Create email draft"
-        target={`${draft.to.trim()} — “${draft.subject.trim()}”`}
+        target={`${draft.to.trim()}: “${draft.subject.trim()}”`}
         blastRadius="Writes one RFC-5322 draft into the mailbox Drafts folder over IMAP. Nothing is sent to the recipient."
         confirmLabel="Save draft"
         onCancel={() => setConfirming(null)}

@@ -238,7 +238,7 @@ export function useVoiceInput(onTranscript: (text: string) => void): UseVoiceInp
 
 const SENTENCE_BOUNDARY = /(?<=[.!?…])\s+/;
 
-/** Split a reply into the FEWEST synthesis segments each within maxChars —
+/** Split a reply into the FEWEST synthesis segments each within maxChars,
  * paragraph, then sentence, then word boundaries, greedily re-joined. */
 export function coalesceForSpeech(text: string, maxChars = 1800): string[] {
   const trimmed = text.trim();
@@ -351,7 +351,7 @@ class WebAudioSink {
         source.onended = null;
         source.stop();
       } catch {
-        // a never-started source throws on stop — ignore
+        // a never-started source throws on stop, ignore
       }
     }
     this.sources.clear();
@@ -495,7 +495,7 @@ const DEFAULT_TTS_FORMAT = "mp3";
 
 /** base64 → ArrayBuffer for the one-shot voice.tts JSON response (its audio
  * comes back as {mimeType,format,dataBase64}, not raw bytes like the stream
- * route — no shared decoder exists in lib/, so this stays local). */
+ * route, no shared decoder exists in lib/, so this stays local). */
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -505,12 +505,12 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 /** One-shot voice.tts fallback (docs/GAPS.md §18 row 1): probed live against
  * a daemon where the only configured TTS provider (Microsoft Edge) reports
- * capabilities ["tts"] with no "tts-stream" — calling voice.tts.stream for
+ * capabilities ["tts"] with no "tts-stream", calling voice.tts.stream for
  * it returns a 409 PROVIDER_NOT_CONFIGURED ("Voice streaming TTS provider is
  * unavailable: microsoft"), never a clean 404/501, so the fallback triggers
  * on ANY non-ok stream response, not just method-unavailable ones. The
  * one-shot route DOES work for that same provider and returns the full
- * audio as base64 JSON — decoded here into the same ArrayBuffer shape the
+ * audio as base64 JSON, decoded here into the same ArrayBuffer shape the
  * WebAudioSink already expects, so it drops into the existing playback
  * pipeline unchanged. */
 async function synthSegmentOneShot(text: string, signal: AbortSignal): Promise<ArrayBuffer> {
@@ -540,7 +540,7 @@ async function synthSegment(text: string, signal: AbortSignal): Promise<ArrayBuf
     return await res.arrayBuffer();
   } catch (error) {
     if (signal.aborted) throw error;
-    // Stream route unavailable for the active provider — fall back to the
+    // Stream route unavailable for the active provider, fall back to the
     // one-shot route rather than skipping the segment outright.
     return synthSegmentOneShot(text, signal);
   }

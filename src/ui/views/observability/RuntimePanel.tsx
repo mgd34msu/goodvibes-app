@@ -1,8 +1,8 @@
-// Runtime metrics — runtime.metrics.get: HTTP/LLM/auth/transport counters,
+// Runtime metrics, runtime.metrics.get: HTTP/LLM/auth/transport counters,
 // gauges, request-duration/token histograms, and per-model/class tool-format
 // telemetry (edit-tool failure classes, declared exec-expectation misses).
 // Every sub-shape beyond the four top-level buckets is intentionally unpinned
-// (additionalProperties:true on the wire) — this renders whatever numeric
+// (additionalProperties:true on the wire), this renders whatever numeric
 // leaves it finds as stat tiles/tables and falls back to the raw payload for
 // anything deeper, never guessing a field name that doesn't match this
 // daemon build. Honest "not observed yet" empty states throughout.
@@ -126,8 +126,8 @@ export function RuntimePanel() {
           <StatTiles label="Counters" data={record["counters"]} />
           <StatTiles label="Gauges" data={record["gauges"]} />
           <KeyedTable title="Histograms" data={record["histograms"]} />
-          <KeyedTable title="Tool format — by model" data={toolFormat["byModel"]} />
-          <KeyedTable title="Tool format — by class" data={toolFormat["byClass"]} />
+          <KeyedTable title="Tool format: by model" data={toolFormat["byModel"]} />
+          <KeyedTable title="Tool format: by class" data={toolFormat["byClass"]} />
           <details className="obs-raw-panel">
             <summary>Raw runtime.metrics.get payload</summary>
             <pre>{compactJson(metrics.data)}</pre>

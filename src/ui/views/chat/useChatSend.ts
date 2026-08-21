@@ -1,9 +1,9 @@
 // Optimistic send + honest-lineage fork verbs, ported from goodvibes-webui
 // src/views/chat/useChatSend.ts onto the gv facade. Sends carry `content`
 // (PostCompanionChatMessageInput in the pinned SDK contract). Never falls
-// back to sessions.messages.create / sessions.followUp — companion chat only
+// back to sessions.messages.create / sessions.followUp, companion chat only
 // (webui docs/architecture.md rule). Includes the client-side send budget for
-// the daemon's 30 msg/min companion rate limit (never silently dropped —
+// the daemon's 30 msg/min companion rate limit (never silently dropped,
 // the composer shows the budget and the block reason).
 
 import { useCallback, useSyncExternalStore, type Dispatch, type SetStateAction } from "react";
@@ -23,7 +23,7 @@ import {
   extractSessionId,
   type LocalCompanionMessage,
 } from "./companion-chat.ts";
-import { fileToBase64, uploadedArtifactId } from "./message-utils.ts";
+import { fileToBase64, uploadedArtifactId, type TurnState } from "./message-utils.ts";
 import type { ChatMessage } from "./types.ts";
 
 // ─── Send budget (30 msg/min/client daemon rate limit awareness) ─────────────
@@ -87,11 +87,11 @@ export interface AttachedArtifactRef {
 export interface SendVars {
   body: string;
   files: File[];
-  /** Existing artifacts referenced via @-mention — no upload needed. */
+  /** Existing artifacts referenced via @-mention, no upload needed. */
   artifactRefs?: AttachedArtifactRef[];
   /** Interrupt-and-send (companion.chat.messages.steer, daemon >= 1.11):
    * cancels the in-flight turn through the same finalization path as
-   * turns.cancel, then runs this message immediately — queued sends keep
+   * turns.cancel, then runs this message immediately, queued sends keep
    * their places behind it. With no turn running this is an ordinary send
    * (Q3). Falls back to a plain create() with an honest note on a daemon
    * that has never heard of the verb. */
@@ -103,18 +103,18 @@ interface UseChatSendOptions {
   onActiveSessionChange: (sessionId: string) => void;
   onLocalSessionCreated: (session: unknown) => void;
   onSessionMissing: (sessionId: string) => void;
-  setTurnState: Dispatch<SetStateAction<string>>;
+  setTurnState: Dispatch<SetStateAction<TurnState>>;
   setTurnError: Dispatch<SetStateAction<string>>;
   setLiveText: Dispatch<SetStateAction<string>>;
   setLocalMessages: Dispatch<SetStateAction<LocalCompanionMessage[]>>;
   setPendingUserMessageId: Dispatch<SetStateAction<string>>;
   invalidateChatState: (sessionId: string) => Promise<void>;
-  turnState: string;
+  turnState: TurnState;
   streamHealthy: boolean;
   /** Session defaults applied when a send has to create the session first. */
   createDefaults?: { provider?: string; model?: string };
   /** Fired once when a steer send falls back to a plain send because the
-   * daemon has never heard of companion.chat.messages.steer — a transient
+   * daemon has never heard of companion.chat.messages.steer, a transient
    * user-facing nudge on top of the honest setTurnError note this hook
    * already sets (which renders in the composer's error rows either way). */
   notifySteerFallback?: (message: string) => void;
@@ -158,16 +158,16 @@ export function useChatSend({
       pruneBudget();
       if (budgetSnapshot.blocked) {
         throw new Error(
-          `Send budget reached — the daemon allows ${SEND_BUDGET_PER_MINUTE} messages per minute per client. Wait a few seconds and try again.`,
+          `Send budget reached: the daemon allows ${SEND_BUDGET_PER_MINUTE} messages per minute per client. Wait a few seconds and try again.`,
         );
       }
       // A send while the stream is down still goes over REST, but the reply
-      // comes back over that same stream — say so honestly.
+      // comes back over that same stream, say so honestly.
       const sendingWhileReconnecting = !streamHealthy || turnState === "reconnecting";
       setTurnState(sendingWhileReconnecting ? "sending while reconnecting" : "sending");
       setTurnError(
         sendingWhileReconnecting
-          ? "Sending — the live stream is reconnecting, so the reply may not appear until it resumes."
+          ? "Sending: the live stream is reconnecting, so the reply may not appear until it resumes."
           : "",
       );
 
@@ -263,11 +263,11 @@ export function useChatSend({
             result = await gv.chat.messages.steer(sessionId, payload);
           } catch (steerError) {
             if (!isMethodUnavailableError(steerError)) throw steerError;
-            // Pre-1.11 daemon: no steer verb — fall back to an ordinary send
+            // Pre-1.11 daemon: no steer verb, fall back to an ordinary send
             // and SAY so, never silently pretend the interruption happened.
             result = await gv.chat.messages.create(sessionId, payload);
             const fallbackMessage =
-              "Sent as a normal message — this daemon does not support steering (needs daemon 1.11+), " +
+              "Sent as a normal message; this daemon does not support steering (needs daemon 1.11+), " +
               "so the current reply was not interrupted.";
             setTurnError(fallbackMessage);
             notifySteerFallback?.(fallbackMessage);
@@ -299,12 +299,12 @@ export function useChatSend({
       }
       if (isAuthExpiredError(error)) {
         setTurnState("auth expired");
-        setTurnError("The daemon rejected the app token — the pairing store needs repair (Settings → Doctor).");
+        setTurnError("The daemon rejected the app token; the pairing store needs repair (Settings → Doctor).");
         return;
       }
       if (isSessionClosedError(error)) {
         setTurnState("idle");
-        setTurnError("This chat is closed — start a new chat to keep going.");
+        setTurnError("This chat is closed; start a new chat to keep going.");
         return;
       }
       setTurnState("send failed");
@@ -331,7 +331,7 @@ export function useChatSend({
       }
       if (isSessionClosedError(error)) {
         setTurnState("idle");
-        setTurnError("This chat is closed — start a new chat to keep going.");
+        setTurnError("This chat is closed; start a new chat to keep going.");
         return;
       }
       setTurnState("error");
@@ -361,7 +361,7 @@ export function useChatSend({
   /** Edit-and-branch (companion.chat.messages.edit): the original and
    * everything after it are SUPERSEDED server-side (retained, viewable) and a
    * fresh turn answers the edit. Un-persisted optimistic messages cannot be
-   * branched — those resend honestly as a new message. */
+   * branched, those resend honestly as a new message. */
   const editAndResend = useCallback(
     (messageId: string, newText: string) => {
       const content = newText.trim();

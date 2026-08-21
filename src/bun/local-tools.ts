@@ -1,25 +1,26 @@
-// /app/local/* — Bun-side local-machine tools (docs/FEATURES.md Wave F). These
+// /app/local/*, Bun-side local-machine tools (docs/FEATURES.md Wave F). These
 // touch the user's real home directory and localhost, so every handler is
 // bounded and self-contained:
-//   GET/PUT  /hooks            — read/write ~/.goodvibes/hooks.json verbatim
-//   GET      /context          — well-known context files in a directory
-//   GET      /context/file     — bounded read, allowlisted basenames only
-//   POST     /fetch-preview    — read-only URL preview; refuses private targets
-//   GET/PUT/DELETE /providers  — custom TUI provider JSON CRUD
-//   POST     /llm-scan         — opt-in localhost LLM server probe
-//   GET      /deps             — gtk/webkit/tooling dependency doctor
+//   GET/PUT  /hooks           , read/write ~/.goodvibes/hooks.json verbatim
+//   GET      /context         , well-known context files in a directory
+//   GET      /context/file    , bounded read, allowlisted basenames only
+//   POST     /fetch-preview   , read-only URL preview; refuses private targets
+//   GET/PUT/DELETE /providers , custom TUI provider JSON CRUD
+//   POST     /llm-scan        , opt-in localhost LLM server probe
+//   GET      /deps            , gtk/webkit/tooling dependency doctor
 //
 // Security rails are binding, not decorative: fetch-preview refuses
 // localhost/private/link-local hosts (checked BEFORE any socket opens) and
 // forwards no cookies or auth; context reads are guarded solely by an allowlist
 // of well-known basenames (the allowlist IS the traversal guard); provider
 // writes reject any filename that carries a path separator or is not *.json.
-// Writes are atomic (temp file + rename), mirroring settings-store.ts — this
+// Writes are atomic (temp file + rename), mirroring settings-store.ts, this
 // module owns different files, so the idiom is duplicated rather than imported.
 
 import { homedir } from "node:os";
 import { join, dirname, basename, isAbsolute } from "node:path";
 import { mkdir, readFile, writeFile, rename, unlink, stat, readdir } from "node:fs/promises";
+import { lookup as dnsLookup } from "node:dns/promises";
 import type { AppRouteHandler } from "./app-routes.ts";
 
 // ─── shared plumbing ─────────────────────────────────────────────────────────
@@ -171,7 +172,9 @@ const FETCH_MAX_REDIRECTS = 3;
 /**
  * Refuse loopback / private / link-local hosts BEFORE opening a socket. The
  * contract enumerates the ranges literally; we match the hostname string plus
- * the obvious IPv6 loopback/unique-local/link-local forms.
+ * the obvious IPv6 loopback/unique-local/link-local forms. Also reused below
+ * to test a resolved IP address literal (the strings this matches are the
+ * same shape either way, "127.0.0.1" as a hostname or as a DNS answer).
  */
 function isPrivateHost(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^\[/, "").replace(/\]$/, "");
@@ -190,6 +193,29 @@ function isPrivateHost(hostname: string): boolean {
   if (/^f[cd][0-9a-f]{0,2}:/.test(h)) return true;
   if (/^fe[89ab][0-9a-f]?:/.test(h)) return true;
   return false;
+}
+
+/** Resolve a hostname to its IP addresses. Overridable (LocalToolsOptions.resolveHost)
+ *  so tests never need real DNS/network. Resolution failure fails OPEN, a
+ *  hostname that fails to resolve here fails the same way in the fetch() call
+ *  right after, so this only needs to catch the case where resolution
+ *  SUCCEEDS at a private address. */
+export type ResolveHost = (hostname: string) => Promise<string[]>;
+
+const DNS_LOOKUP_TIMEOUT_MS = 2_000; // bounded like every other external call in this module
+
+async function defaultResolveHost(hostname: string): Promise<string[]> {
+  try {
+    const records = await Promise.race([
+      dnsLookup(hostname, { all: true, verbatim: true }),
+      new Promise<never>((_resolve, reject) =>
+        setTimeout(() => reject(new Error("dns lookup timed out")), DNS_LOOKUP_TIMEOUT_MS),
+      ),
+    ]);
+    return records.map((record) => record.address);
+  } catch {
+    return [];
+  }
 }
 
 async function readCapped(response: Response, cap: number): Promise<{ bytes: Uint8Array; truncated: boolean }> {
@@ -241,7 +267,7 @@ function stripTags(html: string): string {
 
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-async function handleFetchPreview(req: Request): Promise<Response> {
+async function handleFetchPreview(req: Request, resolveHost: ResolveHost): Promise<Response> {
   const body = await readJsonBody(req);
   const raw = typeof body["url"] === "string" ? body["url"].trim() : "";
   if (!raw) {
@@ -266,6 +292,23 @@ async function handleFetchPreview(req: Request): Promise<Response> {
           error: "Refusing to fetch a localhost / private / link-local address.",
           code: "LOCAL_FETCH_PRIVATE",
           host: current.hostname,
+        },
+        400,
+      );
+    }
+    // The hostname string itself can look public while resolving to a
+    // private/loopback address (DNS rebinding, or a plain internal DNS
+    // entry), check what fetch() would actually connect to, not just the
+    // literal the caller typed.
+    const resolvedAddresses = await resolveHost(current.hostname);
+    const resolvedPrivateAddress = resolvedAddresses.find((address) => isPrivateHost(address));
+    if (resolvedPrivateAddress) {
+      return json(
+        {
+          error: "Refusing to fetch a hostname that resolves to a localhost / private / link-local address.",
+          code: "LOCAL_FETCH_PRIVATE",
+          host: current.hostname,
+          resolvedAddress: resolvedPrivateAddress,
         },
         400,
       );
@@ -555,10 +598,14 @@ async function handleDeps(): Promise<Response> {
 export interface LocalToolsOptions {
   /** Base ~/.goodvibes directory; override for tests. */
   home?: string;
+  /** Resolve a hostname to IP addresses for the fetch-preview DNS-rebinding
+   *  guard; override in tests to avoid real DNS (no network in CI). */
+  resolveHost?: ResolveHost;
 }
 
 export function createLocalToolsRoutes(opts: LocalToolsOptions = {}): AppRouteHandler {
   const gvHome = opts.home ?? process.env["GOODVIBES_HOME"] ?? join(homedir(), ".goodvibes");
+  const resolveHost = opts.resolveHost ?? defaultResolveHost;
   const hooksPath = join(gvHome, "hooks.json");
   const providersDir = join(gvHome, "tui", "providers");
 
@@ -595,7 +642,7 @@ export function createLocalToolsRoutes(opts: LocalToolsOptions = {}): AppRouteHa
       if (method === "POST") {
         switch (sub) {
           case "/fetch-preview":
-            return await handleFetchPreview(req);
+            return await handleFetchPreview(req, resolveHost);
           case "/llm-scan":
             return await handleLlmScan();
           default:

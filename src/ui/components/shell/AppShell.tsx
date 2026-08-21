@@ -1,4 +1,4 @@
-// AppShell — the whole chrome: sidebar (6 groups, icon-rail collapse), topbar
+// AppShell, the whole chrome: sidebar (6 groups, icon-rail collapse), topbar
 // (eyebrow + title + view actions slot), keep-alive view outlet, bottom
 // StatusStrip, right peek outlet, command palette, toasts, announcer, and the
 // DaemonGate overlay (over the mounted shell, never a remount). Provider
@@ -35,7 +35,7 @@ export function AppShell() {
   const [collapsed, setCollapsed] = useState<boolean>(readSidebarCollapsed);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
-  // Onboarding/Doctor overlay — null = closed; renders OVER the mounted shell
+  // Onboarding/Doctor overlay, null = closed; renders OVER the mounted shell
   // so drafts and view state survive (docs/UX.md §1.2).
   const [onboardingMode, setOnboardingMode] = useState<OnboardingMode | null>(null);
 

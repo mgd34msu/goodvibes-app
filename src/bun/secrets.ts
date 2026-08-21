@@ -1,23 +1,23 @@
-// /app/secrets — SecretsManager + ServiceRegistry surface via the SDK's
-// platform/config (Bun-side ONLY; no wire method exists for either — see
+// /app/secrets, SecretsManager + ServiceRegistry surface via the SDK's
+// platform/config (Bun-side ONLY; no wire method exists for either, see
 // docs/FEATURES.md §19 "gap" rows). Also hosts, under the same module (this
 // agent's only Bun-side grant), the app-own settings persistence and the
 // read-only tui/agent settings-import preview.
 //
 // Shared store: SecretsManager is constructed with surfaceRoot 'tui' so it
 // reads/writes the EXACT same ~/.goodvibes/tui/secrets.enc the TUI/agent use
-// (verified against goodvibes-tui src/runtime/services.ts — every surface
+// (verified against goodvibes-tui src/runtime/services.ts, every surface
 // passes surfaceRoot:'tui' to its own SecretsManager). Values NEVER cross
-// into a JSON response — every route below returns metadata/booleans only.
+// into a JSON response, every route below returns metadata/booleans only.
 //
 // Literal-safety wrapping: a plain secret value that happens to look like a
 // secret-ref string (e.g. "op://…", "secretref:…") would otherwise be
 // mis-resolved by the SDK's own get() as a reference. goodvibes-tui's own
-// SecretsManager wrapper (src/config/secrets.ts, not exported for reuse —
+// SecretsManager wrapper (src/config/secrets.ts, not exported for reuse,
 // no `exports` map on the npm package) guards this with a literal envelope.
 // The exact same prefix + base64url(JSON) shape is reproduced here so a
 // secret written by this app round-trips correctly when read by the TUI (and
-// vice versa) — this is NOT reinvented encoding, it is the documented shape.
+// vice versa), this is NOT reinvented encoding, it is the documented shape.
 //
 // Routes:
 //   GET    /app/secrets                       → list (names/providers only)
@@ -173,17 +173,19 @@ async function handleSetSecret(req: Request): Promise<Response> {
   const body = await readJsonBody(req);
   const name = typeof body["name"] === "string" ? body["name"].trim() : "";
   if (!name) return badRequest("SECRETS_NAME_REQUIRED", "A secret name is required.");
+  const unsafe = rejectUnsafeName(name);
+  if (unsafe) return unsafe;
 
   const options = { scope: parseScope(body["scope"]), medium: parseMedium(body["medium"]) };
 
   // "link" wins when present: a structured SecretRef (env/file/exec/1Password/
-  // Bitwarden/Vaultwarden/BWS) or a provider URI string — stored verbatim so
+  // Bitwarden/Vaultwarden/BWS) or a provider URI string, stored verbatim so
   // SecretsManager.get() resolves through the referenced provider.
   if (body["link"] !== undefined) {
     const link = body["link"] as unknown;
     const normalized = normalizeSecretRef(link);
     if (!normalized) return badRequest("SECRETS_BAD_LINK", "That link is not a recognized secret reference shape.");
-    // The runtime store is plain JSON — an object ref serializes fine even
+    // The runtime store is plain JSON, an object ref serializes fine even
     // though the SDK's own .set() type is declared as `string` (it forwards
     // whatever is given straight into the JSON store untouched).
     await secretsManager.set(name, normalized as unknown as string, options);
@@ -296,7 +298,7 @@ async function handleDoctor(): Promise<Response> {
   return json({
     secrets: inspect,
     services,
-    note: "Non-network summary — use the per-service test button for a live connection check.",
+    note: "Non-network summary: use the per-service test button for a live connection check.",
   });
 }
 
@@ -340,7 +342,7 @@ async function handlePutAppSettings(req: Request): Promise<Response> {
 }
 
 // ─── launch-at-login posture (real when a built launcher exists, honest
-// "not implemented yet" otherwise — never a silent no-op toggle) ────────────
+// "not implemented yet" otherwise, never a silent no-op toggle) ────────────
 
 const REPO_ROOT = join(import.meta.dir, "..", "..");
 const LAUNCHER_CANDIDATES = [
@@ -377,11 +379,11 @@ interface AutostartStatus {
 function autostartUnsupportedReason(): string {
   switch (process.platform) {
     case "darwin":
-      return "Launch at login is not available yet on macOS — it needs a packaged app and a LaunchAgent, which are not built on this machine.";
+      return "Launch at login is not available yet on macOS; it needs a packaged app and a LaunchAgent, which are not built on this machine.";
     case "win32":
-      return "Launch at login is not available yet on Windows — it needs a packaged app and a Startup entry, which are not built on this machine.";
+      return "Launch at login is not available yet on Windows; it needs a packaged app and a Startup entry, which are not built on this machine.";
     default:
-      return "Not implemented on this machine yet — no built launcher was found under build/*-linux-x64. Run `bun run build` first.";
+      return "Not implemented on this machine yet; no built launcher was found under build/*-linux-x64. Run `bun run build` first.";
   }
 }
 
@@ -414,7 +416,7 @@ function desktopEntry(launcherPath: string): string {
     "Name=GoodVibes",
     `Exec=env WEBKIT_DISABLE_DMABUF_RENDERER=1 ${launcherPath}`,
     "X-GNOME-Autostart-enabled=true",
-    "Comment=GoodVibes desktop — unified GoodVibes ecosystem GUI",
+    "Comment=GoodVibes desktop: unified GoodVibes ecosystem GUI",
     "",
   ].join("\n");
 }
@@ -457,7 +459,7 @@ interface ImportSuggestion {
 const SECRET_KEY_SUFFIX =
   /(token|secret|password|passwd|apikey|api_key|accesskey|privatekey|authkey|signingkey|key|credential|cookie|auth|signature|webhook|bearer)$/i;
 
-/** URL with embedded userinfo (scheme://user:pass@host…) — mask the userinfo
+/** URL with embedded userinfo (scheme://user:pass@host…), mask the userinfo
  *  regardless of the key name, since connection strings often hide credentials
  *  under an innocuous key like "url" or "endpoint". */
 const URL_USERINFO = /^([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+:[^/@\s]+@/i;
@@ -525,7 +527,7 @@ async function handleImportPreview(url: URL): Promise<Response> {
 
 // ─── route dispatch ──────────────────────────────────────────────────────────
 
-/** Single-segment literal routes handled above by method GET/POST/PUT — never
+/** Single-segment literal routes handled above by method GET/POST/PUT, never
  *  a valid secret name for the bare-name DELETE route below. */
 const RESERVED_TOP_LEVEL_NAMES = new Set(["inspect", "set", "services", "doctor", "app-settings", "import-preview"]);
 
@@ -557,7 +559,7 @@ export function createSecretsRoutes(): AppRouteHandler {
 
       if (sub === "/import-preview" && method === "GET") return handleImportPreview(url);
 
-      // Bare "/<name>" is the delete route — the only DELETE this module
+      // Bare "/<name>" is the delete route, the only DELETE this module
       // serves. Reserved literal names (routed above by other methods) are
       // excluded so a stray DELETE never tries to delete a "secret" that is
       // actually one of this module's own sub-routes.

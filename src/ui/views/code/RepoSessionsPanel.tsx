@@ -2,14 +2,14 @@
 // 10): sessions whose `project` field matches this git workspace, with
 // jump-to-session links into the Sessions view.
 //
-// Backed by gv.sessions.list() (GET /api/sessions — the same cross-surface
+// Backed by gv.sessions.list() (GET /api/sessions, the same cross-surface
 // union SessionsView reads). That route ignores ?limit/?cursor and the
-// daemon caps the union at 50 (verified live, see SessionsView.tsx) — this
+// daemon caps the union at 50 (verified live, see SessionsView.tsx), this
 // panel filters that same capped set client-side by `project`, so it is
 // honestly "sessions in the 50 most recent whose project matches", never a
 // claim of full history. `project` may be a workspace path, a repo name, or
 // 'unknown' depending on how the session was registered, so the match is
-// exact-or-contains-basename rather than a strict path equality — the raw
+// exact-or-contains-basename rather than a strict path equality, the raw
 // value is always shown alongside the match so a user can judge it.
 
 import { useMemo } from "react";
@@ -21,7 +21,7 @@ import { useUrlState } from "../../lib/router.ts";
 import { EmptyState, ErrorState, SkeletonBlock } from "../../components/feedback.tsx";
 
 const codeSessionsKey = ["code", "sessions", "repo"] as const;
-const SESSIONS_CAP_NOTE = "up to the 50 most recent sessions across all projects — the daemon caps the session union.";
+const SESSIONS_CAP_NOTE = "up to the 50 most recent sessions across all projects; the daemon caps the session union.";
 
 interface RepoSessionRow {
   id: string;
@@ -59,7 +59,7 @@ function basename(path: string): string {
 }
 
 /** Loose match: project field is a path, a repo name, or 'unknown' depending
- * on how the session registered — never a strict path-equality assumption. */
+ * on how the session registered, never a strict path-equality assumption. */
 function matchesWorkspace(project: string, workspaceDir: string): boolean {
   if (!project || project === "unknown") return false;
   const p = project.trim().toLowerCase();

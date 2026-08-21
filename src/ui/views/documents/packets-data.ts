@@ -1,10 +1,10 @@
 // Review packets: wizard + presets + freshness check (docs/GAPS.md §11 rows
 // 4-6). Packets and presets persist through the SAME /app/registries "notes"
 // collection documents-data.ts already uses for blind-compare judgments
-// (tag: "model-compare") — this file just adds two more tags:
-//   "review-packet"        — a composed packet: title, context, and a frozen
+// (tag: "model-compare"), this file just adds two more tags:
+//   "review-packet"       , a composed packet: title, context, and a frozen
 //                             snapshot of each included document version.
-//   "review-packet-preset" — a reusable wizard config: which documents +
+//   "review-packet-preset", a reusable wizard config: which documents +
 //                             a context template, no frozen content.
 // No new Bun-side route: the generic /app/registries CRUD (superset-tolerant
 // RegistryItem, src/shared/registries.ts) already round-trips arbitrary
@@ -83,7 +83,7 @@ export function presetFrom(value: unknown): PacketPreset {
   };
 }
 
-/** A plain note — anything in the collection that isn't a packet/preset
+/** A plain note, anything in the collection that isn't a packet/preset
  * (includes chat's /note-saved items, tag "chat-note", and anything else). */
 export interface PlainNote {
   id: string;
@@ -174,7 +174,7 @@ export interface FreshnessRow {
 }
 
 /** Compares each packet item's captured version against the live document's
- * current headVersion — reuses the Drafts tab's already-fetched doc list, no
+ * current headVersion, reuses the Drafts tab's already-fetched doc list, no
  * extra round trip. */
 export function checkFreshness(packet: ReviewPacket, liveDocs: readonly DocRecord[]): FreshnessRow[] {
   const byId = new Map(liveDocs.map((doc) => [doc.id, doc]));

@@ -1,4 +1,4 @@
-// Health snapshot — health.snapshot rendered as actionable cause/impact/
+// Health snapshot, health.snapshot rendered as actionable cause/impact/
 // next-action cards (docs/FEATURES.md §17), not a bare status blob.
 
 import { useMemo } from "react";

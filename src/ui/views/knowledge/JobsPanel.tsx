@@ -1,7 +1,7 @@
 // Jobs tab: job definitions (knowledge.jobs.list / job.get / job.run),
 // recent job runs (knowledge.job-runs.list), schedules CRUD
 // (knowledge.schedules.* PLUS the single-item knowledge.schedule.get detail
-// peek — docs/GAPS.md §6 row 15 — seeded from the schedules-list cache as a
+// peek, docs/GAPS.md §6 row 15, seeded from the schedules-list cache as a
 // placeholder while the fresh fetch is in flight, with an honest stale-cache
 // note if the refresh itself errors), and index maintenance (knowledge.lint /
 // knowledge.reindex). Admin actions that kick off daemon-side work or
@@ -33,7 +33,7 @@ function JobsSection({ active }: { active: boolean }) {
   const jobs = useQuery({
     queryKey: kKeys.jobs,
     queryFn: () => invoke("knowledge.jobs.list"),
-    // No wire event for job definitions — poll slowly while visible.
+    // No wire event for job definitions, poll slowly while visible.
     refetchInterval: active ? 60_000 : false,
   });
 
@@ -142,7 +142,7 @@ function ScheduleDetailPeek({ scheduleId }: { scheduleId: string }) {
   const queryClient = useQueryClient();
   // Seed from the schedules-list cache so the peek shows something instantly
   // instead of a blank skeleton, and so a failed refresh still has a row to
-  // fall back to (docs/GAPS.md §6 row 15 — "cache as placeholder while
+  // fall back to (docs/GAPS.md §6 row 15, "cache as placeholder while
   // loading" / honest stale fallback on error).
   const cached = knowledgeList(queryClient.getQueryData(kKeys.schedules), "schedules").find(
     (row) => knowledgeId(row) === scheduleId,
@@ -187,7 +187,7 @@ function JobRunsSection({ active }: { active: boolean }) {
   const runs = useQuery({
     queryKey: kKeys.jobRuns,
     queryFn: () => invoke("knowledge.job-runs.list", { query: { limit: 50 } }),
-    // Runs change while jobs execute in the background — 15s poll while visible.
+    // Runs change while jobs execute in the background, 15s poll while visible.
     refetchInterval: active ? 15_000 : false,
   });
   const jobs = useQuery({ queryKey: kKeys.jobs, queryFn: () => invoke("knowledge.jobs.list") });
@@ -452,7 +452,7 @@ function MaintenanceSection() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: KNOWLEDGE_PREFIX });
       const count = firstArray(result, ["issues"]).length;
-      toast({ title: `Lint finished — ${count} issue${count === 1 ? "" : "s"}`, tone: count > 0 ? "warning" : "success" });
+      toast({ title: `Lint finished: ${count} issue${count === 1 ? "" : "s"}`, tone: count > 0 ? "warning" : "success" });
     },
     onError: (error: unknown) => {
       toast({ title: "Lint failed", description: formatError(error), tone: "danger" });

@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
-/** True when the user requested reduced motion — via the OS media query or
+/** True when the user requested reduced motion, via the OS media query or
  * the app's own motion preference (data-motion="reduced" on :root). */
 export function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState<boolean>(() => {

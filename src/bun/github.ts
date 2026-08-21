@@ -1,8 +1,8 @@
-// /app/github — GitHub device-flow + PAT auth, a thin read proxy to the
+// /app/github, GitHub device-flow + PAT auth, a thin read proxy to the
 // GitHub REST API, and the three SDK-backed write calls (PR comment, PR
 // review, issue comment). Backs docs/FEATURES.md §15 "GitHub: device-flow
 // auth + PR/issue list/create" and closes the docs/GAPS.md §15 PARTIAL rows
-// that were blocked on "no github.* wire method exists" — this module serves
+// that were blocked on "no github.* wire method exists", this module serves
 // the endpoints directly from the app process instead of through the daemon
 // wire, so src/ui/views/code/GitHubPanel.tsx (built against this contract,
 // not against this file) gets a live surface on every daemon.
@@ -23,26 +23,26 @@
 //   POST   /pr-review            body {owner,repo,prNumber,body,event} -> SDK GitHubIntegration.postPRReview
 //   POST   /issue-comment        body {owner,repo,issueNumber,body} -> SDK GitHubIntegration.postIssueComment
 //
-// The stored token never appears in a response body after it is stored —
+// The stored token never appears in a response body after it is stored,
 // every route below returns metadata (login/scopes/tokenSource) only.
 //
 // Device flow (RFC 8628): beginDeviceCodeFlow/pollDeviceCodeFlow from the
 // SDK's platform/calendar module are generic OAuth machinery, not
-// calendar-specific — reused here rather than reimplemented. GitHub's device
+// calendar-specific, reused here rather than reimplemented. GitHub's device
 // token endpoint answers HTTP 200 with {"error":"authorization_pending"} (and
 // "slow_down"/"expired_token"/"access_denied") while pending, but the SDK's
 // pollDeviceCodeFlow treats `res.ok` as success. createDeviceFlowHttpFetch
 // below is the fix: it buffers the JSON body and, when a 200 carries a string
-// `error` field, reports ok:false/status 400 with that same body as json() —
+// `error` field, reports ok:false/status 400 with that same body as json(),
 // which makes the SDK's own pending/slow_down/expiry branches run unchanged.
 // A clean 200 (no `error` field) passes through untouched.
 //
-// Only one device flow runs at a time — starting a new one supersedes
+// Only one device flow runs at a time, starting a new one supersedes
 // whatever flow was previously active; a poll on a superseded flowId still
 // resolves (to an honest "superseded" error), it just never completes.
 //
 // GitHub is not a member of the SDK's CalendarProviderId union ('google' |
-// 'microsoft') — that field is never read by beginDeviceCodeFlow /
+// 'microsoft'), that field is never read by beginDeviceCodeFlow /
 // pollDeviceCodeFlow (verified against dist/platform/calendar/oauth-flow.js),
 // so buildGithubClientConfig below deliberately escapes that narrower type
 // with a documented cast rather than lying about being a calendar provider.
@@ -106,7 +106,7 @@ function readGithubSettingsFromFile(file: Record<string, unknown>): GithubAppSet
   };
 }
 
-/** Narrow slice of SecretsManager this module needs — real instance by default, a Map-backed fake in tests. */
+/** Narrow slice of SecretsManager this module needs, real instance by default, a Map-backed fake in tests. */
 export interface SecretStoreLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
@@ -184,8 +184,8 @@ function readNumber(body: Record<string, unknown>, key: string): number | null {
  * pending/denied/expired instead of a non-2xx status. When that happens this
  * reports ok:false/status 400 (json() still resolves to the same body) so
  * pollDeviceCodeFlow's own authorization_pending / slow_down / expired_token
- * branches fire correctly. A response with no string `error` field — success
- * or a real HTTP failure — passes through with its original ok/status.
+ * branches fire correctly. A response with no string `error` field, success
+ * or a real HTTP failure, passes through with its original ok/status.
  */
 export function createDeviceFlowHttpFetch(rawFetch: typeof fetch): HttpFetch {
   return async (req: HttpRequest): Promise<HttpResponse> => {
@@ -229,7 +229,7 @@ interface GithubClientConfigShape {
 }
 
 /** Build a ResolvedClientConfig for GitHub. See the file-header note on the
- *  deliberate `provider` type escape — GitHub is not a calendar provider. */
+ *  deliberate `provider` type escape, GitHub is not a calendar provider. */
 function buildGithubClientConfig(clientId: string): ResolvedClientConfig {
   const config: GithubClientConfigShape = {
     provider: "github",
@@ -254,7 +254,17 @@ interface DeviceFlowRecord {
   login?: string;
   error?: string;
   superseded: boolean;
+  startedAt: number;
 }
+
+// Superseding a flow only flags it (poll still needs the honest "superseded"
+// answer for whatever grace window a client is mid-poll), it never deletes
+// the record, and terminal flows (complete/expired/denied/error) are never
+// deleted either, nothing bounds this Map's growth otherwise. Swept
+// opportunistically wherever a flow is started or polled rather than with a
+// per-record timer, one entry per login attempt for the app's lifetime is
+// small, but unbounded is still unbounded.
+const FLOW_RETENTION_MS = 5 * 60_000;
 
 function classifyRejection(message: string): "denied" | "error" {
   return /access_denied/i.test(message) ? "denied" : "error";
@@ -293,6 +303,12 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
 
   const flows = new Map<string, DeviceFlowRecord>();
   let activeFlowId: string | null = null;
+
+  function pruneFlows(nowMs: number): void {
+    for (const [id, record] of flows) {
+      if (nowMs - record.startedAt > FLOW_RETENTION_MS) flows.delete(id);
+    }
+  }
 
   async function runDeviceFlow(flowId: string, config: ResolvedClientConfig, start: DeviceCodeFlowStart): Promise<void> {
     const record = flows.get(flowId);
@@ -361,6 +377,7 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
   }
 
   async function handleDeviceStart(): Promise<Response> {
+    pruneFlows(now());
     const settings = await readSettings();
     if (!settings.clientId) return json({ error: "client-not-configured" }, 409);
 
@@ -380,7 +397,7 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
       if (previous) previous.superseded = true;
     }
     const flowId = crypto.randomUUID();
-    flows.set(flowId, { status: "pending", superseded: false });
+    flows.set(flowId, { status: "pending", superseded: false, startedAt: now() });
     activeFlowId = flowId;
     void runDeviceFlow(flowId, config, start);
 
@@ -394,6 +411,7 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
   }
 
   function handleDevicePoll(url: URL): Response {
+    pruneFlows(now());
     const flowId = url.searchParams.get("flowId") ?? "";
     const record = flowId ? flows.get(flowId) : undefined;
     if (!record) return json({ status: "error", error: "Unknown or expired flow id." });

@@ -1,5 +1,5 @@
 // Create/edit form for the daemon-canonical skills store. Name is editable
-// only on create (skills.update has no rename — it addresses by name).
+// only on create (skills.update has no rename, it addresses by name).
 // A 409 name-conflict from skills.create renders as an INLINE field error
 // under the Name input, never a toast (UX bar: full detail at the moment of
 // consent belongs where the conflict is, not in a passing notification).
@@ -41,7 +41,7 @@ export function DaemonSkillEditorModal({
   const [body, setBody] = useState("");
   const [metadataText, setMetadataText] = useState("{}");
   const [mode, setMode] = useState<"edit" | "preview">("edit");
-  // Closing a dirty form asks first instead of silently discarding it — item
+  // Closing a dirty form asks first instead of silently discarding it, item
   // 1 (closing warns) from the friction checklist's registry-editor callout.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 

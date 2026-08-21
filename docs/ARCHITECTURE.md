@@ -1,4 +1,4 @@
-# goodvibes-app — Architecture
+# goodvibes-app: architecture
 
 The GoodVibes desktop app: a "Claude Desktop"-class GUI that unifies every capability of
 goodvibes-tui (coding, operations, automation, knowledge, channels, control plane) and
@@ -15,7 +15,7 @@ The feature completion bar is `docs/FEATURES.md`; the UX contract is `docs/UX.md
    blocks the window from painting.
 2. **Wire or delete.** (The goodvibes-desktop autopsy rule.) No surface ships unless its
    backing call works end to end. Capabilities without wire backing render as *honest*
-   read-only or "not available on this daemon" states — never silent stubs.
+   read-only or "not available on this daemon" states, never silent stubs.
 3. **TypeScript-native, Bun everywhere.** One language, one runtime. No Node, no Rust,
    no Electron.
 4. **The daemon is the engine.** We do not reimplement agent execution, providers, tools,
@@ -30,14 +30,14 @@ The feature completion bar is `docs/FEATURES.md`; the UX contract is `docs/UX.md
 | Contract/client | `@pellux/goodvibes-sdk@1.3.1` | Typed operator client, contracts, realtime SSE/WS connectors, auth, errors, pairing helpers. |
 | UI | React 19 + TanStack Query v5 | Direct reuse of goodvibes-webui's proven patterns (`docs/research/webui-map.md` §4). |
 | Styling | Plain CSS design tokens (webui token contract) + SDK presentation contract | Cross-surface visual consistency with TUI/agent/webui. No Tailwind, no CSS-in-JS. |
-| Markdown/code | react-markdown + remark-gfm + highlight.js | Same as webui. Fonts bundled locally (no external fetches — strict offline). |
+| Markdown/code | react-markdown + remark-gfm + highlight.js | Same as webui. Fonts bundled locally (no external fetches, strict offline). |
 | Icons | lucide-react | Same as webui. |
 
 **Linux launch requirement:** `WEBKIT_DISABLE_DMABUF_RENDERER=1` must be in the process
 environment before the native wrapper creates a webview, or WebKitGTK paints a blank
-window (GBM buffer failures — verified in the spike). The launcher wrapper script sets it.
+window (GBM buffer failures, verified in the spike). The launcher wrapper script sets it.
 Known-benign: one `GLXBadWindow` X11 warning at startup; Linux runs under XWayland until
-Electrobun's Wayland PR lands. App menus don't exist on Linux — all chrome is in-page.
+Electrobun's Wayland PR lands. App menus don't exist on Linux. All chrome is in-page.
 
 ## 2. Process model
 
@@ -101,18 +101,18 @@ Mirrors the TUI's `startHostServices` topology (research: tui-daemon-architectur
    the versions and remediation (never start a competing daemon on the port).
 3. If nothing listens: **spawn detached** `goodvibes-daemon` (bin from our
    `node_modules/@pellux/goodvibes-tui`), record pid/port, poll `/status` until ready,
-   then adopt. The daemon outlives the app (same as TUI's detached layer) — closing the
+   then adopt. The daemon outlives the app (same as TUI's detached layer). Closing the
    app never kills running agent work. A settings toggle offers "stop daemon on quit".
 4. Token: `getOrCreateCompanionToken('app', { daemonHomeDir: ~/.goodvibes/daemon })`
-   from `@pellux/goodvibes-sdk/platform/pairing` — the same store the TUI/agent use, so
+   from `@pellux/goodvibes-sdk/platform/pairing`, the same store the TUI/agent use, so
    adoption works with zero setup on a machine that has ever run either.
 5. Health loop: `/status` + `control.snapshot` on a 15s cadence feeding the status strip
    (three axes: Reachable / Signed-in / Working), with SSE liveness as the fast signal.
 
 ## 4. UI data layer (src/ui/lib/)
 
-Ported webui doctrine (research: webui-map §2, §4 — read those files' docblocks when
-implementing):
+Ported webui doctrine (research: webui-map §2, §4). Read those files' docblocks when
+implementing:
 - **TanStack Query is the only server-state store.** Central `queryKeys` registry;
   prefix-key invalidation fan-out; boot snapshot via one `Promise.allSettled`.
 - **SDK facade** (`src/ui/lib/gv.ts`): typed wrapper over `fetch('/api/...')` built from
@@ -121,7 +121,7 @@ implementing):
   probing via `control.methods.get`, and the webui error taxonomy
   (`isMethodUnavailableError`, `isDaemonUnreachableError`, …).
 - **Realtime:** SSE. One multiplexed invalidation stream
-  (`/api/control-plane/events?domains=…`) that only invalidates query keys — frames are
+  (`/api/control-plane/events?domains=…`) that only invalidates query keys. Frames are
   never rendered directly; one raw stream for `session-update`; per-chat-session streams
   via `companion.chat.events.stream`. Desktop has no 6-connection browser cap, but the
   architecture stays: it's the right consistency model. Degradation: "live updates
@@ -132,24 +132,24 @@ implementing):
 
 Features from the products that are process-local (not daemon methods) are implemented in
 the Bun main process and exposed to the UI through the same proxy server under `/app/*`
-routes (same-origin, same patterns — TanStack Query doesn't care who answers):
+routes (same-origin, same patterns, and TanStack Query doesn't care who answers):
 
-- `/app/registries/*` — agent-brain stores: routines, personas, skills, notes, VIBE.md,
+- `/app/registries/*`, agent-brain stores for routines, personas, skills, notes, VIBE.md,
   profiles. File-based JSON registries under `~/.goodvibes/app/` matching goodvibes-agent's
   record shapes (research: agent-map §1b), plus **read-only import bridges** from
   `~/.goodvibes/agent/*` and TUI stores (preview → confirm, redacted, source never
-  mutated — the agent's own settings-import pattern).
-- `/app/git/*` — status/log/diff/branches/stage/commit/stash/worktrees for the workspace
+  mutated, the agent's own settings-import pattern).
+- `/app/git/*`: status/log/diff/branches/stage/commit/stash/worktrees for the workspace
   (Bun spawning `git`; no native modules). Safety rules from the desktop autopsy: dirty-
   checkout confirm, no force-push, no unguarded destructive ops.
-- `/app/pty/*` + WS — terminal tabs (optional feature; a pty via `bun-pty` or
+- `/app/pty/*` + WS: terminal tabs (optional feature; a pty via `bun-pty` or
   `script -qfc` fallback). Exit codes surface loudly (autopsy Theme 1: never silently
   drop a dead terminal).
-- `/app/settings/*` — app-shell settings (theme, density, keybindings, window state,
+- `/app/settings/*`: app-shell settings (theme, density, keybindings, window state,
   daemon lifecycle prefs) in `~/.goodvibes/app/settings.json`.
 
 Rule: Bun-side platform subpaths of the SDK (`platform/*`) may be imported **only** in
-`src/bun/` — never in `src/ui/` (which uses client-safe subpaths only). An ESLint-grade
+`src/bun/`, never in `src/ui/` (which uses client-safe subpaths only). An ESLint-grade
 check script enforces this at build.
 
 ## 6. Repo layout
@@ -182,7 +182,7 @@ test/                     bun test (lib/logic), later Playwright against the pro
 - Proxy: loopback bind, random port, `X-GV-App` header check, no directory listing.
 - Confirm-gated daemon methods (`dangerous: true` / `confirm` required): the UI renders
   explicit confirmation surfaces and passes `confirm:true` + `explicitUserRequest`
-  metadata exactly like the agent does — no auto-confirm setting exists.
+  metadata exactly like the agent does. No auto-confirm setting exists.
 - Secrets views mask by default (webui `config-redaction` pattern); reveal is explicit
   and never persisted.
 - External links open via RPC → `xdg-open`, never navigate the app webview.
@@ -200,16 +200,16 @@ test/                     bun test (lib/logic), later Playwright against the pro
 
 A user-global `GDK_SCALE=2` (set for other GTK3/XWayland apps on this machine) doubles
 the entire app UI when inherited into this process's environment. GTK4-native-Wayland
-apps ignore `GDK_SCALE`, which is why this app is the one thing on the machine affected —
+apps ignore `GDK_SCALE`, which is why this app is the one thing on the machine affected.
 WebKitGTK's webview still renders through the X11/XWayland scaling path.
 
 - **Dev-launch fix (in place):** `scripts/launch.ts` builds the spawned child's env from a
   copy of `process.env` with `GDK_SCALE` and `GDK_DPI_SCALE` deleted before `Bun.spawn`.
-  The user's own shell/session environment is never touched — only the launched app
+  The user's own shell/session environment is never touched. Only the launched app
   process's env is stripped. This is verified working (2026-07-07).
 - **Production-launcher gap (open, not yet fixed):** the bundled release launcher
   (the `.desktop` entry + wrapper script from §8) execs the built `bin/launcher`
-  directly and inherits whatever environment the desktop session hands it — it does
+  directly and inherits whatever environment the desktop session hands it. It does
   **not** go through `scripts/launch.ts`, so the `GDK_SCALE` strip does not apply to
   installed/packaged builds today. A future wrapper script (or a patch to the
   `.desktop`/wrapper generation in the electrobun CLI's Linux packaging step) needs to
@@ -217,20 +217,20 @@ WebKitGTK's webview still renders through the X11/XWayland scaling path.
   with a global `GDK_SCALE` override will render doubled.
 - **The port-50000 relaunch race (operational hazard, not a scale bug):** Electrobun
   binds a fixed internal port (50000) for its own IPC. Killing and immediately
-  relaunching the app races that port's release — a relaunch that starts before the
+  relaunching the app races that port's release. A relaunch that starts before the
   previous process's port is freed dies at boot with GTK "invalid unclassed pointer in
   cast to GtkWidget" errors. This race was repeatedly misdiagnosed as instability in the
   `GDK_SCALE` env fix itself during investigation. Always poll `ss -tln | grep :50000`
-  until the port is free before spawning a new instance — never relaunch
+  until the port is free before spawning a new instance. Never relaunch
   back-to-back without that check.
-- **Known dead ends — do not retry these:**
-  - **CSS `zoom`** — blurry text/images and native form-control sizes desync from the
-    scaled layout (checkboxes, selects, etc. do not scale with `zoom`).
-  - **CSS `transform: scale(...)` on the root** — breaks `vh`/`vw`-relative sizing and
+- **Known dead ends, do not retry these:**
+  - **CSS `zoom`.** Blurry text/images and native form-control sizes desync from the
+    scaled layout (checkboxes, selects, and other form controls do not scale with `zoom`).
+  - **CSS `transform: scale(...)` on the root.** Breaks `vh`/`vw`-relative sizing and
     any resize-driven layout; scrolling and hit-testing region math goes wrong too.
-  - **Electrobun's `webviewSetPageZoom` / `setPageZoom` API** — semantics are inverted
+  - **Electrobun's `webviewSetPageZoom` / `setPageZoom` API.** Semantics are inverted
     from what the name implies on this build, and toggling it has produced webview
-    instability ("invalid unclassed pointer in cast to GtkWidget" — the same failure
+    instability ("invalid unclassed pointer in cast to GtkWidget", the same failure
     signature as the port-50000 race, which is what made this dead end hard to isolate
     from the operational hazard above).
 
@@ -245,4 +245,4 @@ WebKitGTK's webview still renders through the X11/XWayland scaling path.
 | Daemon contract drift (sdk 1.3.1 vs daemon from tui 1.9.2) | Capability probes before non-core calls; `EXTRA_METHOD_ROUTES` seam; version-band gate at adopt time; honest "method unavailable" states. |
 | WebKitGTK quirks (fonts, media) | Bundle fonts; test TTS audio playback early (Wave D); `WEBKIT_DISABLE_DMABUF_RENDERER=1` baked into every launch path. |
 | Companion-chat rate limit (30 msg/min/client) | Client-side send throttle indicator; never silently drop. |
-| Linux window-class branding (`WM_CLASS` shows electrobun's own default, not "GoodVibes") | Upstream gap in electrobun 1.18.1's Linux native wrapper — `libNativeWrapper.so` has no JS-facing hook to set the X11 class hint; `app.name`/`app.identifier` in `electrobun.config.ts` already correctly drive the build folder name and `Info.plist` but never reach that native call. No app-side config fix exists; needs an electrobun upstream fix or a native-wrapper patch. Never target windows by title/class in tooling — match by PID/process instead. |
+| Linux window-class branding (`WM_CLASS` shows electrobun's own default, not "GoodVibes") | Upstream gap in electrobun 1.18.1's Linux native wrapper: `libNativeWrapper.so` has no JS-facing hook to set the X11 class hint; `app.name`/`app.identifier` in `electrobun.config.ts` already correctly drive the build folder name and `Info.plist` but never reach that native call. No app-side config fix exists; needs an electrobun upstream fix or a native-wrapper patch. Never target windows by title/class in tooling. Match by PID/process instead. |

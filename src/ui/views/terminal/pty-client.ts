@@ -2,7 +2,7 @@
 // over plain fetch, plus a reconnecting reader for the per-session SSE output
 // stream. On every (re)connect the server replays the full server-side
 // scrollback (bounded ~2 MB) as the first `output` frame, so the connector
-// signals onReset() before replay and the emulator is rebuilt idempotently —
+// signals onReset() before replay and the emulator is rebuilt idempotently,
 // no double-rendering across reconnects or view switches.
 
 import { appFetch, appJson } from "../../lib/http.ts";

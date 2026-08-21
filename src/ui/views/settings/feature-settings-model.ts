@@ -1,17 +1,17 @@
-// feature-settings-model.ts — pure, deterministic model builder for the
+// feature-settings-model.ts, pure, deterministic model builder for the
 // Feature settings surface. Takes the daemon's live config snapshot
 // (config.get) plus the pinned FEATURE_SETTINGS_SNAPSHOT (feature-
 // settings.generated.ts) and produces the domain-grouped feature-unit
 // structure FeatureSettingsSection renders. No React, no I/O.
 //
 // Ported/adapted from goodvibes-webui src/lib/settings-model.ts's feature-unit
-// half (buildFeatureUnit / isFeatureEnabled / grouping) — this app's Daemon
+// half (buildFeatureUnit / isFeatureEnabled / grouping), this app's Daemon
 // config tab (ConfigSettingsSection.tsx) already renders every config key
 // flattened from config.get with its own TUI-parity category grouping, so
 // this module intentionally does NOT reproduce the plain-row / raw-row model:
 // it renders ONLY feature units, grouped by feature.domain in
 // FEATURE_SETTINGS_SNAPSHOT declaration order. A key a feature owns therefore
-// still also appears as an ordinary editable row in the Daemon config tab —
+// still also appears as an ordinary editable row in the Daemon config tab,
 // that overlap is deliberate (two different lenses on the same config tree),
 // not a duplicate-listing bug; see the integration report.
 
@@ -61,7 +61,7 @@ export interface FeatureFieldModel {
  *
  *   - boolean/enum: `enablementField` is the settings key the feature-level
  *     control writes; excluded from `fields`.
- *   - constant: no separate off switch — `enablementField` is null and every
+ *   - constant: no separate off switch, `enablementField` is null and every
  *     owned settings key (which governs runtime activation directly) renders
  *     as an ordinary field, enablement key first.
  */
@@ -141,7 +141,7 @@ function buildFeatureUnit(feature: FeatureSettingMeta, liveConfig: unknown): Fea
 
 /** Build the ordered, domain-grouped feature-unit model from the live config
  *  snapshot. Group order: domains in FEATURE_SETTINGS_SNAPSHOT declaration
- *  order (first appearance wins) — structural parity with the SDK registry,
+ *  order (first appearance wins), structural parity with the SDK registry,
  *  never a hand-copied category list. */
 export function buildFeatureGroups(liveConfig: unknown): FeatureGroupModel[] {
   const order: string[] = [];
@@ -164,15 +164,11 @@ export function buildFeatureGroups(liveConfig: unknown): FeatureGroupModel[] {
     id: domain,
     // Feature domains ARE config namespaces (schema-grounded), so the same
     // CATEGORY_LABELS/titleCase fallback the Daemon config tab uses applies
-    // verbatim — cross-tab label parity, never a hand-copied list.
+    // verbatim, cross-tab label parity, never a hand-copied list.
     label: categoryLabelForKey(`${domain}.x`),
     units: unitsByDomain.get(domain) ?? [],
   }));
 }
-
-// ---------------------------------------------------------------------------
-// Search / filter
-// ---------------------------------------------------------------------------
 
 function fieldMatches(field: FeatureFieldModel, q: string): boolean {
   return field.key.toLowerCase().includes(q) || field.description.toLowerCase().includes(q);

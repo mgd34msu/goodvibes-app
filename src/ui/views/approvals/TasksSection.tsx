@@ -1,9 +1,9 @@
 // Tasks half of the Approvals & Tasks view: tasks.list with verbatim daemon
-// statuses, fire-and-forget create (tasks.create — POST /task semantics),
+// statuses, fire-and-forget create (tasks.create, POST /task semantics),
 // cancel (only when the task reports itself cancellable) and retry (only for
-// failed/cancelled — the daemon's own transition guard), plus a task detail
+// failed/cancelled, the daemon's own transition guard), plus a task detail
 // peek (tasks.get) with session correlation. Realtime rides the `tasks`
-// domain already wired into DOMAIN_INVALIDATIONS — no extra subscription.
+// domain already wired into DOMAIN_INVALIDATIONS, no extra subscription.
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

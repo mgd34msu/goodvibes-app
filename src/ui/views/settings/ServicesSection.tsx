@@ -1,9 +1,9 @@
 // Service registry (docs/FEATURES.md §19 "gap" row): read-only list of named
 // services from the SDK's ServiceRegistry (services.json + the Secrets
 // section's SecretsManager), a per-service inspect (which credential fields
-// are present — never their values), a live connection test, and a doctor
+// are present, never their values), a live connection test, and a doctor
 // summary. There is no create/edit wire or SDK API for services.json itself
-// — this renders what exists honestly; adding a service means editing
+//, this renders what exists honestly; adding a service means editing
 // ~/.goodvibes/tui/services.json directly (same as the TUI today).
 
 import { useState } from "react";
@@ -39,7 +39,7 @@ export function ServicesSection() {
       setTestResults((prev) => ({ ...prev, [name]: result.test }));
       toast({
         title: result.test.ok ? "Connection ok" : "Connection failed",
-        description: `${name}: ${result.test.status ?? "no response"}${result.test.error ? ` — ${result.test.error}` : ""}`,
+        description: `${name}: ${result.test.status ?? "no response"}${result.test.error ? `, ${result.test.error}` : ""}`,
         tone: result.test.ok ? "success" : "danger",
       });
     },

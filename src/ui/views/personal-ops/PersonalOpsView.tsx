@@ -1,4 +1,4 @@
-// Personal Ops — docs/FEATURES.md §9. Email inbox/compose, calendar agenda +
+// Personal Ops, docs/FEATURES.md §9. Email inbox/compose, calendar agenda +
 // ICS, and one-shot reminders under a unified daily briefing header whose
 // chips (today's events / pending approvals / running tasks / unread inbox)
 // each deep-link to the owning surface. Tab state rides ?filter[tab]= so
@@ -55,7 +55,7 @@ export function PersonalOpsView(): ReactElement {
       return;
     }
     if (target === "deliveries") {
-      // Deliveries has its own panel in the Channels view — this app does
+      // Deliveries has its own panel in the Channels view, this app does
       // not duplicate a delivery log here.
       setView("channels");
       return;
@@ -63,7 +63,7 @@ export function PersonalOpsView(): ReactElement {
     selectTab(target === "events" ? "calendar" : "inbox");
   };
 
-  // View-scoped palette commands — live only while this view is mounted.
+  // View-scoped palette commands, live only while this view is mounted.
   // The `run` closures only touch React setters (stable) and window.history
   // (module-level), so registration does not need to churn per URL change.
   useEffect(() => {

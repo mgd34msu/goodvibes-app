@@ -1,6 +1,6 @@
 // App-local cost analytics engine (docs/FEATURES.md §17): 4 disjoint token
 // buckets (input/output/cache-read/cache-write) plus an "Ephemeral" rollup
-// bucket for sessions with no stable project identity — the desktop autopsy
+// bucket for sessions with no stable project identity, the desktop autopsy
 // (docs/research/desktop-prior-art.md §3, Theme 4) flagged the prior art for
 // showing ephemeral wf_* work-dirs as real "projects" and cumulative token
 // counts with no framing at all. This engine ports that praised 4-bucket +
@@ -8,7 +8,7 @@
 // usage events) instead of a local SQLite scan, and keeps every ephemeral
 // rollup under one clearly-labeled bucket instead of inflating named projects.
 //
-// Pure, side-effect-free — the view layer owns fetching and rendering.
+// Pure, side-effect-free, the view layer owns fetching and rendering.
 
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
 
@@ -35,7 +35,7 @@ export function bucketsTotal(b: TokenBuckets): number {
 }
 
 // ---------------------------------------------------------------------------
-// Dated pricing table — USD per 1M tokens. A small hand-maintained snapshot,
+// Dated pricing table, USD per 1M tokens. A small hand-maintained snapshot,
 // NOT a live catalog fetch: honesty-over-false-precision per docs/UX.md §1.
 // Cache-write/-read ratios follow the common provider convention (cache
 // write ≈ 1.25x base input, cache read ≈ 0.1x base input) applied to the
@@ -87,7 +87,7 @@ const STATIC_PRICING_TABLE: Record<string, BasePricing> = {
 
 export interface PricingResult {
   pricing: ModelPricing;
-  /** False when no entry in the table recognizes this model — cost renders as "unpriced", never a silent zero framed as real. */
+  /** False when no entry in the table recognizes this model, cost renders as "unpriced", never a silent zero framed as real. */
   priced: boolean;
 }
 
@@ -117,7 +117,7 @@ export function costForBuckets(tokens: TokenBuckets, modelId: string): { usd: nu
 }
 
 // ---------------------------------------------------------------------------
-// Usage records — normalized shape extracted defensively from wire payloads
+// Usage records, normalized shape extracted defensively from wire payloads
 // whose exact field names are not pinned by the contracts package.
 // ---------------------------------------------------------------------------
 
@@ -164,7 +164,7 @@ function readTokenBuckets(value: unknown): TokenBuckets {
 /**
  * Extract usage records from a `telemetry.events.list` payload. Every event
  * that carries no recognizable token field contributes ZERO_BUCKETS (never
- * skipped outright — the caller can still see it in the raw events browser),
+ * skipped outright, the caller can still see it in the raw events browser),
  * so a shape this reader doesn't anticipate degrades to an honest zero
  * instead of a thrown error.
  */
@@ -187,7 +187,7 @@ export function usageRecordsFromTelemetryEvents(payload: unknown): UsageRecord[]
 }
 
 /**
- * Extract a synthetic usage record from a `providers.usage.get` payload —
+ * Extract a synthetic usage record from a `providers.usage.get` payload,
  * this is a provider-level rollup already, so it becomes one record with the
  * daemon's own dedup key (there is nothing to dedupe against downstream).
  */
@@ -217,16 +217,12 @@ export function dedupeRecords(records: readonly UsageRecord[]): UsageRecord[] {
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// Rollups
-// ---------------------------------------------------------------------------
-
 export interface Rollup {
   key: string;
   tokens: TokenBuckets;
   costUsd: number;
   recordCount: number;
-  /** True when at least one contributing record used an unrecognized model — the total understates the true cost. */
+  /** True when at least one contributing record used an unrecognized model, the total understates the true cost. */
   hasUnpriced: boolean;
 }
 
@@ -265,7 +261,7 @@ export function totalRollup(records: readonly UsageRecord[]): Rollup {
 }
 
 // ---------------------------------------------------------------------------
-// Formatting — every number gets a label/frame (docs/UX.md Principle #2).
+// Formatting, every number gets a label/frame (docs/UX.md Principle #2).
 // ---------------------------------------------------------------------------
 
 export function formatUsd(value: number): string {

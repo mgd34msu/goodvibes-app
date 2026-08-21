@@ -1,10 +1,10 @@
-// Git view — workspace status master (docs/FEATURES.md §15): staged /
+// Git view, workspace status master (docs/FEATURES.md §15): staged /
 // unstaged / untracked / conflicted groups with per-file stage/unstage, a
 // commit composer that refuses no-op commits with visible reasons, a bounded
 // log with a detail peek, a branch list with dirty-guarded checkout (via
 // ConfirmSurface) and a create-branch form, a stash panel, and read-only
 // tags/remotes/reflog-rescue panels (§15 rows 2-3). All data is app-local
-// (/app/git/* — src/bun/git.ts): no wire events exist, so freshness is a
+// (/app/git/*, src/bun/git.ts): no wire events exist, so freshness is a
 // targeted 15s status poll + mutation-driven invalidation of the
 // ["code","git"] prefix.
 
@@ -77,7 +77,7 @@ export function GitView() {
 
   const refreshAll = () => void queryClient.invalidateQueries({ queryKey: codeKeys.git });
 
-  // Palette command — view-scoped, live only while mounted.
+  // Palette command, view-scoped, live only while mounted.
   useEffect(() => {
     registerCommand({
       id: "git.refresh",
@@ -205,11 +205,11 @@ export function GitView() {
   );
 }
 
-// ─── repo file browser (docs/GAPS.md §15 row 9 — honest gap, see note) ──────
+// ─── repo file browser (docs/GAPS.md §15 row 9, honest gap, see note) ──────
 
 // Repo file browser (docs/FEATURES.md §15 row 9) over the Bun-side
 // /app/git/files + /app/git/file endpoints (tracked files only; bounded
-// listing and reads — src/bun/git.ts). Filter is client-side; preview is
+// listing and reads, src/bun/git.ts). Filter is client-side; preview is
 // plain text with binary/truncation honesty.
 function RepoFilesPanel() {
   const [filter, setFilter] = useState("");
@@ -492,7 +492,7 @@ function CommitComposer({ status }: { status: GitStatus }) {
     : status.conflicted.length > 0
       ? `Resolve ${status.conflicted.length} conflict(s) first`
       : status.staged.length === 0
-        ? "Nothing staged — no-op commits are refused"
+        ? "Nothing staged; no-op commits are refused"
         : message.trim() === ""
           ? "A commit message is required"
           : "";
@@ -653,7 +653,7 @@ function BranchesSection({ enabled, guard }: { enabled: boolean; guard: GitGuard
       toast({
         title: "Checkout failed",
         description: isCheckoutDirtyError(error)
-          ? "Working tree is dirty — commit or stash first."
+          ? "Working tree is dirty; commit or stash first."
           : formatError(error),
         tone: "danger",
         durationMs: 0,
@@ -681,7 +681,7 @@ function BranchesSection({ enabled, guard }: { enabled: boolean; guard: GitGuard
     if (branch.current) return "Already on this branch";
     if (checkout.isPending) return "Checking out…";
     if (guard === undefined) return "Checking working tree status…";
-    if (guard.dirty) return `Working tree has ${dirtyCount} dirty file(s) — commit or stash first`;
+    if (guard.dirty) return `Working tree has ${dirtyCount} dirty file(s); commit or stash first`;
     return "";
   }
 
@@ -947,7 +947,7 @@ function ReflogDrawerContent() {
   );
 }
 
-/** Small copy-to-clipboard chip — local to Git views (no shared component owns this). */
+/** Small copy-to-clipboard chip, local to Git views (no shared component owns this). */
 function CopyChip({ value, label, display }: { value: string; label: string; display: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -1078,7 +1078,7 @@ function StashPanel({ enabled }: { enabled: boolean }) {
       <ConfirmSurface
         open={popTarget !== null}
         action="Pop stash"
-        target={popTarget ? `${popTarget.ref} — ${popTarget.message || "(no message)"}` : ""}
+        target={popTarget ? `${popTarget.ref}: ${popTarget.message || "(no message)"}` : ""}
         blastRadius="Applies the stashed changes onto the current working tree and removes the entry from the stash list. Conflicts stop the pop, leave conflict markers in files, and keep the stash entry."
         confirmLabel={pop.isPending ? "Popping…" : "Pop stash"}
         onConfirm={() => {

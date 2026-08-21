@@ -1,4 +1,4 @@
-// The three live checks from docs/UX.md §5 — daemon / auth / provider+model —
+// The three live checks from docs/UX.md §5, daemon / auth / provider+model,
 // with real-time status, inline repair, and per-check retry. Used by both the
 // first-run onboarding overlay and the re-runnable Doctor surface. Every
 // failure names a next action; nothing here is modal-blocking.
@@ -105,7 +105,7 @@ function ProviderFix({
     },
     onSuccess: async () => {
       setApiKey("");
-      announce("Provider key saved — revalidating providers");
+      announce("Provider key saved: revalidating providers");
       // Validate by refetching: the daemon re-derives provider status.
       await Promise.allSettled([
         queryClient.refetchQueries({ queryKey: queryKeys.providers }),
@@ -229,15 +229,11 @@ function ProviderFix({
   );
 }
 
-// ---------------------------------------------------------------------------
-// The three checks
-// ---------------------------------------------------------------------------
-
 export interface OnboardingChecksProps {
   /**
    * Reports whether all three checks currently pass (drives "Start
    * chatting") and whether the daemon is reachable at all (drives whether
-   * daemon-dependent sections below the checks — permissions/import/pairing —
+   * daemon-dependent sections below the checks, permissions/import/pairing,
    * render their live content or wait).
    */
   onStatus: (allPass: boolean, daemonUp: boolean) => void;
@@ -287,7 +283,7 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
       state: "fail",
       summary: "Token rejected",
       detail: isAuthExpiredError(auth.error)
-        ? "The proxy-injected companion token was refused. The shared pairing store (~/.goodvibes/daemon) may be stale — restart the app to re-pair, or run the TUI once on this machine."
+        ? "The proxy-injected companion token was refused. The shared pairing store (~/.goodvibes/daemon) may be stale; restart the app to re-pair, or run the TUI once on this machine."
         : formatError(auth.error),
     };
   } else if (authExplicitlyRejected(auth.data)) {
@@ -317,7 +313,7 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
     providerResult = {
       state: "unavailable",
       summary: "providers.list not served",
-      detail: "The connected daemon does not serve the provider inventory — chat may still work if it was configured elsewhere.",
+      detail: "The connected daemon does not serve the provider inventory; chat may still work if it was configured elsewhere.",
     };
   } else if (providers.isError) {
     providerResult = { state: "fail", summary: "Provider inventory failed", detail: formatError(providers.error) };
@@ -330,7 +326,7 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
       summary: providerOptions.length === 0 ? "No provider configured" : "No default model set",
       detail:
         providerOptions.length === 0
-          ? "Pick a provider and store an API key — the daemon revalidates instantly."
+          ? "Pick a provider and store an API key; the daemon revalidates instantly."
           : "Providers are available; pick the default model chat should use.",
     };
   }

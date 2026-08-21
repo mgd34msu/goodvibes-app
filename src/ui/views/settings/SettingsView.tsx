@@ -1,4 +1,4 @@
-// Settings & Config workspace (docs/FEATURES.md §19 — forefront requirement).
+// Settings & Config workspace (docs/FEATURES.md §19, forefront requirement).
 // Ten sections behind a local tab rail, each URL-addressable via
 // ?filter[section]=…: the schema-driven daemon config editor, app-shell
 // preferences (theme/density/motion + the live keybinding registry editor),
@@ -7,7 +7,7 @@
 // secrets manager + service registry, notification prefs, app-own
 // window/launch settings, and profile bundles + the tui/agent import bridge.
 // The Doctor (onboarding checks, re-runnable) is one click away in the
-// header — it is owned by AppShell and reached through its registered
+// header, it is owned by AppShell and reached through its registered
 // command. A cross-section fuzzy search (settings-search.ts) sits next to
 // it: jump-to-section + a brief highlight flash, <2s to find any key.
 
@@ -60,7 +60,7 @@ export function SettingsView(): React.ReactElement {
   const rawSection = filters["section"] ?? "";
   const section: SettingsSection = SECTION_IDS.has(rawSection) ? (rawSection as SettingsSection) : "config";
 
-  // Palette commands — view-scoped, live only while the view is mounted.
+  // Palette commands, view-scoped, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "settings.refreshConfig",

@@ -1,6 +1,6 @@
 // Shared four-state gate for the Channels panels (docs/UX.md §4 binding rule):
 // loading (SkeletonBlock) / error-with-retry / capability-unavailable (naming
-// the missing daemon method — the 1.0.0 daemon may 404 any channels.* method)
+// the missing daemon method, the 1.0.0 daemon may 404 any channels.* method)
 // / empty, all visually distinct. Success content renders through the child
 // function so every panel keeps its own markup.
 

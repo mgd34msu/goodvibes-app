@@ -1,11 +1,11 @@
-// Knowledge view — local query keys + shared readers (docs/FEATURES.md §6).
+// Knowledge view, local query keys + shared readers (docs/FEATURES.md §6).
 //
 // Key discipline: every key here is prefixed ["knowledge", …] so one
 // mutation-side `invalidateQueries({ queryKey: ["knowledge"] })` fans out to
 // the whole domain. The four keys that already exist in lib/queries.ts
 // (status / sources / nodes / issues) are re-exported from there so the
 // `knowledge` domain SSE invalidation (lib/realtime.ts DOMAIN_INVALIDATIONS)
-// hits exactly the same arrays. Everything else is view-local — the daemon
+// hits exactly the same arrays. Everything else is view-local, the daemon
 // emits NO wire events for jobs/candidates/refinement/etc., so those queries
 // poll (comments at each use site).
 
@@ -15,12 +15,12 @@ import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.t
 export const KNOWLEDGE_PREFIX = ["knowledge"] as const;
 
 export const kKeys = {
-  // Aligned with lib/queries.ts — invalidated live by the `knowledge` domain.
+  // Aligned with lib/queries.ts, invalidated live by the `knowledge` domain.
   status: queryKeys.knowledgeStatus,
   sources: queryKeys.knowledgeSources,
   nodes: queryKeys.knowledgeNodes,
   issues: queryKeys.knowledgeIssues,
-  // View-local (no wire events — poll or refetch-on-mutation).
+  // View-local (no wire events, poll or refetch-on-mutation).
   map: (filter: string) => ["knowledge", "map", filter] as const,
   item: (id: string) => ["knowledge", "item", id] as const,
   jobs: ["knowledge", "jobs"] as const,
@@ -41,7 +41,7 @@ export const kKeys = {
   graphqlSchema: ["knowledge", "graphql", "schema"] as const,
   agentScopeProbe: ["knowledge", "agent-scope-probe"] as const,
   // Home-graph (docs/FEATURES.md §6 rows 21-22, `homeassistant.homeGraph.*`).
-  // View-local — not part of the `knowledge` SSE domain, no wire events.
+  // View-local, not part of the `knowledge` SSE domain, no wire events.
   homeGraphProbe: ["knowledge", "homegraph", "probe"] as const,
   homeGraphStatus: ["knowledge", "homegraph", "status"] as const,
   homeGraphSources: ["knowledge", "homegraph", "sources"] as const,
@@ -60,7 +60,7 @@ export const kKeys = {
   planningWorkPlanTask: (id: string) => ["knowledge", "planning", "work-plan", "tasks", "detail", id] as const,
 } as const;
 
-/** Best-effort record id/title for home-graph and project-planning payloads —
+/** Best-effort record id/title for home-graph and project-planning payloads,
  * same defensive-reader shape as knowledgeId/knowledgeTitle above, reused
  * because both surfaces' records use the same id/title/name/status vocabulary. */
 export const graphId = knowledgeId;
@@ -112,7 +112,7 @@ export function formatEpoch(value: unknown): string {
   return "";
 }
 
-/** Flat scalar entries of a record — for key/value fact grids. */
+/** Flat scalar entries of a record, for key/value fact grids. */
 export function scalarEntries(value: unknown): Array<[string, string]> {
   const record = asRecord(value);
   const out: Array<[string, string]> = [];

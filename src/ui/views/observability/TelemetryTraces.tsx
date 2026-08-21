@@ -1,4 +1,4 @@
-// Traces browser — telemetry.traces.list.
+// Traces browser, telemetry.traces.list.
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";

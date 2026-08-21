@@ -1,17 +1,17 @@
-// fleet-graph.ts — tolerant readers + display helpers for fleet.graph.get
-// (operator contract 1.11): the dependency-graph view of one workstream —
+// fleet-graph.ts, tolerant readers + display helpers for fleet.graph.get
+// (operator contract 1.11): the dependency-graph view of one workstream,
 // nodes (state/cluster/files/merge state/blocked reason/orphaned/remaining
 // depth/stalled/agent), edges (from depends on to), and the elastic-pool
 // summary (ready/running/at-cap/cap key+size/refusal).
 //
-// Rendered as a VERTICAL LIST (deliberate, per the brief) — legible at any
+// Rendered as a VERTICAL LIST (deliberate, per the brief), legible at any
 // width; a node-link diagram earns its complexity only once this list stops
 // being readable, which it is not.
 //
-// Node `state` is a WorkItemState (platform/orchestration/types.ts) — a
+// Node `state` is a WorkItemState (platform/orchestration/types.ts), a
 // DIFFERENT vocabulary from fleet.snapshot's ProcessState (fleet.ts): this
 // client is hand-mirrored from the SDK source rather than generated, so a
-// daemon newer than this client may report a state it has never seen —
+// daemon newer than this client may report a state it has never seen,
 // render it verbatim, never drop it. Ported from goodvibes-webui
 // src/lib/fleet-graph.ts.
 
@@ -71,7 +71,7 @@ export interface FleetGraphResult {
   readonly title: string;
   readonly nodes: readonly FleetGraphNode[];
   readonly edges: readonly FleetGraphEdge[];
-  /** null when this workstream has no elastic pool (fixed-capacity/single-agent run) — never a fabricated "0 ready, 0 running". */
+  /** null when this workstream has no elastic pool (fixed-capacity/single-agent run), never a fabricated "0 ready, 0 running". */
   readonly pool: FleetGraphPool | null;
 }
 
@@ -123,7 +123,7 @@ export function normalizeFleetGraph(value: unknown): FleetGraphResult {
   };
 }
 
-/** The plain-language "tell" a task-graph row shows for its state — matches
+/** The plain-language "tell" a task-graph row shows for its state, matches
  * the brief's own vocabulary (ready/running/blocked/at-cap/stalled) where it
  * maps cleanly, and states an unknown value verbatim otherwise. */
 export function graphNodeStateLabel(state: string): string {
@@ -167,7 +167,7 @@ export function graphNodeStateTone(state: string): BadgeTone {
   }
 }
 
-/** "N ready, M running[, at cap (fleet.maxSize=K)]" — verbatim in the brief's
+/** "N ready, M running[, at cap (fleet.maxSize=K)]", verbatim in the brief's
  * own wording; the "at cap" clause only when the daemon reports it. */
 export function poolSummaryLabel(pool: FleetGraphPool): string {
   const base = `${pool.ready} ready, ${pool.running} running`;
@@ -175,7 +175,7 @@ export function poolSummaryLabel(pool: FleetGraphPool): string {
 }
 
 /** Titles of the nodes this node depends on (edges "from depends on to",
- * fleet.graph.get's own wording) — the dependency mentions a vertical-list
+ * fleet.graph.get's own wording), the dependency mentions a vertical-list
  * row shows instead of drawing an edge. */
 export function dependencyTitlesForNode(
   nodeId: string,

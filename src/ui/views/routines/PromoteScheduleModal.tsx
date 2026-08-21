@@ -1,4 +1,4 @@
-// "Promote to schedule" — mirrors goodvibes-agent's routine-schedule-promotion
+// "Promote to schedule", mirrors goodvibes-agent's routine-schedule-promotion
 // semantics: routines are LOCAL recipes; only an explicit, confirmed promotion
 // creates a daemon schedule (automation.schedules.create, kind cron|every|at,
 // timezone, the routine's steps as the task body). Two stages:
@@ -66,7 +66,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
   const [timezone, setTimezone] = useState("");
   const [initialTimezone, setInitialTimezone] = useState("");
   const [confirming, setConfirming] = useState<ScheduleDraft | null>(null);
-  // Closing a dirty form asks first instead of silently discarding it — same
+  // Closing a dirty form asks first instead of silently discarding it, same
   // guard the sibling registry editors (RoutineEditorModal etc.) use.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
@@ -108,14 +108,14 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
         kind: draft.kind,
         [draft.kind]: expression,
         ...(draft.kind === "cron" ? { timezone: draft.timezone } : {}),
-        // ConfirmSurface metadata forwarded verbatim — the daemon-side
+        // ConfirmSurface metadata forwarded verbatim, the daemon-side
         // confirmation gate the agent's promotion flow also satisfies.
         ...meta,
       };
       return gv.invoke("automation.schedules.create", { body });
     },
     onSuccess: (result) => {
-      // automation.* has no realtime invalidation stream — the Automation view
+      // automation.* has no realtime invalidation stream, the Automation view
       // refreshes via manual invalidation + poll. Promoting from here writes the
       // same schedule store, so invalidate it too or the new schedule is absent
       // from the Schedules tab until the next poll tick.
@@ -193,7 +193,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
         {routine && capability === "unavailable" && (
           <UnavailableState
             capability="automation.schedules.create"
-            description="routines stay local recipes — this daemon cannot host schedules for them."
+            description="routines stay local recipes; this daemon cannot host schedules for them."
           />
         )}
         {routine && capability !== "unavailable" && (
@@ -201,7 +201,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
             <p className="reg-promote__intro">
               Creates a schedule on the connected daemon that runs this routine&apos;s steps as its task.
               The routine itself stays a local recipe.
-              {capability === "uncertain" && " (Capability probe failed — the daemon may still reject this.)"}
+              {capability === "uncertain" && " (Capability probe failed: the daemon may still reject this.)"}
               {capability === "checking" && " (Checking daemon capability…)"}
             </p>
 
@@ -279,7 +279,7 @@ export function PromoteScheduleModal({ routine, capability, onClose }: PromoteSc
         action="Create daemon schedule"
         target={
           routine && confirming
-            ? `${routine.name} — ${confirming.kind} ${confirming.expression}${confirming.kind === "cron" ? ` (${confirming.timezone})` : ""}`
+            ? `${routine.name}: ${confirming.kind} ${confirming.expression}${confirming.kind === "cron" ? ` (${confirming.timezone})` : ""}`
             : ""
         }
         blastRadius="The daemon will run this routine's steps on the schedule above, unattended, until the schedule is disabled or deleted from the Automation view."

@@ -1,4 +1,4 @@
-// src/bun/github.ts — unit coverage per the task contract:
+// src/bun/github.ts, unit coverage per the task contract:
 //  1. the device-flow HttpFetch quirk adapter (200+string-error becomes
 //     non-ok; a clean 200 passes through unchanged);
 //  2. POST /auth/device/start refuses with 409 client-not-configured when no
@@ -237,6 +237,73 @@ describe("PUT /auth/token", () => {
     expect(JSON.stringify(res.body)).not.toContain("good-token");
     expect(secrets.store.get("GITHUB_TOKEN")).toBe("good-token");
     expect(settings.current.tokenSource).toBe("pat");
+  });
+});
+
+// ─── device-flow Map growth (fix: superseded/terminal flows must not pile up
+// forever, see the FLOW_RETENTION_MS sweep in handleDeviceStart/handleDevicePoll) ──
+
+describe("device-flow Map growth", () => {
+  function deviceStartFetch(): typeof fetch {
+    return (async () =>
+      new Response(
+        JSON.stringify({
+          device_code: "dc",
+          user_code: "USER-CODE",
+          verification_uri: "https://github.com/login/device",
+          expires_in: 900,
+          interval: 5,
+        }),
+        { status: 200 },
+      )) as unknown as typeof fetch;
+  }
+
+  test("a freshly superseded flow still answers 'superseded' (grace window intact)", async () => {
+    const secrets = fakeSecretStore();
+    const settings = fakeSettingsStore({ clientId: "some-client-id" });
+    let clock = 0;
+    const handler = makeHandler({
+      secrets,
+      readSettings: settings.readSettings,
+      writeSettings: settings.writeSettings,
+      fetchImpl: deviceStartFetch(),
+      now: () => clock,
+    });
+
+    const first = await call(handler, "POST", "/app/github/auth/device/start");
+    const firstFlowId = first.body.flowId as string;
+
+    clock += 1_000; // still well inside FLOW_RETENTION_MS
+    const second = await call(handler, "POST", "/app/github/auth/device/start");
+    expect(second.body.flowId).not.toBe(firstFlowId);
+
+    const poll = await call(handler, "GET", `/app/github/auth/device/poll?flowId=${firstFlowId}`);
+    expect(poll.body).toEqual({ status: "error", error: "Superseded by a newer device flow." });
+  });
+
+  test("a flow older than FLOW_RETENTION_MS is swept instead of retained forever", async () => {
+    const secrets = fakeSecretStore();
+    const settings = fakeSettingsStore({ clientId: "some-client-id" });
+    let clock = 0;
+    const handler = makeHandler({
+      secrets,
+      readSettings: settings.readSettings,
+      writeSettings: settings.writeSettings,
+      fetchImpl: deviceStartFetch(),
+      now: () => clock,
+    });
+
+    const first = await call(handler, "POST", "/app/github/auth/device/start");
+    const firstFlowId = first.body.flowId as string;
+
+    // Confirm it is really there before the sweep window passes.
+    const stillThere = await call(handler, "GET", `/app/github/auth/device/poll?flowId=${firstFlowId}`);
+    expect(stillThere.body.status).toBe("pending");
+
+    clock += 5 * 60_000 + 1; // past FLOW_RETENTION_MS
+    // Polling itself sweeps stale entries (handleDevicePoll calls pruneFlows).
+    const afterSweep = await call(handler, "GET", `/app/github/auth/device/poll?flowId=${firstFlowId}`);
+    expect(afterSweep.body).toEqual({ status: "error", error: "Unknown or expired flow id." });
   });
 });
 

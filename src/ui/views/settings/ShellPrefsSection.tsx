@@ -1,5 +1,5 @@
 // App-shell preferences (docs/FEATURES.md §19): theme / density / motion via
-// lib/theme.ts (persisted, instant apply), plus the keybinding editor — it
+// lib/theme.ts (persisted, instant apply), plus the keybinding editor, it
 // lists the LIVE keybinding registry (lib/keybindings.ts is the single source
 // of truth for every displayed hint) and rebinding writes back through
 // setBinding(), with conflict detection via findConflicts().
@@ -116,7 +116,7 @@ function PrefRadioGroup<T extends string>({
 
 /** Human labels for command ids whose owning view is not currently mounted
  *  (the command registry only holds live commands). Falls back to the live
- *  registry title when available, then to the raw id — never invented. */
+ *  registry title when available, then to the raw id, never invented. */
 const COMMAND_LABELS: Record<string, string> = {
   "system.palette": "Command palette",
   "system.shortcuts": "Shortcut cheatsheet",
@@ -187,7 +187,7 @@ function KeybindingEditor() {
       setCapturingId(null);
       return;
     }
-    // Ignore bare modifier presses — wait for the full combo.
+    // Ignore bare modifier presses, wait for the full combo.
     if (["Control", "Meta", "Alt", "Shift"].includes(event.key)) return;
     const combo = eventToCombo(event.nativeEvent).replace(/^Control\+|^Meta\+/, "mod+");
     const conflicts = findConflicts(combo, id);

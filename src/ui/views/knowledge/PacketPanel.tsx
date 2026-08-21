@@ -1,8 +1,8 @@
-// Packet tab: knowledge.packet — preview the packed, budget-aware context an
+// Packet tab: knowledge.packet, preview the packed, budget-aware context an
 // agent would carry into a task, with per-item "why" (reason + score,
 // explainability per docs/FEATURES.md §6) and the post-1.2.0 truncation
 // disclosure (truncated/totalCandidates/droppedCount are additive on the
-// wire — absent fields render nothing rather than a fabricated claim).
+// wire, absent fields render nothing rather than a fabricated claim).
 
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";

@@ -2,7 +2,7 @@
 // schedules)"): automation.schedules.list filtered CLIENT-SIDE to
 // kind === "at" (the wire has no kind filter), plus create through
 // ConfirmSurface. Recurring cron/every schedules belong to the Automation
-// view — a count + jump link keeps that boundary honest.
+// view, a count + jump link keeps that boundary honest.
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export function RemindersPanel({
 }: {
   /** False while this tab is hidden behind another Personal Ops tab (the
    * panel stays mounted so an in-progress reminder draft survives the switch
-   * — item 1 — but its poll pauses while hidden — item 18). */
+   *, item 1, but its poll pauses while hidden, item 18). */
   active?: boolean;
   /** >0 = a pending palette "New reminder" intent; consumed on mount/change. */
   createSignal: number;
@@ -66,7 +66,7 @@ export function RemindersPanel({
 
   // Palette command "New reminder" bumps this counter from the view root;
   // the panel stays mounted across a tab switch (see PersonalOpsView) so this
-  // waits for `active` before focusing — the input cannot take real focus
+  // waits for `active` before focusing, the input cannot take real focus
   // while its tab is display:none.
   const formRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -78,7 +78,7 @@ export function RemindersPanel({
   }, [createSignal, active]);
 
   // Auto-dismiss the confirm overlay when this tab is hidden behind another
-  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Personal Ops tab, an invisible Modal would otherwise keep trapping
   // Tab/Escape globally. The draft text is untouched, so switching back
   // leaves it exactly as typed (item 1).
   useEffect(() => {

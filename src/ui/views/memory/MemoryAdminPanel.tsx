@@ -3,7 +3,7 @@
 //
 // memory.vector.rebuild and memory.embeddings.default.set are admin-access
 // routes; a non-admin token gets the daemon's own rejection surfaced verbatim
-// in a toast. Rebuild goes through ConfirmSurface (docs/UX.md §4) — the wire
+// in a toast. Rebuild goes through ConfirmSurface (docs/UX.md §4), the wire
 // method itself takes no confirm field, so the surface gates the CLICK, and
 // nothing is sent until the operator confirms.
 

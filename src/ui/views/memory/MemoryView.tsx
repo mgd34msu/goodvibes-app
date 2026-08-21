@@ -1,17 +1,17 @@
-// Memory — the canonical cross-surface store (docs/FEATURES.md §7, ported
+// Memory, the canonical cross-surface store (docs/FEATURES.md §7, ported
 // from goodvibes-webui src/views/memory/*).
 //
 // Browse/search rides memory.records.search, whose recall-honesty envelope
 // (mode actually ran, indexUnavailableReason, caveat, exclusion counts) is
 // surfaced verbatim via MemorySearchHonestyNote. The semantic toggle asks the
-// SAME verb for semantic:true — the server decides honestly whether the index
-// answered — and additionally overlays similarity scores from
+// SAME verb for semantic:true, the server decides honestly whether the index
+// answered, and additionally overlays similarity scores from
 // memory.records.search-semantic when that verb is served. Add / detail peek
 // (update + review transitions + links) / review queue / delete-with-confirm /
 // export-import (JSON bundle download/upload) / vector + doctor admin live in
 // the panels around it.
 //
-// Realtime: memory.* has NO wire event domain (docs/FEATURES.md §16 pin) —
+// Realtime: memory.* has NO wire event domain (docs/FEATURES.md §16 pin),
 // the review queue polls every 30s and every mutation invalidates the
 // ["memory"] prefix, which refetches list + open peeks + queue + admin.
 //
@@ -20,7 +20,7 @@
 // own triage buckets) sits alongside the knowledge consolidation candidates
 // queue, reusing knowledge/RefinePanel.tsx's exported `CandidatesSection`
 // rather than re-fetching/re-deciding candidates here. Each half degrades
-// honestly on its own — one method family being absent never hides the
+// honestly on its own, one method family being absent never hides the
 // other.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -71,7 +71,7 @@ import { asRecord } from "../../lib/wire.ts";
 
 const DEFAULT_FILTERS: MemoryFilters = { limit: 100 };
 
-/** Review-queue poll cadence — no wire events exist for memory.* (pinned
+/** Review-queue poll cadence, no wire events exist for memory.* (pinned
  * upstream gap), so freshness here is poll + refetch-on-mutation. */
 const REVIEW_QUEUE_POLL_MS = 30_000;
 
@@ -129,7 +129,7 @@ function MemoryViewInner() {
   });
 
   // Similarity-score overlay: only meaningful when the server says semantic
-  // ACTUALLY ran (list.data.mode) — never claim a ranking a literal scan made.
+  // ACTUALLY ran (list.data.mode), never claim a ranking a literal scan made.
   const semanticScores = useQuery({
     queryKey: memoryKeys.semantic(appliedFilters),
     queryFn: async () =>
@@ -144,7 +144,7 @@ function MemoryViewInner() {
     queryKey: memoryKeys.reviewQueue,
     queryFn: async () =>
       parseMemoryRecords(asRecord(await gv.memory.reviewQueue({ limit: 50 }))["records"]),
-    // No wire events for memory — poll while the view is mounted.
+    // No wire events for memory, poll while the view is mounted.
     refetchInterval: REVIEW_QUEUE_POLL_MS,
     retry: false,
   });
@@ -170,7 +170,7 @@ function MemoryViewInner() {
     onSuccess: async (result, record) => {
       await invalidateAll();
       // Delete-means-delete honesty: the daemon answers {deleted:false} when
-      // no such record existed — never claim a phantom row was removed.
+      // no such record existed, never claim a phantom row was removed.
       const deleted = asRecord(result)["deleted"];
       if (deleted === false) {
         toast({ title: "Nothing deleted", description: "No record with that id existed.", tone: "warning" });
@@ -197,7 +197,7 @@ function MemoryViewInner() {
 
   const exportBundle = useMutation({
     mutationFn: async () => {
-      // Export takes the shared filter fields — recall is search-only and is
+      // Export takes the shared filter fields, recall is search-only and is
       // deliberately NOT forwarded (filtersToBody(…, false)).
       const result = await invoke("memory.records.export", { body: filtersToBody(appliedFilters, false) });
       return asRecord(asRecord(result)["bundle"] ?? result);
@@ -338,7 +338,7 @@ function MemoryViewInner() {
     if (!meta) {
       toast({
         title: "Not a memory bundle",
-        description: `${file.name} has no records array — expected a memory.records.export download.`,
+        description: `${file.name} has no records array: expected a memory.records.export download.`,
         tone: "danger",
       });
       return;
@@ -450,7 +450,7 @@ function MemoryViewInner() {
             className="memory-button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importBundle.isPending}
-            title="Import a memory bundle JSON file (id-keyed union — never overwrites)"
+            title="Import a memory bundle JSON file (id-keyed union: never overwrites)"
           >
             <Upload size={13} aria-hidden="true" />
             {importBundle.isPending ? "Importing…" : "Import"}
@@ -629,7 +629,7 @@ function MemoryViewInner() {
         open={deleteTarget !== null}
         action="Delete memory record"
         target={deleteTarget?.summary ?? ""}
-        blastRadius="Delete means delete: the record and its links are removed from the store AND the semantic index — not flagged, not archived. This cannot be undone."
+        blastRadius="Delete means delete: the record and its links are removed from the store AND the semantic index, not flagged, not archived. This cannot be undone."
         danger
         confirmLabel="Delete permanently"
         onConfirm={() => {
@@ -643,7 +643,7 @@ function MemoryViewInner() {
         open={pendingImport !== null}
         action="Import memory bundle"
         target={pendingImport?.filename ?? ""}
-        blastRadius={`Adds up to ${pendingImport?.recordCount ?? 0} records and ${pendingImport?.linkCount ?? 0} links to the canonical store as an id-keyed union — existing ids are left untouched (counted as skipped), nothing is overwritten or deleted, and re-running is idempotent.`}
+        blastRadius={`Adds up to ${pendingImport?.recordCount ?? 0} records and ${pendingImport?.linkCount ?? 0} links to the canonical store as an id-keyed union; existing ids are left untouched (counted as skipped), nothing is overwritten or deleted, and re-running is idempotent.`}
         confirmLabel="Import"
         onConfirm={() => {
           if (pendingImport) importBundle.mutate(pendingImport.bundle);

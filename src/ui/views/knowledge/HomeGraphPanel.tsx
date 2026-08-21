@@ -1,6 +1,6 @@
 // Home-graph tab: the Home Assistant integration mirror of the wiki
 // (docs/FEATURES.md §6 rows 21-22, `homeassistant.homeGraph.*`, 25 wire
-// methods — docs/GAPS.md gap #2). Shapes below are read straight off the
+// methods, docs/GAPS.md gap #2). Shapes below are read straight off the
 // SDK's own d.ts (node_modules/@pellux/goodvibes-sdk/dist/platform/knowledge/
 // home-graph/{types,service}.d.ts) rather than guessed field names.
 //
@@ -8,13 +8,13 @@
 // 404s the whole tab renders a single UnavailableState ("HA integration not
 // configured on this daemon") instead of 25 broken buttons. When status
 // succeeds, every section below still uses its own QueryStates/mutation
-// error handling — an individual sub-method can still be missing on a build
+// error handling, an individual sub-method can still be missing on a build
 // that otherwise has the integration (wire-or-delete: each is invoked for
 // real, honesty renders per-method when one of them specifically 404s).
 //
 // All access:"admin" routes here go through the single shared
 // PendingConfirmSurface (confirm:true + explicitUserRequest). `reset` is the
-// one `dangerous:true` route — danger styling + typed confirmation.
+// one `dangerous:true` route, danger styling + typed confirmation.
 
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -412,7 +412,7 @@ function IngestSection({ requestConfirm }: { requestConfirm: (action: PendingAct
   const { toast } = useToast();
   const [url, setUrl] = useState("");
   const [noteTitle, setNoteTitle] = useState("");
-  // Note body is the field worth persisting — a hand-written note a user
+  // Note body is the field worth persisting, a hand-written note a user
   // would grieve losing to an accidental view switch.
   const [noteBody, setNoteBody, noteBodyDraft] = useDraftState("knowledge.homegraph.ingest-note-body", "");
   const [artifactId, setArtifactId] = useState("");
@@ -614,7 +614,7 @@ function IngestSection({ requestConfirm }: { requestConfirm: (action: PendingAct
 function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: PendingAction) => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  // Both are JSON bodies a user would grieve retyping — projectionParams is a
+  // Both are JSON bodies a user would grieve retyping, projectionParams is a
   // shared working value reused across passport/room-page/packet actions (no
   // single "submit" clears it); importDraft is cleared once import succeeds.
   const [projectionParams, setProjectionParams] = useDraftState("knowledge.homegraph.projection-params", "{}");
@@ -762,7 +762,7 @@ function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: Pendi
       <JsonParamsField
         value={projectionParams}
         onChange={setProjectionParams}
-        label="Projection target (JSON — e.g. {&quot;deviceId&quot;:&quot;…&quot;} or {&quot;areaId&quot;:&quot;…&quot;})"
+        label="Projection target (JSON: e.g. {&quot;deviceId&quot;:&quot;…&quot;} or {&quot;areaId&quot;:&quot;…&quot;})"
       />
       <div className="knowledge-maintenance">
         <button
@@ -817,7 +817,7 @@ function MaintenanceSection({ requestConfirm }: { requestConfirm: (action: Pendi
           {exportSpace.isPending ? "Exporting…" : "Export space"}
         </button>
       </div>
-      <JsonParamsField value={importDraft} onChange={setImportDraft} label="Import data (JSON — a prior Export result)" />
+      <JsonParamsField value={importDraft} onChange={setImportDraft} label="Import data (JSON: a prior Export result)" />
       <button
         type="button"
         className="knowledge-button knowledge-button--danger"
@@ -857,7 +857,7 @@ function RefinementSection({
     queryKey: kKeys.homeGraphRefinementTasks,
     queryFn: () => invoke(`${HG}.refinement.tasks.list`, { query: { limit: 100 } }),
     // The Home graph tab stays mounted-but-hidden on the other Knowledge
-    // tabs — gate on `active` so this stops polling once it's not visible
+    // tabs, gate on `active` so this stops polling once it's not visible
     // (item 18).
     refetchInterval: active ? 15_000 : false,
   });
@@ -1002,9 +1002,9 @@ export function HomeGraphPanel({ active }: { active: boolean }) {
   const probe = useHomeGraphProbe();
 
   // Home-graph sources/nodes live in a SEPARATE knowledge store from the wiki
-  // (docs/research/tui-daemon-architecture.md:79 — `knowledge-home-graph.sqlite`
+  // (docs/research/tui-daemon-architecture.md:79, `knowledge-home-graph.sqlite`
   // is its own database), so this can't reuse KnowledgeItemPeekBody's
-  // `knowledge.item.get` call — that would query the wrong store. Every list
+  // `knowledge.item.get` call, that would query the wrong store. Every list
   // here already has the full record in hand; the peek just renders it.
   const openItem = (title: string, record: unknown) =>
     peek.open({
@@ -1030,7 +1030,7 @@ export function HomeGraphPanel({ active }: { active: boolean }) {
     return (
       <UnavailableState
         capability={`${HG}.status`}
-        description="this daemon has no Home Assistant home-graph integration configured — every ask/browse/map/ingest/sync surface below depends on it."
+        description="this daemon has no Home Assistant home-graph integration configured; every ask/browse/map/ingest/sync surface below depends on it."
       />
     );
   }

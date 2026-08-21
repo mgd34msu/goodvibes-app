@@ -1,8 +1,8 @@
-// Global hotkey listener — combos ("mod+k", "Escape") and two-key chords
+// Global hotkey listener, combos ("mod+k", "Escape") and two-key chords
 // ("g c", 1 s window), guarded against firing while typing unless a binding
 // opts in. Ported from goodvibes-webui src/hooks/useHotkeys.ts, plus
 // useCommandHotkeys() which binds every command with an effective combo from
-// the keybinding registry (lib/keybindings.ts) — the registry stays the
+// the keybinding registry (lib/keybindings.ts), the registry stays the
 // single source of truth for what actually fires.
 
 import { useEffect, useRef, useState } from "react";
@@ -78,7 +78,7 @@ export function eventToCombo(event: KeyboardEvent): string {
   if (event.metaKey) parts.push("Meta");
   if (event.ctrlKey) parts.push("Control");
   if (event.altKey) parts.push("Alt");
-  // Shift is omitted for bare printable chars — the char already encodes it
+  // Shift is omitted for bare printable chars, the char already encodes it
   // (Shift+/ arrives as "?"). Kept for named keys and modified combos.
   const isBareShiftedChar =
     event.key.length === 1 && event.key !== " " && !event.ctrlKey && !event.metaKey && !event.altKey;
@@ -120,7 +120,7 @@ export function useHotkeys(bindings: HotkeyBinding[]): void {
             return;
           }
 
-          // Arm the chord without preventDefault — the raw first key may
+          // Arm the chord without preventDefault, the raw first key may
           // matter to other listeners.
           if (currentCombo === firstKey) {
             pendingSeqRef.current = { key: firstKey, ts: Date.now() };

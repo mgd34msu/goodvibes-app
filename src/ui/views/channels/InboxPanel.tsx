@@ -1,5 +1,5 @@
 // Channels inbox (docs/FEATURES.md §13 "Inbox (triage-decorated)"):
-// channels.inbox.list rendered with its triage decorations preserved —
+// channels.inbox.list rendered with its triage decorations preserved,
 // unread marker, provider + kind badges, attachment count, route/thread ids.
 // Read-only observability (pages observe, modals configure); replies happen
 // through channel actions.

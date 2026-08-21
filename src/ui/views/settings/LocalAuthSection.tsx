@@ -7,11 +7,11 @@
 //
 // docs/GAPS.md §20 row 2 (PARTIAL → login form): the route table's exact id
 // for interactive login is `control.auth.login` (POST /login, public access)
-// — NOT any `local_auth.*` id, despite the row's docs/FEATURES.md phrasing;
+//, NOT any `local_auth.*` id, despite the row's docs/FEATURES.md phrasing;
 // confirmed by reading operator-contract.json's method list directly. Its
 // outputSchema returns {authenticated, token, username, expiresAt}, but
 // ui-server.ts's proxy unconditionally overwrites every outbound
-// Authorization header with this app's own companion bearer token — so a
+// Authorization header with this app's own companion bearer token, so a
 // token this form receives can never actually be applied to this app's own
 // subsequent requests. The form below still calls the real method and shows
 // its real result (verification, not theater), with that architectural
@@ -73,7 +73,7 @@ export function LocalAuthSection() {
     queryKey: settingsKeys.localAuth,
     queryFn: () => gv.invoke("local_auth.status"),
     retry: false,
-    // No wire event covers local-auth churn — targeted poll.
+    // No wire event covers local-auth churn, targeted poll.
     refetchInterval: SETTINGS_POLL_MS,
   });
 
@@ -85,7 +85,7 @@ export function LocalAuthSection() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: settingsKeys.localAuth });
 
   // The local_auth delete methods declare additionalProperties:false input
-  // schemas (no confirm passthrough on the wire) — the ConfirmSurface gate is
+  // schemas (no confirm passthrough on the wire), the ConfirmSurface gate is
   // client-side, same as sessions.delete.
   const deleteUser = useMutation({
     mutationFn: ({ username }: { username: string }) =>
@@ -507,7 +507,7 @@ function RotatePasswordModal({
   }
 
   return (
-    <Modal open={username !== null} onClose={onClose} title={`Rotate password — ${username ?? ""}`}>
+    <Modal open={username !== null} onClose={onClose} title={`Rotate password: ${username ?? ""}`}>
       <form className="settings-auth__form" onSubmit={handleSubmit}>
         <label>
           New password

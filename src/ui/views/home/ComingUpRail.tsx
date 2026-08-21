@@ -69,7 +69,7 @@ export function ComingUpRail({ onOpenCalendar, onOpenAutomation }: { onOpenCalen
     return merged.sort((a, b) => a.when - b.when).slice(0, RAIL_LIMIT);
   }, [schedules.isSuccess, schedules.data, events.isSuccess, events.data, now]);
 
-  // Muted per-source degradation notes — the rail never goes blank silently.
+  // Muted per-source degradation notes, the rail never goes blank silently.
   const notes: string[] = [];
   if (schedules.isError) {
     const refusal = capabilityRefusal(schedules.error, "automation.schedules.list", "");
@@ -122,7 +122,7 @@ export function ComingUpRail({ onOpenCalendar, onOpenAutomation }: { onOpenCalen
                 type="button"
                 className="home-coming-up__row"
                 onClick={item.kind === "event" ? onOpenCalendar : onOpenAutomation}
-                aria-label={`${item.label} at ${formatEpoch(item.when)} — open ${item.kind === "event" ? "calendar" : "automation"}`}
+                aria-label={`${item.label} at ${formatEpoch(item.when)}: open ${item.kind === "event" ? "calendar" : "automation"}`}
               >
                 {item.kind === "event" ? (
                   <CalendarDays size={13} aria-hidden="true" />

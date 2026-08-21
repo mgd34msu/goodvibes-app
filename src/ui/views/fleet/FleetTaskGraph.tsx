@@ -1,16 +1,16 @@
-// FleetTaskGraph — the fix-phase task graph for one workstream
+// FleetTaskGraph, the fix-phase task graph for one workstream
 // (fleet.graph.get, operator contract 1.11), rendered in the workstream
 // detail pane.
 //
-// Deliberately a VERTICAL LIST, not a node-link diagram — every state tell
+// Deliberately a VERTICAL LIST, not a node-link diagram, every state tell
 // (ready/running/blocked/at-cap/stalled) is expressible as text + a badge,
 // and a diagram earns its complexity only once this list stops being
 // legible, which it is not.
 //
-// fleet.graph.get has no wire event — this is fetch-once (no poll) + a
+// fleet.graph.get has no wire event, this is fetch-once (no poll) + a
 // manual refresh button, matching the rest of this app's fleet.*-domain
 // views (docs/UX.md §6: poll only while relevant, else fetch-once +
-// invalidate-on-mutation — a task graph has no mutation this app drives, so
+// invalidate-on-mutation, a task graph has no mutation this app drives, so
 // "invalidate" here is just the refresh button).
 
 import { useMemo } from "react";
@@ -40,7 +40,7 @@ function GraphNodeRow({ node, dependsOn }: { node: FleetGraphNode; dependsOn: re
         <span
           className={`badge ${tone}`}
           data-contract-state={contractStateForBadgeTone(tone)}
-          title={isKnownGraphNodeState(node.state) ? undefined : "State not known to this client — shown verbatim"}
+          title={isKnownGraphNodeState(node.state) ? undefined : "State not known to this client, shown verbatim"}
         >
           {graphNodeStateLabel(node.state)}
         </span>
@@ -106,7 +106,7 @@ export function FleetTaskGraph({ workstreamId }: { workstreamId: string }) {
           {graph.data.pool && (
             <p className="fleet-task-graph__pool">
               {poolSummaryLabel(graph.data.pool)}
-              {graph.data.pool.refusal ? ` — ${graph.data.pool.refusal}` : ""}
+              {graph.data.pool.refusal ? `, ${graph.data.pool.refusal}` : ""}
             </p>
           )}
           {graph.data.nodes.length === 0 ? (

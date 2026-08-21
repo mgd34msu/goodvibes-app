@@ -42,7 +42,7 @@ interface MessageItemProps {
   revisionOf?: string;
   /** Snippet of the user message this assistant reply answers, shown only
    * when that pairing is NOT the plain preceding message in the transcript
-   * (a queued send or a steer jumping the queue broke positional pairing —
+   * (a queued send or a steer jumping the queue broke positional pairing,
    * see message-utils.ts `messageInReplyTo`). */
   replyToSnippet?: string;
   onCopyMessage: (message: ChatMessage) => void;
@@ -213,9 +213,9 @@ export function MessageItem({
                   : state === "local"
                     ? "Pending"
                     : state === "queued"
-                      ? "Queued — will run once the current turn finishes"
+                      ? "Queued: will run once the current turn finishes"
                       : state === "cancelled"
-                        ? "Stopped — this reply was interrupted before it finished"
+                        ? "Stopped: this reply was interrupted before it finished"
                         : "Sent"
               }
             >

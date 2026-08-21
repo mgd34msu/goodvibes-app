@@ -1,4 +1,4 @@
-// Node-host contract viewer — remote.node_host.contract (docs/FEATURES.md
+// Node-host contract viewer, remote.node_host.contract (docs/FEATURES.md
 // §21 row 5). Read-only: the daemon's own description of the peer wire
 // protocol (transport, recommended heartbeat/work-pull intervals, scopes,
 // endpoints). A collapsible summary is the default view; the full raw JSON

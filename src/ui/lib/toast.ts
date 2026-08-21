@@ -1,6 +1,6 @@
-// Toast store — ported from goodvibes-webui src/lib/toast.ts with the
+// Toast store, ported from goodvibes-webui src/lib/toast.ts with the
 // docs/UX.md §4 rules applied: max 3 visible, older toasts overflow into a
-// drawer that is actually fed (autopsy Theme 3 — the "+N more" counter opens
+// drawer that is actually fed (autopsy Theme 3, the "+N more" counter opens
 // a real notification list, nothing is silently dropped). Every toast() call
 // also announces to the ARIA live region (lib/announcer.ts).
 
@@ -43,13 +43,13 @@ export interface ToastEntry extends ToastOptions {
 const DEFAULT_DURATION_MS = 5000;
 /** Max toasts painted as floating cards; the rest wait in the drawer. */
 export const MAX_VISIBLE_TOASTS = 3;
-/** Exit animation duration — matches --motion-base in tokens.css. */
+/** Exit animation duration, matches --motion-base in tokens.css. */
 export const TOAST_EXIT_DURATION_MS = 180;
 
 interface ToastState {
   /** All live toasts, oldest first. Visible = last MAX_VISIBLE_TOASTS. */
   toasts: ToastEntry[];
-  /** Ids playing their exit animation — still mounted, present=false. */
+  /** Ids playing their exit animation, still mounted, present=false. */
   leavingIds: ReadonlySet<string>;
   drawerOpen: boolean;
 }
@@ -174,13 +174,13 @@ export function useToast(): Pick<ToastContextValue, "toast" | "dismiss" | "dismi
   return { toast: ctx.toast, dismiss: ctx.dismiss, dismissAll: ctx.dismissAll };
 }
 
-/** Null outside a provider — for leaf components rendered in isolation. */
+/** Null outside a provider, for leaf components rendered in isolation. */
 export function useOptionalToast(): Pick<ToastContextValue, "toast"> | null {
   const ctx = useContext(ToastContext);
   return ctx ? { toast: ctx.toast } : null;
 }
 
-/** Full context — ToastViewport/drawer internals only. */
+/** Full context, ToastViewport/drawer internals only. */
 export function useToastContext(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToastContext must be used within a ToastProvider");
@@ -224,7 +224,7 @@ export function useAutoDismiss({ id, durationMs, onDismiss }: UseAutoDismissOpti
   useEffect(() => {
     if (durationMs > 0) start();
     return () => clearTimer();
-    // start only on mount — pause/resume own the timer afterwards.
+    // start only on mount, pause/resume own the timer afterwards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

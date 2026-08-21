@@ -1,7 +1,7 @@
-// Minimal store-only (uncompressed) ZIP writer — docs/GAPS.md §11 row 5
+// Minimal store-only (uncompressed) ZIP writer, docs/GAPS.md §11 row 5
 // ("Reviewer handoff ZIP archives"). No dependency, no deflate: every entry
 // is written with compression method 0 ("store"). This is a fully valid ZIP
-// — any unzip tool opens it — the only cost is size, and every entry this
+//, any unzip tool opens it, the only cost is size, and every entry this
 // view writes is markdown/JSON text for a handful of document versions, so
 // that cost is negligible. Deliberately not implementing DEFLATE keeps this
 // file small and dependency-free, which is the explicit trade-off the task
@@ -10,7 +10,7 @@
 export interface ZipEntryInput {
   /** Path within the archive (forward slashes, no leading slash). */
   name: string;
-  /** UTF-8 text content — this writer only handles text entries. */
+  /** UTF-8 text content, this writer only handles text entries. */
   content: string;
 }
 

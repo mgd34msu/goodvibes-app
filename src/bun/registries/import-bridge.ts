@@ -1,6 +1,6 @@
 // Read-only import bridge from goodvibes-agent's file stores under
 // ~/.goodvibes/agent/ (docs/research/agent-map.md §1b, §3). Source stores are
-// NEVER mutated — corrupt or missing agent files are skipped with a warning,
+// NEVER mutated, corrupt or missing agent files are skipped with a warning,
 // never renamed or rewritten. Imported items keep their agent ids (re-imports
 // are idempotent) and are marked source:"agent-import".
 //

@@ -3,7 +3,7 @@
 // (calendar.events.create, admin + ConfirmSurface), ICS export download and
 // ICS import (admin + ConfirmSurface). Ports the webui CalendarView's
 // three-way refusal taxonomy verbatim: unconfigured 412 / capability-missing
-// 404-501 / genuine error — never folded into one generic failure.
+// 404-501 / genuine error, never folded into one generic failure.
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -58,8 +58,8 @@ export function CalendarPanel({
   onCreateSignalConsumed,
 }: {
   /** False while this tab is hidden behind another Personal Ops tab (the
-   * panel stays mounted so an in-progress event draft survives the switch —
-   * item 1 — but its poll pauses while hidden — item 18). */
+   * panel stays mounted so an in-progress event draft survives the switch,
+   * item 1, but its poll pauses while hidden, item 18). */
   active?: boolean;
   /** >0 = a pending palette "New event" intent; consumed on mount/change. */
   createSignal: number;
@@ -99,10 +99,10 @@ export function CalendarPanel({
   }, [createSignal, active]);
 
   // Auto-close any open overlay when this tab is hidden behind another
-  // Personal Ops tab — an invisible Modal would otherwise keep trapping
+  // Personal Ops tab, an invisible Modal would otherwise keep trapping
   // Tab/Escape globally even though nothing is on screen. Draft text and any
   // loaded .ics content are untouched, so switching back restores them
-  // exactly (item 1 — nothing expires on a tab switch).
+  // exactly (item 1, nothing expires on a tab switch).
   useEffect(() => {
     if (!active) {
       setCreateOpen(false);
@@ -115,7 +115,7 @@ export function CalendarPanel({
 
   const create = useMutation({
     // confirm:true is the SDK schema's own explicit-confirmation field for
-    // this write (webui parity: only `confirm` goes on the wire — the
+    // this write (webui parity: only `confirm` goes on the wire, the
     // ConfirmSurface still collects the explicit user gesture in the UI).
     mutationFn: (input: EventDraft) =>
       gv.invoke("calendar.events.create", {
@@ -455,7 +455,7 @@ function CalendarEventPeek({ eventId, fallback }: { eventId: string; fallback: C
     retry: false,
   });
 
-  // The list row already carries the summary — render it while (or instead
+  // The list row already carries the summary, render it while (or instead
   // of) the detail call, and note honestly when the detail read failed.
   const record = detail.isSuccess ? asRecord(detail.data) : {};
   const merged: CalendarEvent = {

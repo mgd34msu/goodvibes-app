@@ -1,10 +1,10 @@
-// Project-context viewer — docs/FEATURES.md §8 row 9. Directory input
+// Project-context viewer, docs/FEATURES.md §8 row 9. Directory input
 // (defaults to GOODVIBES_WORKING_DIR, read off /app/git/workspace) → GET
 // /app/local/context for the well-known-filename list → bounded read +
 // markdown render via /app/local/context/file. Read-only; the allowlist of
 // well-known basenames (CLAUDE.md, AGENTS.md, .cursorrules,
 // .goodvibes/GOODVIBES.md, .github/copilot-instructions.md) IS the traversal
-// guard on the Bun side (src/bun/local-tools.ts) — this panel never lets the
+// guard on the Bun side (src/bun/local-tools.ts), this panel never lets the
 // user type an arbitrary file path, only pick from that fixed list.
 
 import { useState, type FormEvent } from "react";
@@ -75,7 +75,7 @@ export function ProjectContextPanel() {
   });
 
   const entries = files.isSuccess ? parseContextFiles(files.data) : [];
-  // Only a failed /app/local/context call means "local tools unavailable" —
+  // Only a failed /app/local/context call means "local tools unavailable",
   // a failed /app/git/workspace default just falls back to an empty
   // placeholder; the user can still type a directory in by hand.
   const unavailable = files.isError && isLocalUnavailable(files.error);

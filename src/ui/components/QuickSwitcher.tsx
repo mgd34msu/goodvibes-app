@@ -1,11 +1,11 @@
-// Quick switcher (docs/FEATURES.md §23 row 4, docs/GAPS.md top-10 gap #9) —
+// Quick switcher (docs/FEATURES.md §23 row 4, docs/GAPS.md top-10 gap #9),
 // a mod+p fuzzy switcher over views + recent chat/operator sessions, in the
 // style of an editor's "go to anything". Self-contained: registers its own
 // command + seeds its own default keybinding through the EXISTING registry
 // APIs (lib/commands.ts, lib/keybindings.ts) rather than editing either
 // module, and drives navigation the same way every other cross-view jump in
-// this app does — through the shell's registered `nav.<id>` commands
-// (lib/commands.ts) plus the router's pure functions (lib/router.ts) — NEVER
+// this app does, through the shell's registered `nav.<id>` commands
+// (lib/commands.ts) plus the router's pure functions (lib/router.ts), NEVER
 // its own `useUrlState()` instance, because only the shell's instance drives
 // the mounted view outlet (see lib/approvals.ts / views/code/diff-model.ts
 // for the same documented pattern this file follows).
@@ -15,7 +15,7 @@
 //   - Operator-session selection is reliable: "sessions" is NOT a keep-alive
 //     view (views/registry.tsx), so SessionsView remounts on every jump and
 //     reads ?session= fresh (its own `useState(() => getCurrentUrlState()
-//     .session)`) — writing the URL right after the nav command lands
+//     .session)`), writing the URL right after the nav command lands
 //     correctly every time.
 //   - Chat-session selection is best-effort: ChatView IS keep-alive, and its
 //     active session lives in a localStorage cache (companion-chat.ts) with
@@ -23,7 +23,7 @@
 //     .ts only carries new/focus-composer/search). Writing that cache key
 //     seeds a FRESH ChatView mount correctly; if Chat was already visited
 //     this session, ChatView stays on its current session (switch to Chat
-//     still happens, right session may not auto-select) — the honest limit
+//     still happens, right session may not auto-select), the honest limit
 //     of what is reachable without editing views/chat/** (out of this file's
 //     grant).
 
@@ -44,7 +44,7 @@ import { useFocusTrap } from "../lib/focus-trap.ts";
 const QUICK_SWITCHER_COMMAND_ID = "system.quickSwitcher";
 const QUICK_SWITCHER_DEFAULT_COMBO = "mod+p";
 
-// Seed the default combo through the public keybindings API exactly once —
+// Seed the default combo through the public keybindings API exactly once,
 // only if nothing (default or user override) is already bound to this
 // command id. Never re-seeds afterward, so a later user remap always wins.
 if (typeof window !== "undefined" && getBinding(QUICK_SWITCHER_COMMAND_ID) === undefined) {
@@ -75,7 +75,7 @@ function navigateToView(viewId: string): void {
  * NOT keep-alive, so this is reliable on every jump (see file header). */
 function navigateToOperatorSession(sessionId: string): void {
   runCommand("nav.sessions");
-  // Overwrite the URL AFTER the nav command's own pushState — the shell's
+  // Overwrite the URL AFTER the nav command's own pushState, the shell's
   // useUrlState instance drives the outlet but does not read session back
   // out of this write; SessionsView reads it fresh at its own remount.
   replaceState({ ...getCurrentUrlState(), view: "sessions", session: sessionId });
@@ -83,7 +83,7 @@ function navigateToOperatorSession(sessionId: string): void {
 
 /** Jump to Chat with a specific companion session pre-selected. Reliable on
  * a fresh mount; best-effort if Chat is already keep-alive mounted (see
- * file header — no event hook is exposed to force an already-mounted
+ * file header, no event hook is exposed to force an already-mounted
  * ChatView to re-read the active session). */
 function navigateToChatSession(sessionId: string): void {
   writeStoredActiveSessionId(sessionId);

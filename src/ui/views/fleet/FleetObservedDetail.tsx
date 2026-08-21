@@ -1,9 +1,9 @@
-// FleetObservedDetail — the row badge + drill-in detail for an
+// FleetObservedDetail, the row badge + drill-in detail for an
 // 'observed-external' fleet node: a foreign coding-agent session goodvibes
 // did NOT spawn or host (Claude Code / Codex / opencode / unknown), detected
 // read-only from OS signals (operator contract 1.11).
 //
-// This is visibility only — the detail states plainly that the session is
+// This is visibility only, the detail states plainly that the session is
 // externally launched and never stoppable from here. Steer is offered ONLY
 // when the node reports a genuine channel (steer.kind === 'tmux'); a
 // channel-less row ('none') renders the daemon's own reason verbatim, never
@@ -27,7 +27,7 @@ function externalKindLabel(kind: string): string {
   return EXTERNAL_KIND_LABELS[kind] ?? (kind.trim() || "unknown agent");
 }
 
-/** Active/Quiet badge from the node's observed liveness verbatim — 'quiet'
+/** Active/Quiet badge from the node's observed liveness verbatim, 'quiet'
  * does NOT mean idle (it may be blocked on the network or a human); the
  * daemon's own `detail` states that distinction, never a client gloss. */
 export function ObservedBadge({ observed }: { observed: FleetObserved }) {

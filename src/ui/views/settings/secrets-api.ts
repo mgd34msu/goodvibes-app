@@ -1,7 +1,7 @@
 // Typed client for the app-local /app/secrets/* routes (src/bun/secrets.ts)
 // plus the LOCAL query-key registry for the Secrets / Services / App & Launch
 // settings sections. No wire method backs any of this (docs/FEATURES.md §19
-// "gap" rows) — every value here is app-local, so freshness is a short
+// "gap" rows), every value here is app-local, so freshness is a short
 // targeted poll plus mutation-driven invalidation, same doctrine as
 // settings-queries.ts's SETTINGS_POLL_MS.
 
@@ -47,7 +47,7 @@ export interface SecretsStorageReview {
 }
 
 /** Mirrors the SDK's SecretRef union shapes closely enough to build a "link"
- *  payload from a form — validated server-side against the real type. */
+ *  payload from a form, validated server-side against the real type. */
 export type SecretLinkInput =
   | { source: "env"; id: string }
   | { source: "goodvibes"; id: string }

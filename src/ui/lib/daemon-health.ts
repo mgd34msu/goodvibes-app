@@ -1,4 +1,4 @@
-// Three-axis daemon health (Reachable / Signed-in / Working) — pure types and
+// Three-axis daemon health (Reachable / Signed-in / Working), pure types and
 // helpers ported from goodvibes-webui src/lib/daemon-health.ts, with the
 // REACHABLE axis re-sourced from this app's /app/health endpoint (the Bun
 // side probes the daemon; the webview asks the Bun side).
@@ -13,7 +13,7 @@ import { useSseRetryAt, useSseState } from "./realtime.ts";
 import { usePendingApprovalsCount } from "./approvals.ts";
 
 /**
- * REACHABLE axis. The daemon answered its /status probe — this says nothing
+ * REACHABLE axis. The daemon answered its /status probe, this says nothing
  * about auth. Label is "Reachable", never "Connected": a 401ing daemon is
  * still reachable while everything else fails.
  */
@@ -39,7 +39,7 @@ export interface DaemonHealth {
   queuedTasks: number;
   /** Approvals awaiting a human decision (pending or claimed). */
   pendingApprovals: number;
-  /** Present when the daemon is incompatible/unreachable — user-facing detail. */
+  /** Present when the daemon is incompatible/unreachable, user-facing detail. */
   detail: string | null;
   daemonMode: AppHealth["daemon"]["mode"] | null;
   daemonVersion: string | null;
@@ -167,7 +167,7 @@ const AUTHED_PROBE_INTERVAL_MS = 15_000;
  *   200 → signed-in+working, 401 → signed-out/blocked, else unknown.
  * - Active turns: control.snapshot totals (placeholder until turn events land).
  * - Pending approvals: shared queryKeys.approvals cache (the permissions SSE
- *   domain invalidates it — the strip badge updates live without polling fast).
+ *   domain invalidates it, the strip badge updates live without polling fast).
  * - SSE axis + reconnect deadline: the module store lib/realtime.ts maintains.
  */
 export function useDaemonHealth(): DaemonHealth {

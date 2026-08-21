@@ -3,7 +3,7 @@
 // no models.* routes, so the model inventory comes from each provider record
 // (models / availableModels / runtime.models.*) and the SELECTION is
 // daemon-owned per chat session (companion.chat.sessions.update
-// { provider, model }) — not a global models.select.
+// { provider, model }), not a global models.select.
 
 import { asRecord, bestId, bestTitle, firstArrayAtPath, firstString, readPath } from "../../lib/wire.ts";
 

@@ -1,10 +1,10 @@
 // Per-session companion-chat SSE stream (the sanctioned render-from-frames
 // exception, docs/ARCHITECTURE.md §4). Ported from goodvibes-webui
-// src/views/chat/useChatStream.ts, re-based on lib/sse.ts openSse — which
+// src/views/chat/useChatStream.ts, re-based on lib/sse.ts openSse, which
 // reconnects forever with capped backoff, so the webui's "stream paused"
 // terminal state becomes a persistent honest "reconnecting" health signal
 // instead. Turn state machine: queued/submitted → running → streaming/tooling
-// → completed | error | cancelled. STREAM_END is NOT terminal — a dropped
+// → completed | error | cancelled. STREAM_END is NOT terminal, a dropped
 // stream flips health to 'reconnecting' while the daemon keeps working.
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
@@ -20,6 +20,7 @@ import {
   assistantContentFromCompletedTurn,
   companionEventType,
   usageFromPayload,
+  type TurnState,
 } from "./message-utils.ts";
 
 export type StreamHealth = "idle" | "connecting" | "live" | "reconnecting";
@@ -28,7 +29,7 @@ interface UseChatStreamOptions {
   activeSessionId: string;
   liveTextRef: RefObject<string>;
   onSessionMissing: (sessionId: string) => void;
-  setTurnState: Dispatch<SetStateAction<string>>;
+  setTurnState: Dispatch<SetStateAction<TurnState>>;
   setTurnError: Dispatch<SetStateAction<string>>;
   setLiveText: Dispatch<SetStateAction<string>>;
   setLocalMessages: Dispatch<SetStateAction<LocalCompanionMessage[]>>;
@@ -37,10 +38,10 @@ interface UseChatStreamOptions {
   /** Fired with the assistant text when a turn completes (long-turn
    * notification + always-speak hooks live in the view). */
   onTurnCompleted?: (content: string, elapsedMs: number) => void;
-  turnState: string;
+  turnState: TurnState;
   /** Surfaces a non-benign sessions.toolCalls.cancel failure (anything past
    * the quiet SESSION_NOT_LOCAL / TOOL_CALL_NOT_RUNNING / method-unavailable
-   * degrades below) — the view toasts it. */
+   * degrades below), the view toasts it. */
   notifyToolCancelError?: (message: string) => void;
 }
 
@@ -50,7 +51,7 @@ export interface UseChatStreamResult {
   /** Live tool-call blocks for the current (or just-finished) turn. */
   toolCalls: ToolCallBlock[];
   /** callIds with a cancel request in flight (or awaiting their settling
-   * tool_result frame) — MessageList shows these as "cancelling…" instead of
+   * tool_result frame), MessageList shows these as "cancelling…" instead of
    * offering the cancel affordance again. Cleared the moment the matching
    * turn.tool_result frame arrives, per the A2 brief: mark cancelled locally
    * immediately, but only actually remove the affordance once that frame
@@ -59,25 +60,25 @@ export interface UseChatStreamResult {
   /** Cancel ONE in-flight tool call (sessions.toolCalls.cancel) without
    * touching the rest of the turn. */
   cancelToolCall: (callId: string) => void;
-  /** True once a cancel attempt has come back isMethodUnavailableError — this
+  /** True once a cancel attempt has come back isMethodUnavailableError, this
    * daemon build has never heard of the verb, so MessageList stops offering
    * the affordance instead of failing the same way on every call. */
   toolCancelUnavailable: boolean;
   /** Live metrics for the thinking strip; null when no turn has run. */
   turnMetrics: TurnMetrics | null;
-  /** True server-side stop (daemon >= 1.11, docs/GAPS.md §1 row 39 —
+  /** True server-side stop (daemon >= 1.11, docs/GAPS.md §1 row 39,
    * previously wire-blocked, see docs/turn-cancel-request.md): calls
    * `gv.chat.turns.cancel(sessionId, {turnId})` (the current turn's id when
    * known from `turnMetrics`, omitted for a very-early stop before
-   * `turn.started` has delivered one — the daemon finds the active turn by
+   * `turn.started` has delivered one, the daemon finds the active turn by
    * sessionId alone) and leaves the stream OPEN. Nothing else happens here on
    * success: the terminal `turn.cancelled` SSE event (handled in `onEvent`
    * below) is the authoritative signal that converges every subscriber to
-   * this session, including this client — closing the stream here would
+   * this session, including this client, closing the stream here would
    * race that convergence. A benign 404 `NO_ACTIVE_TURN` (the turn finished
    * naturally before the stop landed) is a quiet no-op. `isMethodUnavailableError`
    * (a pre-1.11 daemon that has never heard of this verb) falls back to the
-   * old local-only behavior — stop rendering, mark cancelled locally, say
+   * old local-only behavior, stop rendering, mark cancelled locally, say
    * plainly that the daemon may still finish the turn server-side. */
   stop: () => void;
   /** Re-open the stream after a stop (or to force a fresh connection). */
@@ -111,7 +112,7 @@ export function useChatStream({
   const notifyToolCancelErrorRef = useRef(notifyToolCancelError);
   notifyToolCancelErrorRef.current = notifyToolCancelError;
 
-  // sessions.toolCalls.cancel(sessionId, callId) — cancels ONE running tool
+  // sessions.toolCalls.cancel(sessionId, callId), cancels ONE running tool
   // call, leaving the turn and every other running call untouched. Marks the
   // call "cancelling" immediately for feedback; the mark is cleared by the
   // turn.tool_result handler below (the call truly ends when that frame
@@ -133,8 +134,8 @@ export function useChatStream({
           return next;
         });
         // Benign: SESSION_NOT_LOCAL (this isn't the daemon's own live
-        // session — see session-runtime.ts), or TOOL_CALL_NOT_RUNNING (the
-        // call already settled — its tool_result frame is on the way or
+        // session, see session-runtime.ts), or TOOL_CALL_NOT_RUNNING (the
+        // call already settled, its tool_result frame is on the way or
         // already landed). Neither is worth alarming the operator over.
         if (isSessionNotLocalError(error) || isToolCallNotRunningError(error)) return;
         if (isMethodUnavailableError(error)) {
@@ -168,7 +169,7 @@ export function useChatStream({
         stopLocally();
         setTurnState("stopped locally");
         setTurnError(
-          "Stopped rendering only — this daemon does not support stopping a turn server-side " +
+          "Stopped rendering only; this daemon does not support stopping a turn server-side " +
             "(needs daemon 1.11+). The reply may still finish and will appear in the history.",
         );
         return;
@@ -325,7 +326,7 @@ export function useChatStream({
         }
 
         if (type === "turn.cancelled") {
-          // Terminal, exactly like turn.completed/turn.error — the daemon has
+          // Terminal, exactly like turn.completed/turn.error, the daemon has
           // already persisted the honest partial (deliveryState "cancelled")
           // when partialPersisted is true, closed any dangling tool calls with
           // a synthetic error turn.tool_result BEFORE this event (handled by
@@ -383,7 +384,7 @@ export function useChatStream({
         hadDrop = true;
         setStreamHealth("reconnecting");
         // Only claim 'reconnecting' for the TURN when one is actually in
-        // flight — an idle chat with a dropped stream is a health issue, not
+        // flight, an idle chat with a dropped stream is a health issue, not
         // a turn state.
         setTurnState((current) => (ACTIVE_TURN_STATES.includes(current) ? "reconnecting" : current));
       },
@@ -413,7 +414,7 @@ export function useChatStream({
   };
 }
 
-/** lib/sse.ts throws plain Errors with { status, body } attached — wrap the
+/** lib/sse.ts throws plain Errors with { status, body } attached, wrap the
  * body so the shared error classifiers can read code/message shape. */
 function normalizeSseError(error: unknown): unknown {
   if (error && typeof error === "object" && "body" in error) {

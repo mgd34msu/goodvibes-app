@@ -1,5 +1,5 @@
 // Connection diagnostics (docs/FEATURES.md §17): the shared SSE connector
-// state from lib/realtime.ts (read-only — that connector is mounted once by
+// state from lib/realtime.ts (read-only, that connector is mounted once by
 // the app shell, so this view surfaces its state rather than owning it) plus
 // an app-local rolling latency prober against /app/health that this view
 // DOES own, with its own pause/resume and a reconnect (failure) counter.
@@ -100,7 +100,7 @@ export function DiagnosticsSection() {
         </div>
 
         {samples.length === 0 ? (
-          <p className="obs-diagnostics__note">{probing ? "Probing /app/health…" : "Probing paused — no samples yet."}</p>
+          <p className="obs-diagnostics__note">{probing ? "Probing /app/health…" : "Probing paused: no samples yet."}</p>
         ) : (
           <>
             <div className="obs-stat-row" role="list" aria-label="Latency stats">
@@ -132,7 +132,7 @@ export function DiagnosticsSection() {
                   key={sample.atMs}
                   className={sample.latencyMs === null ? "obs-diagnostics__bar obs-diagnostics__bar--down" : "obs-diagnostics__bar"}
                   style={sample.latencyMs !== null ? { height: `${Math.min(100, 8 + sample.latencyMs / 5)}%` } : undefined}
-                  title={`${new Date(sample.atMs).toLocaleTimeString()} — ${sample.latencyMs === null ? "failed" : formatLatency(sample.latencyMs)}`}
+                  title={`${new Date(sample.atMs).toLocaleTimeString()}: ${sample.latencyMs === null ? "failed" : formatLatency(sample.latencyMs)}`}
                 />
               ))}
             </ul>

@@ -1,4 +1,4 @@
-// Unified daily briefing — the composed dashboard row shared by Personal Ops
+// Unified daily briefing, the composed dashboard row shared by Personal Ops
 // (header chips) and Home (richer card). Five sources, each honestly degraded
 // per-source (docs/FEATURES.md §9 "honest per-source degradation"): a failed
 // source renders a "—" chip with the cause in plain words, never a fake zero.
@@ -29,11 +29,11 @@ import {
 
 export type BriefingJumpTarget = "events" | "approvals" | "tasks" | "inbox" | "deliveries";
 
-/** Poll cadence for deliveries.list — no wire event drives this chip. */
+/** Poll cadence for deliveries.list, no wire event drives this chip. */
 const DELIVERIES_POLL_MS = 30_000;
 
 export interface BriefingSource<T> {
-  /** null while degraded — the chip shows "—", never a fabricated 0. */
+  /** null while degraded, the chip shows "—", never a fabricated 0. */
   count: number | null;
   items: T[];
   loading: boolean;
@@ -72,7 +72,7 @@ export function useBriefing(): BriefingData {
   const now = new Date();
   const events = useCalendarEvents(startOfDayIso(now), endOfDayIso(now));
   const inbox = useEmailInbox();
-  // Approvals + tasks ride the shared queryKeys prefixes — the `permissions`
+  // Approvals + tasks ride the shared queryKeys prefixes, the `permissions`
   // and `tasks` SSE domains invalidate them live; no extra polling here.
   const approvals = useApprovalsSnapshot();
   const tasks = useTasksSnapshot();
@@ -209,8 +209,8 @@ export function BriefingChips({
             title={degraded ? chip.source.degradedNote : `Open ${chip.label}`}
             aria-label={
               degraded
-                ? `${chip.label}: unavailable — ${chip.source.degradedNote}`
-                : `${value} ${chip.label} — open`
+                ? `${chip.label}: unavailable, ${chip.source.degradedNote}`
+                : `${value} ${chip.label}: open`
             }
           >
             {chip.icon}

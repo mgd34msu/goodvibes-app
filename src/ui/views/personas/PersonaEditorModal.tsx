@@ -24,7 +24,7 @@ export function PersonaEditorModal({ open, persona, saving, onClose, onSave }: P
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
-  // Closing a dirty form asks first instead of silently discarding it — item
+  // Closing a dirty form asks first instead of silently discarding it, item
   // 1 (closing warns) from the friction checklist's registry-editor callout.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 

@@ -1,9 +1,9 @@
 // Dependency-check step (docs/GAPS.md §22 row 6, PARTIAL → closed). The
-// three live daemon/auth/provider checks stay exactly as they were — this is
+// three live daemon/auth/provider checks stay exactly as they were, this is
 // a fourth, purely additive, skippable section (same doctrine as
 // PermissionsStep/ImportStep/PairingStep) that surfaces the one thing those
 // three checks never covered: gtk/webkit/tooling dependencies. Backed by
-// GET /app/local/deps (src/bun/local-tools.ts) — Bun.which / ldconfig -p
+// GET /app/local/deps (src/bun/local-tools.ts), Bun.which / ldconfig -p
 // probes, honest {ok: null} on non-Linux platforms where a check does not
 // apply. Re-runnable any time via the same "Retry" affordance the three
 // live checks use.
@@ -27,9 +27,9 @@ const FIX_HINTS: Record<string, string> = {
   webkit2gtk: "Install libwebkit2gtk (e.g. `sudo pacman -S webkit2gtk-4.1` on Arch, `sudo apt install libwebkit2gtk-4.1-0` on Debian/Ubuntu).",
   gtk3: "Install GTK 3 (e.g. `sudo pacman -S gtk3` on Arch, `sudo apt install libgtk-3-0` on Debian/Ubuntu).",
   "notify-send": "Install libnotify (e.g. `sudo pacman -S libnotify` on Arch, `sudo apt install libnotify-bin` on Debian/Ubuntu) for desktop notifications.",
-  git: "Install git (e.g. `sudo pacman -S git`, `sudo apt install git`) — needed for the Coding/Dev views.",
+  git: "Install git (e.g. `sudo pacman -S git`, `sudo apt install git`), needed for the Coding/Dev views.",
   setsid: "Install util-linux (usually already present) for session-leader process spawning.",
-  script: "Install util-linux's `script` (PTY capture) — usually preinstalled on Linux/macOS.",
+  script: "Install util-linux's `script` (PTY capture), usually preinstalled on Linux/macOS.",
 };
 
 function stateFor(ok: boolean | null): ContractStatusState {
@@ -43,7 +43,7 @@ async function fetchDeps(): Promise<{ checks: DepCheck[] }> {
 
 export function DepsCheckStep() {
   // Dependency checks are app-local (Bun.which/ldconfig), independent of the
-  // daemon connection — unlike PermissionsStep/ReasoningEffortStep, this
+  // daemon connection, unlike PermissionsStep/ReasoningEffortStep, this
   // needs no `daemonUp` gate.
   const deps = useQuery({
     queryKey: onboardingKeys.deps,

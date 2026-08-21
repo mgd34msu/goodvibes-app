@@ -1,5 +1,5 @@
 // Import-bridge entry point (docs/GAPS.md §22 row 8). The bridge itself is
-// owned by the Routines/Personas/Skills wave; this view only links to it —
+// owned by the Routines/Personas/Skills wave; this view only links to it,
 // cross-directory IMPORT of the modal is allowed, editing it is not.
 
 import { useState } from "react";

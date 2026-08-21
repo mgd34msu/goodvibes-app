@@ -1,16 +1,16 @@
-// Approvals & Tasks — human-in-the-loop (docs/FEATURES.md §4).
+// Approvals & Tasks, human-in-the-loop (docs/FEATURES.md §4).
 //
 // Approvals: pending / claimed / history tabs over approvals.list, with a
 // category × risk matrix for the active tab. The hero interaction is per-hunk
 // edit approval: a pending edit approval's request.args.edits render as real
 // diffs with per-hunk checkboxes; "Approve selected" sends
-// approvals.approve({ selectedHunks }) — an INDEX ARRAY ONLY, the daemon
+// approvals.approve({ selectedHunks }), an INDEX ARRAY ONLY, the daemon
 // computes the modified edit so every surface agrees. Deny always requires a
 // note (docs/UX.md §4). Claim locks a pending approval; Cancel withdraws it
 // without deciding. Realtime rides the `permissions` domain invalidation.
 //
 // Deep links: ?filter[approval]=<id> (and the module focus store fed by
-// jumpToApprovals — the toast → jump flow) selects the right tab, scrolls the
+// jumpToApprovals, the toast → jump flow) selects the right tab, scrolls the
 // card into view, and highlights it.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -40,7 +40,7 @@ import { PermissionRulesSection } from "./PermissionRulesSection.tsx";
 
 function friendlyError(error: unknown): string {
   if (isSessionClosedError(error)) {
-    return "That session is closed — the approval can no longer be actioned.";
+    return "That session is closed; the approval can no longer be actioned.";
   }
   return formatError(error);
 }
@@ -152,7 +152,7 @@ function ApprovalsSection() {
       });
       await invalidate();
       // A subset was sent only when selectedHunks is non-empty AND shorter
-      // than the full hunk count — selecting every hunk (or "Approve all")
+      // than the full hunk count, selecting every hunk (or "Approve all")
       // is a full approval, not a partial one.
       const selectedCount = variables.selectedHunks?.length ?? 0;
       const isPartial =
@@ -315,11 +315,11 @@ function ApprovalsSection() {
   );
 }
 
-// ─── Deny modal (a note is REQUIRED — docs/UX.md §4) ─────────────────────────
+// ─── Deny modal (a note is REQUIRED, docs/UX.md §4) ─────────────────────────
 // Exported so other surfaces that render the shared ApprovalCard (e.g.
 // FleetApprovalInline) reuse this exact deny-with-note flow instead of a
 // second, crippled note prompt. Callers key this component by
-// `record?.id ?? "none"` so it remounts per target approval — that remount is
+// `record?.id ?? "none"` so it remounts per target approval, that remount is
 // what makes the per-record draft key below safe (see useDraftState's
 // "stable per mount" contract in lib/drafts.ts). Callers must also call
 // clearDraft(`approvals.deny-note.${id}`) in their deny mutation's onSuccess.
@@ -349,7 +349,7 @@ export function DenyModal({
         <form className="deny-form" onSubmit={handleSubmit}>
           <p className="deny-form__context">
             Denying <strong>{record.request.tool}</strong>
-            {record.request.analysis.summary ? ` — ${record.request.analysis.summary}` : ""}. The requesting agent
+            {record.request.analysis.summary ? `, ${record.request.analysis.summary}` : ""}. The requesting agent
             sees your note as the reason.
           </p>
           <label className="deny-form__label" htmlFor="deny-note">
@@ -380,7 +380,7 @@ export function DenyModal({
 
 // ─── Category × risk matrix ──────────────────────────────────────────────────
 // Grounded entirely in fields already on ApprovalRecord (request.category,
-// request.analysis.riskLevel) — both open, daemon-defined vocabularies this
+// request.analysis.riskLevel), both open, daemon-defined vocabularies this
 // client renders verbatim, so the matrix groups by whatever strings are
 // actually present rather than a fixed enum.
 

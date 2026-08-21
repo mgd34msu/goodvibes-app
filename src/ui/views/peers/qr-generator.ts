@@ -1,5 +1,5 @@
 // Local mirror of the pinned goodvibes SDK's "platform" pairing qr-generator
-// module — same algorithm, same output shape ({size, modules}), over the
+// module, same algorithm, same output shape ({size, modules}), over the
 // vendored qrcodegen-vendor.ts in this same directory. See that file's
 // docblock for why this is duplicated rather than imported: scripts/
 // check-boundaries.ts forbids every import of that SDK's "platform"

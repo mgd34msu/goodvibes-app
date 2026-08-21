@@ -1,14 +1,14 @@
-// QueuedMessagesPanel — messages submitted while a turn is still running sit
+// QueuedMessagesPanel, messages submitted while a turn is still running sit
 // queued (not yet delivered to the model) until that turn ends
 // (sessions.queuedMessages.list/edit/delete, contract 1.11's interaction-wins
 // round). Lets the operator review, edit, or drop a queued message before it
 // is ever sent. Renders nothing when there is nothing queued (the common
 // case) AND when the daemon can't answer for this session at all
-// (SESSION_NOT_LOCAL / method-unavailable) — never a dead empty section, and
+// (SESSION_NOT_LOCAL / method-unavailable), never a dead empty section, and
 // never a scary error for an ambient panel that's usually just absent.
 //
 // No wire event exists for this verb family (same standing gap fleet.*/
-// checkpoints.*/memory.* document elsewhere in this app) — polls while a turn
+// checkpoints.*/memory.* document elsewhere in this app), polls while a turn
 // is active, refetches explicitly on every mutation success. Ported from
 // goodvibes-webui src/views/chat/QueuedMessagesPanel.tsx, with its
 // window.confirm() replaced by this app's shared ConfirmSurface (UX bar:
@@ -25,7 +25,7 @@ import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 
 export interface QueuedMessagesPanelProps {
   sessionId: string;
-  /** Poll only while a turn is actually active — a queued message can only exist then. */
+  /** Poll only while a turn is actually active, a queued message can only exist then. */
   active: boolean;
 }
 
@@ -170,7 +170,7 @@ export function QueuedMessagesPanel({ sessionId, active }: QueuedMessagesPanelPr
         open={deleteTarget !== null}
         action="Drop queued message"
         target={deleteTarget?.text ?? ""}
-        blastRadius="It will never be sent to the model. Nothing else in this chat is affected — you can retype it."
+        blastRadius="It will never be sent to the model. Nothing else in this chat is affected; you can retype it."
         confirmLabel="Drop message"
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}

@@ -1,6 +1,6 @@
 // Renders one TerminalController: the emulator grid as styled DOM lines, plus
 // keyboard capture (incl. Ctrl+C passthrough), paste, click-to-focus, and
-// size measurement that drives PTY resize. Reduced emulation — see emulator.ts.
+// size measurement that drives PTY resize. Reduced emulation, see emulator.ts.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import type { TerminalController } from "./terminal-controller.ts";
@@ -73,7 +73,7 @@ export function TerminalScreen({ controller, active }: TerminalScreenProps): Rea
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       // Let the global command palette (Ctrl/Cmd+K) win even while the terminal
-      // is focused — it is the one app shortcut we deliberately do NOT capture.
+      // is focused, it is the one app shortcut we deliberately do NOT capture.
       if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "k" || e.key === "K")) return;
       // Allow copy/paste of a real selection; never swallow those.
       if (e.ctrlKey && e.shiftKey && (e.key === "C" || e.key === "c")) return;

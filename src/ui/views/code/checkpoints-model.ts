@@ -9,7 +9,7 @@ export interface WorkspaceCheckpoint {
   label: string;
   kind: string;
   retentionClass: string;
-  // undefined = not reported by the daemon — never a fabricated epoch date;
+  // undefined = not reported by the daemon, never a fabricated epoch date;
   // formatRelative(undefined) renders an honest "unknown", never 1/1/1970.
   createdAt: number | undefined;
   sizeBytes: number | undefined;
@@ -58,7 +58,7 @@ export function parseCheckpointDiff(value: unknown): CheckpointDiffPayload {
 
 export function sortCheckpointsNewestFirst(checkpoints: readonly WorkspaceCheckpoint[]): WorkspaceCheckpoint[] {
   // 0-fallback here is sort-order-only (an unreported timestamp sorts as
-  // oldest) — it is never rendered; display always goes through
+  // oldest), it is never rendered; display always goes through
   // formatRelative(checkpoint.createdAt), which keeps the real undefined.
   return [...checkpoints].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
@@ -78,8 +78,8 @@ export function formatBytes(bytes: number | undefined): string {
 
 /**
  * The exact honest wording for a create() response that reported noop:true
- * (tree identical to the most recent checkpoint — no commit, ref, or manifest
+ * (tree identical to the most recent checkpoint, no commit, ref, or manifest
  * entry created). Never phrased as a failure.
  */
 export const CHECKPOINT_NOOP_MESSAGE =
-  "Nothing to snapshot — the workspace tree is unchanged since the last checkpoint.";
+  "Nothing to snapshot; the workspace tree is unchanged since the last checkpoint.";

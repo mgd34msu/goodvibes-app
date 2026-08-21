@@ -116,7 +116,7 @@ export interface DocumentVersionsResponse {
   versions: DocumentVersion[];
 }
 
-/** GET /app/registries/vibe — the REAL file ~/.goodvibes/app/VIBE.md. */
+/** GET /app/registries/vibe, the REAL file ~/.goodvibes/app/VIBE.md. */
 export interface VibeResponse {
   content: string;
   path: string;

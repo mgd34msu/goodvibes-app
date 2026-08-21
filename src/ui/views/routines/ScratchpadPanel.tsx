@@ -1,14 +1,14 @@
-// Scratchpad — docs/FEATURES.md §8 row 11. Quick notes over the app-local
+// Scratchpad, docs/FEATURES.md §8 row 11. Quick notes over the app-local
 // "notes" registry collection: add/edit/tag/delete, plus two explicit
 // confirm-gated promote flows that leave a durable marker on the note once
 // they land:
 //   - Promote to memory  → memory.records.add (class "fact", scope "project")
 //   - Promote to knowledge → no daemon verb ingests raw text directly, so we
 //     wrap the note's text in a small text/plain artifact (artifacts.create)
-//     and then knowledge.ingest.artifact that artifact id — the same route
+//     and then knowledge.ingest.artifact that artifact id, the same route
 //     ArtifactsView's own "Promote to knowledge" button uses.
 // Both promotions are one-way: the note is marked `promoted` with the
-// destination id, but is NOT deleted or edited further — re-promoting stays
+// destination id, but is NOT deleted or edited further, re-promoting stays
 // possible on purpose (the daemon-side record is independent of this note).
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -62,7 +62,7 @@ export function ScratchpadPanel() {
   const [promoteTarget, setPromoteTarget] = useState<PromoteTarget>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
-  // Palette command scoped to this panel's own mount — only registered while
+  // Palette command scoped to this panel's own mount, only registered while
   // the Scratchpad tab is actually showing (item 19: keyboard access).
   useEffect(() => {
     registerCommand({
@@ -78,7 +78,7 @@ export function ScratchpadPanel() {
   const list = useQuery({
     queryKey: regKeys.collection("notes"),
     queryFn: () => listRegistryItems("notes"),
-    // App-local file store — no wire event exists, so poll (cheap local read).
+    // App-local file store, no wire event exists, so poll (cheap local read).
     refetchInterval: REGISTRY_POLL_MS,
     retry: false,
   });
@@ -343,7 +343,7 @@ function NoteEditor({
 }) {
   const [text, setText] = useState(note.text);
   const [tagsText, setTagsText] = useState(note.tags.join(", "));
-  // Closing a dirty editor asks first instead of silently discarding it —
+  // Closing a dirty editor asks first instead of silently discarding it,
   // same guard the sibling registry editors (RoutineEditorModal etc.) use.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const dirty = text !== note.text || tagsText !== note.tags.join(", ");

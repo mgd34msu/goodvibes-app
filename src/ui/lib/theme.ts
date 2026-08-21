@@ -1,4 +1,4 @@
-// Theme (dark default / light / system), density, and motion preferences —
+// Theme (dark default / light / system), density, and motion preferences,
 // persisted to localStorage, applied via data-theme / data-density /
 // data-motion attributes on :root (styles/tokens.css). Instant apply, no
 // restart. Cross-component sync via a custom window event.
@@ -70,10 +70,6 @@ export function applyThemeToRoot(prefs: ThemePreferences): void {
   if (prefs.motion === "reduced") root.setAttribute("data-motion", "reduced");
   else root.removeAttribute("data-motion");
 }
-
-// ---------------------------------------------------------------------------
-// Provider / hook
-// ---------------------------------------------------------------------------
 
 export interface UseThemeResult extends ThemePreferences {
   resolvedTheme: ResolvedTheme;

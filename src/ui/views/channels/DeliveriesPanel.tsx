@@ -2,12 +2,12 @@
 // deliveries.list rendered as a filterable master list (status, target
 // surface) with a detail peek (deliveries.get) that shows the failure reason
 // verbatim. Read-only: the generated route table has no deliveries.retry (or
-// any deliveries.* mutating verb at all — see channels-wire.ts's header note)
+// any deliveries.* mutating verb at all, see channels-wire.ts's header note)
 // on this pin, so this panel says so plainly instead of drawing a button that
 // would no-op or 404.
 //
 // Freshness: the `deliveries` realtime domain (lib/realtime.ts) invalidates
-// queryKeys.deliveries — this panel nests its own keys under that SAME shared
+// queryKeys.deliveries, this panel nests its own keys under that SAME shared
 // prefix (imported, not reinvented) so the fast-path event reaches it, exactly
 // like AwayDigest.tsx's `[...queryKeys.deliveries, "away"]`.
 
@@ -27,7 +27,7 @@ const DELIVERY_STATUS_OPTIONS = ["pending", "sending", "sent", "failed", "dead_l
 
 type DeliveryTone = "ok" | "warning" | "bad" | "neutral";
 
-/** Local tone ruling — classifyBadgeTone's generic word-matching doesn't know
+/** Local tone ruling, classifyBadgeTone's generic word-matching doesn't know
  * "dead_lettered" is worse than "failed", so this panel rules it directly
  * rather than mis-classify through the shared heuristic. */
 function deliveryStatusTone(status: string): DeliveryTone {
@@ -41,7 +41,7 @@ function DeliveryStatusBadge({ status }: { status: string }) {
   return <span className={`badge ${deliveryStatusTone(status)}`}>{status}</span>;
 }
 
-/** Detail peek — deliveries.get rendered field-by-field, failure reason
+/** Detail peek, deliveries.get rendered field-by-field, failure reason
  * verbatim, plus the honest no-retry note (channels-wire.ts header). */
 function DeliveryDetailPeek({ deliveryId }: { deliveryId: string }) {
   const detail = useQuery({

@@ -1,4 +1,4 @@
-// Home rail quick-capture (docs/FEATURES.md §8 row 11) — a one-line note
+// Home rail quick-capture (docs/FEATURES.md §8 row 11), a one-line note
 // composer over the same app-local "notes" registry collection the
 // Scratchpad panel (Routines view) manages fully. This widget only adds
 // notes; edit/promote/delete live in Routines → Scratchpad, linked below.

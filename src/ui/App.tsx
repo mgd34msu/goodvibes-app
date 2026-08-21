@@ -1,5 +1,5 @@
 // Root component: theme → error boundary → toasts → shell. The window paints
-// this immediately (docs/UX.md §6 — never serialize window creation behind
+// this immediately (docs/UX.md §6, never serialize window creation behind
 // network calls); data hydrates in via the boot snapshot and queries.
 
 import type { ReactElement } from "react";

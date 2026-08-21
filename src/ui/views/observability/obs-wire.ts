@@ -1,7 +1,7 @@
 // Defensive readers shared across the Observability sections. The daemon's
 // telemetry/control/health payload shapes are not pinned by the contracts
 // package for this pin, so every reader here degrades to an honest fallback
-// ("unknown", empty string, undefined) rather than throwing — matching the
+// ("unknown", empty string, undefined) rather than throwing, matching the
 // wire-or-delete discipline in lib/wire.ts, which this module extends.
 
 import { asRecord, compactJson, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
@@ -37,7 +37,7 @@ export function severityBadgeTone(severity: Severity): "ok" | "warning" | "bad" 
 
 export function formatTimestamp(value: unknown): string {
   if (typeof value === "number" && Number.isFinite(value)) {
-    // Accept both ms and seconds epoch — seconds values are ~13 digits shorter.
+    // Accept both ms and seconds epoch, seconds values are ~13 digits shorter.
     const ms = value > 10_000_000_000 ? value : value * 1000;
     const date = new Date(ms);
     if (!Number.isNaN(date.getTime())) return date.toLocaleString();
@@ -174,7 +174,7 @@ export function readHealthCards(payload: unknown): HealthCard[] {
 export { compactJson };
 
 // ---------------------------------------------------------------------------
-// Power — power.status.get / power.keepAwake.set (docs/FEATURES.md §17).
+// Power, power.status.get / power.keepAwake.set (docs/FEATURES.md §17).
 // Two independent concepts on one payload: `work` is the daemon's own
 // automatic sleep inhibitor (held while there is live work), `keepAwake` is
 // the owner's manual toggle. Both can disagree; neither is inferred from the
@@ -224,7 +224,7 @@ export function readPowerStatus(payload: unknown): PowerSnapshot {
   };
 }
 
-/** The status-strip chip's tooltip — the daemon's own verbatim note when it
+/** The status-strip chip's tooltip, the daemon's own verbatim note when it
  * has one, else the live reasons the inhibitor names, never a guess. */
 export function powerHeldTooltip(snapshot: PowerSnapshot): string {
   if (snapshot.keepAwakeNote) return snapshot.keepAwakeNote;
@@ -233,8 +233,8 @@ export function powerHeldTooltip(snapshot: PowerSnapshot): string {
 }
 
 // ---------------------------------------------------------------------------
-// Memory governor — ops.memory.get. Crib: goodvibes-webui
-// src/components/settings/MemoryDiagnostics.tsx / lib/memory-governance.ts —
+// Memory governor, ops.memory.get. Crib: goodvibes-webui
+// src/components/settings/MemoryDiagnostics.tsx / lib/memory-governance.ts,
 // same tier badge / budget bar / per-cache table / paused-jobs / tripwire
 // shape, ported onto this app's wire helpers.
 // ---------------------------------------------------------------------------
@@ -304,7 +304,7 @@ export function readMemorySnapshot(payload: unknown): MemorySnapshot {
   };
 }
 
-/** Human-facing label for the pressure tier — never the raw enum value. */
+/** Human-facing label for the pressure tier, never the raw enum value. */
 export function memoryTierLabel(tier: MemoryTier): string {
   switch (tier) {
     case "normal":
@@ -319,7 +319,7 @@ export function memoryTierLabel(tier: MemoryTier): string {
 }
 
 /** This app's own .badge tone (components.css .badge.ok/.warning/.bad/
- * .neutral/.info) for a pressure tier — 'elevated' maps to 'info' (still
+ * .neutral/.info) for a pressure tier, 'elevated' maps to 'info' (still
  * working, worth a glance, not yet a problem); 'high'/'critical' get the two
  * genuine severities. */
 export function memoryTierBadgeClass(tier: MemoryTier): "neutral" | "info" | "warning" | "bad" {
@@ -335,14 +335,14 @@ export function memoryTierBadgeClass(tier: MemoryTier): "neutral" | "info" | "wa
   }
 }
 
-/** Values are already in MB on the wire — this only rounds and labels. Never
- * "0 MB" for a value the daemon didn't report — that's an em-dash. */
+/** Values are already in MB on the wire, this only rounds and labels. Never
+ * "0 MB" for a value the daemon didn't report, that's an em-dash. */
 export function formatMb(mb: number | undefined): string {
   if (typeof mb !== "number" || !Number.isFinite(mb)) return "—";
   return `${Math.round(mb)} MB`;
 }
 
-/** Em-dash for a cache footprint the daemon didn't report — never a
+/** Em-dash for a cache footprint the daemon didn't report, never a
  * fabricated 0. */
 export function formatBytesOrDash(bytes: number | undefined): string {
   if (typeof bytes !== "number" || !Number.isFinite(bytes)) return "—";
@@ -357,16 +357,16 @@ export function formatBytesOrDash(bytes: number | undefined): string {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-/** One human line for the tripwire state — armed (with its live rate/
+/** One human line for the tripwire state, armed (with its live rate/
  * duration) or not. */
 export function tripwireLine(tripwire: MemoryTripwireState): string {
   if (!tripwire.armed) return "Leak tripwire: not armed.";
-  return `Leak tripwire: armed — sustained growth of ${tripwire.rateMbPerSec.toFixed(1)} MB/s for ${tripwire.sustainedSec}s.`;
+  return `Leak tripwire: armed, sustained growth of ${tripwire.rateMbPerSec.toFixed(1)} MB/s for ${tripwire.sustainedSec}s.`;
 }
 
 // ---------------------------------------------------------------------------
-// Runtime metrics — runtime.metrics.get. Every sub-shape beyond the four
-// top-level buckets is unpinned (additionalProperties:true on the wire) —
+// Runtime metrics, runtime.metrics.get. Every sub-shape beyond the four
+// top-level buckets is unpinned (additionalProperties:true on the wire),
 // this extracts numeric leaves generically rather than guessing field names.
 // ---------------------------------------------------------------------------
 
@@ -385,8 +385,8 @@ export function numericLeaves(value: unknown, prefix = ""): Array<{ label: strin
 }
 
 // ---------------------------------------------------------------------------
-// Quota — quota.snapshot.get / quota.fanout.get (WS-only). hasSignal:false is
-// an honest "no observation yet" — never render a fabricated full/empty
+// Quota, quota.snapshot.get / quota.fanout.get (WS-only). hasSignal:false is
+// an honest "no observation yet", never render a fabricated full/empty
 // quota. verdict:"unknown" is likewise honest, not an error.
 // ---------------------------------------------------------------------------
 
@@ -432,10 +432,10 @@ export function formatEpoch(ms: number | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
-// Cost attribution — cost.attribution.get (WS-only). Honest-unpriced per the
+// Cost attribution, cost.attribution.get (WS-only). Honest-unpriced per the
 // contract: totalCostUsd/costUsd is null when a contributor is unpriced,
 // never a fabricated amount. costSource/pricingAsOf ABSENT on pre-1.7
-// daemon records is an honest absence — costProvenanceLine renders nothing
+// daemon records is an honest absence, costProvenanceLine renders nothing
 // for it, never a guessed provenance line.
 // ---------------------------------------------------------------------------
 
@@ -521,7 +521,7 @@ export function readCostAttribution(payload: unknown): CostAttribution {
   };
 }
 
-/** Never $0.00 for an unpriced total — "price unknown" instead. */
+/** Never $0.00 for an unpriced total, "price unknown" instead. */
 export function formatCostUsd(value: number | null): string {
   if (value === null) return "price unknown";
   if (value === 0) return "$0.00";
@@ -529,7 +529,7 @@ export function formatCostUsd(value: number | null): string {
   return `$${value.toFixed(2)}`;
 }
 
-/** "your price"/"provider-served"/"catalog, as of DATE"/"mixed sources" — or
+/** "your price"/"provider-served"/"catalog, as of DATE"/"mixed sources", or
  * null when the daemon didn't report a source at all (pre-1.7 record): the
  * caller renders nothing for that case, never a guessed provenance line. */
 export function costProvenanceLine(source: CostSource, pricingAsOf: string | null): string | null {
@@ -542,7 +542,7 @@ export function costProvenanceLine(source: CostSource, pricingAsOf: string | nul
 }
 
 // ---------------------------------------------------------------------------
-// Flags graduation — flags.graduation.report (WS-only, read-only reporting;
+// Flags graduation, flags.graduation.report (WS-only, read-only reporting;
 // no reference implementation existed anywhere for this contract shape).
 // Evidence is real-only: "no evidence collected" is an honest state, never a
 // fabricated readiness signal.

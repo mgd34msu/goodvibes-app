@@ -16,7 +16,7 @@ export function readLastSeen(): number | null {
     const parsed = Number(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   } catch {
-    // localStorage unavailable (private mode etc.) — behave like first visit.
+    // localStorage unavailable (private mode etc.), behave like first visit.
     return null;
   }
 }

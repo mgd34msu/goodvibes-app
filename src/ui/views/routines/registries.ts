@@ -1,7 +1,7 @@
 // Shared client for the /app/registries HTTP contract (Bun-side app-local
-// file stores under ~/.goodvibes/app/ — src/bun/registries, built by a
+// file stores under ~/.goodvibes/app/, src/bun/registries, built by a
 // parallel agent; we code strictly to the contract, never import their
-// files). Used by the three Assistant views: Routines, Personas, Skills —
+// files). Used by the three Assistant views: Routines, Personas, Skills,
 // all three view dirs are owned by the same wave agent, so the shared code
 // lives here in views/routines/ and the other two import it.
 //
@@ -23,7 +23,7 @@ import { asRecord, firstString } from "../../lib/wire.ts";
 import { errorStatus } from "../../lib/errors.ts";
 
 // ─── Query keys ──────────────────────────────────────────────────────────────
-// LOCAL keys with a unique prefix (never added to lib/queries.ts — hard rule).
+// LOCAL keys with a unique prefix (never added to lib/queries.ts, hard rule).
 // Everything hangs off ["app-registries"] so one prefix invalidation after an
 // import-apply refreshes every registry list across all three views.
 
@@ -36,7 +36,7 @@ export const regKeys = {
   importPreview: (source: string) => [...REGISTRIES_KEY_PREFIX, "import-preview", source] as const,
 } as const;
 
-/** No wire event exists for the app-local registry files — views poll on this
+/** No wire event exists for the app-local registry files, views poll on this
  * interval (cheap local file reads) so out-of-band edits (agent CLI, manual
  * file edits) surface without a manual refresh. */
 export const REGISTRY_POLL_MS = 30_000;
@@ -71,7 +71,7 @@ export interface RoutineItem {
   source: string;
   reviewState: string;
   startCount: number;
-  /** Raw record — spread back on PUT so unknown fields survive round-trips. */
+  /** Raw record, spread back on PUT so unknown fields survive round-trips. */
   raw: Record<string, unknown>;
 }
 
@@ -96,7 +96,7 @@ export interface SkillItem {
   raw: Record<string, unknown>;
 }
 
-/** Scratchpad note (docs/FEATURES.md §8 row 11) — app-local only, no daemon
+/** Scratchpad note (docs/FEATURES.md §8 row 11), app-local only, no daemon
  * verb backs the "notes" collection itself. Promotion is a separate,
  * confirm-gated write to memory.records.add / knowledge.ingest.artifact;
  * `promotedTo` records the id it landed at so a promoted note can say so. */
@@ -112,7 +112,7 @@ export interface NoteItem {
 }
 
 /** Named app-level preset bundle (docs/FEATURES.md §8 row 7). SCOPE NOTE: this
- * is an app-level preset, not an isolated GOODVIBES_APP_HOME root — activating
+ * is an app-level preset, not an isolated GOODVIBES_APP_HOME root, activating
  * one only (a) sets a persona active and (b) overwrites VIBE.md content, both
  * via the same registries API a user could drive by hand from Personas. The
  * skills list is informational (shown, not enforced) unless the user opens
@@ -261,7 +261,7 @@ export async function deleteRegistryItem(collection: RegistryCollection, id: str
   });
 }
 
-// ─── VIBE.md (real disk file — never a DB; the desktop autopsy's Memory-view
+// ─── VIBE.md (real disk file, never a DB; the desktop autopsy's Memory-view
 // deception is the named failure this endpoint exists to avoid) ──────────────
 
 export interface VibeFile {
@@ -333,7 +333,7 @@ export async function applyImport(
 // ─── Availability ────────────────────────────────────────────────────────────
 
 /**
- * The registries service is app-local (Bun side), not a daemon method — a 404
+ * The registries service is app-local (Bun side), not a daemon method, a 404
  * or 501 from an /app/registries path means this build does not serve the
  * store at all (the route module is missing), the honest UnavailableState
  * signal. Anything else is a real error and renders ErrorState with retry.
@@ -346,7 +346,7 @@ export function isRegistryUnavailable(error: unknown): boolean {
 // ─── Chat draft handoff (Routines → Chat composer) ───────────────────────────
 
 /**
- * DOCUMENTED HANDOFF CONTRACT — localStorage key "gv.chat.draft".
+ * DOCUMENTED HANDOFF CONTRACT, localStorage key "gv.chat.draft".
  * Value: JSON { text: string, source?: string, ts: number }.
  * Producer (this module) writes the key and navigates to the Chat view;
  * consumer (views/chat) reads AND REMOVES the key, prefilling its composer

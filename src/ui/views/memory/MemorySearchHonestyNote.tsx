@@ -1,16 +1,16 @@
 // The recall-honesty contract, surfaced verbatim (ported from goodvibes-webui
 // views/memory/MemorySearchHonestyNote.tsx). Three things this MUST NEVER do:
-//   1. Hide `indexUnavailableReason` — a silent empty result would read as
+//   1. Hide `indexUnavailableReason`, a silent empty result would read as
 //      "nothing was ever stored" when the truth is "the semantic index could
 //      not be consulted, so this fell back to a literal scan". Verbatim.
-//   2. Hide `caveat` — the softer "ran on the hashed-only fallback provider"
+//   2. Hide `caveat`, the softer "ran on the hashed-only fallback provider"
 //      note.
-//   3. Hide the recall-filter exclusion counts when `recallFiltered` is true —
+//   3. Hide the recall-filter exclusion counts when `recallFiltered` is true,
 //      a caller who asked "what would the agent actually see" needs to know
 //      how many records were excluded and why.
 //
 // `totalBeforeRecallFilter` is whatever the underlying search returned (itself
-// capped at the caller's `limit`), NOT every matching record — the label says
+// capped at the caller's `limit`), NOT every matching record, the label says
 // "of the first N matches" so it never over-claims completeness. The recall
 // floor is stated from the wire value (`recallFloor`), never hardcoded.
 

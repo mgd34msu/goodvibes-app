@@ -99,7 +99,7 @@ export function companionEventType(eventName: string, payload: unknown): string 
 }
 
 /** The user message id an assistant message answers (daemon >= 1.11: every
- * assistant message — completed or the honest cancelled partial — carries
+ * assistant message, completed or the honest cancelled partial, carries
  * `inReplyTo`). Queue-when-busy sends and steer jumping the queue both break
  * simple positional (adjacent-in-list) pairing, so this is the preferred
  * association wherever it is present; callers fall back to position/timestamp
@@ -109,7 +109,7 @@ export function messageInReplyTo(message: unknown): string {
 }
 
 /** Wire-reported token usage on a completed turn, when the daemon sends any.
- * Read from every plausible location; undefined when nothing is reported —
+ * Read from every plausible location; undefined when nothing is reported,
  * the context meter then stays honest-hidden instead of showing estimates. */
 export function usageFromPayload(payload: unknown): TurnUsage | undefined {
   const candidates = [
@@ -138,13 +138,42 @@ export function usageFromPayload(payload: unknown): TurnUsage | undefined {
 }
 
 /**
+ * Every value the turn lifecycle can be in, across useChatSend.ts (send/
+ * lineage mutations) and useChatStream.ts (SSE event handlers), the single
+ * source of truth `TurnState` is derived from. A literal passed to
+ * setTurnState that is not in this tuple is now a compile error instead of a
+ * silent ACTIVE_TURN_STATES.includes() miss (widening to plain `string` hid
+ * this: any of the ~16 values typo'd cleanly).
+ */
+export const TURN_STATES = [
+  "idle",
+  "sending",
+  "sending while reconnecting",
+  "submitted",
+  "running",
+  "streaming",
+  "tooling",
+  "syncing",
+  "stopping",
+  "stopped locally",
+  "reconnecting",
+  "completed",
+  "cancelled",
+  "error",
+  "send failed",
+  "auth expired",
+] as const;
+
+export type TurnState = (typeof TURN_STATES)[number];
+
+/**
  * States for which a turn is genuinely in flight (drives the streaming
  * indicator, the Stop control, and the 1s message-poll fallback).
  * 'reconnecting' / 'sending while reconnecting' are deliberate: an SSE drop
- * mid-turn means the live channel is down while the daemon keeps working —
+ * mid-turn means the live channel is down while the daemon keeps working,
  * STREAM_END is NOT terminal, only turn.completed/error (docs/UX.md §4).
  */
-export const ACTIVE_TURN_STATES = [
+export const ACTIVE_TURN_STATES: readonly TurnState[] = [
   "sending",
   "submitted",
   "running",
@@ -174,7 +203,7 @@ export function deriveChatTitle(text: string, maxLength = 52): string {
 
 export function deliveryState(message: unknown): "sent" | "failed" | "local" | "cancelled" | "queued" | "" {
   const state = firstString(message, ["deliveryState"]).toLowerCase();
-  // Exact daemon markers first — "cancelled" (an assistant partial whose turn
+  // Exact daemon markers first, "cancelled" (an assistant partial whose turn
   // was stopped) and "queued" (a user message whose turn has not started yet)
   // must never fall through to a substring/default match: "cancelled" itself
   // contains no "fail"/"error"/"local"/"pending"/"sent" substring, but a
@@ -190,7 +219,7 @@ export function deliveryState(message: unknown): "sent" | "failed" | "local" | "
   return "";
 }
 
-/** Rough token estimate for the thinking strip — always labelled "~". */
+/** Rough token estimate for the thinking strip, always labelled "~". */
 export function estimateTokens(chars: number): number {
   return Math.max(0, Math.round(chars / 4));
 }

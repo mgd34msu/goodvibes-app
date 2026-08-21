@@ -2,10 +2,10 @@
 // "find any key in <2s"). Reuses the palette's own fuzzy matcher (lib/
 // commands.ts) rather than reinventing scoring. The daemon config tab is
 // indexed key-by-key from the static CONFIG_SCHEMA_SNAPSHOT (no query
-// needed — it's already a bundled generated file); every other section gets
+// needed, it's already a bundled generated file); every other section gets
 // a hand-curated set of entries naming its prominent controls. Selecting a
 // result switches tabs and flashes the target section's root element by
-// class name — deep per-row anchors only exist for sections this agent
+// class name, deep per-row anchors only exist for sections this agent
 // wrote; sections from earlier waves get a whole-section flash, which is
 // still "find it" in under 2s without editing files outside this grant.
 
@@ -97,7 +97,7 @@ export function searchSettings(query: string, limit = 8): SettingsSearchEntry[] 
 }
 
 /** Switch to the entry's tab, then briefly flash its section root so the
- *  user's eye lands on the right place — best-effort, never throws if the
+ *  user's eye lands on the right place, best-effort, never throws if the
  *  selector isn't mounted yet (the caller flips tabs first). */
 export function flashSection(selector: string): void {
   window.setTimeout(() => {

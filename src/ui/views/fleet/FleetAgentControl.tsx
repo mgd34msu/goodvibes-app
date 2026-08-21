@@ -1,8 +1,8 @@
-// Agent Control — the real control surface over a running session-backed
+// Agent Control, the real control surface over a running session-backed
 // fleet node (docs/GAPS.md §3 row 7, was "EXCLUDED: interrupt / kill / pause
-// / resume — no such wire method exists"). That exclusion was accurate for
+// / resume, no such wire method exists"). That exclusion was accurate for
 // the fleet node's OWN capability flags (interruptible/killable/pausable/
-// resumable describe internal daemon mechanics, not a wire verb) — but every
+// resumable describe internal daemon mechanics, not a wire verb), but every
 // node with a live sessionRef.sessionId sits on top of the shared-session
 // wire surface, which DOES expose a real, if differently-shaped, set of
 // controls:
@@ -10,7 +10,7 @@
 //   - interrupt          : sessions.inputs.list + sessions.inputs.cancel
 //   - stop                : sessions.close (ends it) / sessions.detach (gentler)
 //   - resume              : sessions.reopen, once status is 'closed'
-// There is still NO wire verb for a true freeze-and-thaw pause anywhere —
+// There is still NO wire verb for a true freeze-and-thaw pause anywhere,
 // this panel says so plainly and never labels a control "Pause".
 //
 // Exposes an imperative handle so FleetView's palette commands (steer/stop/
@@ -48,7 +48,7 @@ export interface FleetAgentControlHandle {
 }
 
 /** One queued/delivered input row: cancellable always, "deliver" only while
- * still queued — once delivered, re-delivering is a no-op the daemon itself
+ * still queued, once delivered, re-delivering is a no-op the daemon itself
  * would reject, so the button simply stops rendering rather than 404ing. */
 function InputRow({
   input,
@@ -161,7 +161,7 @@ export const FleetAgentControl = forwardRef<FleetAgentControlHandle, { node: Fle
   const detach = useMutation({
     mutationFn: () => invoke("sessions.detach", { params: { sessionId }, body: { sessionId, surfaceId: APP_SURFACE_ID } }),
     onSuccess: async () => {
-      toast({ title: "Detached — this app stops following the session; the process keeps running", tone: "info" });
+      toast({ title: "Detached: this app stops following the session; the process keeps running", tone: "info" });
       await invalidateFleetAndSessions();
     },
     onError: (error: unknown) => toast({ title: "Detach failed", description: formatError(error), tone: "danger" }),
@@ -266,7 +266,7 @@ export const FleetAgentControl = forwardRef<FleetAgentControlHandle, { node: Fle
             type="button"
             className="fleet-action"
             disabled={detach.isPending}
-            title="Stop this app from following this session — never stops the process; other surfaces are unaffected"
+            title="Stop this app from following this session; never stops the process; other surfaces are unaffected"
             onClick={() => detach.mutate()}
           >
             <Unlink size={13} aria-hidden="true" /> {detach.isPending ? "Detaching…" : "Detach"}

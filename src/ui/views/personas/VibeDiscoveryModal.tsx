@@ -1,4 +1,4 @@
-// Persona discovery from VIBE.md — parses persona-like sections client-side
+// Persona discovery from VIBE.md, parses persona-like sections client-side
 // (vibe-discovery.ts) and offers them as import candidates. Creating never
 // touches VIBE.md itself; candidates become app-registry personas with
 // source:"vibe", inactive until explicitly activated.
@@ -67,7 +67,7 @@ export function VibeDiscoveryModal({ open, existing, onClose }: VibeDiscoveryMod
       await queryClient.invalidateQueries({ queryKey: regKeys.collection("personas") });
       toast({
         title: `Created ${created} ${created === 1 ? "persona" : "personas"} from VIBE.md`,
-        description: "They start inactive — activate one from the list.",
+        description: "They start inactive; activate one from the list.",
         tone: "success",
       });
       setChecked(new Set());

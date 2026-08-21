@@ -1,5 +1,5 @@
 // Feature settings surface (owner-flagged Tier-2 debt: the app previously had
-// ZERO feature-flag settings surface — the Automate sidebar sat over dark
+// ZERO feature-flag settings surface, the Automate sidebar sat over dark
 // flags with no way to see or flip them here).
 //
 // Renders the SDK's dissolved-feature model (feature-settings.generated.ts,
@@ -10,17 +10,17 @@
 //   - boolean : a toggle writing true/false to the domain key.
 //   - enum    : a mode select over enablement.enabledValues (inactive modes
 //               like "off" are real, selectable choices).
-//   - constant: no separate off switch — "Governed by its settings below",
+//   - constant: no separate off switch, "Governed by its settings below",
 //               and every owned key renders as an ordinary field.
 // Every write goes through the same per-key config.set path
-// (ConfigSettingsSection.tsx's gv.config.set({ key, value })) — features live
+// (ConfigSettingsSection.tsx's gv.config.set({ key, value })), features live
 // on first-class domain settings keys, there is no separate enablement
 // namespace, and no page-level "save all" exists: each control saves on
 // change with its own toast.
 //
 // Restart honesty: a restart-gated feature (feature.restartRequired) states
 // that up front as static text, and after a successful ENABLEMENT write shows
-// a pending-restart marker for the rest of this session — tracked purely from
+// a pending-restart marker for the rest of this session, tracked purely from
 // this session's confirmed config.set resolutions, never a fabricated wire
 // signal (the daemon exposes no per-process pending-restart state).
 import { useMemo, useState, type FormEvent } from "react";
@@ -50,7 +50,7 @@ function isAdminRequiredError(error: unknown): boolean {
 interface PendingWrite {
   key: string;
   value: unknown;
-  /** Set only for an enablement write — drives the pending-restart marker. */
+  /** Set only for an enablement write, drives the pending-restart marker. */
   featureId?: string;
   restartRequired?: boolean;
 }
@@ -63,10 +63,10 @@ export function FeatureSettingsSection() {
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PendingWrite | null>(null);
   // Feature ids whose enablement changed THIS session and await a daemon
-  // restart — never fabricated from a wire signal, held only in memory.
+  // restart, never fabricated from a wire signal, held only in memory.
   const [pendingRestartIds, setPendingRestartIds] = useState<ReadonlySet<string>>(new Set());
 
-  // Same query key as ConfigSettingsSection — the two tabs share one cache
+  // Same query key as ConfigSettingsSection, the two tabs share one cache
   // entry, so switching tabs never double-fetches config.get.
   const config = useQuery({
     queryKey: settingsKeys.config,
@@ -93,7 +93,7 @@ export function FeatureSettingsSection() {
       if (variables.featureId && variables.restartRequired) {
         setPendingRestartIds((prev) => new Set(prev).add(variables.featureId!));
         toast({
-          title: "Saved — restart required",
+          title: "Saved: restart required",
           description: `"${variables.key}" takes effect after the daemon restarts.`,
           tone: "warning",
         });
@@ -230,7 +230,7 @@ export function FeatureSettingsSection() {
         target={pendingConfirm?.key ?? ""}
         blastRadius={
           pendingConfirm?.key.startsWith("danger.")
-            ? "This key sits in the daemon's danger namespace — it can disable safety rails for every surface and agent using this daemon."
+            ? "This key sits in the daemon's danger namespace; it can disable safety rails for every surface and agent using this daemon."
             : "This key changes the approval posture for every surface and agent using this daemon."
         }
         danger
@@ -244,7 +244,7 @@ export function FeatureSettingsSection() {
           <p className="settings-confirm-value">
             New value:{" "}
             <code>
-              {isSecretConfigKey(pendingConfirm.key) ? "(hidden — secret-shaped key)" : JSON.stringify(pendingConfirm.value)}
+              {isSecretConfigKey(pendingConfirm.key) ? "(hidden: secret-shaped key)" : JSON.stringify(pendingConfirm.value)}
             </code>
           </p>
         )}
@@ -378,7 +378,7 @@ function FeatureCard({
 }
 
 // ─── Field row + type-aware editor (parity with ConfigSettingsSection's
-// ConfigRow/ValueEditor — same CSS classes, independent implementation
+// ConfigRow/ValueEditor, same CSS classes, independent implementation
 // because it reads a FeatureFieldModel, not a flattened ConfigEntry) ────────
 
 interface FeatureFieldRowProps {
@@ -592,7 +592,7 @@ function FeatureFieldEditor({
             autoComplete="off"
             spellCheck={false}
             aria-label={`${field.key} new secret value`}
-            placeholder="Enter new value — current value stays masked"
+            placeholder="Enter new value; current value stays masked"
           />
           <button type="button" className="settings-editor__reveal" onClick={() => setReveal((r) => !r)} aria-pressed={reveal}>
             {reveal ? "Hide" : "Reveal"}

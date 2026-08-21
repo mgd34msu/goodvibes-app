@@ -1,24 +1,24 @@
-// Observability — docs/FEATURES.md §17 (the forefront requirement), all 20
+// Observability, docs/FEATURES.md §17 (the forefront requirement), all 20
 // rows minus the ambient status-strip row (owned by
 // components/shell/StatusStrip, not this view). Tabbed workspace:
-//   Telemetry   — dashboard, events browser, error ledger, traces browser,
+//   Telemetry  , dashboard, events browser, error ledger, traces browser,
 //                  metrics, and a pausable live tail (telemetry.stream).
-//   Cost        — app-local 4-bucket + Ephemeral cost analytics engine
+//   Cost       , app-local 4-bucket + Ephemeral cost analytics engine
 //                  (cost-engine.ts), budget alert, token/context console.
-//   System      — health cards, control snapshot/clients/messages, routes +
+//   System     , health cards, control snapshot/clients/messages, routes +
 //                  bindings CRUD, surfaces, continuity, scheduler, OTLP.
-//   Ops         — power/keep-awake, memory governor, runtime metrics, quota
+//   Ops        , power/keep-awake, memory governor, runtime metrics, quota
 //                  + fan-out advisor, cost attribution, flags graduation.
-//   Diagnostics — shared SSE connector state + a local rolling latency probe.
-//   Contract    — searchable method/event catalog explorer.
-//   Panels      — remote-open TUI panels (panels.list/.open).
+//   Diagnostics, shared SSE connector state + a local rolling latency probe.
+//   Contract   , searchable method/event catalog explorer.
+//   Panels     , remote-open TUI panels (panels.list/.open).
 //
 // None of telemetry/control-plane/health/routes/surfaces/continuity/
 // scheduler/panels/ops carry a wire event lib/realtime.ts's
 // DOMAIN_INVALIDATIONS actually subscribes to (verified: power.keepAwake.set
 // emits OPS_POWER_STATE_CHANGED and ops.memory.get names OPS_MEMORY_PRESSURE
 // on the wire, but the app's own SSE subscription path has no "ops"/"power"
-// domain listed — noted for the integration gate), so every read here polls
+// domain listed, noted for the integration gate), so every read here polls
 // or refetches on demand; live freshness specifically comes from the
 // dedicated pausable telemetry tail, not from background invalidation.
 // Top-level tab (and each section's own subtab) is URL-addressable so

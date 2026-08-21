@@ -1,6 +1,6 @@
 // Local provider→model catalog normalization for the blind model compare
 // (docs/FEATURES.md §11). Deliberately reimplemented here from the same
-// providers.list shapes the chat surface reads — view dirs do not import
+// providers.list shapes the chat surface reads, view dirs do not import
 // each other's modules. Model inventory comes off each provider record; the
 // provider-qualified registry key is what config.set { key: "provider.model" }
 // takes for the winner-route update.

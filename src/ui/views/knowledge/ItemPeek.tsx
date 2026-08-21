@@ -62,7 +62,7 @@ function FacetSection({ label, value }: { label: string; value: unknown }) {
   );
 }
 
-/** Issue review form — knowledge.issue.review is admin; the action vocabulary
+/** Issue review form, knowledge.issue.review is admin; the action vocabulary
  * is daemon-defined (free string on the wire), so common actions are offered
  * plus a custom escape hatch. Failures surface verbatim. */
 function IssueReviewForm({ issueId }: { issueId: string }) {
@@ -137,7 +137,7 @@ export function KnowledgeItemPeekBody({ itemId }: { itemId: string }) {
     queryFn: () => invoke("knowledge.item.get", { params: { id: itemId } }),
   });
 
-  // Source extraction — only fetched when the item resolves to a source.
+  // Source extraction, only fetched when the item resolves to a source.
   const record = asRecord(detail.data);
   const sourceId = firstString(asRecord(record["source"]), ["id"]);
   const extraction = useQuery({

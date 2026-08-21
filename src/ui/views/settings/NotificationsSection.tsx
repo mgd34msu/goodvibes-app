@@ -1,5 +1,5 @@
 // Notification preferences (docs/FEATURES.md §19/§24): enabled toggle,
-// batching cadence, quiet-while-typing, and a per-domain verbosity grid —
+// batching cadence, quiet-while-typing, and a per-domain verbosity grid,
 // coded against the /app/notifications/prefs HTTP contract the notifications
 // agent implements Bun-side. Capability-honest: a 404/501 (not landed yet in
 // this build) renders UnavailableState, never a fake "saved".
@@ -22,9 +22,9 @@ import {
 import { SETTINGS_POLL_MS } from "./settings-queries.ts";
 
 const BATCHING_OPTIONS: ReadonlyArray<{ value: NotificationBatching; label: string }> = [
-  { value: "off", label: "Off — every notification immediately" },
-  { value: "30s", label: "Batch — every 30s" },
-  { value: "5m", label: "Batch — every 5m" },
+  { value: "off", label: "Off: every notification immediately" },
+  { value: "30s", label: "Batch: every 30s" },
+  { value: "5m", label: "Batch: every 5m" },
 ];
 
 const VERBOSITY_OPTIONS: ReadonlyArray<{ value: DomainVerbosity; label: string }> = [
@@ -38,7 +38,7 @@ export function NotificationsSection() {
   const { toast } = useToast();
   const [draft, setDraft] = useState<NotificationPrefs | null>(null);
   const [testTitle, setTestTitle] = useState("Test notification");
-  // Tracks the latest draft without adding it as an effect dependency below —
+  // Tracks the latest draft without adding it as an effect dependency below,
   // lets the background poll refresh `draft` from the server while it's
   // untouched, but never clobber an in-progress, unsaved edit (item 1/13:
   // drafts survive; writes never silently overwrite what the user is doing).
@@ -108,7 +108,7 @@ export function NotificationsSection() {
       {unavailable && (
         <UnavailableState
           capability="/app/notifications/prefs"
-          description="notification preferences are not part of this build — desktop notifications fall back to their defaults."
+          description="notification preferences are not part of this build; desktop notifications fall back to their defaults."
         />
       )}
 

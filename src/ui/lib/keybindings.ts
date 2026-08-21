@@ -1,8 +1,8 @@
-// Keybinding registry — the SINGLE source of truth for every shortcut the UI
+// Keybinding registry, the SINGLE source of truth for every shortcut the UI
 // displays or listens for. Commands (lib/commands.ts) carry no combo of their
 // own; this module maps commandId → combo, with user remaps persisted to
 // localStorage (a shared ~/.goodvibes/app/keybindings.json store comes with
-// the Settings surface later — the read API here stays the same).
+// the Settings surface later, the read API here stays the same).
 // Combo grammar (lib/hotkeys.ts parses it): "mod+k", "Escape", "g c" chords.
 
 export const KEYBINDINGS_STORAGE_KEY = "goodvibes.app.keybindings";
@@ -122,7 +122,7 @@ export function subscribeKeybindings(listener: Listener): () => void {
 }
 
 // ---------------------------------------------------------------------------
-// Display formatting — every rendered hint goes through this.
+// Display formatting, every rendered hint goes through this.
 // ---------------------------------------------------------------------------
 
 function isMac(): boolean {

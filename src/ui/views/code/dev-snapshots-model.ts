@@ -2,9 +2,9 @@
 // docs/GAPS.md same rows): `intelligence.snapshot` (LSP/tree-sitter/
 // diagnostics posture) and `review.snapshot` (API families + counts). Both
 // are declared on the wire (operator-contract.json) but were never invoked
-// anywhere in src/ui before this file — confirmed by grep before writing a
+// anywhere in src/ui before this file, confirmed by grep before writing a
 // line of UI. Shapes below mirror the contract's outputSchema exactly;
-// parsed defensively anyway (daemon builds may add fields — every object
+// parsed defensively anyway (daemon builds may add fields, every object
 // schema is `additionalProperties: true`/`false` per method, never assumed).
 
 import { asRecord, firstNumber, firstString, firstArray } from "../../lib/wire.ts";
@@ -16,7 +16,7 @@ export interface IntelligenceSnapshot {
   symbolSearchStatus: string;
   completionsStatus: string;
   hoverStatus: string;
-  // undefined = the daemon didn't report this field — never collapsed into a
+  // undefined = the daemon didn't report this field, never collapsed into a
   // fabricated 0 (a real zero errors/requests looks identical to "unreported"
   // otherwise; callers render an honest "—" for the undefined case).
   errorCount: number | undefined;
@@ -56,7 +56,7 @@ export function statusTone(status: string): "ok" | "bad" | "neutral" {
 export interface ReviewSnapshot {
   apiFamilies: string[];
   routes: string[];
-  // undefined = not reported by this daemon — never a fabricated 0; see
+  // undefined = not reported by this daemon, never a fabricated 0; see
   // IntelligenceSnapshot's header comment for the same rule.
   sessions: number | undefined;
   tasks: number | undefined;

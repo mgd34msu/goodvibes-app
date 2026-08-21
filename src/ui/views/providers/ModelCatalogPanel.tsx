@@ -1,14 +1,14 @@
-// ModelCatalogPanel — the "Catalog" tab inside the Model Workspace modal
+// ModelCatalogPanel, the "Catalog" tab inside the Model Workspace modal
 // (docs/GAPS.md top-10 gap #8 / docs/FEATURES.md §14 row 5): real catalog
 // browsing over models.dev's public api.json (4000+ models across every
 // provider it tracks), not just whatever this daemon's providers.list
-// already returns. Read-only browsing — no config writes; routing a target
+// already returns. Read-only browsing, no config writes; routing a target
 // to a model stays on the Workspace tab (model-catalog.ts / config.set).
 //
 // Network-honest: model-dev-catalog.ts holds the 24h localStorage cache +
 // manual refresh. When models.dev cannot be reached AND there is no cache to
 // fall back to, this panel degrades to the SAME providers.list this app
-// already calls elsewhere — the pre-existing behavior — with an explicit note
+// already calls elsewhere, the pre-existing behavior, with an explicit note
 // that it is a fallback, never presented as the real catalog.
 
 import { useMemo, useRef, useState } from "react";
@@ -53,7 +53,7 @@ export function ModelCatalogPanel() {
       return fetchModelsDevCatalog(force);
     },
     // The 24h TTL lives in model-dev-catalog.ts's own localStorage cache, not
-    // react-query's in-memory staleness — this query is cheap to re-run and
+    // react-query's in-memory staleness, this query is cheap to re-run and
     // the cache check inside fetchModelsDevCatalog decides whether it hits
     // the network at all.
     staleTime: Infinity,
@@ -144,7 +144,7 @@ export function ModelCatalogPanel() {
         <span>
           {remoteModels.length} models across {providerOptions.length} providers · as of{" "}
           {fetchedAt !== undefined ? formatRelative(fetchedAt) : "unknown"}
-          {source === "stale-cache" ? " (refresh failed — showing the last successful fetch)" : ""}
+          {source === "stale-cache" ? " (refresh failed: showing the last successful fetch)" : ""}
         </span>
         <button
           type="button"

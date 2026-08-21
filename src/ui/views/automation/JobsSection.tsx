@@ -1,5 +1,5 @@
 // Shared jobs/schedules table (docs/FEATURES.md §5). The daemon backs
-// automation.jobs.* and automation.schedules.* with the SAME job store —
+// automation.jobs.* and automation.schedules.* with the SAME job store,
 // only the method ids, path param names, and available verbs differ
 // (schedules have no PATCH). This one section renders both tabs so the two
 // row sets never drift; the caller parameterizes noun + method ids.
@@ -31,7 +31,7 @@ export interface JobsSectionMethods {
   disable: string;
   run: string;
   delete: string;
-  /** PATCH verb — only jobs have one on the wire. */
+  /** PATCH verb, only jobs have one on the wire. */
   update?: string;
 }
 
@@ -54,7 +54,7 @@ export function JobsSection({ noun, methods, paramName, queryKey, onCreate, note
 
   const list = useQuery({
     queryKey,
-    // No automation domain on the invalidation stream — poll while visible.
+    // No automation domain on the invalidation stream, poll while visible.
     queryFn: () => gv.invoke(methods.list),
     refetchInterval: AUTOMATION_POLL_MS,
   });
@@ -82,7 +82,7 @@ export function JobsSection({ noun, methods, paramName, queryKey, onCreate, note
         result && typeof result === "object" && "runId" in result ? String((result as { runId: unknown }).runId) : "";
       toast({
         title: `Run queued`,
-        description: runId ? `Run ${runId.slice(0, 8)} — watch it under the Runs tab.` : undefined,
+        description: runId ? `Run ${runId.slice(0, 8)}: watch it under the Runs tab.` : undefined,
         tone: "success",
       });
     },

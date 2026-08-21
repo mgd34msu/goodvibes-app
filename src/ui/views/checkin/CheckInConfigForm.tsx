@@ -1,5 +1,5 @@
 // Check-in configuration edit form. checkin.config.set can ENABLE proactive
-// contact (the daemon reaching out on its own schedule) — every save is
+// contact (the daemon reaching out on its own schedule), every save is
 // gated by ConfirmSurface, not just the specific edit that flips enabled on,
 // and the confirm names the exact channel/cadence/quiet-hours that will
 // apply. Danger-toned when the save leaves check-in enabled; neutral when it
@@ -27,7 +27,7 @@ export function CheckInConfigForm({ config, onSaved, onCancel }: CheckInConfigFo
   const [quietHours, setQuietHours] = useState(config.quietHours);
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Closing a dirty form asks first instead of silently discarding the edits
-  // — item 1 (closing warns) from the friction checklist.
+  //, item 1 (closing warns) from the friction checklist.
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const dirty =
@@ -121,12 +121,12 @@ export function CheckInConfigForm({ config, onSaved, onCancel }: CheckInConfigFo
 
       <ConfirmSurface
         open={confirmOpen}
-        action={enabled ? "Save — proactive check-ins will run" : "Save check-in configuration"}
+        action={enabled ? "Save: proactive check-ins will run" : "Save check-in configuration"}
         target={enabled ? deliveryChannel || "the configured channel" : "check-in configuration"}
         blastRadius={
           enabled
             ? `The daemon will contact you via ${deliveryChannel || "(no channel set)"} on schedule "${cadence || "(no cadence set)"}", outside quiet hours "${quietHours || "(none set)"}".`
-            : "Check-ins remain disabled — no proactive contact will run on any schedule or channel."
+            : "Check-ins remain disabled; no proactive contact will run on any schedule or channel."
         }
         danger={enabled}
         confirmLabel={save.isPending ? "Saving…" : "Save"}

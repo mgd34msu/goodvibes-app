@@ -2,7 +2,7 @@
 // .transform, plus the multimodal.status/.providers/.analyze/.packet/
 // .writeback pipeline (writeback is admin-gated via ConfirmSurface). Mounted
 // as a tab inside ArtifactsView (see the "Artifacts | Media Lab" toggle
-// there) rather than a separate sidebar view — docs/FEATURES.md files it
+// there) rather than a separate sidebar view, docs/FEATURES.md files it
 // under §18 "Media Lab (in Artifacts view)". Every 404/501 renders
 // UnavailableState; every result payload is read defensively and falls back
 // to a raw JSON dump when nothing recognizable is found (wire-or-delete: the
@@ -100,7 +100,7 @@ function useSourcePicker() {
   return { ui, resolve, ready };
 }
 
-// ─── Generic result render — best-effort fields + raw JSON fallback ────────
+// ─── Generic result render, best-effort fields + raw JSON fallback ────────
 
 function ResultView({ value }: { value: unknown }) {
   const summary = summarizeMediaResult(value);
@@ -276,7 +276,7 @@ function GenerateSection() {
             generate.mutate(
               { prompt: prompt.trim(), kind: kind || undefined },
               {
-                onSuccess: () => toast({ title: "Generated — saved to Artifacts", tone: "success" }),
+                onSuccess: () => toast({ title: "Generated: saved to Artifacts", tone: "success" }),
                 onError: (error) => toast({ title: "Generate failed", description: formatError(error), tone: "danger" }),
               },
             );

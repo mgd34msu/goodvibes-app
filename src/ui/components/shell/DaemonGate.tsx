@@ -1,5 +1,5 @@
-// Daemon gate — rendered OVER the still-mounted shell (never remounts the
-// workspace: drafts survive outages — docs/UX.md §1.2) when the daemon is
+// Daemon gate, rendered OVER the still-mounted shell (never remounts the
+// workspace: drafts survive outages, docs/UX.md §1.2) when the daemon is
 // unreachable or version-incompatible. Shows the Bun-side detail text, a
 // retry that re-probes /app/health, and a jump into the Doctor overlay
 // (views/onboarding/) which carries the full three-check fix guidance.
@@ -36,7 +36,7 @@ export function DaemonGate({ health, appUnreachable, onOpenDoctor }: DaemonGateP
       ? "Daemon version incompatible"
       : "Daemon unreachable";
   const detail = appUnreachable
-    ? "The app's own local server is not answering — the window may have outlived its process. Relaunch the app."
+    ? "The app's own local server is not answering; the window may have outlived its process. Relaunch the app."
     : (health?.daemon.detail ??
       `No GoodVibes daemon is answering at ${health?.daemon.baseUrl ?? "the configured address"}.`);
 

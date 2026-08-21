@@ -1,7 +1,7 @@
 // Typed daemon facade. Every call goes through invoke(), which resolves the
 // method's HTTP route from the generated OPERATOR_ROUTES table (path
 // {param} substitution + query encoding) and issues it same-origin through
-// appFetch — the Bun proxy injects the bearer token. WS-only methods
+// appFetch, the Bun proxy injects the bearer token. WS-only methods
 // ([ws] in docs/FEATURES.md) route through lib/ws.ts. Ported in spirit from
 // goodvibes-webui src/lib/goodvibes.ts, minus browser token handling (the
 // webview never holds credentials).
@@ -58,7 +58,7 @@ export function encodeQuery(query?: QueryParams): string {
 }
 
 function methodNotFoundError(methodId: string): HttpError {
-  // Same shape isMethodUnavailableError() classifies — an unknown id in the
+  // Same shape isMethodUnavailableError() classifies, an unknown id in the
   // pinned route table degrades identically to a daemon that never heard of it.
   return new HttpError(
     404,
@@ -131,7 +131,7 @@ export async function probeMethod(methodId: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Convenience namespaces — thin, mirroring the webui facade. Payload types are
+// Convenience namespaces, thin, mirroring the webui facade. Payload types are
 // `unknown` unless the contracts package gives us one for free; views apply
 // the defensive readers in lib/wire.ts.
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ export const gv = {
         invoke("companion.chat.turns.cancel", { params: { sessionId }, body }),
     },
     events: {
-      /** Per-session SSE stream path — open with lib/sse.ts (token streaming
+      /** Per-session SSE stream path, open with lib/sse.ts (token streaming
        * is the sanctioned render-from-frames exception). */
       streamPath: (sessionId: string) => streamPath("companion.chat.events.stream", { params: { sessionId } }),
     },
@@ -226,7 +226,7 @@ export const gv = {
     },
     integrationSnapshot: () => invoke("sessions.integration.snapshot"),
     // Contract 1.11 granular session verbs. permissionMode/contextUsage answer
-    // ONLY for the daemon's live local runtime — any other sessionId is an
+    // ONLY for the daemon's live local runtime, any other sessionId is an
     // honest 404 SESSION_NOT_LOCAL (surface as unavailable, never fall back
     // daemon-wide). permissionMode speaks operator vocabulary
     // (plan|normal|accept-edits|auto, read-only custom); the
@@ -257,7 +257,7 @@ export const gv = {
   fleet: {
     snapshot: (body?: unknown) => invoke("fleet.snapshot", { body }), // [ws]
     list: (body?: unknown) => invoke("fleet.list", { body }), // [ws]
-    // Fleet archive (daemon ≥ operator contract 1.6): session-scoped — archived
+    // Fleet archive (daemon ≥ operator contract 1.6): session-scoped, archived
     // subtrees leave the live snapshot but stay fully inspectable via archived.list.
     // archive() refuses honestly ({archived:false, reason}) unless the whole
     // subtree is terminal (done/failed/killed/interrupted).
@@ -294,7 +294,7 @@ export const gv = {
     diff: (body?: unknown) => invoke("checkpoints.diff", { body }), // [ws]
     // restore is confirm-gated server-side: pass confirm:true or a confirmToken
     // minted by restorePreview. Refusal is a 200 {result:null, refused:true,
-    // refusal} — check `refused`, never truthiness of `result`.
+    // refusal}, check `refused`, never truthiness of `result`.
     restore: (body?: unknown) => invoke("checkpoints.restore", { body }), // [ws] dangerous
     restorePreview: (body: unknown) => invoke("checkpoints.restorePreview", { body }), // [ws]
     // Single-hunk revert, same preview→token→apply idiom. Preview's
@@ -384,7 +384,7 @@ export const gv = {
   },
 
   cost: {
-    // costSource/pricingAsOf absent on pre-1.7 records — honest absence.
+    // costSource/pricingAsOf absent on pre-1.7 records, honest absence.
     attribution: (body: unknown) => invoke("cost.attribution.get", { body }), // [ws]
   },
 
@@ -416,7 +416,7 @@ export const gv = {
 
   worktrees: {
     // discard preserves work: dirty state committed onto the KEPT branch
-    // first — surface receipt.branch/preservedCommit, not a bare "discarded".
+    // first, surface receipt.branch/preservedCommit, not a bare "discarded".
     discard: (body: unknown) => invoke("worktrees.discard", { body }), // [ws] dangerous
     setupRun: (body: unknown) => invoke("worktrees.setup.run", { body }), // [ws]
   },
@@ -441,7 +441,7 @@ export const gv = {
 
   channelTest: {
     // Live probe through the REAL delivery router. delivered:false + error in
-    // a 200 body is the normal failure path — do NOT wrap expecting a throw.
+    // a 200 body is the normal failure path, do NOT wrap expecting a throw.
     send: (body: unknown) => invoke("channels.test.send", { body }), // [ws]
   },
 
@@ -503,7 +503,7 @@ export const gv = {
     // Consolidation runs leave receipts (merges/decay) + human-review proposals.
     consolidationReceipts: (query?: QueryParams) =>
       invoke("memory.consolidation.receipts", { query }),
-    // Live markdown projections of standing memory — computed from the store
+    // Live markdown projections of standing memory, computed from the store
     // each call, never stale disk.
     projections: {
       list: () => invoke("memory.projections.list"),
@@ -526,7 +526,7 @@ export const gv = {
     providers: () => invoke("voice.providers.list"),
     // One-act managed local TTS/STT install (download+checksum+atomic install,
     // no manual paths). install() is single-flight server-side; there is NO
-    // progress stream — poll status() while installInProgress is present.
+    // progress stream, poll status() while installInProgress is present.
     local: {
       status: () => invoke("voice.local.status"),
       install: () => invoke("voice.local.install", { body: {} }),

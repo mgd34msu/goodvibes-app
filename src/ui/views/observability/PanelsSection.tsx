@@ -1,4 +1,4 @@
-// Remote-open TUI panels (docs/FEATURES.md §17 — "delightful cross-surface
+// Remote-open TUI panels (docs/FEATURES.md §17, "delightful cross-surface
 // trick"): panels.list + panels.open. Honest UnavailableState if this pin's
 // daemon doesn't serve panels at all, rather than a dead button.
 

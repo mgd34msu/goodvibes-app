@@ -1,4 +1,4 @@
-# goodvibes-app — UX Specification
+# goodvibes-app: UX specification
 
 UI/UX is the forefront criterion for every decision in this app. This document is the
 contract implementation agents build against. The failure catalog it must never repeat is
@@ -10,7 +10,7 @@ extends is `docs/research/webui-map.md` §3.
 1. **Zero friction.** First launch lands you in a working chat within seconds: daemon
    auto-detected or auto-spawned, token auto-resolved from the shared store, model
    defaulted from existing TUI/agent settings when present. Onboarding asks questions
-   only when no answer can be inferred — and never blocks surfaces that already work.
+   only when no answer can be inferred, and never blocks surfaces that already work.
 2. **Never lie, never lose work.** Every number has a label and a frame of reference.
    Every failure has a visible, specific error state distinct from "empty". Drafts
    survive daemon outages (gate overlays render *over* the still-mounted workspace, never
@@ -18,7 +18,7 @@ extends is `docs/research/webui-map.md` §3.
    daemon-side work.
 3. **Keyboard-first.** Command palette (Ctrl+K) reaches every action; `g`-chords navigate
    views; every shortcut shown in the UI comes from the single live keybinding registry
-   (no hardcoded hint strings — autopsy Theme 2). Full focus-trap discipline in modals;
+   (no hardcoded hint strings, autopsy Theme 2). Full focus-trap discipline in modals;
    ARIA labels on all icon buttons; reduced-motion honored.
 4. **Observability ambient, not buried.** The status strip is always present (daemon
    three-axis health, latency, SSE state, active turns, live cost of the current
@@ -47,7 +47,7 @@ notifications, and deep links compose.
 ## 3. Visual language
 
 Port the webui token sheet (`docs/research/webui-map.md` §3) as `src/ui/styles/tokens.css`:
-dark-first neon-cyan operator aesthetic — base `#08080f`, cyan-alpha borders, accent
+dark-first neon-cyan operator aesthetic: base `#08080f`, cyan-alpha borders, accent
 `#00dede`→`#00ffff`, status `#38ff8b`/`#ffcc66`/`#ff6ac8`/`#8da2ff` with `-soft` fills;
 brand neon reserved for glow/accents, never large fills. Light theme = the webui desaturated
 remap. 4px spacing scale, radius 6/8/12/999, Inter/Space Mono (bundled locally, no network
@@ -62,8 +62,8 @@ identically to TUI/agent/webui. Theme: dark default, light opt-in, compact densi
 
 - **Streaming chat**: deltas paint as they arrive; a thinking strip shows live token
   count; tool calls render as collapsible blocks with status glyphs; a visible turn state
-  machine (queued → streaming → completed/error/cancelled) — `STREAM_END` is not
-  terminal, only `TURN_COMPLETED/ERROR/CANCEL` are.
+  machine (queued → streaming → completed/error/cancelled). `STREAM_END` is not
+  terminal. Only `TURN_COMPLETED/ERROR/CANCEL` are.
 - **Optimistic sends** with `local/sent/failed` states and explicit retry affordance.
 - **Approvals**: actionable from anywhere (toast → jump); per-hunk edit approval renders
   real diffs with per-hunk checkboxes; deny requires a note.
@@ -73,20 +73,20 @@ identically to TUI/agent/webui. Theme: dark default, light opt-in, compact densi
   list view implements all four (`EmptyState`, `ErrorState` with cause + retry,
   `SkeletonBlock`, `UnavailableState` naming the missing daemon capability).
 - **Toasts** max 3 with overflow counter ("+2 more" opens a notification drawer that is
-  actually fed — autopsy Theme 3).
+  actually fed, autopsy Theme 3).
 - **No native `alert()`/`confirm()` ever.** RPC native dialogs for file pickers only.
 - **Long-running turns** trigger desktop notifications (configurable threshold) with
   deep links back to the exact session.
-- **View switches never destroy state** — views keep-alive (display:none, not unmount)
+- **View switches never destroy state.** Views keep-alive (display:none, not unmount)
   for Chat, Terminal, and any view holding a draft or scrollback.
 
 ## 5. Zero-friction onboarding (first run)
 
-One screen, three live checks with real-time status: (1) daemon found/spawned/adopted —
+One screen, three live checks with real-time status: (1) daemon found/spawned/adopted,
 shows which; (2) auth token resolved; (3) provider+model available (imported from
 existing TUI/agent settings when present; otherwise inline key entry with a provider
-picker and validation-on-blur). A "Start chatting" button enables the moment checks pass
-— every check repairable inline, none modal-blocking, all skippable to a degraded but
+picker and validation-on-blur). A "Start chatting" button enables the moment checks pass.
+Every check is repairable inline, none modal-blocking, all skippable to a degraded but
 honest workspace. Re-runnable anytime as Settings → Doctor.
 
 ## 6. Performance budgets

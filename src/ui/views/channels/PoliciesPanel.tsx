@@ -1,7 +1,7 @@
 // Policies (docs/FEATURES.md §13 "Policies: list / audit / update"):
 // channels.policies.list rendered per surface with the gating switches and
 // allowlist counts; edits open a modal (modals are configuration) and the
-// admin-scoped channels.policies.update only fires after ConfirmSurface —
+// admin-scoped channels.policies.update only fires after ConfirmSurface,
 // confirm + explicitUserRequest ride the body (the method takes
 // additionalProperties). The audit sub-tab renders channels.policies.audit
 // decisions verbatim (allowed/denied + reason). The access sub-tab
@@ -148,7 +148,7 @@ function PolicyEditModal({ policy, onClose }: { policy: SurfacePolicy | null; on
   const [allowBareCommands, setAllowBareCommands] = useState(policy?.allowTextCommandsWithoutMention ?? false);
   const [dmPolicy, setDmPolicy] = useState(policy?.dmPolicy ?? "");
   const [groupPolicy, setGroupPolicy] = useState(policy?.groupPolicy ?? "");
-  // Allowlists are the fields worth persisting — potentially long id lists a
+  // Allowlists are the fields worth persisting, potentially long id lists a
   // user would grieve retyping. This modal remounts per policy.surface (key
   // on the parent), so each surface gets its own draft.
   const surfaceKey = policy?.surface ?? "new";
@@ -279,7 +279,7 @@ function PolicyEditModal({ policy, onClose }: { policy: SurfacePolicy | null; on
         open={confirming && policy !== null}
         action="Update channel policy"
         target={policy?.surface ?? ""}
-        blastRadius="Changes who this surface will answer — every agent replying on this channel obeys the new gating immediately."
+        blastRadius="Changes who this surface will answer; every agent replying on this channel obeys the new gating immediately."
         confirmLabel="Update policy"
         onConfirm={(meta) => update.mutate(meta)}
         onCancel={() => setConfirming(false)}

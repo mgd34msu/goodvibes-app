@@ -1,6 +1,6 @@
-// Remote work queue — remote.work.list/cancel (docs/FEATURES.md §21 row 4).
+// Remote work queue, remote.work.list/cancel (docs/FEATURES.md §21 row 4).
 // Work items are commands and automation runs dispatched to peers; only
-// queued/claimed items are cancellable (the daemon's own transition guard —
+// queued/claimed items are cancellable (the daemon's own transition guard,
 // completed/failed/cancelled/expired are terminal). A peek-free detail
 // <details> shows payload/result/error/telemetry inline since work rows are
 // already compact.
@@ -85,7 +85,7 @@ export function WorkSection() {
         <EmptyState
           icon={<ListTodo size={28} aria-hidden="true" />}
           title="No remote work queued"
-          description="Commands, status/location requests, and automation runs dispatched to peers appear here — queued, claimed, completed, and failed alike."
+          description="Commands, status/location requests, and automation runs dispatched to peers appear here: queued, claimed, completed, and failed alike."
         />
       )}
 
@@ -122,7 +122,7 @@ export function WorkSection() {
         open={cancelTarget !== null}
         action="Cancel work item"
         target={cancelTarget ? `${cancelTarget.command || cancelTarget.type} (${cancelTarget.id})` : ""}
-        blastRadius="The item is marked cancelled and removed from the peer's work queue. If the peer already claimed it, work in progress on the peer's side is not forcibly stopped — only the daemon's record of it."
+        blastRadius="The item is marked cancelled and removed from the peer's work queue. If the peer already claimed it, work in progress on the peer's side is not forcibly stopped, only the daemon's record of it."
         confirmLabel="Cancel work"
         onConfirm={(meta) => {
           if (cancelTarget) cancel.mutate({ id: cancelTarget.id, meta });

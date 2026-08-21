@@ -1,13 +1,13 @@
 // "Approve from the tree": renders the real, correlated pending approvals for
 // a selected fleet node inline in its detail pane, using the SAME
-// ApprovalCard component and deny-with-note modal as the Approvals view —
+// ApprovalCard component and deny-with-note modal as the Approvals view,
 // full per-hunk diff rendering, claim/cancel, and decision trail. This used
 // to be a second, crippled approve/deny implementation with no hunk
 // rendering and no claimed-approval guard (an approval another surface had
 // claimed could still be approved from here); reusing the shared card closes
 // both gaps at once (FRICTION checklist items 3 & 5).
 //
-// Correlation is fleet.ts's approvalsForNode — the exact sessionId /
+// Correlation is fleet.ts's approvalsForNode, the exact sessionId /
 // metadata.agentId matching the daemon itself uses to derive a node's
 // 'awaiting-approval' state. Shares queryKeys.approvals with the Approvals
 // view, so a decision here reflects there instantly (the `permissions`
@@ -26,7 +26,7 @@ import { DenyModal } from "../approvals/ApprovalsTasksView.tsx";
 import { approvalsForNode, approvalsFromListResponse, type FleetNode } from "./fleet.ts";
 
 function friendlyError(error: unknown): string {
-  if (isSessionClosedError(error)) return "That session is closed — the approval can no longer be actioned.";
+  if (isSessionClosedError(error)) return "That session is closed; the approval can no longer be actioned.";
   return formatError(error);
 }
 
@@ -43,7 +43,7 @@ export function FleetApprovalInline({ node }: { node: FleetNode }) {
 
   // approvalsForNode correlates on the flattened FleetApproval shape, but
   // every action here needs the FULL record (hunks, audit trail, claimedBy)
-  // — parse each match's own `raw` payload rather than re-fetching.
+  //, parse each match's own `raw` payload rather than re-fetching.
   const matches = useMemo(() => {
     const flat = approvalsForNode(node, approvalsFromListResponse(approvals.data));
     return flat

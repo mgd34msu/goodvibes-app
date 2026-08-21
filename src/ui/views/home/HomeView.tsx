@@ -1,8 +1,8 @@
-// Home — the assistant cockpit (docs/UX.md §2 "Assistant", docs/FEATURES.md
+// Home, the assistant cockpit (docs/UX.md §2 "Assistant", docs/FEATURES.md
 // §8/§22 rows): daily briefing card (same sources as the Personal Ops header,
 // richer layout), "While you were away" digest, "Coming up" rail, quick
 // actions sourced from the LIVE command registry (shortcut hints come from
-// lib/keybindings — never hardcoded), and a daemon status card. Every card
+// lib/keybindings, never hardcoded), and a daemon status card. Every card
 // renders an honest empty/degraded state; none of them can go blank.
 
 import { useCallback, useEffect, useState, type ReactElement } from "react";
@@ -108,7 +108,7 @@ export function HomeView(): ReactElement {
   const runningTasks = briefing.tasks.items.slice(0, 3);
   const topUnread = briefing.inbox.items.filter((m) => m.unread).slice(0, 3);
 
-  // Quick actions come from the LIVE registry — an id that is not registered
+  // Quick actions come from the LIVE registry, an id that is not registered
   // (or whose when-guard fails) simply does not render; nothing is faked.
   const quickActions = [
     { id: "chat.new", label: "New chat", icon: <MessageSquarePlus size={15} aria-hidden="true" /> },

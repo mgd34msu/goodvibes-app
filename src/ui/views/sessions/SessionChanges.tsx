@@ -1,11 +1,11 @@
-// SessionChanges — the session review cockpit's "Changes" section.
+// SessionChanges, the session review cockpit's "Changes" section.
 //
 // DAEMON SURFACE: sessions.changes.get (contract 1.11) returns a session's
 // aggregate workspace diff, joined over the workspace checkpoints stamped
-// with that session's id — the net change from before the session's earliest
+// with that session's id, the net change from before the session's earliest
 // stamped checkpoint to its latest. That is the PRIMARY, default source. A
 // session with no stamped checkpoints answers honestly with
-// checkpointCount:0 and an empty diff — rendered as an explicit "no captured
+// checkpointCount:0 and an empty diff, rendered as an explicit "no captured
 // changes" state with a one-tap workspace-scoped fallback (checkpoints.list +
 // checkpoints.diff), never a blank panel. If sessions.changes.get itself is
 // not available on this daemon build, the same fallback is offered with a
@@ -14,12 +14,12 @@
 // PER-HUNK REVERT: checkpoints.revertHunkPreview -> render exactly what would
 // be reverted -> ConfirmSurface (danger) -> checkpoints.revertHunk with the
 // preview's confirmToken. A stale hunk (preview applies:false, or a 409 on
-// apply) renders the honest conflict state and refreshes the diff — never a
+// apply) renders the honest conflict state and refreshes the diff, never a
 // partial apply, never stale state left standing.
 //
 // Ported in spirit from goodvibes-webui src/views/sessions/SessionChanges.tsx
 // + HunkRevertSheet.tsx, trimmed to this wave's scope (no comment/approve
-// actions — those are a separate, not-yet-wired capability).
+// actions, those are a separate, not-yet-wired capability).
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -112,7 +112,7 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
   const [revertTarget, setRevertTarget] = useState<{ file: DiffFile; hunk: DiffHunk } | null>(null);
   const [revertConflict, setRevertConflict] = useState<string | null>(null);
 
-  // ── Primary: sessions.changes.get — genuinely session-scoped ────────────
+  // ── Primary: sessions.changes.get, genuinely session-scoped ────────────
   const sessionChanges = useQuery({
     queryKey: queryKeys.sessionChanges(sessionId),
     queryFn: () => gv.sessions.changes({ sessionId }),
@@ -198,7 +198,7 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
     },
     onError: async (error: unknown) => {
       if (errorStatus(error) === 409) {
-        // Stale hunk on apply — never leave stale state, re-read the diff now.
+        // Stale hunk on apply, never leave stale state, re-read the diff now.
         setRevertConflict(formatError(error));
         await refreshActiveDiff();
       } else {
@@ -229,11 +229,11 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
   const capturedLabel =
     mode === "session"
       ? parsedSessionChanges && !sessionHasNoCapturedChanges
-        ? `Session changes from "${parsedSessionChanges.from}" to "${parsedSessionChanges.to}" — filtered to this session's own checkpoints only.`
+        ? `Session changes from "${parsedSessionChanges.from}" to "${parsedSessionChanges.to}", filtered to this session's own checkpoints only.`
         : "Session changes, aggregated over this session's own captured checkpoints."
       : baseline
-        ? `Workspace changes since checkpoint "${baseline.label || baseline.id}" (${formatRelative(baseline.createdAt)}), compared to the live working tree — workspace-scoped fallback, not filtered to this session.`
-        : "Workspace diff vs. the live working tree — workspace-scoped fallback, not filtered to this session.";
+        ? `Workspace changes since checkpoint "${baseline.label || baseline.id}" (${formatRelative(baseline.createdAt)}), compared to the live working tree, workspace-scoped fallback, not filtered to this session.`
+        : "Workspace diff vs. the live working tree, workspace-scoped fallback, not filtered to this session.";
 
   return (
     <section className="session-changes">

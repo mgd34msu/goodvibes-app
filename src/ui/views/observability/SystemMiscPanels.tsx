@@ -1,7 +1,7 @@
 // The smaller read-only System subtabs: surfaces list, continuity snapshot,
 // scheduler capacity, and OTLP ingest endpoints (display-only per
 // docs/FEATURES.md §17). Each shape is unpinned, so every panel renders a
-// best-effort summary list plus the raw payload — nothing is hidden behind a
+// best-effort summary list plus the raw payload, nothing is hidden behind a
 // guessed field name that doesn't match.
 
 import { useMemo } from "react";

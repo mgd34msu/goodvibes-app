@@ -85,7 +85,7 @@ export class RegistryStore {
       console.warn(
         `[registries] CORRUPT store file for "${collection}" at ${path}: ${
           err instanceof Error ? err.message : String(err)
-        } — renaming to ${aside} and starting with an empty collection.`,
+        }; renaming to ${aside} and starting with an empty collection.`,
       );
       await rename(path, aside).catch((renameErr) => {
         console.warn(`[registries] could not rename corrupt file aside: ${String(renameErr)}`);

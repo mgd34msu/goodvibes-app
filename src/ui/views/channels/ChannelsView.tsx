@@ -1,24 +1,24 @@
-// Channels — omnichannel operations (docs/FEATURES.md §13, all 15 rows).
+// Channels, omnichannel operations (docs/FEATURES.md §13, all 15 rows).
 // Tabbed observability page: Status board (per-surface health + doctor/
 // setup/lifecycle/repairs drill-in), Inbox, Accounts, Catalog (actions/
 // tools/agent tools/capabilities/directory), Policies (+ audit), Drafts,
-// Routing, Deliveries (row 12: deliveries.list/.get, read-only — no
+// Routing, Deliveries (row 12: deliveries.list/.get, read-only, no
 // deliveries.retry exists on this pin, see DeliveriesPanel.tsx), Identities
 // (contract 1.11: principals.* registry + channels.profiles.* intake
-// defaults + channels.test.send — the FIRST UI surface for all three, see
-// IdentitiesPanel.tsx) — every mutating verb confirm-gated (see each panel's
+// defaults + channels.test.send, the FIRST UI surface for all three, see
+// IdentitiesPanel.tsx), every mutating verb confirm-gated (see each panel's
 // docblock).
 //
 // Freshness: the `communication` realtime domain invalidates the ["channels"]
 // key prefix (lib/realtime.ts) that every local key extends (keys.ts); the
 // status board and inbox add slow polls as the no-event floor. Deliveries
 // rides the SEPARATE `deliveries` domain/["deliveries"] prefix (shared
-// queryKeys.deliveries, not a local key) — refresh here invalidates both.
+// queryKeys.deliveries, not a local key), refresh here invalidates both.
 //
 // Deep links: ?filter[channels-tab]=<tab> selects a tab so palette jumps and
 // notifications compose (docs/UX.md §2).
 //
-// Companion pairing (QR) is the header action — see PairingModal.tsx +
+// Companion pairing (QR) is the header action, see PairingModal.tsx +
 // src/bun/pairing.ts.
 
 import { useEffect, useState } from "react";
@@ -79,12 +79,12 @@ export function ChannelsView() {
   const tab: ChannelsTab = isChannelsTab(rawTab) ? rawTab : "status";
 
   function selectTab(next: ChannelsTab): void {
-    // Tab selection is not a history-worthy step — replace, don't push.
+    // Tab selection is not a history-worthy step, replace, don't push.
     setFilters({ "channels-tab": next === "status" ? undefined : next }, { replace: true });
   }
 
-  // channelsKeys.all (communication domain) covers channels.profiles too —
-  // queryKeys.channelProfiles is ["channels","profiles"], a prefix match — but
+  // channelsKeys.all (communication domain) covers channels.profiles too,
+  // queryKeys.channelProfiles is ["channels","profiles"], a prefix match, but
   // queryKeys.principals is its own top-level key ["principals"], outside the
   // "channels" prefix, so it needs its own invalidation here. Plus the
   // separately-invalidated deliveries domain the Deliveries tab rides.
@@ -94,7 +94,7 @@ export function ChannelsView() {
     void queryClient.invalidateQueries({ queryKey: queryKeys.principals });
   }
 
-  // Topbar view-scoped actions (the view unmounts when hidden — keepAlive:false).
+  // Topbar view-scoped actions (the view unmounts when hidden, keepAlive:false).
   useEffect(() => {
     setViewActions(
       <>
@@ -109,7 +109,7 @@ export function ChannelsView() {
     return () => setViewActions(null);
   }, [setViewActions, queryClient]);
 
-  // Palette commands — live only while the view is mounted.
+  // Palette commands, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "channels.refresh",

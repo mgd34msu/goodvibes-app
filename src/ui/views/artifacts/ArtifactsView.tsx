@@ -1,4 +1,4 @@
-// Artifacts — docs/FEATURES.md §12. Paginated artifacts.list with kind
+// Artifacts, docs/FEATURES.md §12. Paginated artifacts.list with kind
 // facets, upload (file picker → base64 → artifacts.create), and a detail
 // panel with real content preview off artifacts.content.get: markdown
 // renders, text/json/csv show raw (capped), images/audio/video play from a
@@ -6,7 +6,7 @@
 // bytes come through appFetch), and binaries get an honest download button.
 // Promote-to-knowledge is confirm-gated knowledge.ingest.artifact (admin).
 //
-// Realtime: artifacts.* has no wire event domain (pinned upstream) — the
+// Realtime: artifacts.* has no wire event domain (pinned upstream), the
 // list polls every 30s.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -39,7 +39,7 @@ import {
 } from "./artifacts-data.ts";
 
 const PAGE_SIZE = 50;
-/** Preview cap — larger text bodies truncate with an honest note. */
+/** Preview cap, larger text bodies truncate with an honest note. */
 const TEXT_PREVIEW_CAP = 256 * 1024;
 
 const UPLOAD_INPUT_ID = "artifacts-upload-input";
@@ -55,9 +55,9 @@ export function ArtifactsView() {
   const [tab, setTab] = useState<"artifacts" | "media-lab">("artifacts");
   const uploadRef = useRef<HTMLInputElement>(null);
 
-  // artifacts.* has no wire event — poll every 30s while the Artifacts tab
+  // artifacts.* has no wire event, poll every 30s while the Artifacts tab
   // is the one showing (gated: irrelevant, and wasted, while Media Lab is
-  // up — item 18).
+  // up, item 18).
   const list = useQuery({
     queryKey: artifactKeys.list(limit),
     queryFn: () => gv.artifacts.list({ limit, offset: 0 }),
@@ -308,7 +308,7 @@ export function ArtifactsView() {
           <EmptyState
             icon={<Archive size={28} aria-hidden="true" />}
             title="Pick an artifact"
-            description="Select a row to preview its content — markdown, code, images, audio, and video render in place."
+            description="Select a row to preview its content: markdown, code, images, audio, and video render in place."
           />
         )}
       </section>

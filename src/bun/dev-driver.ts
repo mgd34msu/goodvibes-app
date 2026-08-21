@@ -1,5 +1,5 @@
 // Dev-only webview driver: lets local tooling execute JS inside the webview
-// and read the result — the app's built-in E2E harness.
+// and read the result, the app's built-in E2E harness.
 // Enabled ONLY when GOODVIBES_APP_DEV=1 (scripts/launch.ts sets it for dev
 // runs; release launches never do). Reachable only through the loopback UI
 // server, and /app/* is x-gv-app header-gated like everything else.

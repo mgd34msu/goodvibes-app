@@ -1,22 +1,22 @@
-// FleetView — the live control room over fleet.snapshot [ws]
+// FleetView, the live control room over fleet.snapshot [ws]
 // (docs/FEATURES.md §3): the flat, parentId-linked process node list
 // (daemon-capped at 2000) rendered as a master/detail tree.
 //
-// fleet.* emits no dedicated wire event (pinned upstream) — freshness is a 5s
+// fleet.* emits no dedicated wire event (pinned upstream), freshness is a 5s
 // poll while the view is visible (docs/UX.md §6) + manual refresh, and the
 // `agents`/`workflows` realtime domains invalidate queryKeys.fleet as a fast
 // signal. fleet.snapshot is ws-only: it rides the /app/ws bridge and degrades
 // honestly when the bridge is down (distinct from daemon-unreachable and from
 // capability-missing).
 //
-// Per-node actions are capability-gated on fleet.ts's wireBackedActions —
+// Per-node actions are capability-gated on fleet.ts's wireBackedActions,
 // steer / detach / start-stop-run-watcher are gated there; any node with a
 // live sessionRef.sessionId ALSO gets the full session-level Agent Control
-// surface (FleetAgentControl.tsx — steer/follow-up, interrupt via
+// surface (FleetAgentControl.tsx, steer/follow-up, interrupt via
 // sessions.inputs.cancel, stop via sessions.close/detach, resume via
 // sessions.reopen; this is what closed out docs/GAPS.md §3 row 7, formerly
 // "EXCLUDED: interrupt/kill/pause/resume"). True freeze-and-thaw pause still
-// has no wire verb anywhere — see unbackedCapabilityNote and the panel's own
+// has no wire verb anywhere, see unbackedCapabilityNote and the panel's own
 // on-screen note. Inline approval cards ride approvalsForNode.
 // The Workstream sub-filter scopes the same snapshot to
 // workstream/phase/work-item kinds (no dedicated contract exists).
@@ -26,7 +26,7 @@
 // session-scoped archive (fleet.archive / fleet.archiveFinished) and come
 // back via fleet.unarchive; the Archived scope renders fleet.archived.list
 // with the same node shape. Terminality of the WHOLE subtree is judged by
-// the daemon — the app only gates on the selected node's own state and
+// the daemon, the app only gates on the selected node's own state and
 // surfaces the daemon's honest refusal reason otherwise.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -95,7 +95,7 @@ import { FleetTaskGraph } from "./FleetTaskGraph.tsx";
 
 type FleetScope = "all" | "workstreams" | "archived";
 
-/** fleet.archive wire result — {archived, count, reason?} per the contract. */
+/** fleet.archive wire result, {archived, count, reason?} per the contract. */
 function readArchiveResult(value: unknown): { archived: boolean; count: number; reason: string } {
   const record = (value ?? {}) as Record<string, unknown>;
   return {
@@ -105,7 +105,7 @@ function readArchiveResult(value: unknown): { archived: boolean; count: number; 
   };
 }
 
-/** A node the daemon flagged as blocked on a human (approval/input/pick/conflict) — contract 1.11's needsAttention marker. */
+/** A node the daemon flagged as blocked on a human (approval/input/pick/conflict), contract 1.11's needsAttention marker. */
 function AttentionBadge({ reason, detail }: { reason: string; detail: string }) {
   const label = attentionReasonLabel(reason);
   return (
@@ -120,7 +120,7 @@ function KindBadge({ kind }: { kind: string }) {
   return (
     <span
       className={`badge ${known ? "neutral" : "warning"}`}
-      title={known ? undefined : "Kind not known to this client — shown verbatim"}
+      title={known ? undefined : "Kind not known to this client, shown verbatim"}
     >
       {kindLabel(kind)}
     </span>
@@ -147,7 +147,7 @@ function StateBadge({ state }: { state: string }) {
   );
 }
 
-/** "c:N/M" — subtask completion progress on a compound WRFC chain; renders
+/** "c:N/M", subtask completion progress on a compound WRFC chain; renders
  * nothing when the chain has no subtasks to count (fleet.ts wrfcChainProgress). */
 function ChainProgressBadge({ node }: { node: FleetNode }) {
   const progress = wrfcChainProgress(node);
@@ -160,7 +160,7 @@ function ChainProgressBadge({ node }: { node: FleetNode }) {
 }
 
 /** SAT/UNS/UNV constraint-verdict tally from the wire's own reviewer findings
- * (fleet.ts wrfcConstraintTally) — absent entirely until a review has reported. */
+ * (fleet.ts wrfcConstraintTally), absent entirely until a review has reported. */
 function ConstraintVerdictBadges({ node }: { node: FleetNode }) {
   const tally = wrfcConstraintTally(node);
   if (!tally) return null;
@@ -216,7 +216,7 @@ export function FleetView() {
   });
   const snapshot = archivedScope ? archivedList : live;
 
-  // Best-of-N attempt groups + merge conflicts (contract 1.11) — polled
+  // Best-of-N attempt groups + merge conflicts (contract 1.11), polled
   // alongside the snapshot, degrading to an empty list SILENTLY on an older
   // daemon (isMethodUnavailableError), never a scary error state.
   const attempts = useFleetAttemptGroups(!archivedScope);
@@ -247,7 +247,7 @@ export function FleetView() {
 
   const allNodes = useMemo(() => snapshot.data?.nodes ?? [], [snapshot.data]);
   // Best-of-N sibling nodes collapse into the FleetAttemptsSection above the
-  // tree instead of appearing as N loose rows — only for groups fleet.
+  // tree instead of appearing as N loose rows, only for groups fleet.
   // attempts.list is actually tracking (a stale/unknown groupId marker never
   // hides a node with nothing collapsing it).
   const attemptGroupIdSet = useMemo(() => new Set(attempts.groups.map((g) => g.groupId)), [attempts.groups]);
@@ -506,7 +506,7 @@ function FleetDetail({
   const unbackedNote = useMemo(() => unbackedCapabilityNote(node), [node]);
   const agentControlRef = useRef<FleetAgentControlHandle>(null);
 
-  // Palette commands for the Agent Control surface (docs/GAPS.md §3 row 7) —
+  // Palette commands for the Agent Control surface (docs/GAPS.md §3 row 7),
   // re-registered whenever the selection changes to a different session, so
   // `when` always guards against the CURRENTLY selected node. The `run`/
   // `when` closures read agentControlRef on every palette query, so they stay
@@ -578,7 +578,7 @@ function FleetDetail({
     onError: (error: unknown) => toast({ title: "Run failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Only the daemon knows whether the WHOLE subtree is terminal — the button
+  // Only the daemon knows whether the WHOLE subtree is terminal, the button
   // gates on this node's own state and the refusal reason covers the rest.
   const archiveNode = useMutation({
     mutationFn: async () => readArchiveResult(await gv.fleet.archive(node.id)),

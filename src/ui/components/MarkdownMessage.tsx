@@ -43,7 +43,7 @@ interface CodeBlockProps {
 function CodeBlock({ children, lineNumbers }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   // MarkdownMessage renders under App.tsx's single ToastProvider (App.tsx:21,
-  // wrapping AppShell — every view in this app's one React tree) regardless
+  // wrapping AppShell, every view in this app's one React tree) regardless
   // of which view hosts this code block, so a toast is a safe, visible way
   // to surface a clipboard failure.
   const { toast } = useToast();
@@ -114,7 +114,7 @@ function CodeBlock({ children, lineNumbers }: CodeBlockProps) {
 
 export interface MarkdownMessageProps {
   content: string;
-  /** UI-only line numbers on code blocks — never copied. */
+  /** UI-only line numbers on code blocks, never copied. */
   lineNumbers?: boolean;
 }
 

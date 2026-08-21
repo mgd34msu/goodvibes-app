@@ -1,9 +1,9 @@
 // Typed client for the app-local /app/local/providers + /app/local/llm-scan
 // routes (src/bun/local-tools.ts). No wire method backs any of this
-// (docs/GAPS.md §14 rows 8/9 — MISSING) — every value here is app-local disk
+// (docs/GAPS.md §14 rows 8/9, MISSING), every value here is app-local disk
 // I/O (custom TUI provider JSON files under ~/.goodvibes/tui/providers/) or an
 // opt-in localhost probe, so freshness is mutation-driven invalidation only
-// (no wire event, no poll — nothing here changes unless this app or the TUI
+// (no wire event, no poll, nothing here changes unless this app or the TUI
 // touches those files, and the scan never runs unless the user clicks it).
 
 import { appJson } from "../../lib/http.ts";
@@ -54,7 +54,7 @@ export interface LlmScanServer {
 }
 
 export const llmScanApi = {
-  /** POST only — never runs unless the caller explicitly invokes it. */
+  /** POST only, never runs unless the caller explicitly invokes it. */
   scan: () => appJson<{ servers: LlmScanServer[] }>("/app/local/llm-scan", { method: "POST" }),
 } as const;
 

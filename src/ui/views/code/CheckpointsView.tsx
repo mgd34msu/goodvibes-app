@@ -1,15 +1,15 @@
-// Checkpoints view — workspace checkpoints browser over checkpoints.* (ALL
+// Checkpoints view, workspace checkpoints browser over checkpoints.* (ALL
 // ws-only: they ride the /app/ws bridge via gv.invoke). Ported from
 // goodvibes-webui src/views/checkpoints/CheckpointsView.tsx with the app's
 // binding rules applied:
 //   - restore is DESTRUCTIVE (git-backed workspace rewrite, no server-side
 //     confirmation) → ConfirmSurface with confirm:true + explicitUserRequest
-//     forwarded on the wire (never window.confirm — docs/UX.md §4);
+//     forwarded on the wire (never window.confirm, docs/UX.md §4);
 //   - create's honest noop:true ("tree unchanged") renders as an info toast,
 //     never an error, never a fabricated checkpoint;
 //   - ws bridge down / method missing → UnavailableState naming the capability;
 //   - checkpoints.* emits NO wire events (pinned upstream; queryKeys note in
-//     lib/queries.ts) — freshness = mutation-driven invalidation + a gentle
+//     lib/queries.ts), freshness = mutation-driven invalidation + a gentle
 //     30s poll while the view is visible.
 
 import { useEffect, useMemo, useState } from "react";
@@ -87,7 +87,7 @@ export function CheckpointsView() {
   });
 
   // Restore always overwrites the CURRENT working tree, regardless of what
-  // compareToId the detail pane happens to be showing — so the confirm's
+  // compareToId the detail pane happens to be showing, so the confirm's
   // preview is its OWN working-tree diff, never whatever comparison the
   // pane is mid-browsing (never show the wrong diff at the consent moment).
   const restoreDiff = useQuery({
@@ -137,14 +137,14 @@ export function CheckpointsView() {
       toast({
         title: isNotFound(error) ? "Checkpoint no longer exists" : "Restore failed",
         description: isNotFound(error)
-          ? `"${checkpoint.label || checkpoint.id}" was not found — it may have been garbage-collected.`
+          ? `"${checkpoint.label || checkpoint.id}" was not found; it may have been garbage-collected.`
           : formatError(error),
         tone: "danger",
       });
     },
   });
 
-  // Palette command — view-scoped.
+  // Palette command, view-scoped.
   useEffect(() => {
     registerCommand({
       id: "checkpoints.snapshot",
@@ -336,7 +336,7 @@ function CheckpointDetail({
           className="checkpoint-detail__restore"
           onClick={onRestore}
           disabled={restoring}
-          title="Restore the workspace to this checkpoint (destructive — confirms first)"
+          title="Restore the workspace to this checkpoint (destructive: confirms first)"
         >
           <RotateCcw size={14} aria-hidden="true" /> {restoring ? "Restoring…" : "Restore this checkpoint"}
         </button>
@@ -400,7 +400,7 @@ function CheckpointDetail({
 // ─── restore confirm: full working-tree diff, never a truncated summary ─────
 
 /** What restoring this checkpoint would actually do to the CURRENT working
- * tree, rendered in full at the moment of consent — never just the worded
+ * tree, rendered in full at the moment of consent, never just the worded
  * blast-radius sentence with the real change hidden behind it. */
 function RestoreDiffPreview({
   query,

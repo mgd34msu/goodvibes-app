@@ -14,7 +14,7 @@ export interface SseHandlers {
   onError?: (error: unknown) => void;
   /** Fired right after onError with the backoff delay chosen for the retry. */
   onReconnectScheduled?: (delayMs: number, attempt: number) => void;
-  /** Disposed for good (dispose() called) — no further callbacks. */
+  /** Disposed for good (dispose() called), no further callbacks. */
   onTerminate?: () => void;
 }
 
@@ -66,7 +66,7 @@ export function createSseParser(onFrame: (frame: Frame) => void): (chunk: string
         if (field === "event") event = value;
         else if (field === "data") data.push(value);
         else if (field === "id" && !value.includes("\0")) id = value;
-        // `retry` is intentionally ignored — we own backoff locally.
+        // `retry` is intentionally ignored, we own backoff locally.
       }
       newlineIndex = buffer.indexOf("\n");
     }
@@ -138,7 +138,7 @@ export function openSse(path: string, handlers: SseHandlers, options?: SseOption
         if (done) break;
         parse(decoder.decode(value, { stream: true }));
       }
-      // Server closed cleanly — still a break in liveness; reconnect.
+      // Server closed cleanly, still a break in liveness; reconnect.
       scheduleReconnect(new Error("SSE stream ended"));
     } catch (error) {
       if (disposed) return;

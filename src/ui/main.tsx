@@ -44,7 +44,7 @@ void (async () => {
     );
 
     // Display scale is handled at launch (GDK_SCALE stripped from the app
-    // process env, Linux-only) — no in-page scaling: CSS zoom blurred text and
+    // process env, Linux-only), no in-page scaling: CSS zoom blurred text and
     // desynced native controls, and transform-scaling broke vh units + resize.
     // health.display.gdkScale stays for observability.
 
@@ -55,6 +55,6 @@ void (async () => {
       startDevDriver();
     }
   } catch {
-    // health unavailable at boot — compensation and driver are niceties, never fatal
+    // health unavailable at boot, compensation and driver are niceties, never fatal
   }
 })();

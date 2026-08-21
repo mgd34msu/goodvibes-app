@@ -1,12 +1,12 @@
-// Devices & pairing — data layer for pairing.tokens.*, pairing.handoff.create,
-// pairing.posture.get, and tailscale.* (contract 1.11 — none of these emit a
+// Devices & pairing, data layer for pairing.tokens.*, pairing.handoff.create,
+// pairing.posture.get, and tailscale.* (contract 1.11, none of these emit a
 // realtime event; each section below fetches only while it actually needs
 // freshness, never a background poll for its own sake, per docs/UX.md §4's
 // poll-only-while-relevant rule).
 //
 // pairing.handoff.complete (the RECEIVING device's WebAuthn/push/relay
 // ceremony) has no surface here on purpose: this desktop app is always the
-// pairing INITIATOR, minting a link for some other device to scan — it never
+// pairing INITIATOR, minting a link for some other device to scan, it never
 // completes one itself. See DevicesPairingSection.tsx for the full rationale.
 
 import { asRecord, firstArray, firstNumber, firstString } from "../../lib/wire.ts";
@@ -64,7 +64,7 @@ export interface HandoffResult {
 }
 
 /** deepLink is optional on the wire (older daemons may omit it, leaving only
- * `fragment`) — fall back to the fragment itself so the QR still has SOMETHING
+ * `fragment`), fall back to the fragment itself so the QR still has SOMETHING
  * scannable rather than rendering an empty code silently. */
 export function readHandoffResult(data: unknown): HandoffResult {
   const record = asRecord(data);

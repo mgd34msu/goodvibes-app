@@ -1,13 +1,13 @@
 // App-own settings (docs/FEATURES.md §19): window/behavior prefs, the
-// launch-at-login POSTURE, and a mirror of the notifications master switch —
+// launch-at-login POSTURE, and a mirror of the notifications master switch,
 // backed by src/bun/secrets.ts's /app/secrets/app-settings routes, which
 // read/write the SAME ~/.goodvibes/app/settings.json the notifications agent
-// uses (merged non-destructively — this module never touches the
+// uses (merged non-destructively, this module never touches the
 // "notifications" top-level key).
 //
 // Launch-at-login is REAL when a built launcher exists under build/*-linux-
 // x64 (writes/removes ~/.config/autostart/goodvibes-app.desktop); otherwise
-// it renders the honest "not implemented yet" state — never a toggle that
+// it renders the honest "not implemented yet" state, never a toggle that
 // looks live but does nothing (docs/ARCHITECTURE.md non-negotiable #2).
 
 import { useEffect, useState } from "react";
@@ -151,7 +151,7 @@ export function AppLaunchSection() {
             {notifUnavailable && (
               <UnavailableState
                 capability="/app/notifications/prefs"
-                description="notification prefs aren't part of this build — manage them from the Notifications section once they land."
+                description="notification prefs aren't part of this build; manage them from the Notifications section once they land."
               />
             )}
             {notifPrefs.isSuccess && (

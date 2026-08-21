@@ -1,11 +1,11 @@
-// Documents & Compare — docs/FEATURES.md §11. Two tabs:
+// Documents & Compare, docs/FEATURES.md §11. Two tabs:
 //  · Drafts: versioned markdown documents in the app-local /app/registries/
-//    documents collection — editor with save-as-version, version timeline
+//    documents collection, editor with save-as-version, version timeline
 //    with client-side line diffs between any two versions, review comments
 //    stored on the item (superset-tolerant), and .md export.
 //  · Model compare: blind two-model comparison (CompareLab.tsx).
 //
-// Realtime: the documents registry is app-local with no wire events — a 30s
+// Realtime: the documents registry is app-local with no wire events, a 30s
 // refetchInterval keeps other-window edits visible; mutations invalidate the
 // "documents-registry" prefix.
 
@@ -62,12 +62,12 @@ function tabFromFilter(value: string | undefined): DocTab | null {
 
 export function DocumentsView() {
   // Deep-linkable tab: ?view=documents&filter[tab]=packets&filter[note]=<id>
-  // — the /note toast's "Open in Documents" jump link lands here (chat's
+  //, the /note toast's "Open in Documents" jump link lands here (chat's
   // useSlashCommands.ts drives this same filter shape).
   const { filters, setFilters } = useUrlState();
   const [tab, setTab] = useState<DocTab>(() => tabFromFilter(filters.tab) ?? "drafts");
   // setFilters is re-created by useUrlState on every URL change (it closes
-  // over the current urlState) — the palette-command effect below registers
+  // over the current urlState), the palette-command effect below registers
   // ONCE on mount, so it goes through this ref rather than a stale closure.
   const setFiltersRef = useRef(setFilters);
   setFiltersRef.current = setFilters;
@@ -172,9 +172,9 @@ function DraftsSection({ active }: { active: boolean }) {
   const [newTitle, setNewTitle] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // App-local registry: no wire events — poll every 30s while this tab is
+  // App-local registry: no wire events, poll every 30s while this tab is
   // the one showing (stays mounted-but-hidden on the other two tabs, so the
-  // poll itself must gate — item 18).
+  // poll itself must gate, item 18).
   const docsQuery = useQuery({
     queryKey: docKeys.list,
     queryFn: listDocuments,
@@ -196,7 +196,7 @@ function DraftsSection({ active }: { active: boolean }) {
   });
 
   // Upload (docs/GAPS.md §11 row 3): a file picker reads the text
-  // client-side, creates a document item, then saves that text as v1 — no
+  // client-side, creates a document item, then saves that text as v1, no
   // wire round-trip for the file content itself.
   const upload = useMutation({
     mutationFn: async (file: File) => {
@@ -333,7 +333,7 @@ function DocumentEditor({
   const versionsQuery = useQuery({
     queryKey: docKeys.versions(doc.id),
     queryFn: () => listVersions(doc.id),
-    // app-local registry — no wire events; gated on `active` since Drafts
+    // app-local registry, no wire events; gated on `active` since Drafts
     // stays mounted-but-hidden on the other Documents tabs (item 18).
     refetchInterval: active ? 30_000 : false,
   });
@@ -343,7 +343,7 @@ function DocumentEditor({
   );
   const head = versions[0];
 
-  // The body is the field worth persisting — this component remounts per
+  // The body is the field worth persisting, this component remounts per
   // document (key=doc.id on the parent), and the persisted draft resumes
   // over the head version content once it loads, unless a restored draft
   // already exists (never clobber a real unsaved edit with server content).
@@ -388,7 +388,7 @@ function DocumentEditor({
   });
 
   // Export-to-artifact (docs/GAPS.md §11 row 3), alongside the existing
-  // browser .md download — puts the current buffer into the shared
+  // browser .md download, puts the current buffer into the shared
   // Artifacts store visible on every surface.
   const exportArtifact = useMutation({
     mutationFn: async () => {
@@ -406,7 +406,7 @@ function DocumentEditor({
       setExportConfirmOpen(false);
       toast({
         title: "Exported to Artifacts",
-        description: `Artifact ${artifactId} — view it in the Artifacts view.`,
+        description: `Artifact ${artifactId}: view it in the Artifacts view.`,
         tone: "success",
       });
     },
@@ -415,7 +415,7 @@ function DocumentEditor({
 
   // Accept a comment's suggestion (docs/GAPS.md §11 row 2): applies the
   // suggested text to the draft as a brand-new version, then marks the
-  // comment resolved+accepted. Confirm-gated — it overwrites the draft.
+  // comment resolved+accepted. Confirm-gated, it overwrites the draft.
   const acceptSuggestion = useMutation({
     mutationFn: async (comment: DocComment) => {
       await saveVersion(doc.id, comment.suggestion, `Applied suggestion from comment`);
@@ -429,7 +429,7 @@ function DocumentEditor({
     },
     onSuccess: async (_result, comment) => {
       setAcceptTarget(null);
-      // Explicit overwrite — the confirm dialog says as much. Show the
+      // Explicit overwrite, the confirm dialog says as much. Show the
       // suggestion immediately and drop the stale persisted draft.
       setDraft(comment.suggestion);
       draftControl.clear();
@@ -641,7 +641,7 @@ function CommentsSection({
   onAcceptSuggestion,
 }: {
   doc: DocRecord;
-  /** Escalates to DocumentEditor — accepting overwrites the draft's content
+  /** Escalates to DocumentEditor, accepting overwrites the draft's content
    * with a new version, which needs its own confirm gate. */
   onAcceptSuggestion: (comment: DocComment) => void;
 }) {
@@ -748,7 +748,7 @@ function CommentsSection({
           className="document-comments__suggestion-input"
           value={suggestion}
           onChange={(e) => setSuggestion(e.target.value)}
-          placeholder="Optional: suggested replacement text (imported or hand-entered — no AI generation is wired here)"
+          placeholder="Optional: suggested replacement text (imported or hand-entered: no AI generation is wired here)"
           aria-label="Optional suggested replacement text"
           rows={2}
         />

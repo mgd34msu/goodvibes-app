@@ -1,15 +1,15 @@
 // App-local chat stores + transcript export. FEATURES.md §1 marks these rows
 // app-local; the parity matrix names ~/.goodvibes/app/*.json files for
 // bookmarks/input-history, but no /app registry route exists for them yet, so
-// they persist to localStorage behind the same read/write API — the store can
+// they persist to localStorage behind the same read/write API, the store can
 // be re-pointed at /app routes later without touching callers. Honest
 // deviation, noted in the view header.
 //
 // /note (below) is the one exception: it writes through the REAL
 // /app/registries/notes collection (the same one docs/views/documents/
 // documents-data.ts uses for blind-compare judgments), tagged "chat-note",
-// so a saved note is a real superset-tolerant registry record — not another
-// localStorage-only store — and shows up in Documents → Packets & notes.
+// so a saved note is a real superset-tolerant registry record, not another
+// localStorage-only store, and shows up in Documents → Packets & notes.
 
 import { appJson } from "../../lib/http.ts";
 import { asRecord } from "../../lib/wire.ts";
@@ -138,7 +138,7 @@ export function toggleBookmark(sessionId: string, messageId: string, snippet: st
 }
 
 // ─── Composer draft (per session; survives an app restart, not just a view
-// switch inside the keep-alive chat tree — friction checklist item 1) ────────
+// switch inside the keep-alive chat tree, friction checklist item 1) ────────
 
 const DRAFTS_KEY = "goodvibes.app.chat.drafts";
 const MAX_DRAFTS = 50;
@@ -161,7 +161,7 @@ export function readDraft(sessionId: string): string {
 }
 
 /** Save (or, for empty text, clear) the composer draft for a session.
- * Bounded to MAX_DRAFTS entries (checklist item 14: no unbounded growth) —
+ * Bounded to MAX_DRAFTS entries (checklist item 14: no unbounded growth),
  * the oldest-touched entry is evicted first once the cap is exceeded. */
 export function writeDraft(sessionId: string, text: string): void {
   const key = sessionId || NEW_CHAT_DRAFT_KEY;
@@ -202,7 +202,7 @@ export function writeAlwaysSpeakPref(on: boolean): void {
 
 // ─── Redaction (share with --redact) ─────────────────────────────────────────
 
-/** Secret-shaped masking applied before export — same spirit as the webui
+/** Secret-shaped masking applied before export, same spirit as the webui
  * config-redaction patterns: named key prefixes, bearer headers, long
  * hex/base64 runs. Conservative on purpose: better to over-mask an export. */
 export function redactSecrets(text: string): string {
@@ -330,7 +330,7 @@ export async function saveChatNote(
 //
 // lib/notify-bridge.ts only watches the "approvals" and "tasks" query-cache
 // keys (verified: src/ui/lib/notify-bridge.ts has no chat/companion-chat
-// handling) — companion-chat turns are invisible to it, so this is NOT a
+// handling), companion-chat turns are invisible to it, so this is NOT a
 // duplicate of an existing feature. useChatStream.ts's onTurnCompleted hook
 // is the documented seam for this ("long-turn notification ... hooks live in
 // the view"); this helper decides whether the moment qualifies, and the view

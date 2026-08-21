@@ -1,5 +1,5 @@
 // Composer draft undo/redo (docs/GAPS.md §1 row 29): a bounded (50-entry)
-// history of composer draft *checkpoints* — NOT a reimplementation of
+// history of composer draft *checkpoints*, NOT a reimplementation of
 // character-level native textarea undo (the browser already gives every
 // <textarea> that for free via Ctrl+Z while it's focused, and fighting the
 // native stack with a controlled-value React textarea is a known source of
@@ -7,7 +7,7 @@
 // granularity ChatView already cares about: checkpoint() is called right
 // before a send/clear/slash-replace overwrites the draft, and on a 2s-idle
 // timer while the user is typing, so "undo" can always recover the text that
-// was in the box before the app itself changed or discarded it — the one
+// was in the box before the app itself changed or discarded it, the one
 // case native undo cannot help with, since the app's own setDraft() calls
 // don't go through the textarea's edit history at all.
 //

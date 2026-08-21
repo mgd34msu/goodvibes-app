@@ -58,7 +58,7 @@ export interface ReasoningControl {
 }
 
 export interface ComposerProps {
-  /** Active companion-chat session id — threaded down only so
+  /** Active companion-chat session id, threaded down only so
    * PermissionModeControl (sessions.permissionMode.get/set) can self-fetch.
    * '' before a chat exists yet; the control hides itself in that case. */
   sessionId: string;
@@ -85,7 +85,7 @@ export interface ComposerProps {
   onDraftChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onComposerKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
-  /** True while a turn is actively in flight — shows the "Steer" button next
+  /** True while a turn is actively in flight, shows the "Steer" button next
    * to Send (docs/GAPS.md §1 row 39). Ctrl+Enter triggers the same action
    * from the textarea regardless of this flag: with no turn running, steer
    * degrades to an ordinary send (companion.chat.messages.steer, Q3). */
@@ -97,7 +97,7 @@ export interface ComposerProps {
   onRemoveAttachedFile: (index: number) => void;
   onAddArtifactRef: (ref: AttachedArtifactRef) => void;
   onRemoveArtifactRef: (index: number) => void;
-  /** Prompt undo/redo (docs/GAPS.md §1 row 29) — checkpoint fires right
+  /** Prompt undo/redo (docs/GAPS.md §1 row 29), checkpoint fires right
    * before a slash-command selection overwrites the draft. */
   onCheckpointDraft: () => void;
   onUndoDraft: () => void;
@@ -315,7 +315,7 @@ function SlashMenu({
 const BIG_PASTE_LINES = 8;
 
 // Platform-aware hint (Ctrl on Linux/Windows, ⌘ on macOS) for the steer
-// shortcut — same combo MessageItem.tsx uses for edit-and-branch submit.
+// shortcut, same combo MessageItem.tsx uses for edit-and-branch submit.
 const SUBMIT_HINT = formatCombo("mod+Enter");
 
 export function Composer({
@@ -521,7 +521,7 @@ export function Composer({
       }
 
       // Ctrl+Enter / Cmd+Enter: steer (interrupt the in-flight turn and send
-      // now). Takes priority over mention/slash Enter-to-select below —
+      // now). Takes priority over mention/slash Enter-to-select below,
       // this is a distinct, deliberate action, not a fancier "select item".
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
         event.preventDefault();
@@ -788,7 +788,7 @@ export function Composer({
           onChange={handleDraftChange}
           onKeyDown={handleTextareaKeyDown}
           onPaste={handlePaste}
-          placeholder={`Message GoodVibes — Enter to send, Shift+Enter for a newline, ${SUBMIT_HINT} to interrupt & send, / for commands, @ to attach an artifact`}
+          placeholder={`Message GoodVibes: Enter to send, Shift+Enter for a newline, ${SUBMIT_HINT} to interrupt & send, / for commands, @ to attach an artifact`}
           aria-label="Message GoodVibes"
           aria-autocomplete={showSlashMenu || mentionQuery !== null ? "list" : undefined}
           aria-controls={
@@ -895,7 +895,7 @@ export function Composer({
               role="status"
             >
               {sendBudget.blocked
-                ? "rate limit reached — wait a moment"
+                ? "rate limit reached, wait a moment"
                 : budgetWarning
                   ? `${sendBudget.remaining}/${SEND_BUDGET_PER_MINUTE} sends left this minute`
                   : ""}

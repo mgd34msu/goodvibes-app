@@ -3,24 +3,24 @@
 //
 // Ported from ../goodvibes-webui/scripts/generate-presentation-tokens.ts
 // (same author, same semantics). Bridges the SDK presentation contract
-// (the platform presentation subpath of @pellux/goodvibes-sdk — status-glyph
+// (the platform presentation subpath of @pellux/goodvibes-sdk, status-glyph
 // registry, tone-token table, spinner frames, thinking-phrase pool the TUI
 // and agent already render through) onto two generated, checked-in artifacts:
 //
-//   - src/ui/lib/generated/presentation-tokens.ts     — typed TS mirror of the
+//   - src/ui/lib/generated/presentation-tokens.ts    , typed TS mirror of the
 //     contract's data tables, consumed by the UI's presentation bridge.
-//   - src/ui/styles/generated/presentation-tokens.css — CSS custom properties:
+//   - src/ui/styles/generated/presentation-tokens.css, CSS custom properties:
 //     glyphs as quoted `content` strings (--contract-glyph-*) and the state
 //     tone-color table per theme mode (--contract-state-*).
 //
 // Only DATA tables are snapshotted (GLYPHS, STATE_GLYPHS, TONE_TOKENS,
 // SPINNER_FRAMES, THINKING_PHRASES). `waitingPhrase` is a pure function with
 // no meaningful generated form; Bun-side code imports it from the SDK
-// directly (src/ui never imports SDK platform subpaths — this generated
+// directly (src/ui never imports SDK platform subpaths, this generated
 // snapshot is exactly how the contract data crosses that boundary).
 //
 // `--check` exits 1 the moment either artifact drifts from a fresh
-// regeneration — wired into `bun run verify`.
+// regeneration, wired into `bun run verify`.
 //
 // Usage:
 //   bun scripts/generate-presentation-tokens.ts          # write/update
@@ -76,22 +76,22 @@ function cssStringLiteral(value: string): string {
 }
 
 // NOTE: the banner deliberately names the SDK's presentation contract without
-// spelling out the platform subpath import specifier — scripts/check-boundaries.ts
+// spelling out the platform subpath import specifier, scripts/check-boundaries.ts
 // scans every line of src/ui/**/*.ts for that substring, comments included.
 const GENERATED_BANNER = [
-  "GENERATED FILE — DO NOT EDIT BY HAND.",
+  "GENERATED FILE: DO NOT EDIT BY HAND.",
   "Produced by scripts/generate-presentation-tokens.ts from the SDK",
   "presentation contract (the platform presentation subpath of",
-  "@pellux/goodvibes-sdk — the same tables the TUI, agent and webui render",
+  "@pellux/goodvibes-sdk: the same tables the TUI, agent and webui render",
   "through, so states look identical across surfaces).",
   "",
   "This is a layer SEPARATE from src/ui/styles/tokens.css: tokens.css owns",
   "this app's own brand palette / layout / motion tokens; this file owns",
-  "only the values the SDK contract actually defines — status glyphs and",
+  "only the values the SDK contract actually defines: status glyphs and",
   "the state tone-color table.",
   "",
   "Regenerate: `bun run generate:presentation`.",
-  "Verify (no write): `bun run generate:check` — wired into `bun run verify`,",
+  "Verify (no write): `bun run generate:check`, wired into `bun run verify`,",
   "so a contract change that was not regenerated fails verification.",
 ].join("\n * ");
 
@@ -105,7 +105,7 @@ export function renderCss(snapshot: PresentationContractSnapshot): string {
   lines.push(`/*\n * ${GENERATED_BANNER}\n */`);
   lines.push("");
   lines.push(":root {");
-  lines.push("  /* Status glyphs — GLYPHS.status, quoted for `content:` use. All keys are");
+  lines.push("  /* Status glyphs: GLYPHS.status, quoted for `content:` use. All keys are");
   lines.push("   * emitted for parity with the TS mirror (one snapshot, not a hand-picked");
   lines.push("   * subset) so a component reaching for a more specific glyph than the");
   lines.push("   * 4-bucket STATE_GLYPHS alias never has to regenerate first. */");
@@ -113,16 +113,16 @@ export function renderCss(snapshot: PresentationContractSnapshot): string {
     lines.push(`  --contract-glyph-${cssIdent(key)}: ${cssStringLiteral(value)};`);
   }
   lines.push("");
-  lines.push("  /* State tone colors — TONE_TOKENS.state (dark / default). Tint the glyph");
+  lines.push("  /* State tone colors: TONE_TOKENS.state (dark / default). Tint the glyph");
   lines.push("   * itself, never a component's overall background/text color: the app's own");
-  lines.push("   * palette (tokens.css) is not repainted onto the contract's colors —");
+  lines.push("   * palette (tokens.css) is not repainted onto the contract's colors;");
   lines.push("   * glyphs, not colors, are the cross-surface parity mechanism. */");
   for (const [key, value] of Object.entries(snapshot.toneDark.state)) {
     lines.push(`  --contract-state-${cssIdent(key)}: ${value};`);
   }
   lines.push("}");
   lines.push("");
-  lines.push("/* State tone colors — light-mode override (resolveTones('light')). */");
+  lines.push("/* State tone colors: light-mode override (resolveTones('light')). */");
   lines.push(':root[data-theme="light"] {');
   for (const [key, value] of Object.entries(snapshot.toneLight.state)) {
     lines.push(`  --contract-state-${cssIdent(key)}: ${value};`);
@@ -181,7 +181,7 @@ if (import.meta.main) {
   drifted = writeIfChanged(TS_OUT_PATH, renderTs(snapshot), CHECK_ONLY) || drifted;
 
   if (CHECK_ONLY && drifted) {
-    console.error("[generate:presentation] drift detected — run `bun run generate:presentation`");
+    console.error("[generate:presentation] drift detected: run `bun run generate:presentation`");
     process.exit(1);
   }
   if (!drifted) {

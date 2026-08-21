@@ -1,6 +1,6 @@
 // Typed client for the app-local /app/git/* routes (src/bun/git.ts) plus the
 // LOCAL query-key registry for the Code views. Keys use the unique
-// ["code", …] prefix — git/worktree data is app-local and has NO wire events,
+// ["code", …] prefix, git/worktree data is app-local and has NO wire events,
 // so freshness is targeted polling + mutation-driven invalidation (the
 // checkpoints view alone rides lib/queries.ts queryKeys.checkpoints).
 
@@ -181,7 +181,7 @@ export const gitApi = {
 
 // ─── error helpers ───────────────────────────────────────────────────────────
 
-/** The workspace dir is not a git repository — a normal state, not a failure. */
+/** The workspace dir is not a git repository, a normal state, not a failure. */
 export function isNotARepoError(error: unknown): boolean {
   return errorCode(error) === "GIT_NOT_A_REPO";
 }

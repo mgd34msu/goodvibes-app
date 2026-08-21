@@ -4,7 +4,7 @@
 // hunk boundaries (the exact `@@ … @@` text checkpoints.revertHunkPreview /
 // checkpoints.revertHunk reverse-apply), not just a per-file split like
 // views/code/diff-model.ts does for the whole-repo Diff view. Pure, no
-// network — kept local to this view rather than shared, per the file-ownership
+// network, kept local to this view rather than shared, per the file-ownership
 // split for this wave.
 
 export type DiffLineType = "context" | "add" | "del" | "meta";
@@ -34,7 +34,7 @@ export interface DiffHunk {
 export type DiffFileStatus = "added" | "deleted" | "modified" | "renamed";
 
 export interface DiffFile {
-  /** The path shown to the user — the new path unless the file was deleted. */
+  /** The path shown to the user, the new path unless the file was deleted. */
   readonly path: string;
   readonly oldPath: string;
   readonly newPath: string;
@@ -66,7 +66,7 @@ interface MutableFile {
 
 /**
  * Parse a git unified-diff string into files and hunks. Returns [] for an
- * empty/whitespace-only diff — the honest "no file differences" case.
+ * empty/whitespace-only diff, the honest "no file differences" case.
  */
 export function parseUnifiedDiff(unifiedDiff: string): DiffFile[] {
   if (!unifiedDiff.trim()) return [];
@@ -226,7 +226,7 @@ function hunkBodyLines(hunk: DiffHunk): string[] {
 }
 
 /**
- * The COMPLETE, exact unified-diff text of one hunk — its `@@` header plus
+ * The COMPLETE, exact unified-diff text of one hunk, its `@@` header plus
  * every body line with its verbatim marker, UNCAPPED. This is the string
  * checkpoints.revertHunkPreview / checkpoints.revertHunk parse and
  * reverse-apply: a truncated or annotated patch would fail to apply cleanly

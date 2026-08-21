@@ -1,4 +1,4 @@
-// /app/local — hooks write validation, context allowlist guard, fetch-preview
+// /app/local, hooks write validation, context allowlist guard, fetch-preview
 // private-address refusal (asserted with no network), and provider filename
 // validation. Exercised through the real HTTP handler with the ~/.goodvibes
 // base pointed at a temp dir.
@@ -20,8 +20,8 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-function makeHandler(): AppRouteHandler {
-  return createLocalToolsRoutes({ home: join(dir, "gv") });
+function makeHandler(resolveHost?: (hostname: string) => Promise<string[]>): AppRouteHandler {
+  return createLocalToolsRoutes({ home: join(dir, "gv"), ...(resolveHost ? { resolveHost } : {}) });
 }
 
 async function call(
@@ -157,11 +157,57 @@ describe("fetch-preview private-address refusal (no network)", () => {
 
   test("rejects a public 172 address that is outside 16-31", async () => {
     const h = makeHandler();
-    // 172.15 and 172.32 are public — the refusal must NOT fire for the scheme
+    // 172.15 and 172.32 are public, the refusal must NOT fire for the scheme
     // guard, so this should progress past the private check. We only assert it
     // is NOT a private refusal (a network error is acceptable, but no network
     // is hit in CI, so accept any non-PRIVATE code).
     const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://172.15.0.1.invalid-tld-xyz/" });
+    expect(res.body.code).not.toBe("LOCAL_FETCH_PRIVATE");
+  });
+});
+
+describe("fetch-preview DNS-rebinding guard (injected resolver, no real DNS)", () => {
+  // A hostname that looks public in the URL string can still resolve to a
+  // private/loopback address (DNS rebinding, or a plain internal DNS entry).
+  // isPrivateHost alone only ever saw the literal hostname string, so this
+  // case used to sail straight through to fetch(). resolveHost is injected
+  // here so the test never touches real DNS/network.
+  test("refuses a public-looking hostname that resolves to a loopback address", async () => {
+    const h = makeHandler(async (hostname) => {
+      expect(hostname).toBe("internal.example.test");
+      return ["127.0.0.1"];
+    });
+    const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://internal.example.test/" });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("LOCAL_FETCH_PRIVATE");
+    expect(res.body.resolvedAddress).toBe("127.0.0.1");
+  });
+
+  test("refuses a public-looking hostname that resolves to a private RFC1918 address", async () => {
+    const h = makeHandler(async () => ["10.1.2.3"]);
+    const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://internal.example.test/" });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("LOCAL_FETCH_PRIVATE");
+  });
+
+  test("refuses when only ONE of several resolved addresses is private", async () => {
+    const h = makeHandler(async () => ["203.0.113.5", "169.254.1.1"]);
+    const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://internal.example.test/" });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("LOCAL_FETCH_PRIVATE");
+  });
+
+  test("does not refuse a hostname that resolves only to public addresses", async () => {
+    const h = makeHandler(async () => ["203.0.113.5"]);
+    const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://internal.example.test/" });
+    // Progresses past the DNS-rebinding guard; the real fetch then fails
+    // (no network in CI), so accept anything except the private refusal.
+    expect(res.body.code).not.toBe("LOCAL_FETCH_PRIVATE");
+  });
+
+  test("a resolver failure (unresolvable host) fails open into the ordinary fetch-failure path", async () => {
+    const h = makeHandler(async () => []);
+    const res = await call(h, "POST", "/app/local/fetch-preview", { url: "http://internal.example.test/" });
     expect(res.body.code).not.toBe("LOCAL_FETCH_PRIVATE");
   });
 });

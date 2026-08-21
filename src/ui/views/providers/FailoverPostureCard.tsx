@@ -1,10 +1,10 @@
 // Synthetic failover posture display (docs/GAPS.md §14 row 6, MISSING).
-// docs/FEATURES.md: "display-only; failover runs daemon-side" — the intended
+// docs/FEATURES.md: "display-only; failover runs daemon-side", the intended
 // backing is `providers.list` + config keys named failover/fallback/synthetic
 // on the provider-routing domain. A grep of the pinned config schema snapshot
 // (config-schema.generated.ts, generated from @pellux/goodvibes-sdk@1.3.3
 // platform/config CONFIG_SCHEMA) for "failover" / "fallback" / "synthetic"
-// finds exactly ONE match — `batch.fallback`, which governs Batch-API job
+// finds exactly ONE match, `batch.fallback`, which governs Batch-API job
 // eligibility ("live" vs "fail" when a batch-requested job isn't eligible),
 // not provider routing/failover. No provider.*/routing.* key of that shape
 // exists on this daemon pin. Rather than fake a picker over an absent key,
@@ -51,7 +51,7 @@ export function FailoverPostureCard() {
             .{" "}
             {matches.length === 0
               ? "No matches at all."
-              : `Found ${matches.length} match${matches.length === 1 ? "" : "es"}, none on a provider.*/routing.* key — only ${matches
+              : `Found ${matches.length} match${matches.length === 1 ? "" : "es"}, none on a provider.*/routing.* key; only ${matches
                   .map((m) => m.key)
                   .join(", ")}, which governs Batch API job eligibility, not model/provider routing.`}{" "}
             Synthetic failover — if the daemon runs it — is daemon-side and reports nothing to this client to

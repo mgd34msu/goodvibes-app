@@ -1,7 +1,7 @@
-// Telemetry dashboard subtab — telemetry.snapshot. The daemon's snapshot
+// Telemetry dashboard subtab, telemetry.snapshot. The daemon's snapshot
 // shape isn't pinned by the contracts package for this pin, so every stat
 // tile probes several candidate field names and simply doesn't render when
-// none match (never a fabricated zero) — the raw snapshot is always shown
+// none match (never a fabricated zero), the raw snapshot is always shown
 // underneath so nothing the daemon actually sent is lost to a guessed key.
 
 import { useQuery } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ export function TelemetryDashboard() {
   const snapshot = useQuery({
     queryKey: obsKeys.telemetrySnapshot,
     queryFn: () => gv.invoke("telemetry.snapshot"),
-    // No wire event for telemetry — floor poll while the dashboard is visible.
+    // No wire event for telemetry, floor poll while the dashboard is visible.
     refetchInterval: 20_000,
     retry: false,
   });

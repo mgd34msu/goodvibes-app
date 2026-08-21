@@ -166,7 +166,7 @@ function ArtifactsPanelContent({
   );
 }
 
-/** openArtifacts(message) — opens the PeekPanel with the message's extracted
+/** openArtifacts(message), opens the PeekPanel with the message's extracted
  * code blocks and attachments. Needs PeekProvider + ToastProvider above. */
 export function useArtifactsPanel(): { openArtifacts: (message: ChatMessage) => void } {
   const { open } = usePeek();

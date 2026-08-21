@@ -1,7 +1,7 @@
-// Generic centered dialog — the configuration surface ("modals are
+// Generic centered dialog, the configuration surface ("modals are
 // configuration, pages are observability"). Ported from goodvibes-webui
 // src/components/modal/Modal.tsx. Unmounts entirely when closed so consumer
-// queries never fire while hidden. Backdrop and panel are SIBLINGS —
+// queries never fire while hidden. Backdrop and panel are SIBLINGS,
 // aria-hidden on the backdrop must never be an ancestor of the dialog.
 
 import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from "react";

@@ -1,4 +1,4 @@
-// VIBE.md editor panel — the anti-desktop-lie surface (docs/FEATURES.md §8):
+// VIBE.md editor panel, the anti-desktop-lie surface (docs/FEATURES.md §8):
 // GET /app/registries/vibe reads and PUT writes the REAL file
 // ~/.goodvibes/app/VIBE.md on disk, never a database. The panel shows the
 // resolved path, an explicit "writes to disk" caption, honest save states,
@@ -22,7 +22,7 @@ export function VibePanel() {
   const vibe = useQuery({
     queryKey: regKeys.vibe,
     queryFn: fetchVibe,
-    // Real disk file with no wire event — poll is deliberately slow; edits
+    // Real disk file with no wire event, poll is deliberately slow; edits
     // from the agent CLI or an editor surface within a minute.
     refetchInterval: 60_000,
     retry: false,
@@ -47,7 +47,7 @@ export function VibePanel() {
     onError: (error: unknown) => {
       toast({
         title: "VIBE.md write failed",
-        description: `${formatError(error)} — your draft is still in the editor.`,
+        description: `${formatError(error)}; your draft is still in the editor.`,
         tone: "danger",
       });
     },

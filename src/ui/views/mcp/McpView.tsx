@@ -1,9 +1,9 @@
 // MCP workspace (docs/FEATURES.md §16): servers list with connection status,
 // transport command, and per-server tool counts; the namespaced tools browser
 // (mcp:<server>:<tool>); the merged config view (locations + registrations);
-// reload / upsert / remove — all admin-gated behind ConfirmSurface. Realtime:
+// reload / upsert / remove, all admin-gated behind ConfirmSurface. Realtime:
 // every query key extends the ["mcp"] prefix, which the `mcp` wire domain in
-// DOMAIN_INVALIDATIONS already invalidates — no polling needed here.
+// DOMAIN_INVALIDATIONS already invalidates, no polling needed here.
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ export function McpView(): React.ReactElement {
   const [editTarget, setEditTarget] = useState<McpConfiguredServer | null>(null);
   const [removeTarget, setRemoveTarget] = useState<McpConfiguredServer | null>(null);
 
-  // Reads — all invalidated by the `mcp` realtime domain (lib/realtime.ts).
+  // Reads, all invalidated by the `mcp` realtime domain (lib/realtime.ts).
   const servers = useQuery({ queryKey: mcpKeys.servers, queryFn: () => gv.invoke("mcp.servers.list"), retry: false });
   const tools = useQuery({ queryKey: mcpKeys.tools, queryFn: () => gv.invoke("mcp.tools.list"), retry: false });
   const config = useQuery({ queryKey: mcpKeys.config, queryFn: () => gv.invoke("mcp.config.get"), retry: false });
@@ -87,7 +87,7 @@ export function McpView(): React.ReactElement {
   // ── mutations ──────────────────────────────────────────────────────────────
 
   const reload = useMutation({
-    // mcp.config.reload input is additionalProperties:false — the confirm gate
+    // mcp.config.reload input is additionalProperties:false, the confirm gate
     // is client-side (ConfirmSurface), nothing extra rides the wire.
     mutationFn: () => gv.invoke("mcp.config.reload"),
     onSuccess: async (result) => {
@@ -136,7 +136,7 @@ export function McpView(): React.ReactElement {
     onError: (error: unknown) => toast({ title: "Remove failed", description: formatError(error), tone: "danger" }),
   });
 
-  // Palette commands — view-scoped, live only while the view is mounted.
+  // Palette commands, view-scoped, live only while the view is mounted.
   useEffect(() => {
     registerCommand({
       id: "mcp.refresh",
@@ -246,7 +246,7 @@ export function McpView(): React.ReactElement {
                 <div className="mcp-server-row__head">
                   <span className="mcp-server-row__name">{row.name}</span>
                   {row.connected === null ? (
-                    <span className="badge neutral" title="In config but not reported by the runtime — reload may be needed">
+                    <span className="badge neutral" title="In config but not reported by the runtime; reload may be needed">
                       not loaded
                     </span>
                   ) : (
@@ -415,7 +415,7 @@ export function McpView(): React.ReactElement {
         open={reloadConfirmOpen}
         action="Reload MCP config"
         target="All configured MCP servers"
-        blastRadius="Re-reads every MCP config file and restarts changed servers — in-flight tool calls on restarted servers fail and agents reconnect."
+        blastRadius="Re-reads every MCP config file and restarts changed servers; in-flight tool calls on restarted servers fail and agents reconnect."
         confirmLabel={reload.isPending ? "Reloading…" : "Reload"}
         onCancel={() => setReloadConfirmOpen(false)}
         onConfirm={() => reload.mutate()}
@@ -437,7 +437,7 @@ export function McpView(): React.ReactElement {
         open={removeTarget !== null}
         action="Remove MCP server"
         target={removeTarget ? `${removeTarget.name} (${removeTarget.source?.scope ?? "unknown scope"} config)` : ""}
-        blastRadius="Deletes the registration from its config file and reloads — every agent loses this server's tools immediately. The server's own files are untouched."
+        blastRadius="Deletes the registration from its config file and reloads; every agent loses this server's tools immediately. The server's own files are untouched."
         danger
         requireTypedText={removeTarget?.name}
         confirmLabel={remove.isPending ? "Removing…" : "Remove server"}

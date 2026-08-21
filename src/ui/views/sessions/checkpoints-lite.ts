@@ -1,4 +1,4 @@
-// Minimal, tolerant readers for checkpoints.list / checkpoints.diff — just
+// Minimal, tolerant readers for checkpoints.list / checkpoints.diff, just
 // enough for the workspace-scoped FALLBACK inside SessionChanges (used only
 // when sessions.changes.get is unavailable on the connected daemon). Kept
 // local and deliberately small rather than importing views/code's

@@ -1,13 +1,13 @@
-// Unified inbox — docs/FEATURES.md §9 row 8. Merges channels.inbox.list
-// (omnichannel — Slack/Discord/etc, owned by the Channels view) with
+// Unified inbox, docs/FEATURES.md §9 row 8. Merges channels.inbox.list
+// (omnichannel, Slack/Discord/etc, owned by the Channels view) with
 // email.inbox.list (owned here) into one timestamp-interleaved list with a
 // source badge per row. Each source degrades HONESTLY AND INDEPENDENTLY:
 // email may be unconfigured (412/config-taxonomy) while channels answers
-// fine, or vice versa — a failure on one source never hides the other's
+// fine, or vice versa, a failure on one source never hides the other's
 // rows, and the panel only renders fully-unavailable when BOTH fail.
 //
 // This is read-only triage (mark as read only); composing/sending/replying
-// still lives in EmailPanel / the Channels view — this panel is a merged
+// still lives in EmailPanel / the Channels view, this panel is a merged
 // VIEW, not a second inbox implementation.
 
 import { useMemo } from "react";
@@ -63,7 +63,7 @@ export function UnifiedInboxPanel({ active = true }: { active?: boolean }) {
   const channels = useQuery({
     queryKey: ["personal-ops", "unified-inbox", "channels"],
     queryFn: () => gv.invoke("channels.inbox.list", { query: { limit: 50 } }),
-    // No wire event for channels inbox in this composed view — 30s poll,
+    // No wire event for channels inbox in this composed view, 30s poll,
     // matching the email side's cadence. Paused while this tab is hidden
     // behind another Personal Ops tab (item 18).
     refetchInterval: active ? 30_000 : false,

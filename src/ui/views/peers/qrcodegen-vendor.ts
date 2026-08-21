@@ -26,8 +26,8 @@
  * dependency-free build that the pinned goodvibes SDK ships under its
  * Node-only "platform" export surface, and that this app's own
  * src/bun/pairing.ts already uses in production (see PairingModal.tsx,
- * which renders its output). Duplicated here — rather than imported from
- * the SDK — solely because scripts/check-boundaries.ts forbids every
+ * which renders its output). Duplicated here, rather than imported from
+ * the SDK, solely because scripts/check-boundaries.ts forbids every
  * import of that SDK's "platform" subpath from src/ui, regardless of
  * whether the specific module is Node-dependent (this one provably isn't:
  * no imports, no I/O, pure arithmetic on arrays). See qr-generator.ts and

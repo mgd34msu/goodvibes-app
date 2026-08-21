@@ -1,6 +1,6 @@
 // Profile bundle: app-local export/import of theme + keybindings + app-own
 // settings as one JSON file (docs/FEATURES.md §19 "Profiles + profile-sync
-// bundles"). Pure client-side serialize/apply helpers — ProfilesSection.tsx
+// bundles"). Pure client-side serialize/apply helpers, ProfilesSection.tsx
 // owns the download/upload/preview/confirm UI around these.
 
 import { DEFAULT_KEYBINDINGS, getAllBindings, setBinding } from "../../lib/keybindings.ts";
@@ -12,7 +12,7 @@ export interface ProfileBundle {
   version: typeof PROFILE_BUNDLE_VERSION;
   exportedAt: string;
   theme: ThemePreferences;
-  /** Only the DIFFS from default — null entries mean "explicitly unbound". */
+  /** Only the DIFFS from default, null entries mean "explicitly unbound". */
   keybindingOverrides: Record<string, string | null>;
   appSettings: { stopDaemonOnQuit: boolean };
 }

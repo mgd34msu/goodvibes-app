@@ -1,6 +1,6 @@
 // Notification targets (ntfy/webhook) manage + test (docs/GAPS.md §19 row 14,
 // PARTIAL). The generic schema-driven Settings editor (ConfigSettingsSection)
-// already reads/writes surfaces.ntfy.*/surfaces.webhook.* — this card curates
+// already reads/writes surfaces.ntfy.*/surfaces.webhook.*, this card curates
 // just those keys into one focused view, plus the one thing the generic
 // editor cannot do: send a REAL test notification through the outbound ntfy
 // or webhook target. That requires an actual channel-surface action, not a
@@ -68,7 +68,7 @@ function readChannelActions(data: unknown, surface: string): ChannelAction[] {
     .filter((a) => a.id && a.surface === surface);
 }
 
-/** Best-effort "this looks like a send-a-test-message action" match — no
+/** Best-effort "this looks like a send-a-test-message action" match, no
  *  standardized action id exists on the wire, so this matches on substring. */
 function findTestAction(actions: ChannelAction[]): ChannelAction | undefined {
   return actions.find((a) => /test|verify|ping|send/i.test(`${a.id} ${a.label}`));
@@ -117,11 +117,11 @@ export function NotificationTargetsSection() {
 
   const localTest = useMutation({
     mutationFn: (surface: "ntfy" | "webhook") =>
-      notificationsApi.notify(`Test ${surface} target`, `Sent from Settings — this app has no registered ${surface} test action, so it fell back to a local desktop notification.`),
+      notificationsApi.notify(`Test ${surface} target`, `Sent from Settings: this app has no registered ${surface} test action, so it fell back to a local desktop notification.`),
     onSuccess: (result, surface) => {
       setLocalTestNote(
         result.shown
-          ? `Local test notification shown (not the real ${surface} target — no channels action registered).`
+          ? `Local test notification shown (not the real ${surface} target, no channels action registered).`
           : `Local test suppressed: ${result.reason ?? "blocked by current prefs or platform support."}`,
       );
     },
@@ -262,7 +262,7 @@ function TargetCard({
           ? "Checking for a registered channel test action…"
           : testAction
             ? `Uses channels.actions.invoke → ${testAction.surface}/${testAction.id}.`
-            : `No ${title} test action registered on this daemon — falls back to a local desktop notification.`}
+            : `No ${title} test action registered on this daemon, falls back to a local desktop notification.`}
       </p>
     </div>
   );
@@ -333,7 +333,7 @@ function TargetFieldRow({
             onChange={(e) => setText(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            placeholder={secret ? "Enter new value — current value stays masked" : undefined}
+            placeholder={secret ? "Enter new value; current value stays masked" : undefined}
             aria-label={`${field.key} value`}
           />
         )}

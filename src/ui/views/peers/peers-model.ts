@@ -1,6 +1,6 @@
-// Remote & Peers view — data layer (docs/FEATURES.md §21 / docs/GAPS.md gap
+// Remote & Peers view, data layer (docs/FEATURES.md §21 / docs/GAPS.md gap
 // #1). 12 remote.* wire methods, none on the realtime invalidation stream
-// (lib/realtime.ts DOMAIN_INVALIDATIONS has no `remote` domain) — every list
+// (lib/realtime.ts DOMAIN_INVALIDATIONS has no `remote` domain), every list
 // here polls at REMOTE_POLL_MS while the view is mounted, same as
 // watchers/fleet/checkpoints.
 //
@@ -11,9 +11,9 @@
 // generated operator contract's per-method input/output JSON Schemas
 // (contracts/artifacts/operator-contract.json, methods remote.*). Records are
 // read defensively (asRecord/firstString/…) because outputSchema marks every
-// object `additionalProperties: true` — daemon builds may add fields.
+// object `additionalProperties: true`, daemon builds may add fields.
 //
-// `remote.snapshot` is NOT a "node identity" document — its real shape is a
+// `remote.snapshot` is NOT a "node identity" document, its real shape is a
 // runtime health snapshot: daemon transport state, the ACP bridge, the
 // sandbox/runner registry, the local supervisor, and a `distributed` block
 // that mirrors peers/pairRequests/work PLUS an audit trail with no dedicated
@@ -22,7 +22,7 @@
 
 import { asRecord, compactJson, firstArray, firstNumber, firstString, formatRelative } from "../../lib/wire.ts";
 
-// ─── Query keys (local — lib/queries.ts is not ours to edit; every key is
+// ─── Query keys (local, lib/queries.ts is not ours to edit; every key is
 // prefixed "peers" so one invalidate({queryKey: peersKeys.all}) fans out to
 // every query this view owns) ─────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ export const peersKeys = {
   contract: ["peers", "contract"] as const,
 } as const;
 
-/** No `remote` domain on the invalidation stream — poll while mounted (docs/UX.md rule for wire-less domains, matches watchers/fleet). */
+/** No `remote` domain on the invalidation stream, poll while mounted (docs/UX.md rule for wire-less domains, matches watchers/fleet). */
 export const REMOTE_POLL_MS = 20_000;
 
 function firstBoolean(value: unknown, keys: string[]): boolean | undefined {
@@ -279,7 +279,7 @@ export function isCancellableWork(work: WorkRecord): boolean {
   return work.status === "queued" || work.status === "claimed";
 }
 
-// ─── Audit (no dedicated list method — only surfaced via remote.snapshot) ───
+// ─── Audit (no dedicated list method, only surfaced via remote.snapshot) ───
 
 export interface AuditRecord {
   id: string;
@@ -310,7 +310,7 @@ export function normalizeAudit(value: unknown): AuditRecord {
   };
 }
 
-// ─── Snapshot (remote.snapshot — runtime health, NOT peer identity) ─────────
+// ─── Snapshot (remote.snapshot, runtime health, NOT peer identity) ─────────
 
 export interface RemoteSnapshot {
   daemon: {

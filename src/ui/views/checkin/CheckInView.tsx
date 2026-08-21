@@ -1,4 +1,4 @@
-// Check-in — the proactive contact loop: config (enabled/cadence/channel/
+// Check-in, the proactive contact loop: config (enabled/cadence/channel/
 // quiet hours), manual run-now, and the receipts every run leaves (contact
 // or not). Crib: goodvibes-webui src/views/checkin/CheckInView.tsx.
 //

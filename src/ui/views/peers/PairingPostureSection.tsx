@@ -1,7 +1,7 @@
-// Posture — the daemon's one honest origin-security notice
+// Posture, the daemon's one honest origin-security notice
 // (pairing.posture.get), rendered VERBATIM, at most once per mount. Never a
-// dismiss-and-reappear nag: no toast, no repeated banner, and — since this is
-// a small ambient aside rather than a load-bearing capability — no
+// dismiss-and-reappear nag: no toast, no repeated banner, and, since this is
+// a small ambient aside rather than a load-bearing capability, no
 // UnavailableState card either when the method is missing; a missing/absent
 // notice here just means nothing to say, so this renders nothing at all
 // rather than manufacturing a "capability gap" story for one status line.

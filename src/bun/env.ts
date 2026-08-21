@@ -2,11 +2,11 @@
 // This module must be the FIRST import of the entrypoint. Nothing outside this
 // process is ever touched, and the inherited environment is NOT modified:
 // unsetting GDK_SCALE here or at spawn time breaks this WebKitGTK stack
-// outright (black/white blob + SIGILL crash, verified live 2026-07-07) — so we
+// outright (black/white blob + SIGILL crash, verified live 2026-07-07), so we
 // record the inherited scale and let the UI compensate instead (see
 // /app/health display.gdkScale and src/ui/main.tsx).
 
-// Linux WebKitGTK renders blank without this (verified on Arch — docs/ARCHITECTURE.md §1).
+// Linux WebKitGTK renders blank without this (verified on Arch, docs/ARCHITECTURE.md §1).
 process.env["WEBKIT_DISABLE_DMABUF_RENDERER"] ??= "1";
 
 /**

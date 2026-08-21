@@ -50,7 +50,7 @@ export function ConfigSettingsSection() {
     queryKey: settingsKeys.config,
     queryFn: () => gv.config.get(),
     retry: false,
-    // No wire event exists for config changes — targeted poll so edits made
+    // No wire event exists for config changes, targeted poll so edits made
     // from the TUI/webui show up here within one cadence.
     refetchInterval: SETTINGS_POLL_MS,
   });
@@ -106,7 +106,7 @@ export function ConfigSettingsSection() {
       await queryClient.invalidateQueries({ queryKey: settingsKeys.config });
       if (requiresDaemonRestart(variables.key)) {
         toast({
-          title: "Saved — restart required",
+          title: "Saved: restart required",
           description: `"${variables.key}" takes effect after the daemon restarts.`,
           tone: "warning",
         });
@@ -232,7 +232,7 @@ export function ConfigSettingsSection() {
         target={pendingConfirm?.key ?? ""}
         blastRadius={
           pendingConfirm?.key.startsWith("danger.")
-            ? "This key sits in the daemon's danger namespace — it can disable safety rails for every surface and agent using this daemon."
+            ? "This key sits in the daemon's danger namespace; it can disable safety rails for every surface and agent using this daemon."
             : "This key changes the approval posture for every surface and agent using this daemon."
         }
         danger
@@ -247,7 +247,7 @@ export function ConfigSettingsSection() {
             New value:{" "}
             <code>
               {isSecretConfigKey(pendingConfirm.key)
-                ? "(hidden — secret-shaped key)"
+                ? "(hidden: secret-shaped key)"
                 : JSON.stringify(pendingConfirm.value)}
             </code>
           </p>
@@ -384,7 +384,7 @@ function ValueEditor({
       }
     }
     if (value === undefined || value === null) {
-      // Enum selects need a concrete initial option — the schema default.
+      // Enum selects need a concrete initial option, the schema default.
       if (kind === "enum" && meta && typeof meta.default === "string") return meta.default;
       return "";
     }
@@ -491,7 +491,7 @@ function ValueEditor({
             autoComplete="off"
             spellCheck={false}
             aria-label={`${entryKey} new secret value`}
-            placeholder="Enter new value — current value stays masked"
+            placeholder="Enter new value; current value stays masked"
           />
           <button
             type="button"

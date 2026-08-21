@@ -1,4 +1,4 @@
-// Shared highlight.js instance — languages registered exactly once
+// Shared highlight.js instance, languages registered exactly once
 // (module-level singleton). Ported from goodvibes-webui src/lib/highlight.ts.
 
 import hljs from "highlight.js/lib/core";

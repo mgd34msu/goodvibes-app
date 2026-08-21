@@ -1,7 +1,7 @@
-// Quota — quota.snapshot.get / quota.fanout.get (WS-only, [ws] in gv.ts).
-// hasSignal:false is an honest "no observation yet" — never rendered as a
+// Quota, quota.snapshot.get / quota.fanout.get (WS-only, [ws] in gv.ts).
+// hasSignal:false is an honest "no observation yet", never rendered as a
 // fabricated full/empty quota. The fan-out advisor is a pre-flight verdict
-// grounded in observed signals — labeled advisory, not a promise; the human
+// grounded in observed signals, labeled advisory, not a promise; the human
 // still decides whether to spawn.
 
 import { useMemo, useState } from "react";

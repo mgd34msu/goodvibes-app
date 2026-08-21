@@ -1,6 +1,6 @@
 // The add-a-memory composer (memory.records.add). New records default to
 // confidence 60 (the recall floor) and reviewState 'fresh' on the daemon
-// side — this form does not offer to override either, keeping "add" honest
+// side, this form does not offer to override either, keeping "add" honest
 // about what a freshly-stored fact starts as. Ported from goodvibes-webui
 // views/memory/AddMemoryForm.tsx.
 
@@ -37,7 +37,7 @@ export function AddMemoryForm({ isPending, error, onSubmit }: AddMemoryFormProps
   const [cls, setCls] = useState<MemoryClass>("fact");
   const [scope, setScope] = useState<MemoryScope>("project");
   const [summary, setSummary] = useState("");
-  // Detail is the body field worth persisting — a longer explanation a user
+  // Detail is the body field worth persisting, a longer explanation a user
   // would grieve losing to an accidental view switch.
   const [detail, setDetail, detailDraft] = useDraftState("memory.add.detail", "");
   const [tags, setTags] = useState("");

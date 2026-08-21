@@ -1,6 +1,6 @@
 // One record row: summary + cls/scope/review-state/confidence badges +
 // optional semantic-similarity chip + delete. Never renders `detail` here
-// (that is the peek's job) — the list stays scannable. Ported from
+// (that is the peek's job), the list stays scannable. Ported from
 // goodvibes-webui views/memory/MemoryRecordRow.tsx.
 
 import { Trash2 } from "lucide-react";
@@ -14,7 +14,7 @@ import {
 
 interface MemoryRecordRowProps {
   record: MemoryRecord;
-  /** The wire recall floor the search that produced this record ran against —
+  /** The wire recall floor the search that produced this record ran against,
    * undefined (older daemon) makes no below-floor claim. */
   recallFloor: number | undefined;
   /** Semantic similarity (0..1) from memory.records.search-semantic, when the
@@ -48,7 +48,7 @@ export function MemoryRecordRow({
             className={`badge ${belowFloor ? "warning" : "neutral"}`}
             title={
               belowFloor
-                ? `Below the ${recallFloor}% recall floor — never injected into a prompt`
+                ? `Below the ${recallFloor}% recall floor, never injected into a prompt`
                 : undefined
             }
           >

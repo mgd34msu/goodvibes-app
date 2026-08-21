@@ -1,7 +1,7 @@
-// /app/notifications — native desktop notifications + routing prefs (Wave D;
+// /app/notifications, native desktop notifications + routing prefs (Wave D;
 // docs/FEATURES.md §24). The route line in app-routes.ts is already wired.
 //
-// HTTP contract (settings agent codes its prefs UI against this — no cross-imports):
+// HTTP contract (settings agent codes its prefs UI against this, no cross-imports):
 //   GET  /app/notifications/prefs  → { prefs }
 //   PUT  /app/notifications/prefs  { prefs } → { prefs }
 //   POST /app/notifications/notify { title, body?, viewId? } → { ok, shown, reason? }
@@ -20,10 +20,6 @@
 
 import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
 import type { AppRouteHandler } from "./app-routes.ts";
-
-// ---------------------------------------------------------------------------
-// Types + defaults
-// ---------------------------------------------------------------------------
 
 export type NotificationBatching = "off" | "30s" | "5m";
 export type DomainVerbosity = "all" | "important" | "off";
@@ -113,10 +109,6 @@ async function savePrefs(next: NotificationPrefs): Promise<NotificationPrefs> {
   return prefs;
 }
 
-// ---------------------------------------------------------------------------
-// Native delivery via notify-send
-// ---------------------------------------------------------------------------
-
 const NOTIFY_SEND: string | null = Bun.which("notify-send");
 
 /**
@@ -164,10 +156,6 @@ function showNative(title: string, body?: string): boolean {
   return false;
 }
 
-// ---------------------------------------------------------------------------
-// Domain routing: derive a domain key from the deep-link viewId
-// ---------------------------------------------------------------------------
-
 function domainForViewId(viewId: string | undefined): string {
   switch (viewId) {
     case "approvals":
@@ -182,10 +170,6 @@ function domainForViewId(viewId: string | undefined): string {
       return viewId && viewId.length > 0 ? viewId : "general";
   }
 }
-
-// ---------------------------------------------------------------------------
-// Batching: coalesce notifies inside a window into one summary
-// ---------------------------------------------------------------------------
 
 interface PendingNotice {
   title: string;
@@ -213,10 +197,6 @@ function enqueueBatched(batching: NotificationBatching, notice: PendingNotice): 
     }
   }, batchWindowMs(batching));
 }
-
-// ---------------------------------------------------------------------------
-// notify(): the single decision point (prefs → routing → batching → native)
-// ---------------------------------------------------------------------------
 
 export async function notify(req: NotifyRequest): Promise<NotifyResult> {
   const prefs = await loadPrefs();
@@ -263,10 +243,6 @@ export const notifications = {
     return !saved.enabled;
   },
 };
-
-// ---------------------------------------------------------------------------
-// Route handler
-// ---------------------------------------------------------------------------
 
 const PREFIX = "/app/notifications";
 

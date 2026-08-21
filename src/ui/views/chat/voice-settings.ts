@@ -1,6 +1,6 @@
 // TTS settings (speed/voice/provider), the voice status/doctor row, and the
 // realtime-session BOOTSTRAP (docs/FEATURES.md §18). Sibling to voice.ts
-// (which owns mic dictation + Web Audio TTS playback) — this file owns the
+// (which owns mic dictation + Web Audio TTS playback), this file owns the
 // *configuration* and *diagnostics* surface: reading/writing the daemon's
 // `tts.*` config keys, listing voice/provider catalogs, and the honest
 // "stretch" realtime-session bootstrap. Every reader is defensive (lib/wire)
@@ -16,7 +16,7 @@ import { asRecord, firstArrayAtPath, firstString } from "../../lib/wire.ts";
 
 // ─── tts.* config keys (config.get/.set) ────────────────────────────────────
 // Confirmed against goodvibes-tui's settings-modal-data.ts: tts.provider,
-// tts.voice, tts.speed (0.25-4.0, synthetic — not yet a schema ConfigKey on
+// tts.voice, tts.speed (0.25-4.0, synthetic, not yet a schema ConfigKey on
 // every daemon build), tts.llmProvider/tts.llmModel (spoken-turn routing,
 // out of this row's scope).
 
@@ -41,7 +41,7 @@ export interface TtsSettings {
   readonly speed: number;
 }
 
-/** Read tts.* out of a config.get() payload — flat dotted keys OR nested
+/** Read tts.* out of a config.get() payload, flat dotted keys OR nested
  * {tts:{provider,voice,speed}}, whichever this daemon build serializes. */
 export function readTtsSettingsFromConfig(config: unknown): TtsSettings {
   const root = asRecord(config);
@@ -62,7 +62,7 @@ export function useTtsSettings(): { settings: TtsSettings; isLoading: boolean; i
   return { settings, isLoading: query.isLoading, isError: query.isError, error: query.error };
 }
 
-/** One config.set write for a single tts.* key, confirm-gated (admin scope —
+/** One config.set write for a single tts.* key, confirm-gated (admin scope,
  * matches docs/FEATURES.md §18's "config tts.* keys (config.set admin
  * confirm)"). Invalidates the shared config query so every reader refreshes. */
 export function useSetTtsConfig() {
@@ -92,7 +92,7 @@ function readCapabilityList(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
-/** Full provider table for the doctor row — id/configured/capabilities per
+/** Full provider table for the doctor row, id/configured/capabilities per
  * entry, unlike voice.ts's deriveVoiceAvailability which only needs a single
  * best match per capability. */
 export function deriveVoiceDoctor(status: unknown): VoiceDoctorInfo {
@@ -185,10 +185,10 @@ export function useVoiceOptions(providerId: string) {
   return { options, ...query };
 }
 
-// ─── Realtime voice session — BOOTSTRAP ONLY ────────────────────────────────
+// ─── Realtime voice session, BOOTSTRAP ONLY ────────────────────────────────
 // docs/FEATURES.md §18: "full duplex UI is explicitly out of scope; render
 // the honest 'stretch' caption." voice.realtime.session is not on the gv.voice
-// facade (Wave A didn't wrap it) — invoked directly by method id.
+// facade (Wave A didn't wrap it), invoked directly by method id.
 
 export interface RealtimeSessionInfo {
   readonly sessionId: string;
@@ -220,7 +220,7 @@ export interface TtsSettingsDraft {
   readonly speed: number;
 }
 
-/** Diff a draft against the loaded settings — only keys that actually
+/** Diff a draft against the loaded settings, only keys that actually
  * changed get written (one config.set per changed key, webui doctrine). */
 export function diffTtsSettings(current: TtsSettings, draft: TtsSettingsDraft): Array<{ key: string; value: unknown }> {
   const changes: Array<{ key: string; value: unknown }> = [];

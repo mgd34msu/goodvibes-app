@@ -35,7 +35,7 @@ interface ServerEditorModalProps {
 
 function draftJsonFor(existing: McpConfiguredServer | null): string {
   if (!existing) return SERVER_DRAFT_TEMPLATE;
-  // envKeys are names only (values never round-trip through config.get) —
+  // envKeys are names only (values never round-trip through config.get),
   // an edit that must change env values re-enters them via "env".
   return JSON.stringify(
     {
@@ -55,7 +55,7 @@ function draftJsonFor(existing: McpConfiguredServer | null): string {
 
 export function ServerEditorModal({ open, existing, saving, onClose, onSubmit }: ServerEditorModalProps) {
   // The caller (McpView) keys this component by open-session + target name
-  // so it remounts fresh each time it opens — that remount is what makes
+  // so it remounts fresh each time it opens, that remount is what makes
   // this per-target draft key safe (see useDraftState's "stable per mount"
   // contract in lib/drafts.ts) and is also why the old re-seed-on-open effect
   // is gone: a remount re-seeds for free. The caller must call
@@ -74,7 +74,7 @@ export function ServerEditorModal({ open, existing, saving, onClose, onSubmit }:
     return validateServerDraft(parsed);
   }, [text]);
 
-  const title = existing ? `Edit MCP server — ${existing.name}` : "Add MCP server";
+  const title = existing ? `Edit MCP server: ${existing.name}` : "Add MCP server";
 
   return (
     <>
@@ -137,7 +137,7 @@ export function ServerEditorModal({ open, existing, saving, onClose, onSubmit }:
         open={open && confirming !== null}
         action={existing ? "Update MCP server" : "Register MCP server"}
         target={confirming ? `${confirming.name} (${confirming.command})` : ""}
-        blastRadius={`Writes the ${scope} MCP config file and reloads the server set — connected agents gain or lose this server's tools immediately.`}
+        blastRadius={`Writes the ${scope} MCP config file and reloads the server set; connected agents gain or lose this server's tools immediately.`}
         confirmLabel={saving ? "Saving…" : existing ? "Update server" : "Register server"}
         onCancel={() => setConfirming(null)}
         onConfirm={(meta) => {

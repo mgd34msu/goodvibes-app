@@ -1,4 +1,4 @@
-// Artifacts view data layer (docs/FEATURES.md §12) — daemon-backed:
+// Artifacts view data layer (docs/FEATURES.md §12), daemon-backed:
 // artifacts.list / artifacts.get / artifacts.content.get / artifacts.create,
 // plus confirm-gated knowledge.ingest.artifact. Records are parsed
 // defensively (shapes vary across daemon versions).
@@ -11,7 +11,7 @@ import {
   type AnyRecord,
 } from "../../lib/wire.ts";
 
-// ─── Query keys — aligned to lib/queries.ts queryKeys.artifacts ("artifacts")
+// ─── Query keys, aligned to lib/queries.ts queryKeys.artifacts ("artifacts")
 // prefix so any future domain invalidation fans out here too. artifacts.* has
 // no wire event today, so the list also polls (30s).
 
@@ -22,7 +22,7 @@ export const artifactKeys = {
   capability: (methodId: string) => ["artifacts", "capability", methodId] as const,
 };
 
-/** Epoch millis from a numeric or ISO-string timestamp field — daemon
+/** Epoch millis from a numeric or ISO-string timestamp field, daemon
  * artifact records may carry either shape; lib/wire.ts firstNumber alone
  * would drop ISO-string createdAt values. */
 export function firstTimestamp(value: unknown, keys: string[]): number | undefined {

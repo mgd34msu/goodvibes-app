@@ -1,7 +1,7 @@
 // Catalog browsers (docs/FEATURES.md §13): channel actions (+ confirmed
 // invoke), channel tools (+ invoke), agent tools (read-only), capability
 // matrix (read-only), and the directory query. Invokes are admin methods on
-// the daemon and confirm-gated here — the invoke modal collects an optional
+// the daemon and confirm-gated here, the invoke modal collects an optional
 // accountId and a JSON args object, then ConfirmSurface emits confirm +
 // explicitUserRequest which are sent in the body (both methods take
 // additionalProperties). Results render verbatim as JSON.
@@ -176,8 +176,8 @@ function InvokeModal({ target, onClose }: { target: InvokeTarget | null; onClose
         target={`${target?.targetId ?? ""} on ${target?.surface ?? ""}${accountId ? ` · ${accountId}` : ""}`}
         blastRadius={
           target?.dangerous
-            ? "Marked dangerous by the daemon — this can send real messages or mutate the channel surface."
-            : "Executes on the live channel surface — a send action reaches real recipients."
+            ? "Marked dangerous by the daemon; this can send real messages or mutate the channel surface."
+            : "Executes on the live channel surface; a send action reaches real recipients."
         }
         danger={target?.dangerous ?? false}
         confirmLabel="Invoke"
@@ -335,7 +335,7 @@ function AgentToolsSection() {
       errorTitle="Failed to load agent tools"
       isEmpty={(rows) => rows.length === 0}
       emptyTitle="No agent tools"
-      emptyDescription="Channel tools exposed to agents appear here (read-only — agents invoke them, not this view)."
+      emptyDescription="Channel tools exposed to agents appear here (read-only: agents invoke them, not this view)."
       skeletonLines={6}
     >
       {(rows) => (

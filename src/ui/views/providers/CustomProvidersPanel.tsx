@@ -1,9 +1,9 @@
 // Custom provider JSON management (docs/GAPS.md §14 row 8, MISSING): a panel
-// over the app-local /app/local/providers CRUD contract — list the files
+// over the app-local /app/local/providers CRUD contract, list the files
 // under ~/.goodvibes/tui/providers/*.json, edit each as raw JSON with parse
 // validation, create a new file (filename validated bare-*.json by the
 // server), and delete (dangerous, ConfirmSurface). The daemon hot-reloads
-// this shared store on its own schedule — this app never restarts it, so the
+// this shared store on its own schedule, this app never restarts it, so the
 // caption says exactly that instead of implying a live effect.
 
 import { useEffect, useState, type FormEvent } from "react";
@@ -160,7 +160,7 @@ export function CustomProvidersPanel({
         open={pendingDelete !== null}
         action="Delete custom provider file"
         target={pendingDelete ?? ""}
-        blastRadius="Removes this JSON file from ~/.goodvibes/tui/providers — the daemon hot-reloads this store on its own schedule, so it stops seeing this custom provider without needing a restart."
+        blastRadius="Removes this JSON file from ~/.goodvibes/tui/providers; the daemon hot-reloads this store on its own schedule, so it stops seeing this custom provider without needing a restart."
         danger
         confirmLabel="Delete file"
         onCancel={() => setPendingDelete(null)}

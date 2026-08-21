@@ -1,4 +1,4 @@
-// /app/registries — store round-trip, corrupt-file recovery, documents
+// /app/registries, store round-trip, corrupt-file recovery, documents
 // versioning, VIBE file, and the read-only agent import bridge. Exercised
 // through the real HTTP handler with the storage root pointed at a temp dir
 // (explicit option + one GOODVIBES_APP_HOME env-override case).

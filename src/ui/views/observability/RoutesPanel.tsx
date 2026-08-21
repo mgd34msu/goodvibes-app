@@ -1,7 +1,7 @@
-// Routes snapshot + bindings CRUD — routes.snapshot (read-only) and
+// Routes snapshot + bindings CRUD, routes.snapshot (read-only) and
 // routes.bindings.{list,create,update,delete}. The binding record shape
 // isn't pinned by the contracts package for this pin, so create/update take
-// a raw JSON body instead of guessing field names wrong — honest about what
+// a raw JSON body instead of guessing field names wrong, honest about what
 // this app actually knows. Delete is dangerous-flagged upstream (operator-
 // routes.ts) and goes through the shared ConfirmSurface with a typed
 // confirmation, never a native confirm().
@@ -172,7 +172,7 @@ export function RoutesPanel() {
         open={deleteTarget !== null}
         action="Delete route binding"
         target={deleteTarget?.label ?? ""}
-        blastRadius="Removes this route binding from the daemon immediately — any traffic depending on this path/target mapping stops resolving."
+        blastRadius="Removes this route binding from the daemon immediately; any traffic depending on this path/target mapping stops resolving."
         danger
         requireTypedText={deleteTarget?.id}
         confirmLabel={deleteBinding.isPending ? "Deleting…" : "Delete binding"}
@@ -185,7 +185,7 @@ export function RoutesPanel() {
   );
 }
 
-// ─── Create/edit form — a raw JSON body, persisted as a draft. Keyed by the
+// ─── Create/edit form, a raw JSON body, persisted as a draft. Keyed by the
 // parent (create vs. this specific bindingId) so it remounts, and therefore
 // re-syncs from storage, per target. ─────────────────────────────────────────
 

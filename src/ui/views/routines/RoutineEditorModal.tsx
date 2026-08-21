@@ -38,7 +38,7 @@ export function RoutineEditorModal({ open, routine, saving, onClose, onSave }: R
   const [tagsText, setTagsText] = useState("");
   const [requirementsText, setRequirementsText] = useState("");
   const [enabled, setEnabled] = useState(true);
-  // Closing a dirty form asks first instead of silently discarding it — item
+  // Closing a dirty form asks first instead of silently discarding it, item
   // 1 (closing warns) from the friction checklist's registry-editor callout.
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 

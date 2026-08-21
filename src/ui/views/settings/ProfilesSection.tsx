@@ -2,7 +2,7 @@
 // from the TUI/agent (docs/FEATURES.md §19, two rows sharing one tab: both
 // are "bring settings in from elsewhere"). Bundle export/import is entirely
 // app-local (theme + keybindings + app-own settings, JSON download/upload,
-// preview before apply). The TUI/agent bridge is READ-ONLY on the source —
+// preview before apply). The TUI/agent bridge is READ-ONLY on the source,
 // it previews ~/.goodvibes/<tui|agent>/settings.json (redacted Bun-side
 // before it ever reaches this webview) and applies only the two properties
 // this app can honestly act on: theme mode and the daemon endpoint.

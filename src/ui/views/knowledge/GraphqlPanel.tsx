@@ -13,11 +13,11 @@ import { ErrorState, SkeletonBlock, UnavailableState } from "../../components/fe
 import { formatCombo } from "../../lib/keybindings.ts";
 import { kKeys } from "./lib.ts";
 
-// Platform-aware run hint: "Ctrl+Enter" on Linux/Windows, "⌘Enter" on macOS —
+// Platform-aware run hint: "Ctrl+Enter" on Linux/Windows, "⌘Enter" on macOS,
 // the handler accepts both ctrl and meta, so the label must match the OS.
 const RUN_HINT = formatCombo("mod+Enter");
 
-const DEFAULT_QUERY = `# Knowledge GraphQL console — ${RUN_HINT} to run
+const DEFAULT_QUERY = `# Knowledge GraphQL console: ${RUN_HINT} to run
 {
   __typename
 }
