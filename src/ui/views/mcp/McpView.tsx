@@ -4,10 +4,16 @@
 // reload / upsert / remove, all admin-gated behind ConfirmSurface. Realtime:
 // every query key extends the ["mcp"] prefix, which the `mcp` wire domain in
 // DOMAIN_INVALIDATIONS already invalidates, no polling needed here.
+//
+// Env values are MASKED by default and revealed only on an explicit toggle
+// (mcp.servers.reveal, admin-only), which is the seventh and last mcp verb.
+// The reveal is never persisted: the query only runs while the toggle is on,
+// and toggling off removes the cache entry explicitly (gcTime 0 alone only
+// evicts on unmount), so an unmasked value cannot survive into a later render.
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plug, Plus, RefreshCw, RotateCw, Search, Wrench } from "lucide-react";
+import { Eye, EyeOff, Plug, Plus, RefreshCw, RotateCw, Search, Wrench } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { formatError, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
 import { useToast } from "../../lib/toast.ts";
@@ -16,11 +22,13 @@ import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import {
+  countRevealedValues,
   formatReloadSummary,
   mcpKeys,
   readConfigLocations,
   readConfiguredServers,
   readReloadSummary,
+  readRevealedEnv,
   readSandboxBindings,
   readSecurityPosture,
   readServerStatuses,
@@ -37,11 +45,28 @@ export function McpView(): React.ReactElement {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<McpConfiguredServer | null>(null);
   const [removeTarget, setRemoveTarget] = useState<McpConfiguredServer | null>(null);
+  const [revealed, setRevealed] = useState(false);
 
   // Reads, all invalidated by the `mcp` realtime domain (lib/realtime.ts).
   const servers = useQuery({ queryKey: mcpKeys.servers, queryFn: () => gv.invoke("mcp.servers.list"), retry: false });
   const tools = useQuery({ queryKey: mcpKeys.tools, queryFn: () => gv.invoke("mcp.tools.list"), retry: false });
   const config = useQuery({ queryKey: mcpKeys.config, queryFn: () => gv.invoke("mcp.config.get"), retry: false });
+  // Unmasked env values. `enabled` is the reveal toggle; gcTime 0 evicts the
+  // payload when the observer unmounts (leaving this view), but disabling a
+  // query does NOT unmount its observer, so toggle-off below also removes the
+  // cache entry explicitly. Without that, hide-then-show would repaint stale
+  // plaintext from cache before the refetch lands.
+  const reveal = useQuery({
+    queryKey: mcpKeys.reveal,
+    queryFn: () => gv.invoke("mcp.servers.reveal"),
+    enabled: revealed,
+    retry: false,
+    gcTime: 0,
+    staleTime: 0,
+  });
+  useEffect(() => {
+    if (!revealed) queryClient.removeQueries({ queryKey: mcpKeys.reveal });
+  }, [revealed, queryClient]);
 
   const statuses = useMemo(() => readServerStatuses(servers.data), [servers.data]);
   const security = useMemo(() => readSecurityPosture(servers.data), [servers.data]);
@@ -49,6 +74,10 @@ export function McpView(): React.ReactElement {
   const toolRows = useMemo(() => readTools(tools.data), [tools.data]);
   const locations = useMemo(() => readConfigLocations(config.data), [config.data]);
   const configured = useMemo(() => readConfiguredServers(config.data), [config.data]);
+  const revealedEnv = useMemo(
+    () => (revealed && reveal.isSuccess ? readRevealedEnv(reveal.data) : new Map<string, Record<string, string>>()),
+    [revealed, reveal.isSuccess, reveal.data],
+  );
 
   const toolCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -162,10 +191,18 @@ export function McpView(): React.ReactElement {
         setEditorOpen(true);
       },
     });
+    registerCommand({
+      id: "mcp.revealEnv",
+      title: "Reveal MCP Env Values",
+      group: "system",
+      keywords: ["mcp", "env", "secrets", "reveal", "unmask"],
+      run: () => setRevealed(true),
+    });
     return () => {
       unregisterCommand("mcp.refresh");
       unregisterCommand("mcp.reloadConfig");
       unregisterCommand("mcp.addServer");
+      unregisterCommand("mcp.revealEnv");
     };
   }, [queryClient]);
 
@@ -175,6 +212,23 @@ export function McpView(): React.ReactElement {
   const configRefused = config.isError && errorStatus(config.error) === 403;
 
   const connectedCount = statuses.filter((s) => s.connected).length;
+
+  // One honest line about what the reveal actually produced. An admin-only verb
+  // refused for lack of scope, a daemon that does not serve it, and a daemon
+  // that served it but had nothing to show are three different answers.
+  const revealResult: string | null = !revealed
+    ? null
+    : reveal.isError
+      ? errorStatus(reveal.error) === 403
+        ? "Revealing env values needs an admin-scoped principal. The keys above stay masked."
+        : isMethodUnavailableError(reveal.error)
+          ? "This daemon does not serve mcp.servers.reveal, so env values cannot be read here."
+          : `Reveal failed: ${formatError(reveal.error)}`
+      : reveal.isSuccess
+        ? countRevealedValues(revealedEnv) === 0
+          ? "No env values are set on any configured server."
+          : `Showing ${countRevealedValues(revealedEnv)} env value(s). Nothing is stored; the values go away when you hide them.`
+        : null;
 
   return (
     <div className="mcp-view">
@@ -201,6 +255,20 @@ export function McpView(): React.ReactElement {
             </button>
             <button
               type="button"
+              className={revealed ? "mcp-action mcp-action--revealed" : "mcp-action"}
+              aria-pressed={revealed}
+              title={
+                revealed
+                  ? "Hide the env values again"
+                  : "Read the env VALUES behind these keys (admin only; not persisted)"
+              }
+              onClick={() => setRevealed((current) => !current)}
+            >
+              {revealed ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+              {revealed ? "Hide env values" : "Reveal env values"}
+            </button>
+            <button
+              type="button"
               className="section-toolbar__refresh"
               aria-label="Refresh MCP data"
               onClick={() => void invalidate()}
@@ -213,6 +281,13 @@ export function McpView(): React.ReactElement {
             </button>
           </span>
         </div>
+
+        {revealed && (
+          <div className="mcp-reveal-banner" role="status">
+            {reveal.isPending && <span>Reading env values…</span>}
+            {revealResult !== null && <span>{revealResult}</span>}
+          </div>
+        )}
 
         {servers.isPending && <SkeletonBlock variant="text" lines={4} />}
 
@@ -267,7 +342,22 @@ export function McpView(): React.ReactElement {
                 )}
                 {row.config && (
                   <div className="mcp-server-row__meta">
-                    {row.config.envKeys.length > 0 && <span>env: {row.config.envKeys.join(", ")}</span>}
+                    {row.config.envKeys.length > 0 &&
+                      (revealedEnv.has(row.name) ? (
+                        <span className="mcp-server-row__env-revealed">
+                          env:{" "}
+                          {row.config.envKeys.map((key) => {
+                            const value = revealedEnv.get(row.name)?.[key];
+                            return (
+                              <code key={key}>
+                                {key}={value === undefined ? "(not set)" : value}
+                              </code>
+                            );
+                          })}
+                        </span>
+                      ) : (
+                        <span>env: {row.config.envKeys.join(", ")}</span>
+                      ))}
                     {row.config.allowedPaths.length > 0 && <span>paths: {row.config.allowedPaths.join(", ")}</span>}
                     {row.config.allowedHosts.length > 0 && <span>hosts: {row.config.allowedHosts.join(", ")}</span>}
                     {row.config.source && (

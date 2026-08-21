@@ -9,7 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { AppHealth } from "../../../shared/app-contract.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { gv } from "../../lib/gv.ts";
-import { configuredModelFrom, isOnboarded, providerOptionsFrom, setOnboarded } from "./checks.ts";
+import { currentModelKey, parseCurrentModel } from "../../lib/current-model.ts";
+import { isOnboarded, providerOptionsFrom, setOnboarded } from "./checks.ts";
 
 export function useFirstRunOnboarding(health: AppHealth | undefined, onAutoOpen: () => void): void {
   const queryClient = useQueryClient();
@@ -30,11 +31,16 @@ export function useFirstRunOnboarding(health: AppHealth | undefined, onAutoOpen:
 
     void (async () => {
       try {
-        const [providers, config] = await Promise.all([
+        const [providers, currentModel] = await Promise.all([
           queryClient.fetchQuery({ queryKey: queryKeys.providers, queryFn: () => gv.providers.list() }),
-          queryClient.fetchQuery({ queryKey: queryKeys.configAll, queryFn: () => gv.config.get() }),
+          queryClient.fetchQuery({ queryKey: currentModelKey, queryFn: () => gv.invoke("models.current.get") }),
         ]);
-        const ready = providerOptionsFrom(providers).length > 0 && configuredModelFrom(config) !== "";
+        // "Configured elsewhere" now means a model IS selected AND its provider
+        // has usable credentials. The old config read could only see the first
+        // half, so a machine with a stale selection sailed past onboarding into
+        // a chat whose first turn had nowhere to go.
+        const current = parseCurrentModel(currentModel);
+        const ready = providerOptionsFrom(providers).length > 0 && current.registryKey !== "" && current.configured;
         if (ready) setOnboarded(); // inferred from existing TUI/agent setup — never ask
         else onAutoOpen();
       } catch {

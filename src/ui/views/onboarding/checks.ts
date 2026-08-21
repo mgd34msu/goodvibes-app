@@ -79,7 +79,7 @@ export function authExplicitlyRejected(response: unknown): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Check 3, provider + model (providers.list + config.get provider.model)
+// Check 3, provider + model (providers.list + models.current.get)
 // ---------------------------------------------------------------------------
 
 export interface ProviderOption {
@@ -105,7 +105,7 @@ export function providerOptionsFrom(response: unknown): ProviderOption[] {
 }
 
 export interface ModelOption {
-  /** provider-qualified registry key (what config.set provider.model takes). */
+  /** provider-qualified registry key (what models.current.set takes). */
   registryKey: string;
   label: string;
 }
@@ -147,22 +147,6 @@ export function modelOptionsFrom(provider: ProviderOption): ModelOption[] {
     if (models.length > 0) break;
   }
   return models;
-}
-
-/** The configured provider.model value off a config.get payload, "" if unset. */
-export function configuredModelFrom(config: unknown): string {
-  const record = asRecord(config);
-  const candidates: unknown[] = [
-    readPath(record, ["provider", "model"]),
-    record["provider.model"],
-    readPath(record, ["config", "provider", "model"]),
-    readPath(record, ["values", "provider", "model"]),
-    readPath(record, ["settings", "provider", "model"]),
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
-  }
-  return "";
 }
 
 /**

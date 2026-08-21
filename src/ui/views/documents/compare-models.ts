@@ -2,8 +2,8 @@
 // (docs/FEATURES.md §11). Deliberately reimplemented here from the same
 // providers.list shapes the chat surface reads, view dirs do not import
 // each other's modules. Model inventory comes off each provider record; the
-// provider-qualified registry key is what config.set { key: "provider.model" }
-// takes for the winner-route update.
+// provider-qualified registry key is what models.current.set takes for the
+// winner-route update.
 
 import { asRecord, firstArrayAtPath, firstString, readPath } from "../../lib/wire.ts";
 

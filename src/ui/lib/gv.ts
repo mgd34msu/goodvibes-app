@@ -476,6 +476,25 @@ export const gv = {
     get: (query?: QueryParams) => invoke("config.get", { query }),
     set: (body: unknown) => invoke("config.set", { body }),
     credentials: () => invoke("credentials.get"),
+    /**
+     * Store a credential the DAEMON executes with, by CONFIG KEY (e.g.
+     * surfaces.telegram.botToken), not by secret-store name. One verb, not two
+     * writes: the daemon derives the store key, writes the value at the scope
+     * its ownership rules resolve, reads it BACK to compare, and only then
+     * points the config key at its goodvibes://secrets/ reference. A read-back
+     * mismatch fails the call and leaves the setting exactly as it was, so the
+     * config never names a reference that resolves to nothing.
+     *
+     * Distinct from src/bun/secrets.ts's /app/secrets routes, which are this
+     * app's handle on the SURFACE secret store (~/.goodvibes/tui/secrets.enc)
+     * and are keyed by secret name. Refuses a key that is not
+     * credential-bearing, naming config.set as the right call. [ws] dangerous.
+     */
+    credentialSet: (key: string, value: string) => invoke("credentials.set", { body: { key, value } }),
+    /** Clear the stored secret first, then the config reference that pointed at
+     * it. `cleared:false` means nothing was stored under that key: a miss, not
+     * an error. [ws] dangerous. */
+    credentialDelete: (key: string) => invoke("credentials.delete", { body: { key } }),
   },
 
   artifacts: {

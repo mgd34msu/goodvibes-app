@@ -11,9 +11,9 @@ import { gv } from "../../lib/gv.ts";
 import { formatError, isAuthExpiredError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { CONTRACT_STATE_GLYPHS, type ContractStatusState } from "../../lib/generated/presentation-tokens.ts";
 import { announce } from "../../lib/announcer.ts";
+import { currentModelKey, parseCurrentModel, setCurrentModel } from "../../lib/current-model.ts";
 import {
   authExplicitlyRejected,
-  configuredModelFrom,
   daemonCheck,
   envKeyForProvider,
   modelOptionsFrom,
@@ -115,14 +115,21 @@ function ProviderFix({
   });
 
   const saveModel = useMutation({
+    // models.current.set, not a config.set of provider.model: it switches the
+    // daemon's live registry and refuses an unknown key or an unconfigured
+    // provider by name, so a first-run mistake is caught here instead of at the
+    // first turn.
     mutationFn: async () => {
       const value = modelKey.trim();
       if (!value) throw new Error("Pick or enter a model first.");
-      await gv.config.set({ key: "provider.model", value });
+      await setCurrentModel(value);
     },
     onSuccess: async () => {
-      announce("Default model saved");
-      await queryClient.refetchQueries({ queryKey: queryKeys.configAll });
+      announce("Current model saved");
+      await Promise.allSettled([
+        queryClient.refetchQueries({ queryKey: currentModelKey }),
+        queryClient.refetchQueries({ queryKey: queryKeys.configAll }),
+      ]);
     },
   });
 
@@ -265,9 +272,13 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
     retry: 0,
   });
 
-  const config = useQuery({
-    queryKey: queryKeys.configAll,
-    queryFn: () => gv.config.get(),
+  // The current model comes from models.current.get, not a config read: it
+  // answers for `authenticated` rather than `admin`, and it says whether the
+  // selected model's provider actually has usable credentials, which is the
+  // real question this check is asking.
+  const currentModelQuery = useQuery({
+    queryKey: currentModelKey,
+    queryFn: () => gv.invoke("models.current.get"),
     enabled: daemonUp,
     retry: 0,
   });
@@ -302,12 +313,13 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
 
   // --- provider + model result ----------------------------------------------
   const providerOptions = providers.isSuccess ? providerOptionsFrom(providers.data) : [];
-  const configuredModel = config.isSuccess ? configuredModelFrom(config.data) : "";
+  const current = parseCurrentModel(currentModelQuery.data);
+  const configuredModel = currentModelQuery.isSuccess ? current.registryKey : "";
   let providerResult: CheckResult;
   let showProviderFix = false;
   if (!daemonUp) {
     providerResult = { state: "unavailable", summary: "Waiting for daemon" };
-  } else if (providers.isPending || config.isPending) {
+  } else if (providers.isPending || currentModelQuery.isPending) {
     providerResult = { state: "checking", summary: "Checking providers…" };
   } else if (providers.isError && isMethodUnavailableError(providers.error)) {
     providerResult = {
@@ -317,6 +329,16 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
     };
   } else if (providers.isError) {
     providerResult = { state: "fail", summary: "Provider inventory failed", detail: formatError(providers.error) };
+  } else if (configuredModel && !current.configured) {
+    // A model IS selected and its provider has no usable credentials. Passing
+    // this check on the selection alone would send a first-run user into a chat
+    // whose very first turn fails.
+    showProviderFix = true;
+    providerResult = {
+      state: "fail",
+      summary: `${configuredModel} has no usable credentials`,
+      detail: "The selected model's provider is not configured. Store its key below, or pick a model that is ready.",
+    };
   } else if (providerOptions.length > 0 && configuredModel) {
     providerResult = { state: "pass", summary: configuredModel };
   } else {
@@ -358,12 +380,17 @@ export function OnboardingChecks({ onStatus }: OnboardingChecksProps) {
             ? () =>
                 void Promise.allSettled([
                   queryClient.refetchQueries({ queryKey: queryKeys.providers }),
-                  queryClient.refetchQueries({ queryKey: queryKeys.configAll }),
+                  queryClient.refetchQueries({ queryKey: currentModelKey }),
                 ])
             : undefined
         }
       >
-        {showProviderFix && <ProviderFix options={providerOptions} hasModel={Boolean(configuredModel)} />}
+        {/* Offer the model picker whenever the selection is unusable, not only
+            when it is absent: the refusal copy says "pick a model that is
+            ready", so the picker must be reachable in that state. */}
+        {showProviderFix && (
+          <ProviderFix options={providerOptions} hasModel={Boolean(configuredModel) && current.configured} />
+        )}
       </CheckRow>
     </ol>
   );

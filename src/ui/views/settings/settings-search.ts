@@ -47,6 +47,9 @@ const CURATED: ReadonlyArray<Omit<SettingsSearchEntry, "keywords">> = [
   { sectionId: "security", sectionLabel: "Security", label: "OS service install/start/stop/restart/uninstall", anchorSelector: ".settings-os-service" },
   { sectionId: "security", sectionLabel: "Security", label: "OS service status (systemd/launchd)", anchorSelector: ".settings-os-service" },
   { sectionId: "credentials", sectionLabel: "Credentials", label: "Credential configured/usable status", anchorSelector: ".settings-credentials" },
+  { sectionId: "credentials", sectionLabel: "Credentials", label: "Store a credential on the daemon", anchorSelector: ".settings-daemon-credentials" },
+  { sectionId: "credentials", sectionLabel: "Credentials", label: "Clear a daemon credential", anchorSelector: ".settings-daemon-credentials" },
+  { sectionId: "credentials", sectionLabel: "Credentials", label: "Mailbox password / bot token (daemon-held)", anchorSelector: ".settings-daemon-credentials" },
   { sectionId: "sync", sectionLabel: "Sync & storage", label: "Settings sync snapshot", anchorSelector: ".settings-sync" },
   { sectionId: "sync", sectionLabel: "Sync & storage", label: "Storage posture", anchorSelector: ".settings-sync" },
   { sectionId: "secrets", sectionLabel: "Secrets & Services", label: "Add / link a secret", anchorSelector: ".settings-secrets" },
@@ -59,6 +62,8 @@ const CURATED: ReadonlyArray<Omit<SettingsSearchEntry, "keywords">> = [
   { sectionId: "notifications", sectionLabel: "Notifications", label: "Per-domain verbosity", anchorSelector: ".settings-notify" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Stop daemon on quit", anchorSelector: ".settings-launch" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Launch at login", anchorSelector: ".settings-launch" },
+  { sectionId: "launch", sectionLabel: "App & Launch", label: "Daemon update status (staged / rolled back)", anchorSelector: ".settings-daemon-update" },
+  { sectionId: "launch", sectionLabel: "App & Launch", label: "Check for a daemon update now", anchorSelector: ".settings-daemon-update" },
   { sectionId: "profiles", sectionLabel: "Profiles & Import", label: "Export / import profile bundle", anchorSelector: ".settings-profiles" },
   { sectionId: "profiles", sectionLabel: "Profiles & Import", label: "Import settings from TUI or Agent", anchorSelector: ".settings-profiles" },
 ];

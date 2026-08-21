@@ -3,6 +3,9 @@
 //   mcp.servers.list → { servers:[{name,connected}], security:[…], sandboxBindings:[…] }
 //   mcp.tools.list   → { tools:[{qualifiedName,serverName,toolName,description}] }
 //   mcp.config.get   → { locations:[{scope,kind,path,writable}], servers:[…] }
+//   mcp.servers.reveal → the same shape as config.get, plus each server's `env`
+//     with real VALUES rather than only `envKeys`. Admin-only, and the redacted
+//     config.get view is what every other read here uses.
 //   mcp.config.reload / servers.upsert / servers.remove → { reload:{added,changed,
 //     removed,unchanged,servers:[{name,action,connected}]}, … }
 // Local keys extend lib/queries.ts's ["mcp"] prefix so the `mcp` realtime
@@ -16,6 +19,10 @@ export const mcpKeys = {
   servers: [...queryKeys.mcp, "servers"] as const,
   tools: [...queryKeys.mcp, "tools"] as const,
   config: [...queryKeys.mcp, "config"] as const,
+  /** Unmasked env values. Only ever fetched while a reveal is explicitly on,
+   * and toggling it off removes the cache entry explicitly (gcTime 0 alone
+   * only evicts on unmount, not on disable). */
+  reveal: [...queryKeys.mcp, "reveal"] as const,
 } as const;
 
 // ─── servers.list ────────────────────────────────────────────────────────────
@@ -114,6 +121,42 @@ export function readConfiguredServers(data: unknown): McpConfiguredServer[] {
       source: record["source"] ? readLocation(record["source"]) : null,
     };
   });
+}
+
+// ─── servers.reveal ──────────────────────────────────────────────────────────
+
+/**
+ * Env VALUES per server name, off an mcp.servers.reveal payload.
+ *
+ * A Map keyed by server name rather than a re-parse of the whole server list:
+ * the rows are already built from config.get, and the only thing reveal adds is
+ * the values behind the keys those rows already show. Returning just that keeps
+ * the unmasked material in one short-lived structure the view can drop.
+ *
+ * Non-string values are skipped rather than stringified: the schema types env
+ * as an open map, and rendering `[object Object]` next to a key name would read
+ * like a credential.
+ */
+export function readRevealedEnv(data: unknown): Map<string, Record<string, string>> {
+  const byServer = new Map<string, Record<string, string>>();
+  for (const raw of asArray(asRecord(data)["servers"])) {
+    const record = asRecord(raw);
+    const name = firstString(record, ["name"]);
+    if (!name) continue;
+    const env: Record<string, string> = {};
+    for (const [key, value] of Object.entries(asRecord(record["env"]))) {
+      if (typeof value === "string") env[key] = value;
+    }
+    byServer.set(name, env);
+  }
+  return byServer;
+}
+
+/** How many env values a reveal actually returned, across every server. */
+export function countRevealedValues(revealed: Map<string, Record<string, string>>): number {
+  let total = 0;
+  for (const env of revealed.values()) total += Object.keys(env).length;
+  return total;
 }
 
 // ─── reload summaries ────────────────────────────────────────────────────────

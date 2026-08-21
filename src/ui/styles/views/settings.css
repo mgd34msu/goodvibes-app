@@ -1556,3 +1556,216 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ── Daemon-held credential writes (credentials.set / .delete) ───────── */
+
+.settings-daemon-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.settings-daemon-credentials__note {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.settings-daemon-credentials__note--aside {
+  color: var(--text-tertiary);
+}
+
+.settings-daemon-credentials__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.settings-daemon-credentials__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.settings-daemon-credentials__field-label {
+  color: var(--text-primary);
+}
+
+.settings-daemon-credentials__field input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.settings-daemon-credentials__hint {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.settings-daemon-credentials__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.settings-daemon-credentials__submit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.settings-daemon-credentials__submit:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.settings-daemon-credentials__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-daemon-credentials__submit--danger {
+  color: var(--status-danger);
+}
+
+.settings-daemon-credentials__receipt {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+
+.settings-daemon-credentials__receipt dt {
+  color: var(--text-tertiary);
+}
+
+.settings-daemon-credentials__receipt dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* ── Daemon self-update posture (update.status / update.check) ───────── */
+
+.settings-daemon-update {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.settings-daemon-update__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-daemon-update__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.settings-daemon-update__check:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-daemon-update__posture {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.settings-daemon-update__posture strong {
+  color: var(--text-primary);
+}
+
+.settings-daemon-update__posture--ok {
+  border-color: var(--status-success);
+  background: var(--status-success-soft);
+}
+
+.settings-daemon-update__posture--info {
+  border-color: var(--status-info);
+  background: var(--status-info-soft);
+}
+
+.settings-daemon-update__posture--warning {
+  border-color: var(--status-warning);
+  background: var(--status-warning-soft);
+}
+
+.settings-daemon-update__posture--danger {
+  border-color: var(--status-danger);
+  background: var(--status-danger-soft);
+}
+
+.settings-daemon-update__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.settings-daemon-update__facts dt {
+  color: var(--text-tertiary);
+}
+
+.settings-daemon-update__facts dd {
+  margin: 0;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.settings-daemon-update__releases {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.settings-daemon-update__releases:hover {
+  text-decoration: underline;
+}

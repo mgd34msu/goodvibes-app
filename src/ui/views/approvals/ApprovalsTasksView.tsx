@@ -12,10 +12,14 @@
 // Deep links: ?filter[approval]=<id> (and the module focus store fed by
 // jumpToApprovals, the toast → jump flow) selects the right tab, scrolls the
 // card into view, and highlights it.
+//
+// The toolbar also RAISES asks (approvals.raise, RaiseApprovalModal): the write
+// counterpart to the five verbs above, which could only ever act on records the
+// daemon's own in-process callers had created.
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClipboardCheck, RefreshCw } from "lucide-react";
+import { ClipboardCheck, Megaphone, RefreshCw } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import {
@@ -35,6 +39,7 @@ import { useUrlState } from "../../lib/router.ts";
 import { Modal } from "../../components/Modal.tsx";
 import { EmptyState, ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { ApprovalCard } from "./ApprovalCard.tsx";
+import { RaiseApprovalModal } from "./RaiseApprovalModal.tsx";
 import { TasksSection } from "./TasksSection.tsx";
 import { PermissionRulesSection } from "./PermissionRulesSection.tsx";
 
@@ -74,6 +79,7 @@ function ApprovalsSection() {
   const [tab, setTab] = useState<ApprovalTab>("pending");
   const [selections, setSelections] = useState<Record<string, ReadonlySet<number>>>({});
   const [denyTarget, setDenyTarget] = useState<ApprovalRecord | null>(null);
+  const [raiseOpen, setRaiseOpen] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [focusTarget, setFocusTarget] = useState<ApprovalFocusTarget | null>(() => {
     // URL deep link is the mount-time focus request; the module store (fed by
@@ -217,14 +223,19 @@ function ApprovalsSection() {
           <ClipboardCheck size={14} aria-hidden="true" /> Approvals
           {approvals.isSuccess ? ` · ${byTab.pending.length} pending` : ""}
         </span>
-        <button
-          type="button"
-          className="section-toolbar__refresh"
-          aria-label="Refresh approvals"
-          onClick={() => void approvals.refetch()}
-        >
-          <RefreshCw size={15} aria-hidden="true" className={approvals.isFetching ? "spinning" : undefined} />
-        </button>
+        <span className="approvals-toolbar__actions">
+          <button type="button" className="approvals-raise-button" onClick={() => setRaiseOpen(true)}>
+            <Megaphone size={13} aria-hidden="true" /> Raise request
+          </button>
+          <button
+            type="button"
+            className="section-toolbar__refresh"
+            aria-label="Refresh approvals"
+            onClick={() => void approvals.refetch()}
+          >
+            <RefreshCw size={15} aria-hidden="true" className={approvals.isFetching ? "spinning" : undefined} />
+          </button>
+        </span>
       </div>
 
       <div className="approvals-tabs" role="tablist" aria-label="Approval status">
@@ -311,6 +322,8 @@ function ApprovalsSection() {
         onClose={() => setDenyTarget(null)}
         onDeny={(id, note) => deny.mutate({ id, note })}
       />
+
+      <RaiseApprovalModal open={raiseOpen} onClose={() => setRaiseOpen(false)} />
     </section>
   );
 }

@@ -2,20 +2,16 @@
 // ported from goodvibes-webui src/lib/model-catalog.ts and adapted to THIS
 // SDK pin (docs/FEATURES.md §14 / src/ui/lib/generated/operator-routes.ts):
 //
-//   - This pin has NO models.* routes (no models.list / models.current /
-//     models.select, verified against the generated route table). The model
-//     inventory comes from providers.list/providers.get records, which
-//     genuinely carry per-model `tier` and `pricing` when the provider
+//   - The model inventory comes from providers.list/providers.get records,
+//     which genuinely carry per-model `tier` and `pricing` when the provider
 //     registry's pricing catalog has the data.
-//   - The "current model" (main chat) is therefore the shared config key
-//     `provider.model` (a provider-qualified registry key, "provider:model"),
-//     read via config.get and written via config.set, exactly what
-//     views/onboarding/OnboardingChecks.tsx already writes. The webui's
-//     models.select validation path does not exist here; the write is honest
-//     but unvalidated by the daemon beyond config-schema checks.
-//   - Multi-target routing is separate shared config keys (SDK
-//     schema-domain-core.ts):
-//       main       -> provider.model
+//   - The "current model" (main chat) is NOT config on this pin. It is the
+//     canonical models.current.get / models.current.set pair, which switches
+//     the live registry and validates the key, and it lives in
+//     current-model.ts. Nothing here reads or writes `provider.model`; the
+//     daemon writes that key itself as the persistence half of the switch.
+//   - Multi-target routing for every OTHER target is separate shared config
+//     keys (SDK schema-domain-core.ts):
 //       helper     -> helper.globalProvider + helper.globalModel (+ helper.enabled)
 //       tool       -> tools.llmProvider + tools.llmModel (+ tools.llmEnabled)
 //       tts        -> tts.llmProvider + tts.llmModel
@@ -27,8 +23,18 @@
 //     instead of a silent no-op filter.
 
 import { asRecord, firstArrayAtPath, firstString, readPath } from "../../lib/wire.ts";
+import { parseCurrentModel } from "../../lib/current-model.ts";
 
 export type ModelTarget = "main" | "helper" | "tool" | "tts" | "embeddings";
+
+/**
+ * Every target EXCEPT main, i.e. the ones that really are config keys.
+ *
+ * Main is excluded at the type level rather than by a runtime guard so a caller
+ * that forgets to route it through models.current.set fails to compile instead
+ * of quietly writing a config key the live registry never reads.
+ */
+export type ConfigModelTarget = Exclude<ModelTarget, "main">;
 
 export const MODEL_TARGETS: readonly ModelTarget[] = ["main", "helper", "tool", "tts", "embeddings"];
 
@@ -49,7 +55,7 @@ export function targetHasNoModelConcept(target: ModelTarget): boolean {
 // ---------------------------------------------------------------------------
 // Config reading, tolerant of the shapes config.get actually returns
 // ({ config: { "dotted.key": v } } flat map, nested objects, or bare).
-// Same tolerance set views/onboarding/checks.ts configuredModelFrom uses.
+// Only the non-main targets read through here; the current model is not config.
 // ---------------------------------------------------------------------------
 
 export function readConfigKey(response: unknown, dotted: string): unknown {
@@ -337,23 +343,32 @@ export interface TargetRouting {
   readonly configuredNote?: string;
 }
 
-/** Split a provider-qualified registry key ("provider:model") into its parts. */
-export function splitRegistryKey(registryKey: string): { provider: string; model: string } {
-  const idx = registryKey.indexOf(":");
-  if (idx <= 0) return { provider: "", model: registryKey };
-  return { provider: registryKey.slice(0, idx), model: registryKey.slice(idx + 1) };
-}
-
-/** Read the current routing for a target off a config.get() response. */
-export function readTargetRouting(target: ModelTarget, config: unknown): TargetRouting {
+/**
+ * Read the current routing for a target.
+ *
+ * `main` comes off a models.current.get payload and every other target off a
+ * config.get payload, because they genuinely live in different places: the
+ * current model is registry state the daemon persists for itself, the rest are
+ * settings this surface owns.
+ */
+export function readTargetRouting(target: ModelTarget, config: unknown, currentModel?: unknown): TargetRouting {
   const label = TARGET_LABELS[target];
   if (target === "main") {
-    // provider.model is the qualified registry key onboarding writes; fall
-    // back to provider.name when the key is unqualified.
-    const raw = readConfigString(config, "provider.model");
-    const { provider: keyProvider, model } = splitRegistryKey(raw);
-    const provider = keyProvider || readConfigString(config, "provider.name");
-    return { target, label, enabled: true, unset: !raw, provider, model };
+    const current = parseCurrentModel(currentModel);
+    return {
+      target,
+      label,
+      enabled: true,
+      unset: current.registryKey === "",
+      provider: current.provider,
+      model: current.id,
+      // A selection whose provider has lost its credentials is NOT an unset
+      // selection, and the two must not render the same way.
+      configuredNote:
+        current.registryKey !== "" && !current.configured
+          ? "Selected, but this provider has no usable credentials right now."
+          : undefined,
+    };
   }
   if (target === "helper") {
     const provider = readConfigString(config, "helper.globalProvider");
@@ -402,20 +417,23 @@ export function readTargetRouting(target: ModelTarget, config: unknown): TargetR
   };
 }
 
+/** The provider-qualified registry key models.current.set takes for a model. */
+export function qualifiedRegistryKey(providerId: string, modelId: string): string {
+  return modelId.includes(":") ? modelId : `${providerId}:${modelId}`;
+}
+
 /**
- * The config.set entries a "Use <model> for <target>" action writes. On this
- * pin EVERY target routes through config.set (there is no models.select),
- * main writes the provider-qualified `provider.model` registry key.
+ * The config.set entries a "Use <model> for <target>" action writes.
+ *
+ * Main is absent from the parameter type on purpose: switching the current
+ * model is models.current.set, which applies to the live registry and persists
+ * itself. See current-model.ts.
  */
 export function buildTargetWriteEntries(
-  target: ModelTarget,
+  target: ConfigModelTarget,
   providerId: string,
   modelId: string,
 ): readonly (readonly [string, unknown])[] {
-  if (target === "main") {
-    const registryKey = modelId.includes(":") ? modelId : `${providerId}:${modelId}`;
-    return [["provider.model", registryKey]];
-  }
   if (target === "helper") {
     return [
       ["helper.globalProvider", providerId],

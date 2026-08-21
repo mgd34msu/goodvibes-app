@@ -1,8 +1,11 @@
 // Credentials snapshot (docs/FEATURES.md §19): GET credentials.get returns
 // STATUS METADATA ONLY (configured/usable/source/scope/secure flags), no
-// secret material ever crosses the wire, so nothing here needs masking. The
-// actual secrets manager (set/link/test) has no wire method on this daemon
-// pin; that gap renders honestly below.
+// secret material ever crosses the wire, so nothing here needs masking.
+//
+// The write half is DaemonCredentialsSection below it (credentials.set /
+// credentials.delete, ws-only): a credential the daemon executes with, named
+// by its config key. It is deliberately not the same thing as the Secrets &
+// Services tab, which drives this app's handle on the surface secret store.
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -74,7 +77,7 @@ export function CredentialsSection() {
 
       <p className="settings-credentials__note">
         Status only — configured/usable flags and where each credential resolves from. Secret values never leave the
-        daemon. Editing secrets has no wire method on this daemon; use the TUI's secrets manager.
+        daemon. To store or clear one of these, use “Store a credential on the daemon” below.
       </p>
 
       {credentials.isPending && <SkeletonBlock variant="text" lines={4} />}

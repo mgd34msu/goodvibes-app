@@ -1,11 +1,16 @@
 // ModelWorkspaceModal, the multi-target model picker (main / helper / tool /
 // tts / embeddings), search + price/tier filters, toward the TUI's Model
 // Workspace (docs/FEATURES.md §14). Ported from goodvibes-webui
-// src/components/model-workspace/ModelWorkspaceModal.tsx, adapted to this pin:
-// every target routes through config.get/config.set (no models.* verbs exist
-// here, see model-catalog.ts header), and EVERY write is confirm-gated
-// through the shared ConfirmSurface (admin config write) with confirm:true +
-// explicitUserRequest forwarded on the wire.
+// src/components/model-workspace/ModelWorkspaceModal.tsx, adapted to this pin.
+//
+// The MAIN target is the daemon's current model and goes through
+// models.current.get / models.current.set (current-model.ts), which switches
+// the live registry and validates the key. Every OTHER target is a shared
+// config key and goes through config.get/config.set. Both paths are
+// confirm-gated through the shared ConfirmSurface; the config writes forward
+// confirm:true + explicitUserRequest on the wire, while models.current.set
+// takes only {registryKey} (additionalProperties:false), so its gate is the
+// ConfirmSurface alone.
 //
 // Filters are wire-honest: search/provider/group-by always work; the price
 // filter enables only when at least one model carries real tier data; the
@@ -34,15 +39,25 @@ import {
   MODEL_TARGETS,
   modelsFromProvidersResponse,
   providerIdsFromProvidersResponse,
+  qualifiedRegistryKey,
   readConfigString,
   readTargetRouting,
   TARGET_LABELS,
   targetHasNoModelConcept,
   type CatalogModel,
   type CategoryFilter,
+  type ConfigModelTarget,
   type GroupByMode,
   type ModelTarget,
 } from "./model-catalog.ts";
+import {
+  currentModelKey,
+  currentModelRefusal,
+  describeSwitch,
+  parseCurrentModel,
+  setCurrentModel,
+  useCurrentModel,
+} from "../../lib/current-model.ts";
 import { isFavoriteModel, toggleFavoriteModel, useFavoriteModels } from "./favorites.ts";
 import { ModelCatalogPanel } from "./ModelCatalogPanel.tsx";
 
@@ -51,15 +66,22 @@ export interface ModelWorkspaceModalProps {
   onClose: () => void;
 }
 
-/** One confirm-gated batch of config writes. */
+/**
+ * One confirm-gated write.
+ *
+ * Two shapes, because the main target really is a different call: a batch of
+ * config.set writes, or the one models.current.set switch.
+ */
 interface PendingWrite {
   /** Verb-first action line for the ConfirmSurface. */
   action: string;
   /** The exact target (model / provider / flag) being routed. */
   target: string;
-  /** Plain-words blast radius naming every config key written. */
+  /** Plain-words blast radius naming exactly what is written. */
   blastRadius: string;
   entries: readonly (readonly [string, unknown])[];
+  /** Set instead of `entries` when this is the current-model switch. */
+  registryKey?: string;
 }
 
 const REASONING_LEVELS = ["instant", "low", "medium", "high"] as const;
@@ -99,7 +121,11 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
   const capabilityDataAvailable = useMemo(() => hasAnyCapabilityData(allModels), [allModels]);
   const qualityTierDataAvailable = useMemo(() => hasAnyQualityTierData(allModels), [allModels]);
 
-  const routing = useMemo(() => readTargetRouting(target, config.data), [target, config.data]);
+  const currentModel = useCurrentModel(open);
+  const routing = useMemo(
+    () => readTargetRouting(target, config.data, currentModel.data),
+    [target, config.data, currentModel.data],
+  );
   const reasoningEffort = readConfigString(config.data, "provider.reasoningEffort");
 
   const filtered = useMemo(
@@ -123,29 +149,61 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
 
   const write = useMutation({
     mutationFn: async ({ pending, meta }: { pending: PendingWrite; meta: ConfirmMetadata }) => {
+      if (pending.registryKey !== undefined) {
+        // The current-model switch. Its input schema is
+        // additionalProperties:false with only {registryKey}, so the confirm
+        // metadata gates the UI and does not ride the wire.
+        return await setCurrentModel(pending.registryKey);
+      }
       // Sequential, not Promise.all: the daemon's /config route accepts one
       // key at a time, several keys for one target means several awaited
       // config.set calls in a row. The ConfirmSurface metadata rides each one.
       for (const [key, value] of pending.entries) {
         await gv.config.set({ key, value, ...meta });
       }
+      return undefined;
     },
-    onSuccess: async (_data, { pending }) => {
+    onSuccess: async (result, { pending }) => {
       setPendingWrite(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.configAll }),
         queryClient.invalidateQueries({ queryKey: queryKeys.providers }),
+        queryClient.invalidateQueries({ queryKey: currentModelKey }),
       ]);
-      toast({ title: `${TARGET_LABELS[target]} updated`, description: pending.target, tone: "success" });
+      toast({
+        title: `${TARGET_LABELS[target]} updated`,
+        description:
+          pending.registryKey !== undefined ? describeSwitch(parseCurrentModel(result)) : pending.target,
+        tone: "success",
+      });
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, { pending }) => {
       setPendingWrite(null);
-      toast({ title: "Config write failed", description: formatError(error), tone: "danger" });
+      const refusal = pending.registryKey !== undefined ? currentModelRefusal(error) : null;
+      toast({
+        title: refusal ? refusal.title : "Config write failed",
+        description: refusal ? refusal.description : formatError(error),
+        tone: "danger",
+      });
     },
   });
 
   function requestUseModel(model: CatalogModel): void {
-    const entries = buildTargetWriteEntries(target, model.provider, model.id);
+    if (target === "main") {
+      // Authoritative daemon key first; the reconstruction mangles Ollama name:tag ids.
+      const registryKey = model.registryKey || qualifiedRegistryKey(model.provider, model.id);
+      setPendingWrite({
+        action: "Switch the current model",
+        target: registryKey,
+        blastRadius:
+          "Switches the daemon's live model: the next turn on every surface it serves (TUI, agent, webui, app) runs on this model, and the choice is persisted so it survives a restart.",
+        entries: [],
+        registryKey,
+      });
+      return;
+    }
+    const configTarget: ConfigModelTarget = target;
+    const entries = buildTargetWriteEntries(configTarget, model.provider, model.id);
     setPendingWrite({
       action: `Set ${TARGET_LABELS[target]} ${targetHasNoModelConcept(target) ? "provider" : "model"}`,
       target: targetHasNoModelConcept(target) ? model.provider : model.registryKey,
@@ -189,7 +247,14 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
   }
 
   const configRefused = config.isError && errorStatus(config.error) === 403;
-  const isLoading = providers.isPending || config.isPending;
+  // The main target reads and writes through models.current.*, which is
+  // `authenticated` rather than `admin`, so an admin-only config.get must no
+  // longer grey out the current-model switch the way it did when the switch
+  // was a config write.
+  const mainUnavailable = target === "main" && currentModel.isError;
+  const routingRefused = target === "main" ? mainUnavailable : configRefused;
+  const writeDisabled = target === "main" ? mainUnavailable : configRefused;
+  const isLoading = providers.isPending || config.isPending || currentModel.isPending;
   const loadError = providers.isError ? providers.error : config.isError && !configRefused ? config.error : null;
   const embeddingsMode = targetHasNoModelConcept(target);
   const enableEntry = buildTargetEnableEntry(target, true);
@@ -238,7 +303,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
           <button
             type="button"
             className={isCurrent ? "providers-button" : "providers-button providers-button--primary"}
-            disabled={isCurrent || write.isPending || configRefused}
+            disabled={isCurrent || write.isPending || writeDisabled}
             aria-pressed={isCurrent}
             onClick={() => requestUseModel(model)}
           >
@@ -309,9 +374,12 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
         ) : (
           <>
           <div className="model-workspace-routing" aria-live="polite">
-            {configRefused ? (
+            {routingRefused ? (
               <span className="model-workspace-routing__note">
-                {routing.label}: current routing hidden — config.get requires an admin-scoped token.
+                {routing.label}:{" "}
+                {target === "main"
+                  ? `the daemon did not answer models.current.get — ${formatError(currentModel.error)}`
+                  : "current routing hidden — config.get requires an admin-scoped token."}
               </span>
             ) : routing.unset ? (
               <span className="model-workspace-routing__note">
@@ -480,7 +548,7 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
                         <button
                           type="button"
                           className={isCurrent ? "providers-button" : "providers-button providers-button--primary"}
-                          disabled={isCurrent || write.isPending || configRefused}
+                          disabled={isCurrent || write.isPending || writeDisabled}
                           onClick={() => requestUseModel({ id: "", registryKey: id, provider: id, label: id })}
                         >
                           {isCurrent ? "Current" : "Use"}

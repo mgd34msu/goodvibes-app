@@ -24,12 +24,14 @@ import { LocalAuthSection } from "./LocalAuthSection.tsx";
 import { SecuritySection } from "./SecuritySection.tsx";
 import { OsServiceSection } from "./OsServiceSection.tsx";
 import { CredentialsSection } from "./CredentialsSection.tsx";
+import { DaemonCredentialsSection } from "./DaemonCredentialsSection.tsx";
 import { SyncSection } from "./SyncSection.tsx";
 import { SecretsSection } from "./SecretsSection.tsx";
 import { ServicesSection } from "./ServicesSection.tsx";
 import { NotificationsSection } from "./NotificationsSection.tsx";
 import { NotificationTargetsSection } from "./NotificationTargetsSection.tsx";
 import { AppLaunchSection } from "./AppLaunchSection.tsx";
+import { DaemonUpdateSection } from "./DaemonUpdateSection.tsx";
 import { ProfilesSection } from "./ProfilesSection.tsx";
 import { flashSection, searchSettings, type SettingsSectionId } from "./settings-search.ts";
 
@@ -156,7 +158,12 @@ export function SettingsView(): React.ReactElement {
           <OsServiceSection />
         </>
       )}
-      {section === "credentials" && <CredentialsSection />}
+      {section === "credentials" && (
+        <>
+          <CredentialsSection />
+          <DaemonCredentialsSection />
+        </>
+      )}
       {section === "sync" && <SyncSection />}
       {section === "secrets" && (
         <>
@@ -170,7 +177,12 @@ export function SettingsView(): React.ReactElement {
           <NotificationTargetsSection />
         </>
       )}
-      {section === "launch" && <AppLaunchSection />}
+      {section === "launch" && (
+        <>
+          <AppLaunchSection />
+          <DaemonUpdateSection />
+        </>
+      )}
       {section === "profiles" && <ProfilesSection />}
     </div>
   );

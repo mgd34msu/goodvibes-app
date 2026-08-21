@@ -118,6 +118,12 @@ export function SecretsSection() {
         daemon-side process; this list shows names, sources, and flags only. Set a plain value or link to an external
         provider (environment variable, file, command, 1Password, Bitwarden/Vaultwarden, or Bitwarden Secrets Manager).
       </p>
+      <p className="settings-secrets__note">
+        These are named by <strong>secret name</strong>. A credential the <strong>daemon</strong> executes with is
+        named by its <strong>config key</strong> instead (<code>surfaces.telegram.botToken</code> and the like) and is
+        written on the Credentials tab, which sends it to the daemon so the setting and its value land in the same
+        tree. Writing one of those here instead puts the value somewhere the daemon does not read.
+      </p>
 
       {inspect.isSuccess && (
         <dl className="settings-secrets__policy">

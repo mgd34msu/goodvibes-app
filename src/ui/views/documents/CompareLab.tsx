@@ -3,7 +3,7 @@
 // show the replies side-by-side ANONYMIZED as A/B, let the user judge, THEN
 // reveal which model wrote which. The judgment is recorded to the app-local
 // notes registry tagged "model-compare", and the winner can be promoted to
-// the daemon's default model via confirm-gated config.set provider.model.
+// the daemon's current model via confirm-gated models.current.set.
 //
 // Replies are POLLED off companion.chat.messages.list every 2.5s while a
 // compare is in flight, this view deliberately does not open chat's
@@ -21,6 +21,13 @@ import { asRecord, firstArray, firstString, formatRelative, readPath } from "../
 import { MarkdownMessage } from "../../components/MarkdownMessage.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock } from "../../components/feedback.tsx";
+import {
+  currentModelKey,
+  currentModelRefusal,
+  describeSwitch,
+  parseCurrentModel,
+  setCurrentModel,
+} from "../../lib/current-model.ts";
 import { compareModelOptionsFrom, type CompareModelOption } from "./compare-models.ts";
 import { createNote, docKeys, firstTimestamp, listNotes } from "./documents-data.ts";
 
@@ -224,14 +231,27 @@ export function CompareLab({ active }: { active: boolean }) {
   }
 
   const setDefault = useMutation({
-    mutationFn: (option: CompareModelOption) => gv.config.set({ key: "provider.model", value: option.registryKey }),
-    onSuccess: async (_result, option) => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.configAll });
+    mutationFn: (option: CompareModelOption) => setCurrentModel(option.registryKey),
+    onSuccess: async (result, option) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: currentModelKey }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.configAll }),
+      ]);
       setPromoteTarget(null);
-      toast({ title: "Default model updated", description: option.registryKey, tone: "success" });
+      toast({
+        title: `Current model is now ${option.registryKey}`,
+        description: describeSwitch(parseCurrentModel(result)),
+        tone: "success",
+      });
     },
-    onError: (error: unknown) =>
-      toast({ title: "config.set failed", description: formatError(error), tone: "danger" }),
+    onError: (error: unknown) => {
+      const refusal = currentModelRefusal(error);
+      toast({
+        title: refusal ? refusal.title : "Model switch failed",
+        description: refusal ? refusal.description : formatError(error),
+        tone: "danger",
+      });
+    },
   });
 
   // Past judgments, app-local registry, no wire events: 30s poll while this
@@ -432,10 +452,10 @@ export function CompareLab({ active }: { active: boolean }) {
 
       <ConfirmSurface
         open={promoteTarget !== null}
-        action="Set default model"
+        action="Switch the current model"
         target={promoteTarget?.registryKey ?? ""}
-        blastRadius="Writes provider.model in the daemon config (admin); every surface that uses the default model route (TUI, agent, new chats) switches to this model."
-        confirmLabel="Set as default"
+        blastRadius="Switches the daemon's live model: the next turn on every surface it serves (TUI, agent, new chats) runs on this model, and the choice is persisted so it survives a restart."
+        confirmLabel="Switch model"
         onCancel={() => setPromoteTarget(null)}
         onConfirm={() => {
           if (promoteTarget) setDefault.mutate(promoteTarget);

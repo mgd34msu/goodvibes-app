@@ -3,9 +3,9 @@
 // ported from goodvibes-webui), provider detail + usage (providers.get /
 // providers.usage.get), secret-free credential status (credentials.get),
 // accounts snapshot (accounts.snapshot), current-model display + provider-first
-// model-second selection (config provider.model, this pin has no models.*
-// verbs, see model-catalog.ts), and the Model Workspace modal for multi-target
-// routing. Config writes are confirm-gated through ConfirmSurface.
+// model-second selection (models.current.get / models.current.set, see
+// current-model.ts), and the Model Workspace modal for multi-target routing.
+// Writes are confirm-gated through ConfirmSurface.
 //
 // Freshness: the `providers` SSE domain (lib/realtime.ts DOMAIN_INVALIDATIONS)
 // invalidates the ["providers"] prefix, the list, every open detail/usage
@@ -31,10 +31,17 @@ import { providerOptionsFromResponse } from "../chat/provider-models.ts";
 import { deriveProviderStatus, providerHeaderLabel } from "./provider-status.ts";
 import {
   modelsFromProviderRecord,
-  readConfigString,
-  splitRegistryKey,
+  qualifiedRegistryKey,
   type CatalogModel,
 } from "./model-catalog.ts";
+import {
+  currentModelKey,
+  currentModelRefusal,
+  describeSwitch,
+  parseCurrentModel,
+  setCurrentModel,
+  useCurrentModel,
+} from "../../lib/current-model.ts";
 import { toggleFavoriteModel, useFavoriteModels } from "./favorites.ts";
 import { CredentialStatusPanel } from "./CredentialStatusPanel.tsx";
 import { AccountsPanel } from "./AccountsPanel.tsx";
@@ -96,12 +103,10 @@ export function ProvidersView() {
     queryKey: queryKeys.providers,
     queryFn: () => gv.providers.list(),
   });
-  // Full config read (admin), current model + reasoning default live here.
-  const config = useQuery({
-    queryKey: queryKeys.configAll,
-    queryFn: () => gv.config.get(),
-    retry: false,
-  });
+  // The current model, over the canonical pair. This used to be a config.get
+  // read of `provider.model`, which needed an admin principal to answer a
+  // question every signed-in client is entitled to ask.
+  const currentModelQuery = useCurrentModel();
 
   const providerOptions = useMemo(() => providerOptionsFromResponse(providers.data), [providers.data]);
   const providerList = useMemo(() => providerOptions.map((option) => option.value), [providerOptions]);
@@ -144,26 +149,41 @@ export function ProvidersView() {
     return fromDetail.length > 0 ? fromDetail : modelsFromProviderRecord(selectedProvider);
   }, [selectedProviderDetail, selectedProvider]);
 
-  // Current model = shared config provider.model (registry key).
-  const currentRegistryKey = readConfigString(config.data, "provider.model");
-  const currentParts = splitRegistryKey(currentRegistryKey);
-  const currentProvider = currentParts.provider || readConfigString(config.data, "provider.name");
-  const configRefused = config.isError && errorStatus(config.error) === 403;
+  const currentModel = useMemo(() => parseCurrentModel(currentModelQuery.data), [currentModelQuery.data]);
+  const currentRegistryKey = currentModel.registryKey;
+  const currentProvider = currentModel.provider;
 
   const selectMainModel = useMutation({
-    mutationFn: ({ model, meta }: { model: CatalogModel; meta: ConfirmMetadata }) =>
-      gv.config.set({ key: "provider.model", value: model.registryKey, ...meta }),
-    onSuccess: async (_data, { model }) => {
+    // models.current.set takes only {registryKey} (additionalProperties:false),
+    // so the ConfirmSurface metadata gates the UI and does not ride the wire.
+    // Unlike the config.set this replaced, the daemon validates the key and
+    // switches its LIVE registry, then persists the choice itself.
+    // The daemon's own registryKey is authoritative; reconstructing it from
+    // provider + id mangles Ollama's name:tag ids, whose colon is a tag
+    // separator, not a provider qualifier.
+    mutationFn: ({ model }: { model: CatalogModel; meta: ConfirmMetadata }) =>
+      setCurrentModel(model.registryKey || qualifiedRegistryKey(model.provider, model.id)),
+    onSuccess: async (result, { model }) => {
       setPendingMainModel(null);
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: currentModelKey }),
         queryClient.invalidateQueries({ queryKey: queryKeys.configAll }),
         queryClient.invalidateQueries({ queryKey: queryKeys.providers }),
       ]);
-      toast({ title: "Main chat model changed", description: model.registryKey, tone: "success" });
+      toast({
+        title: `Current model is now ${model.registryKey}`,
+        description: describeSwitch(parseCurrentModel(result)),
+        tone: "success",
+      });
     },
     onError: (error: unknown) => {
       setPendingMainModel(null);
-      toast({ title: "Failed to set model", description: formatError(error), tone: "danger" });
+      const refusal = currentModelRefusal(error);
+      toast({
+        title: refusal ? refusal.title : "Failed to set model",
+        description: refusal ? refusal.description : formatError(error),
+        tone: "danger",
+      });
     },
   });
 
@@ -320,30 +340,37 @@ export function ProvidersView() {
             </div>
           </div>
 
-          {/* Current model (shared config provider.model) */}
+          {/* Current model (models.current.get) */}
           <section className="providers-panel" aria-label="Current model">
             <div className="providers-panel__title">
               <h3>Current Model (main chat)</h3>
               <Route size={16} aria-hidden="true" />
             </div>
-            {config.isPending ? (
+            {currentModelQuery.isPending ? (
               <SkeletonBlock variant="block" height={40} />
-            ) : configRefused ? (
-              <div className="providers-degraded-note" role="status">
-                <strong>Admin access required</strong>
-                <span>The daemon default model lives in shared config (config.get is admin-scoped).</span>
-              </div>
-            ) : config.isError ? (
+            ) : currentModelQuery.isError ? (
               <ErrorState
-                error={config.error}
-                title="Failed to load current model"
-                onRetry={() => void config.refetch()}
+                error={currentModelQuery.error}
+                title="Failed to load the current model"
+                onRetry={() => void currentModelQuery.refetch()}
               />
             ) : (
               <div className="providers-current-model">
                 <div className="providers-current-model__copy">
-                  <strong>{currentParts.model || "No model selected"}</strong>
-                  <span>{currentRegistryKey || "provider.model is not configured on this daemon"}</span>
+                  <strong>{currentModel.id || "No model selected"}</strong>
+                  <span>
+                    {currentRegistryKey || "This daemon has no model selected; pick one below."}
+                  </span>
+                  {/* A selection whose provider lost its credentials is not the
+                      same state as no selection, and must not read like one. */}
+                  {currentRegistryKey && !currentModel.configured && (
+                    <span className="providers-current-model__warning">
+                      Selected, but this provider has no usable credentials right now.
+                    </span>
+                  )}
+                  {currentRegistryKey && currentModel.configured && currentModel.configuredVia && (
+                    <span>Authenticated via {currentModel.configuredVia}.</span>
+                  )}
                 </div>
                 {currentProvider ? <StatusBadge value={currentProvider} /> : null}
               </div>
@@ -412,12 +439,10 @@ export function ProvidersView() {
                         <button
                           type="button"
                           className={isCurrent ? "providers-button" : "providers-button providers-button--primary"}
-                          disabled={isCurrent || selectMainModel.isPending || configRefused}
+                          disabled={isCurrent || selectMainModel.isPending}
                           aria-pressed={isCurrent}
                           title={
-                            configRefused
-                              ? "Writing provider.model requires an admin-scoped token"
-                              : undefined
+                            isCurrent ? undefined : "Switch the daemon's current model to this one"
                           }
                           onClick={() => setPendingMainModel(model)}
                         >
@@ -512,13 +537,13 @@ export function ProvidersView() {
         </section>
       </ErrorBoundary>
 
-      {/* Confirm-gated main-model write (shared config, daemon-wide) */}
+      {/* Confirm-gated current-model switch (live registry, daemon-wide) */}
       <ConfirmSurface
         open={pendingMainModel !== null}
-        action="Set main chat model"
+        action="Switch the current model"
         target={pendingMainModel?.registryKey ?? ""}
-        blastRadius="Writes shared config key provider.model: the daemon default every surface (TUI, agent, webui, app) uses when a session has no explicit model."
-        confirmLabel={selectMainModel.isPending ? "Writing…" : "Set model"}
+        blastRadius="Switches the daemon's live model: the next turn on every surface it serves (TUI, agent, webui, app) runs on this model, and the choice is persisted so it survives a restart."
+        confirmLabel={selectMainModel.isPending ? "Switching…" : "Switch model"}
         onConfirm={(meta) => {
           if (pendingMainModel && !selectMainModel.isPending) {
             selectMainModel.mutate({ model: pendingMainModel, meta });

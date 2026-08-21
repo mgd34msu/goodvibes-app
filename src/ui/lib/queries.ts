@@ -13,7 +13,9 @@ export const queryKeys = {
   control: ["control", "snapshot"] as const,
   contract: ["control", "contract"] as const,
   authCurrent: ["control", "auth", "current"] as const,
-  // Full config read (admin), onboarding/doctor reads provider.model off it.
+  // Full config read (admin). The CURRENT MODEL is not here: it is
+  // models.current.get (lib/current-model.ts), which answers for any signed-in
+  // client and says whether the selection's provider is actually usable.
   configAll: ["config"] as const,
   accounts: ["accounts"] as const,
   providers: ["providers"] as const,
