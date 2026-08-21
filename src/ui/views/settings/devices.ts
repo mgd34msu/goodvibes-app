@@ -409,8 +409,8 @@ function readCaptureRemoval(value: unknown): DeviceCaptureRemoval | null {
  * `revoked` is required by the contract, and its absence is a malformed answer
  * rather than a revocation of nothing. A daemon that did not say it removed a
  * grant has not told us the grant is gone, and a surface that reported success
- * anyway would leave a live "always allow" on a phone the owner believes he
- * just revoked.
+ * anyway would leave a live "always allow" on a phone the owner believes
+ * was just revoked.
  */
 export function readDeviceRevokeReceipt(value: unknown): DeviceRevokeReceipt | null {
   const record = asRecord(value);
@@ -515,7 +515,7 @@ export type CapabilityRequestBuild =
  * Number fields are coerced here and a value that is not a number is REFUSED
  * rather than dropped or sent as a string: a maxWidth of "big" silently omitted
  * would take a full-resolution photo the owner did not ask for, and sent as a
- * string would be a 400 whose message is about types rather than about what he
+ * string would be a 400 whose message is about types rather than about what the owner
  * typed. Empty optional fields are omitted entirely, which is what lets the
  * device apply its own default.
  */
@@ -815,7 +815,7 @@ export interface DeviceReport {
  * `revoked: 0` is reported as an INFO rather than a success: the grant this page
  * rendered is not there any more, which usually means another surface revoked it
  * or it expired between the read and the click, and saying "revoked" would tell
- * the owner he had just done something he did not do.
+ * the owner that something happened that did not.
  */
 export function revokeReportLine(receipt: DeviceRevokeReceipt | null, label: string): DeviceReport {
   if (receipt === null) {

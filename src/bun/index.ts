@@ -15,8 +15,7 @@ import { createDevDriver } from "./dev-driver.ts";
 import { buildAppRoutes } from "./app-routes.ts";
 import { notifications, setNotificationDelivery } from "./notifications.ts";
 import type { DaemonInfo } from "../shared/app-contract.ts";
-
-const APP_VERSION = "0.1.0";
+import { APP_VERSION } from "./app-version.ts";
 
 // Built layout: this bundle runs as Resources/app/bun/index.js; view assets are
 // bundled to Resources/app/views/mainview/* (verified against electrobun 1.18.1).
@@ -58,14 +57,18 @@ async function main(): Promise<void> {
     frame: { width: 1440, height: 940, x: 120, y: 80 },
   });
 
-  // XWayland GDK_SCALE display compensation lives in the UI (src/ui/main.tsx,
-  // transform-based, driven by /app/health display.gdkScale). Do NOT use
-  // win.setPageZoom here: on this electrobun/GTK version it either inverts
-  // (0.5 doubled the magnification) or hard-crashes the event loop seconds
-  // after dom-ready ("invalid unclassed pointer in cast to 'GtkWidget'") --
-  // both verified live 2026-07-07. Unsetting GDK_SCALE at spawn also crashes
-  // WebKitGTK (SIGILL). The transform approach is the only path that proved
-  // stable.
+  // XWayland GDK_SCALE display compensation is handled at launch, not here:
+  // scripts/launch.ts strips GDK_SCALE/GDK_DPI_SCALE from the spawned app
+  // process's env before this process starts. There is no in-page scaling in
+  // src/ui/main.tsx: CSS zoom blurred text and desynced native controls, and
+  // transform-scaling broke vh units and resize, so both were rejected;
+  // main.tsx reads /app/health's display.gdkScale for observability only, it
+  // does not compensate with it. Do NOT use win.setPageZoom here: on this
+  // electrobun/GTK version it either inverts (0.5 doubled the magnification)
+  // or hard-crashes the event loop seconds after dom-ready ("invalid
+  // unclassed pointer in cast to 'GtkWidget'"), both verified live
+  // 2026-07-07. Unsetting GDK_SCALE at spawn also crashes WebKitGTK (SIGILL).
+  // The launch-time env strip is the only path that proved stable.
 
   // Give the notifications module a cross-platform delivery path. notify-send is
   // Linux-only; electrobun's Utils.showNotification works on macOS/Windows/Linux

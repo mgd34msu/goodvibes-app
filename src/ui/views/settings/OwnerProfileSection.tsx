@@ -9,7 +9,7 @@
 //   "what do you know about me?"  profile.read, rendered by section. Mechanical
 //      fields render as labelled values; everything else renders as the prose it
 //      is. The owner's prose is NOT restyled into a table: the file is a
-//      document he wrote, and the daemon's writer never normalizes it, so
+//      document the owner wrote, and the daemon's writer never normalizes it, so
 //      neither does this.
 //   "where did you get that?"     profile.provenance, per field, from that
 //      field's own button. Every learned line already shows its compact suffix;
@@ -35,7 +35,7 @@
 // for one person's lines) and each answers with the disclosure the owner would
 // see. They get their own "Ask the profile" block so the operator can see
 // exactly what a named read returns, including the honest present:false for a
-// field he has not recorded.
+// field the owner has not recorded.
 //
 // CONTAINMENT. The People section holds facts about people who never agreed to
 // be in a database: it is marked in the DOM, carries a visible note, and renders

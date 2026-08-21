@@ -3,15 +3,15 @@
 // .set / .append / .forget / .undo).
 //
 // WHAT THE PROFILE IS. One Markdown file the daemon keeps, holding what the
-// platform knows about its owner. It is a DOCUMENT he writes, not a table: the
-// writer never normalizes a line he typed, so neither does this reader, and
-// prose stays prose instead of being restyled into fields.
+// platform knows about its owner. It is a DOCUMENT the owner writes, not a
+// table: the writer never normalizes a line the owner typed, so neither does
+// this reader, and prose stays prose instead of being restyled into fields.
 //
 // MECHANICAL FIELDS vs PROSE. A field (`city:`, `shipping address:`) is
 // addressed by its `fieldId` and can be superseded and undone. A prose bullet
 // is addressed by its CONTENT (its section plus its exact text) and never by
-// its position: the owner edits this file himself, so an index taken from an
-// earlier read may name a different line by the time a click arrives, and
+// its position: the owner edits this file directly, so an index taken from
+// an earlier read may name a different line by the time a click arrives, and
 // profile.forget refuses a lineIndex outright for exactly that reason.
 // `lineIndex` is kept here as a React key and document order, and must never
 // reach a verb.
@@ -117,8 +117,8 @@ export interface ProfileProvenanceAnswer {
   fieldId: string;
   /** Whether the field is in the document at all. */
   present: boolean;
-  /** True when the field exists but carries no suffix: he wrote it by hand,
-   *  and saying so is the honest answer rather than inventing a source. */
+  /** True when the field exists but carries no suffix: it was written by
+   *  hand, and saying so is the honest answer rather than inventing a source. */
   handEdited: boolean;
   provenance?: ProfileProvenance;
   superseded: ProfileSupersededValue[];
@@ -479,7 +479,7 @@ export function readProfileWriteOutcome(value: unknown): ProfileWriteOutcome | n
  * hand-edit); anything else is a 400 from the route's readSurface, verified
  * live: `surface: "app"` is refused, naming the five. None of them is this
  * desktop app, so the choice is which true statement to make, and `hand-edit`
- * is the one the daemon itself defines as "the owner typed it himself", which
+ * is the one the daemon itself defines as "the owner typed it directly", which
  * is exactly what a value typed into the form below is. Claiming `webui` would
  * name a DIFFERENT client as the source of a line it never touched, and the
  * whole point of the provenance suffix is that it can be trusted.
@@ -491,16 +491,16 @@ export function readProfileWriteOutcome(value: unknown): ProfileWriteOutcome | n
 export const APP_PROFILE_SURFACE = "hand-edit";
 
 /** The `said` a settings-surface write records. Not a quote of the owner's
- *  words, because there were none: he typed a value into a form, and the line
- *  says so instead of inventing a sentence he never said. */
+ *  words, because there were none: a value was typed into a form, and the
+ *  line says so instead of inventing a sentence that was never said. */
 export const SETTINGS_EDIT_UTTERANCE = "(edited in the GoodVibes desktop app settings)";
 
 /**
  * The authority every write from this surface claims: where the fact came from.
  *
  * This surface can say `owner-direct` honestly, because the only thing that
- * reaches these calls is the owner typing into his own settings page: no page
- * content, no message body, no document composes them. An agent must NOT
+ * reaches these calls is the owner typing into their own settings page: no
+ * page content, no message body, no document composes them. An agent must NOT
  * hardcode this: it can genuinely be handed a purported fact by an email or a
  * web page and has to say which so the daemon can refuse.
  */
@@ -645,7 +645,7 @@ export function deletedWhat(outcome: ProfileWriteOutcome, fallbackLabel: string)
  * Appended whenever a delete finds nothing to delete.
  *
  * A forget names a row this page rendered from an earlier read, so a failure
- * usually means the file has moved on since, because the owner edited it himself or
+ * usually means the file has moved on since, because the owner edited it directly or
  * another surface did. Saying only "nothing was removed" would be true and
  * useless; the useful part is that the page may no longer match the file. It
  * says MAY rather than asserting a change, because one failure branch is not

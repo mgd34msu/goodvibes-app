@@ -10,7 +10,7 @@
 // remembers, so what is listed is what is actually honoured. Revoking deletes
 // the grant rather than flagging it, so the next request asks again; a revoke
 // that removed nothing is reported as such rather than as a success, because
-// telling the owner he just revoked something he did not would be the one
+// telling the owner a revocation happened that did not would be the one
 // failure that matters here.
 
 import { useMemo, useState } from "react";
