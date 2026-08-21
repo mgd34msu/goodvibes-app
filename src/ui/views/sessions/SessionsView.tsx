@@ -16,7 +16,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Download, ListTodo, Plus, RefreshCw, Search, Stethoscope, Unlink } from "lucide-react";
+import { Boxes, ChevronLeft, Download, ListTodo, Plus, RefreshCw, Search, Stethoscope, Unlink } from "lucide-react";
 import { gv, invoke } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import {
@@ -28,7 +28,7 @@ import {
 } from "../../lib/errors.ts";
 import { compactJson, formatRelative } from "../../lib/wire.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
-import { getCurrentUrlState, replaceState } from "../../lib/router.ts";
+import { getCurrentUrlState, replaceState, useUrlState, withFilters } from "../../lib/router.ts";
 import { useSessionStreamPaused } from "../../lib/realtime.ts";
 import { announce } from "../../lib/announcer.ts";
 import { useToast } from "../../lib/toast.ts";
@@ -60,6 +60,7 @@ import {
 import { SteerComposer } from "./SteerComposer.tsx";
 import { SessionChanges } from "./SessionChanges.tsx";
 import { SessionRewind } from "./SessionRewind.tsx";
+import { HostedSessionsPanel } from "./HostedSessionsPanel.tsx";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -145,7 +146,75 @@ function writeSelectionToUrl(sessionId: string): void {
   replaceState({ ...current, session: sessionId });
 }
 
+/**
+ * The view's two tabs, URL-addressable via ?filter[stab]=… (the RoutinesView
+ * idiom). "All sessions" is the cross-surface union that has always been here;
+ * "Hosted" is the daemon-hosted family (sessions.hosted.*), which belongs
+ * beside it rather than in its own sidebar entry: a hosted session REGISTERS on
+ * the same spine and shows up in the union list too, so splitting them across
+ * the sidebar would present one thing as two.
+ */
+const STAB_IDS = ["all", "hosted"] as const;
+type STabId = (typeof STAB_IDS)[number];
+
+function isSTabId(value: string): value is STabId {
+  return (STAB_IDS as readonly string[]).includes(value);
+}
+
 export function SessionsView() {
+  // Read-only here: the hook is kept for its popstate subscription (a Back that
+  // lands on ?filter[stab]=hosted syncs the tab), while writes go through
+  // replaceState below so nothing composed from its snapshot can clobber the URL.
+  const { filters } = useUrlState();
+  const urlTab = filters["stab"] ?? "";
+  const [stab, setStab] = useState<STabId>(() => (isSTabId(urlTab) ? urlTab : "all"));
+
+  useEffect(() => {
+    if (isSTabId(urlTab) && urlTab !== stab) setStab(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab]);
+
+  // Composed from a FRESH read, never from useUrlState's snapshot: the union
+  // tab writes the selected ?session= straight through replaceState, which that
+  // snapshot never sees, so rebuilding the URL from it would drop the selection
+  // and the deep link every time the tab changed.
+  const setTab = (next: STabId) => {
+    setStab(next);
+    replaceState(withFilters(getCurrentUrlState(), { stab: next === "all" ? undefined : next }));
+  };
+
+  return (
+    <div className="sessions-shell">
+      <div className="reg-tabs" role="tablist" aria-label="Session surfaces">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stab === "all"}
+          className={stab === "all" ? "reg-tab reg-tab--active" : "reg-tab"}
+          onClick={() => setTab("all")}
+        >
+          <ListTodo size={14} aria-hidden="true" /> All sessions
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={stab === "hosted"}
+          className={stab === "hosted" ? "reg-tab reg-tab--active" : "reg-tab"}
+          onClick={() => setTab("hosted")}
+        >
+          <Boxes size={14} aria-hidden="true" /> Hosted
+        </button>
+      </div>
+
+      {/* Unmounted, not hidden, when the other tab is showing: the hosted panel
+          detaches this app from its attached session on unmount, and the union
+          tab's own queries should not keep polling behind it. */}
+      {stab === "all" ? <SessionsUnionTab /> : <HostedSessionsPanel />}
+    </div>
+  );
+}
+
+function SessionsUnionTab() {
   const queryClient = useQueryClient();
   const peek = usePeek();
   const streamPaused = useSessionStreamPaused();

@@ -1769,3 +1769,282 @@
 .settings-daemon-update__releases:hover {
   text-decoration: underline;
 }
+
+/* Inert counterpart: the releases url did not survive lib/safe-href.ts, so the
+   value is shown as text and must not carry the anchor's hover underline. */
+.settings-daemon-update__releases--inert,
+.settings-daemon-update__releases--inert:hover {
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* ── Owner profile (profile.* verbs) ─────────────────────────────────── */
+
+.settings-owner-profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.settings-owner-profile__note,
+.settings-owner-profile__hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.settings-owner-profile__hint {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.settings-owner-profile__report:empty {
+  display: none;
+}
+
+.settings-owner-profile__banner {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.settings-owner-profile__banner.ok {
+  color: var(--text-primary);
+  background: var(--status-success-soft);
+}
+
+.settings-owner-profile__banner.info {
+  color: var(--text-primary);
+  background: var(--status-info-soft);
+}
+
+.settings-owner-profile__banner.warning {
+  color: var(--text-primary);
+  background: var(--status-warning-soft);
+}
+
+.settings-owner-profile__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-owner-profile__path {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.settings-owner-profile__invalid {
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--status-warning-soft);
+  font-size: var(--text-xs);
+}
+
+.settings-owner-profile__invalid ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.settings-owner-profile__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.settings-owner-profile__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.settings-owner-profile__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-owner-profile__section-head h3 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.settings-owner-profile__containment {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--status-info-soft);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+}
+
+.settings-owner-profile__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.settings-owner-profile__field dt {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-owner-profile__field dd {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-owner-profile__value {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.settings-owner-profile__invalid-note {
+  margin: 0;
+  color: var(--status-warning);
+  font-size: var(--text-xs);
+}
+
+.settings-owner-profile__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-owner-profile__line {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-owner-profile__prose {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.settings-owner-profile__row-actions,
+.settings-owner-profile__edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.settings-owner-profile__edit input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.settings-owner-profile__edit .settings-owner-profile__hint {
+  flex: 1 1 100%;
+}
+
+.settings-owner-profile__button {
+  padding: var(--space-1) var(--space-3);
+  color: var(--text-accent);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.settings-owner-profile__button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.settings-owner-profile__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.settings-owner-profile__button--danger {
+  color: var(--status-danger);
+}
+
+.settings-owner-profile__provenance-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.settings-owner-profile__provenance-detail p {
+  margin: 0;
+}
+
+.settings-owner-profile__superseded {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.settings-owner-profile__ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.settings-owner-profile__ask h3 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.settings-owner-profile__answer {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings-owner-profile__answer p {
+  margin: 0;
+}
+
+/* The one retained value Undo would promote back. The list is in document
+   order, not recency order, so this is a label rather than a position. */
+.settings-owner-profile__restored {
+  margin-left: var(--space-2);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent-muted);
+  color: var(--text-accent);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}

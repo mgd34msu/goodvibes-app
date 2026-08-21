@@ -27,6 +27,7 @@ import { queryKeys } from "../../lib/queries.ts";
 import { parseTaskDetail, parseTasksSnapshot } from "../../lib/approvals.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { formatError, errorCode, errorStatus, isMethodUnavailableError } from "../../lib/errors.ts";
+import { safeHref } from "../../lib/safe-href.ts";
 import { useToast } from "../../lib/toast.ts";
 import { asRecord, firstString, formatRelative, type AnyRecord } from "../../lib/wire.ts";
 import { Modal } from "../../components/Modal.tsx";
@@ -124,9 +125,13 @@ function InspectContent({
       <dl className="research-inspect__facts">
         <dt>Final URL</dt>
         <dd>
-          <a href={preview.finalUrl} target="_blank" rel="noreferrer">
-            {preview.finalUrl}
-          </a>
+          {safeHref(preview.finalUrl) ? (
+            <a href={safeHref(preview.finalUrl)} target="_blank" rel="noreferrer">
+              {preview.finalUrl}
+            </a>
+          ) : (
+            <span>{preview.finalUrl}</span>
+          )}
         </dd>
         <dt>Status</dt>
         <dd>{preview.status || "—"}</dd>
@@ -390,9 +395,13 @@ function WebSearchSection({
                     {index + 1}
                   </span>
                   <div className="research-result__body">
-                    <a className="research-result__title" href={result.url} target="_blank" rel="noreferrer">
-                      {result.title}
-                    </a>
+                    {safeHref(result.url) ? (
+                      <a className="research-result__title" href={safeHref(result.url)} target="_blank" rel="noreferrer">
+                        {result.title}
+                      </a>
+                    ) : (
+                      <span className="research-result__title research-result__title--inert">{result.title}</span>
+                    )}
                     <span className="research-result__url">{result.url}</span>
                     {result.snippet && <p className="research-result__snippet">{result.snippet}</p>}
                     <div className="research-result__meta">
@@ -1087,9 +1096,13 @@ function RunDetail({
           {run.findings.map((finding, index) => (
             <li key={`${finding.url}-${index}`} className="research-finding">
               <div className="research-finding__head">
-                <a href={finding.url} target="_blank" rel="noreferrer" className="research-finding__title">
-                  {finding.title}
-                </a>
+                {safeHref(finding.url) ? (
+                  <a href={safeHref(finding.url)} target="_blank" rel="noreferrer" className="research-finding__title">
+                    {finding.title}
+                  </a>
+                ) : (
+                  <span className="research-finding__title research-finding__title--inert">{finding.title}</span>
+                )}
                 <select
                   value={finding.credibility}
                   onChange={(e) => patchFinding(index, { credibility: credibilityFrom(e.target.value) })}
@@ -1403,9 +1416,13 @@ function LegacyRunReadOnly({ run, onDelete }: { run: ResearchRun; onDelete: () =
           {run.findings.map((finding, index) => (
             <li key={`${finding.url}-${index}`} className="research-finding">
               <div className="research-finding__head">
-                <a href={finding.url} target="_blank" rel="noreferrer" className="research-finding__title">
-                  {finding.title}
-                </a>
+                {safeHref(finding.url) ? (
+                  <a href={safeHref(finding.url)} target="_blank" rel="noreferrer" className="research-finding__title">
+                    {finding.title}
+                  </a>
+                ) : (
+                  <span className="research-finding__title research-finding__title--inert">{finding.title}</span>
+                )}
                 <span className="badge neutral">{finding.credibility}</span>
               </div>
               <span className="research-finding__url">{finding.url}</span>

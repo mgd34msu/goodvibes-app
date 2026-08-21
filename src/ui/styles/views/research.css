@@ -132,6 +132,16 @@
   text-decoration: underline;
 }
 
+/* The same slot when the url did not survive lib/safe-href.ts and the value is
+   rendered as inert text. Without this it keeps the anchor's hover underline
+   and reads as a link that simply does not work. */
+.research-result__title--inert,
+.research-result__title--inert:hover {
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: default;
+}
+
 .research-result__url,
 .research-collect__url,
 .research-finding__url {
@@ -371,6 +381,14 @@
 .research-finding__title:hover {
   color: var(--accent-hover);
   text-decoration: underline;
+}
+
+/* Inert counterpart, see .research-result__title--inert. */
+.research-finding__title--inert,
+.research-finding__title--inert:hover {
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: default;
 }
 
 .research-finding__head select {

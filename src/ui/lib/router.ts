@@ -128,6 +128,30 @@ export function getCurrentUrlState(): AppUrlState {
   return decodeUrlState(window.location.search);
 }
 
+/**
+ * Merge filter updates into a URL state, leaving `view`, `session` and every
+ * other filter exactly as they were. Undefined removes a key.
+ *
+ * Composing from a state read FRESH (getCurrentUrlState) rather than from
+ * useUrlState's local copy is what keeps this non-destructive. That hook holds a
+ * snapshot updated only by its own setters and by popstate, so a view that
+ * writes the URL directly (SessionsView stamps the selected ?session= with
+ * replaceState, deliberately, since a selection is not a history-worthy step)
+ * leaves the hook's copy behind. Rebuilding the URL from that stale copy drops
+ * whatever was written in between: the deep link and the selection with it.
+ */
+export function withFilters(
+  state: AppUrlState,
+  updates: Record<string, string | undefined>,
+): AppUrlState {
+  const filters: Record<string, string> = { ...state.filters };
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === undefined) delete filters[key];
+    else filters[key] = value;
+  }
+  return { ...state, filters };
+}
+
 // ---------------------------------------------------------------------------
 // Hook (webui useUrlState port)
 // ---------------------------------------------------------------------------

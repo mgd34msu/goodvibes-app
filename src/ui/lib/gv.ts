@@ -252,6 +252,36 @@ export const gv = {
       cancel: (sessionId: string, callId: string) =>
         invoke("sessions.toolCalls.cancel", { params: { sessionId, callId } }),
     },
+    /**
+     * Daemon-hosted sessions: the conversation loop runs INSIDE the daemon, so
+     * it does not end when this window closes. All five verbs are [ws] (no REST
+     * binding on this pin) and ride the /app/ws bridge.
+     *
+     * There is deliberately NO hosted steer/cancel/queued-message family: the
+     * ordinary sessions.steer / sessions.followUp / sessions.toolCalls.cancel
+     * above resolve a hosted session's id the same way they resolve the
+     * daemon's local runtime, and live output arrives on the ordinary `turn`
+     * and `tools` event domains stamped with the hosted session's id.
+     *
+     * attach() carries a LEASE (hostedSessions.attachmentTtlMs, ten minutes by
+     * default): a client that closed without detaching would otherwise hold a
+     * kill-policy session open forever. Re-attaching with the same clientId
+     * renews it, and an open control-plane connection renews it automatically.
+     */
+    hosted: {
+      list: (includeTerminated = false) =>
+        invoke("sessions.hosted.list", { body: { includeTerminated } }), // [ws]
+      create: (body: unknown) => invoke("sessions.hosted.create", { body }), // [ws]
+      attach: (sessionId: string, clientId: string) =>
+        invoke("sessions.hosted.attach", { body: { sessionId, clientId } }), // [ws]
+      // Applies the effective detach policy when this was the LAST client; the
+      // returned record says which applied and what the session now is.
+      detach: (sessionId: string, clientId: string) =>
+        invoke("sessions.hosted.detach", { body: { sessionId, clientId } }), // [ws]
+      // Ends it regardless of who is attached or what the policy says. Killing
+      // an already-terminated session returns that record unchanged, not an error.
+      kill: (sessionId: string) => invoke("sessions.hosted.kill", { body: { sessionId } }), // [ws] dangerous
+    },
   },
 
   fleet: {
@@ -495,6 +525,41 @@ export const gv = {
      * it. `cleared:false` means nothing was stored under that key: a miss, not
      * an error. [ws] dangerous. */
     credentialDelete: (key: string) => invoke("credentials.delete", { body: { key } }),
+  },
+
+  /**
+   * The owner profile: one Markdown file the daemon keeps, holding what the
+   * platform knows about its owner. Nine verbs, all plain HTTP.
+   *
+   * Reads split on purpose: read() is the ONE bulk read and carries its own
+   * scope (read:profile-document), while get/person/provenance/status are
+   * named lookups under read:profile. Nothing here is cached to disk, logged,
+   * or put in a diagnostics bundle by this app; status() is the only verb that
+   * is SAFE in one, because its shape has no value property anywhere.
+   *
+   * Every write states an `authority`, naming where the fact came from. The daemon
+   * requires it and refuses an absent or unrecognised value rather than
+   * defaulting, because forget/undo are gated on authority and nothing else: an
+   * unstated authority on a delete would not be a weakened gate, it would be no
+   * gate. Callers pass the whole body, so the claim is made at the call site
+   * that can actually make it honestly (views/settings/owner-profile.ts).
+   */
+  profile: {
+    read: () => invoke("profile.read"),
+    status: () => invoke("profile.status"),
+    get: (fieldId: string) => invoke("profile.get", { params: { fieldId } }),
+    provenance: (fieldId: string) => invoke("profile.provenance", { params: { fieldId } }),
+    // Takes a NAME by design and has no enumerate-all counterpart: a People
+    // line may reach outbound content only when the owner named that person.
+    person: (name: string) => invoke("profile.person", { body: { name } }),
+    set: (body: unknown) => invoke("profile.set", { body }),
+    append: (body: unknown) => invoke("profile.append", { body }),
+    // Delete means delete: the field AND every retained earlier value go, so
+    // there is nothing left to undo. Addressed by fieldId, or by section plus
+    // the line's exact text, never by position. dangerous.
+    forget: (body: unknown) => invoke("profile.forget", { body }),
+    // Promotes a field's most recent superseded value back to the active line.
+    undo: (body: unknown) => invoke("profile.undo", { body }),
   },
 
   artifacts: {

@@ -24,6 +24,7 @@ import {
   isMethodUnavailableError,
   isWsBridgeUnavailableError,
 } from "../../lib/errors.ts";
+import { safeHref } from "../../lib/safe-href.ts";
 import { useToast } from "../../lib/toast.ts";
 import { ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
 import { SETTINGS_POLL_MS } from "./settings-queries.ts";
@@ -158,15 +159,21 @@ export function DaemonUpdateSection() {
             )}
           </dl>
 
-          {parsed.releasesUrl && (
+          {safeHref(parsed.releasesUrl) ? (
             <a
               className="settings-daemon-update__releases"
-              href={parsed.releasesUrl}
+              href={safeHref(parsed.releasesUrl)}
               target="_blank"
               rel="noreferrer"
             >
               <ExternalLink size={13} aria-hidden="true" /> Release notes
             </a>
+          ) : (
+            parsed.releasesUrl && (
+              <span className="settings-daemon-update__releases settings-daemon-update__releases--inert">
+                {parsed.releasesUrl}
+              </span>
+            )
           )}
         </>
       )}

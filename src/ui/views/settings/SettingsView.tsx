@@ -32,6 +32,7 @@ import { NotificationsSection } from "./NotificationsSection.tsx";
 import { NotificationTargetsSection } from "./NotificationTargetsSection.tsx";
 import { AppLaunchSection } from "./AppLaunchSection.tsx";
 import { DaemonUpdateSection } from "./DaemonUpdateSection.tsx";
+import { OwnerProfileSection } from "./OwnerProfileSection.tsx";
 import { ProfilesSection } from "./ProfilesSection.tsx";
 import { flashSection, searchSettings, type SettingsSectionId } from "./settings-search.ts";
 
@@ -48,6 +49,10 @@ const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string }> = [
   { id: "secrets", label: "Secrets & Services" },
   { id: "notifications", label: "Notifications" },
   { id: "launch", label: "App & Launch" },
+  // "Owner profile" is what the daemon knows about the person using it; the
+  // "Profiles & Import" tab below is app-local settings bundles. Two different
+  // things that share a word, kept as two tabs rather than merged.
+  { id: "owner-profile", label: "Owner profile" },
   { id: "profiles", label: "Profiles & Import" },
 ];
 
@@ -183,6 +188,7 @@ export function SettingsView(): React.ReactElement {
           <DaemonUpdateSection />
         </>
       )}
+      {section === "owner-profile" && <OwnerProfileSection />}
       {section === "profiles" && <ProfilesSection />}
     </div>
   );

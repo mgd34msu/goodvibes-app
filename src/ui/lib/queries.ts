@@ -36,6 +36,14 @@ export const queryKeys = {
   // open sessions.search results too (they are session records).
   sessionSearch: (query: string, includeClosed: boolean) =>
     ["sessions", "search", query, includeClosed] as const,
+  // Daemon-hosted sessions. NOT prefixed with 'sessions': the raw session-update
+  // stream invalidates that prefix on every frame from every surface, and the
+  // hosted list is driven by its own hosted-session-update stream plus a poll
+  // fallback (views/sessions/useHostedSessionRealtime.ts). Keeping it separate
+  // is what lets the includeTerminated variants share one invalidation without
+  // dragging the whole union list along with them.
+  hostedSessionsAll: ["hosted-sessions"] as const,
+  hostedSessions: (includeTerminated: boolean) => ["hosted-sessions", includeTerminated] as const,
   chatSessions: ["chat", "sessions"] as const,
   chatMessages: (sessionId: string) => ["chat", "sessions", sessionId, "messages"] as const,
   // fleet.*/checkpoints.* have no wire events (pinned upstream), views poll
@@ -51,6 +59,15 @@ export const queryKeys = {
   // memory.* has no wire event either, poll/refetch-on-mutation.
   memoryList: ["memory", "list"] as const,
   memoryReviewQueue: ["memory", "review-queue"] as const,
+  // Owner profile. profile.* emits NO wire event, so freshness is
+  // mutation-driven invalidation of the whole prefix: any write can move the
+  // document, its counts, and any field's provenance history at once.
+  ownerProfile: ["owner-profile"] as const,
+  ownerProfileDocument: ["owner-profile", "document"] as const,
+  ownerProfileStatus: ["owner-profile", "status"] as const,
+  ownerProfileProvenance: (fieldId: string) => ["owner-profile", "provenance", fieldId] as const,
+  ownerProfilePerson: (name: string) => ["owner-profile", "person", name] as const,
+  ownerProfileField: (fieldId: string) => ["owner-profile", "field", fieldId] as const,
   artifacts: ["artifacts"] as const,
   automation: ["automation"] as const,
   watchers: ["watchers"] as const,

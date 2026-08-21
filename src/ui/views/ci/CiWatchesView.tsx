@@ -37,6 +37,7 @@ import { gv } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import { formatError, isMethodUnavailableError } from "../../lib/errors.ts";
 import { formatRelative } from "../../lib/wire.ts";
+import { safeHref } from "../../lib/safe-href.ts";
 import { useToast } from "../../lib/toast.ts";
 import { registerCommand, unregisterCommand } from "../../lib/commands.ts";
 import { useUrlState } from "../../lib/router.ts";
@@ -83,10 +84,12 @@ function CiReportDetail({ report }: { report: CiReport }) {
               <span className="ci-report__job-name" title={job.name || "unnamed job"}>{job.name || "unnamed job"}</span>
               <span className={`badge ${ciTone(job.conclusion ?? job.status)}`}>{job.conclusion ?? job.status}</span>
               {job.continueOnError && <span className="badge warning">continue-on-error</span>}
-              {job.url && (
-                <a href={job.url} target="_blank" rel="noreferrer" className="ci-report__job-link">
+              {safeHref(job.url) ? (
+                <a href={safeHref(job.url)} target="_blank" rel="noreferrer" className="ci-report__job-link">
                   details
                 </a>
+              ) : (
+                job.url && <span className="ci-report__job-link">{job.url}</span>
               )}
             </li>
           ))}

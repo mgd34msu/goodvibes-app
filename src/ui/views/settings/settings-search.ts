@@ -24,6 +24,7 @@ export type SettingsSectionId =
   | "secrets"
   | "notifications"
   | "launch"
+  | "owner-profile"
   | "profiles";
 
 export interface SettingsSearchEntry {
@@ -64,6 +65,11 @@ const CURATED: ReadonlyArray<Omit<SettingsSearchEntry, "keywords">> = [
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Launch at login", anchorSelector: ".settings-launch" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Daemon update status (staged / rolled back)", anchorSelector: ".settings-daemon-update" },
   { sectionId: "launch", sectionLabel: "App & Launch", label: "Check for a daemon update now", anchorSelector: ".settings-daemon-update" },
+  { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "What the platform knows about you", anchorSelector: ".settings-owner-profile" },
+  { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Where did you get that (provenance)", anchorSelector: ".settings-owner-profile" },
+  { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Undo a profile correction", anchorSelector: ".settings-owner-profile" },
+  { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Forget a fact permanently", anchorSelector: ".settings-owner-profile" },
+  { sectionId: "owner-profile", sectionLabel: "Owner profile", label: "Look up a profile field or a person", anchorSelector: ".settings-owner-profile" },
   { sectionId: "profiles", sectionLabel: "Profiles & Import", label: "Export / import profile bundle", anchorSelector: ".settings-profiles" },
   { sectionId: "profiles", sectionLabel: "Profiles & Import", label: "Import settings from TUI or Agent", anchorSelector: ".settings-profiles" },
 ];

@@ -20,6 +20,10 @@ export const KNOWN_SESSION_KINDS = [
   "companion-task",
   "companion-chat",
   "automation",
+  // A daemon-hosted session registers on the shared spine like any other, and
+  // this client now has a whole tab for the family (HostedSessionsPanel), so
+  // flagging it as a kind we have never seen would be false.
+  "hosted",
 ] as const;
 
 /** GET /api/sessions ignores ?limit/?cursor, the daemon caps the union at 50. */

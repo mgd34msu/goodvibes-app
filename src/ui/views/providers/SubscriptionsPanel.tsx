@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2, LogOut, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { appFetch, appJson } from "../../lib/http.ts";
 import { formatError } from "../../lib/errors.ts";
+import { safeHref } from "../../lib/safe-href.ts";
 import { useToast } from "../../lib/toast.ts";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { EmptyState, ErrorState, SkeletonBlock } from "../../components/feedback.tsx";
@@ -334,10 +335,12 @@ function PendingLoginRow({
           <Loader2 size={12} className="spinning" aria-hidden="true" /> Waiting for automatic redirect capture — or
           paste the code (or the full redirect URL) below.
         </span>
-        {authorizationUrl && (
-          <a className="providers-button" href={authorizationUrl} target="_blank" rel="noreferrer">
+        {safeHref(authorizationUrl) ? (
+          <a className="providers-button" href={safeHref(authorizationUrl)} target="_blank" rel="noreferrer">
             <ExternalLink size={13} aria-hidden="true" /> Open sign-in page
           </a>
+        ) : (
+          authorizationUrl && <span className="providers-custom__note">{authorizationUrl}</span>
         )}
         <div className="providers-subscriptions__row">
           <input

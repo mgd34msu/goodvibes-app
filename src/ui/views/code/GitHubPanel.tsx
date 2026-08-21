@@ -13,6 +13,7 @@ import { Check, CircleDot, Copy, ExternalLink, Github, GitPullRequest, Loader2 }
 import { EmptyState, ErrorState, SkeletonBlock } from "../../components/feedback.tsx";
 import { ConfirmSurface } from "../../components/ConfirmSurface.tsx";
 import { formatError } from "../../lib/errors.ts";
+import { safeHref } from "../../lib/safe-href.ts";
 import { useToast } from "../../lib/toast.ts";
 import { codeKeys, formatCommitDate, gitApi } from "./git-api.ts";
 import {
@@ -236,10 +237,12 @@ function DeviceFlowRunner() {
               {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}{" "}
               {copied ? "Copied" : "Copy code"}
             </button>
-            {verificationUri && (
-              <a className="git-mini-button" href={verificationUri} target="_blank" rel="noreferrer">
+            {safeHref(verificationUri) ? (
+              <a className="git-mini-button" href={safeHref(verificationUri)} target="_blank" rel="noreferrer">
                 <ExternalLink size={12} aria-hidden="true" /> Open verification page
               </a>
+            ) : (
+              verificationUri && <span className="git-honest-note">{verificationUri}</span>
             )}
           </div>
           <p className="git-honest-note" role="status">
@@ -533,9 +536,13 @@ function PrRow({ owner, repo, pr, onChanged }: { owner: string; repo: string; pr
           <p className="github-item__meta-line">
             {pr.head.ref} → {pr.base.ref} · opened {formatCommitDate(pr.created_at)}
           </p>
-          <a className="git-mini-button" href={pr.html_url} target="_blank" rel="noreferrer">
-            <ExternalLink size={12} aria-hidden="true" /> View on GitHub
-          </a>
+          {safeHref(pr.html_url) ? (
+            <a className="git-mini-button" href={safeHref(pr.html_url)} target="_blank" rel="noreferrer">
+              <ExternalLink size={12} aria-hidden="true" /> View on GitHub
+            </a>
+          ) : (
+            pr.html_url && <span className="git-honest-note">{pr.html_url}</span>
+          )}
           <CommentBox itemLabel={`pull request #${pr.number}`} postComment={(body) => githubApi.prComment(owner, repo, pr.number, body)} />
           <ReviewButtons owner={owner} repo={repo} prNumber={pr.number} prTitle={pr.title} onDone={onChanged} />
         </div>
@@ -562,9 +569,13 @@ function IssueRow({ owner, repo, issue }: { owner: string; repo: string; issue: 
           <p className="github-item__meta-line">
             {issue.comments} comment{issue.comments === 1 ? "" : "s"} · opened {formatCommitDate(issue.created_at)}
           </p>
-          <a className="git-mini-button" href={issue.html_url} target="_blank" rel="noreferrer">
-            <ExternalLink size={12} aria-hidden="true" /> View on GitHub
-          </a>
+          {safeHref(issue.html_url) ? (
+            <a className="git-mini-button" href={safeHref(issue.html_url)} target="_blank" rel="noreferrer">
+              <ExternalLink size={12} aria-hidden="true" /> View on GitHub
+            </a>
+          ) : (
+            issue.html_url && <span className="git-honest-note">{issue.html_url}</span>
+          )}
           <CommentBox itemLabel={`issue #${issue.number}`} postComment={(body) => githubApi.issueComment(owner, repo, issue.number, body)} />
         </div>
       )}
