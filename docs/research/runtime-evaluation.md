@@ -1,5 +1,9 @@
 # Desktop Runtime Evaluation for the GoodVibes Bun Desktop App (Arch Linux x64 primary)
 
+Snapshot captured 2026-07-07, evaluated against `@pellux/goodvibes-sdk@1.3.1`'s published
+engine constraints at that date. This is a point-in-time research record, not re-verified
+against the SDK's current state.
+
 Context anchor: `@pellux/goodvibes-sdk@1.3.1` declares `engines: { bun: "1.3.10", node: ">=22.0.0" }` (npm registry), so SDK/daemon logic can run under Bun or Node 22+, but the brief mandates a Bun-side process. All options below are evaluated on that constraint.
 
 ---

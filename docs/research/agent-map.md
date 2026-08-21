@@ -1,5 +1,9 @@
 # goodvibes-agent (@pellux/goodvibes-agent v1.6.0): Codebase Map
 
+Snapshot captured 2026-07-07 of the goodvibes-agent repository at v1.6.0. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state.
+
 Bun TUI app (`bun >= 1.3.10`), single binary `goodvibes-agent` (`bin/goodvibes-agent.ts` → `src/main.ts`). ~180 model-tool modules in `src/tools/`, workspace UI in `src/input/agent-workspace-*.ts`, product brain in `src/agent/`. SDK pinned: `@pellux/goodvibes-sdk@1.3.1` (devDependency; bundled at build, `package.json`). Positioning (`README.md`): "installable autonomous operator assistant": one assistant that can chat, plan, remember, research, schedule, send, generate, run visible agents, and operate the GoodVibes daemon contract with confirmation gates.
 
 ## 1. Complete User-Facing Feature Inventory

@@ -1,23 +1,31 @@
 # goodvibes-app: parity gap audit
 
-Row-by-row audit of `docs/FEATURES.md` against the code. Original audit at commit
-`b2ca124`; refreshed after the Wave E gap-closure pass, after the Wave F pass, then
-**refreshed again after the Wave G pass** (five agents + integration gate). Wave G
-closures are marked `(Wave G)` in their evidence cell and the counts below reflect the
-post-Wave-G working tree (SDK upgraded to `@pellux/goodvibes-sdk@1.3.3`), verified against
-the tree by the integration gate (not trusted from agent reports).
+Row-by-row audit of `docs/FEATURES.md` against the code, refreshed at v0.4.0 (SDK
+2.0.19, tui 2.0.15, daemon 1.28.21). Six major additions since the previous refresh are
+folded in below with fresh evidence:
 
-Wave F also fixed two arithmetic errors in the prior summary table (§14 was listed 8/1/4
-but its rows count 9/1/3; §15 was listed 6/3/3 but its rows count 7/3/2. The section-text
-tallies were right, the summary table was not.
+| Addition | What it is | Where it lands |
+|---|---|---|
+| Wake-word app port | Local wake-phrase detection in the webview, with model bytes served same-origin from a local daemon and an honest fallback for a remote one | §18 rows 10-13 |
+| Payments view | Cards, budget, checkout, and purchase ledger; app-side complete, daemon composition currently answers 501 on every verb | §9c (new) |
+| Device-node hosting | Paired-phone capability nodes, in-app confirm-gated requests, durable grants, an allowlisted capture viewer, and honest rewind-hosting posture | §19b (new) |
+| Daemon-hosted sessions | A "Hosted" tab distinct from the cross-surface session union, five ws-only verbs (list, create, attach, detach, kill) | §2 rows 13-17 |
+| Owner profile surface | A Settings tab over the daemon's nine owner-profile verbs, with provenance disclosure and Undo | §19c (new) |
+| App-wide URL scheme gate | One function every daemon- or content-supplied href passes through before it can render as a link | §20 row 10 |
 
-For each row, the Backing method id was checked against
-every literal string passed to `invoke(...)` / `streamPath(...)` in `src/ui`
-(220 unique method ids actually called, out of 327 known in
-`src/ui/lib/generated/operator-routes.ts`), then the calling component was
-opened to confirm the call is reachable from a rendered view (not just present
-in `gv.ts`'s convenience wrapper, which wraps some methods that no view ends
-up calling). `app-local`/`RPC` rows were checked against the actual Bun route
+The pre-existing sections (§1 through §24, §26) were spot-verified against the current
+tree rather than re-derived from scratch: their method ids, call sites, and behavior were
+checked on a representative sample across sections, and every row that sample touched
+still holds. A full line-by-line re-citation of all 322 pre-existing rows was out of scope
+for this pass.
+
+For each row, the Backing method id was checked against every literal string passed to
+`invoke(...)` / `streamPath(...)` in `src/ui` (389 unique method ids actually called
+this way, out of 507 known in `src/ui/lib/generated/operator-routes.ts`; the app also
+reaches some methods only through `gv.ts`'s typed convenience wrappers, which this count
+does not capture), then the calling component was opened to confirm the call is reachable
+from a rendered view, not just present in a wrapper that no view ends up calling.
+`app-local`/`RPC` rows were checked against the actual Bun route
 (`src/bun/app-routes.ts` and its handlers) and the UI module implementing them.
 
 **Legend.** **SHIPPED.** Wired end-to-end with cited evidence. **PARTIAL.** Some
@@ -74,7 +82,7 @@ evidence found; stated plainly, no inference.
 
 **Section 1 tally.** 41 shipped, 0 partial, 0 missing (of 41 rows; FEATURES.md's own row-count table claims 44, an overcount, since actual rows in the section are 41). Wave E closed rows 28/31/36/41; Wave F closed row 29 (prompt undo/redo), row 40 (honest whole-chat fork), and row 35 (the literal `/image` slash command, wired into the existing image-attach flow). Row 39 (companion turn cancel) closed once the daemon shipped `companion.chat.turns.cancel`/`companion.chat.messages.steer` to the app's own spec (`docs/turn-cancel-request.md`, daemon 1.11.0); see the row's evidence above.
 
-## 2. Sessions (12 rows)
+## 2. Sessions (17 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -90,8 +98,13 @@ evidence found; stated plainly, no inference.
 | 10 | Create operator session | SHIPPED | `SessionsView.tsx:488` → `gv.sessions.create` |
 | 11 | Session export | SHIPPED | `SessionsView.tsx:638-647` `exportTranscript()`, an app-local JSON download from retained messages |
 | 12 | Session integration snapshot | SHIPPED | `SessionsView.tsx:129` → `gv.sessions.integrationSnapshot()` |
+| 13 | Hosted-session tab (separate from the operator union) | SHIPPED | `SessionsView.tsx` renders two tabs, "All" and "Hosted" (`STAB_IDS`), URL-addressable via `?filter[stab]=`; the hosted family is `sessions.hosted.*`, distinct from the union list in rows 1-12 because a hosted session REGISTERS on this daemon rather than merely appearing in a cross-surface list |
+| 14 | Hosted session list (live) | SHIPPED | `HostedSessionsPanel.tsx` → `sessions.hosted.list` (`:147,400,416`; `hosted-sessions.ts:142`), ws-only |
+| 15 | Hosted session create | SHIPPED | `HostedSessionsPanel.tsx:229` → `sessions.hosted.create` (`hosted-sessions.ts:388`) |
+| 16 | Hosted session full attach (transcript plus live turn/tool frames) | SHIPPED | `HostedSessionsPanel.tsx:195` → `sessions.hosted.attach` (`hosted-sessions.ts:211`); a superseded attach response is dropped against the current selection and its orphaned attachment detached, covering the race where a second attach lands after the first is abandoned |
+| 17 | Hosted session detach / kill (confirmation-gated) | SHIPPED | detach: `HostedSessionsPanel.tsx:176,326` → `sessions.hosted.detach`, confirmation states what leaving now does for other attached clients; kill: `HostedSessionsPanel.tsx:25,267` → `sessions.hosted.kill`, behind confirmation |
 
-**Section 2 tally.** 12 shipped, 0 partial, 0 missing.
+**Section 2 tally.** 17 shipped, 0 partial, 0 missing.
 
 ## 3. Fleet (13 rows)
 
@@ -294,6 +307,29 @@ cannot be refused by the daemon (a re-answer and an unknown `stepId` both return
 `present:true`), so the card states plainly that a reply replaces any earlier answer for
 that question rather than implying a refusal path exists.
 
+## 9c. Payments (7 rows)
+
+New section, added with the Payments view in v0.4.0. All seven payments verbs are wired
+end-to-end on the app side and pinned field-for-field to the SDK's published output
+schemas, but the shipped daemon composition attaches no handler for any of them today:
+every call answers `501` regardless of `payments.enabled`. That is a daemon-side gap, not
+an app-side one, and the UI names the composition rather than pointing at a setting that
+does not work. A `400` still renders as a real validation error, never folded into the
+composition refusal.
+
+| # | Feature | Status | Evidence |
+|---|---|---|---|
+| 1 | Budget status | SHIPPED (app-side; daemon 501 today) | `payments-data.ts:1010` → `gv.payments.budget.status()`; `BudgetPanel.tsx:42` names the composition refusal via `paymentsRefusal()` |
+| 2 | Cards: list / create / delete | SHIPPED (app-side; daemon 501 today) | `payments-data.ts:1011,1019,1021` → `gv.payments.cards.list/.create/.delete`; concealed inputs with no `<form>` element and no `name` attributes, so nothing autofills or submits a card number by accident |
+| 3 | Checkout: begin / fill card | SHIPPED (app-side; daemon 501 today) | `payments-data.ts:1025,1027` → `gv.payments.checkout.begin/.fillCard`; `CheckoutPanel.tsx` submits as a plain async action rather than a TanStack mutation, because a mutation would retain the card draft in query-client state after submit |
+| 4 | Purchase ledger | SHIPPED (app-side; daemon 501 today) | `payments-data.ts:1023` → `gv.payments.purchases.list({limit, dayKey})`; `PurchasesPanel.tsx:46` |
+| 5 | Card-intake draft hygiene (never outlives the panel) | SHIPPED | drafts clear on submit, cancel, unmount, and the moment the intake form stops rendering; enforced as tests, not comments; late responses are sequence-guarded so a stale checkout result can never populate a newer draft |
+| 6 | Card-entry eligibility gate | SHIPPED | mirrors the SDK's card-entry surface allowlist; a test pins the mirror to the real gate, normalized so a prose republish of the allowlist cannot fail the test while semantic drift still does |
+| 7 | Money handling (no float currency math; honest minor-unit fallback) | SHIPPED | amounts never touch floats on the way in; a total whose currency the daemon left `null` renders as labeled minor units instead of an invented dollar amount |
+
+**Section 9c tally.** 7 shipped (app-side complete; daemon-side composition currently
+answers 501 on all seven verbs), 0 partial, 0 missing.
+
 ## 10. Research (7 rows)
 
 | # | Feature | Status | Evidence |
@@ -438,7 +474,7 @@ that question rather than implying a refusal path exists.
 
 **Section 17 tally.** 18 shipped, 0 partial, 0 missing. The best-covered section in the audit: every row wired end-to-end.
 
-## 18. Voice & media (9 rows)
+## 18. Voice & media (13 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -451,8 +487,12 @@ that question rather than implying a refusal path exists.
 | 7 | Media providers list | SHIPPED | `media-data.ts:52` → `media.providers.list` |
 | 8 | Media analyze / generate / transform | SHIPPED | `media-data.ts:131,139,154` |
 | 9 | Multimodal: status/providers/analyze/packet/writeback | SHIPPED | `media-data.ts:72,82,164,173,181` |
+| 10 | Wake-word provisioning + status | SHIPPED | `src/ui/lib/wake/useWake.ts` `useWakeProvisioning()` → `voice.wake.status` plus the explicit `voice.wake.provision` act; `wake-config.ts` resolves `voice.wake.*` config the same way goodvibes-webui's tab does |
+| 11 | Wake-word detection host (confirm-gated toggle, live status, chime) | SHIPPED | `useWake.ts` `useWakeHost()`/`useWakeState()`; `wake-host.ts` runs the SDK's shared `WakeListener` (scoring, pre-roll, silence/ceiling policy, restart/latch) with this app's own model loader; `wake-chime.ts` plays the confirmation chime; a wake chip joins the status strip |
+| 12 | Same-origin wake-word model serving (local daemon) | SHIPPED | `src/bun/wake-models.ts` `GET`/`HEAD /app/wake/model/:component` for classifier, embedding, and vad; re-reads and re-hashes the file on every request rather than trusting a cached status, refuses a size mismatch, and carries the served sha256 in a response header so the client verifies the exact bytes it received |
+| 13 | Remote-daemon wake-word fallback (honest refusal + chunked verb) | SHIPPED | `src/bun/wake-models.ts` refuses with `409 APP_WAKE_MODEL_REMOTE_DAEMON` when `voice.wake.surfaces.app` points at a daemon that is not this machine; `src/ui/lib/wake/wake-models.ts` falls back to the chunked `voice.wake.model.get` daemon verb in that case, the same path goodvibes-webui's tab has always used |
 
-**Section 18 tally.** 9 shipped, 0 partial, 0 missing. Wave G closed row 1 (one-shot `voice.tts`): it is now the live fallback in `synthSegment`'s real speak path (`voice.ts`) when the streaming route is unavailable for the active provider, decoded into the same WebAudio playback pipeline; no longer declared-but-dead.
+**Section 18 tally.** 13 shipped, 0 partial, 0 missing. One-shot `voice.tts` is the live fallback in `synthSegment`'s real speak path (`voice.ts`) when the streaming route is unavailable for the active provider, decoded into the same WebAudio playback pipeline. Rows 10-13 (wake-word) shipped in v0.4.0.
 
 ## 19. Settings & Config (12 rows)
 
@@ -473,7 +513,43 @@ that question rather than implying a refusal path exists.
 
 **Section 19 tally.** 12 shipped, 0 partial, 0 missing.
 
-## 20. Security & auth (9 rows)
+## 19b. Devices (device-node hosting, 6 rows)
+
+New section, added with the Devices settings tab in v0.4.0. Covers the daemon's seven
+paired-device verbs (`devices.nodes.list`, `.capability.request`, `.artifacts.list`,
+`.artifacts.read`, `.grants.list`, `.grants.revoke`, `.housekeeping.run`): a paired phone
+SERVES capabilities, and this desktop app CONSUMES them.
+
+| # | Feature | Status | Evidence |
+|---|---|---|---|
+| 1 | Paired node list + live capability availability | SHIPPED | `DeviceNodesSection.tsx` reads `devices.nodes.list`; helpers in `devices.ts` (`nodeKindLabel` renders an unlisted node kind as-is rather than rejecting it, since a web node and a native node are described identically on the wire) |
+| 2 | Capability request with in-app confirm gating | SHIPPED | `devices.ts` `devices.capability.request`; the confirmation prompt is driven by the app's own pinned capability catalog (`device-capabilities.generated.ts`), never the wire's `effect` field, so a skewed daemon cannot turn a phone action into a one-click fire; `readCapabilityOutcome` treats an `ok:false` refusal (declined, disabled, or unservable) as a well-formed answer, not an error |
+| 3 | Durable grants: list + revoke | SHIPPED | `DeviceGrantsSection.tsx` → `devices.grants.list`/`.grants.revoke` |
+| 4 | Housekeeping | SHIPPED | `devices.ts` `devices.housekeeping.run` |
+| 5 | Capture viewer (allowlisted render policy) | SHIPPED | `DeviceCapturesSection.tsx` → `devices.artifacts.list`/`.artifacts.read`; a capture blob is only ever built with a media type from `IMAGE_MEDIA_TYPES`, everything else downloads as `application/octet-stream` with an allowlist-derived extension and sanitized id; text renders as text (never `dangerouslySetInnerHTML`); `open_url` payloads are scheme-gated through `safeHref()` before the wire; object URLs are revoked including when the response lands after unmount |
+| 6 | Rewind hosting posture (honest subset) | SHIPPED (posture-only, by design) | `rewind-hosts.ts` reads `rewind.conversation.hosts.list`; `RewindHostsSection.tsx` and inline rewind posture in `SessionRewind.tsx` (refreshed while open). This app holds no conversation of its own (companion chat and daemon-hosted sessions live in the daemon; a tui session lives in that terminal), so it deliberately does not register as a rewind host: registering would cost real latency for a preview to reach the same "unavailable" answer while evicting a tui host that actually has the messages. The register/release/`requests.take`/`requests.answer` verbs are wired and live-verified for a future surface that does hold messages, recorded rather than papered over |
+
+**Section 19b tally.** 6 shipped, 0 partial, 0 missing.
+
+## 19c. Owner profile (5 rows)
+
+New section, added with the owner-profile Settings tab in v0.4.0. Covers the daemon's
+nine owner-profile verbs (`profile.read`, `.get`, `.person`, `.provenance`, `.status`,
+`.set`, `.append`, `.forget`, `.undo`): one markdown file the daemon keeps, holding what
+the platform knows about the owner, addressed as mechanical fields (superseded and
+undoable) plus prose bullets (addressed by content, never by position).
+
+| # | Feature | Status | Evidence |
+|---|---|---|---|
+| 1 | Profile read (fields + prose + person summary) | SHIPPED | `owner-profile.ts` reads `profile.read`/`.get`/`.person`; `OwnerProfileSection.tsx` renders mechanical fields separately from prose bullets |
+| 2 | Field set / append / forget (confirm-gated writes) | SHIPPED | `owner-profile.ts` `profile.set`/`.append`/`.forget`; writes carry a surface hand-edit marker naming this app with a said-suffix, since the daemon's surface enum is closed and a settings-form edit is the owner typing it |
+| 3 | Provenance disclosure (which superseded entry Undo restores) | SHIPPED | `owner-profile.ts` `profile.provenance`; verified against a file where wire order disagreed with the daemon's date-then-lineIndex rule, and the disclosure names the correct entry |
+| 4 | Undo (disabled while provenance refetches) | SHIPPED | `owner-profile.ts` `profile.undo`; the Undo action is disabled during the provenance refetch window rather than racing a stale disclosure |
+| 5 | Status disclosure | SHIPPED | `owner-profile.ts` `profile.status` |
+
+**Section 19c tally.** 5 shipped, 0 partial, 0 missing.
+
+## 20. Security & auth (10 rows)
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -486,8 +562,9 @@ that question rather than implying a refusal path exists.
 | 7 | Approval decision history (audit trail) | SHIPPED | `ApprovalsTasksView.tsx:3,46-90,268`: history tab filters `approvals.list` to terminal states |
 | 8 | OS service: install/start/stop/restart/uninstall/status | SHIPPED | `OsServiceSection.tsx` (rendered `SettingsView.tsx:145-150` under the Security section) is the first and only caller of all six `services.*` methods: `services.status` on a poll plus `.install/.start/.stop/.restart/.uninstall` as actions. install/stop/restart/uninstall go through `ConfirmSurface` naming the exact host effect (uninstall+stop danger-flagged); status is re-fetched after every action. Wire-shape-honest: the operator contract's input schema for every `services.*` method is `{additionalProperties:false}` (no body, verified against `operator-contract.json`), so no `confirm`/`explicitUserRequest` is forwarded, the daemon takes none. 403 renders an admin-required notice, method-absent renders `UnavailableState`. Distinct from `ServicesSection.tsx` (the §19 row 9 connect-plugin registry) (Wave F) |
 | 9 | TLS / network posture display | SHIPPED (generic) | `controlPlane.tls.mode/.certFile/.keyFile` are generic rows in `config-schema.generated.ts:717-734`, editable through the same schema-driven settings workspace |
+| 10 | URL scheme gate (every daemon- or content-supplied href) | SHIPPED | `src/ui/lib/safe-href.ts` `safeHref()`/`isSafeHref()`; called at every render site that builds an `<a href>` from untrusted content (research findings, CI reports, GitHub panel links, subscription provider links, daemon update links, device capture payloads): `CiWatchesView.tsx`, `GitHubPanel.tsx`, `SubscriptionsPanel.tsx`, `ResearchView.tsx`, `DaemonUpdateSection.tsx`, `settings/devices.ts`. A `javascript:`/`data:` value never reaches an href; a relative-looking string never silently resolves against the app's own origin; a refused value renders as an inert span |
 
-**Section 20 tally.** 8 shipped, 1 partial, 0 missing. Wave F closed row 8 (OS service lifecycle) via `OsServiceSection`, the first caller of the six `services.*` methods. The one remaining partial is row 2, no in-chrome interactive login form (deliberate design choice: the app is architected so zero-friction companion-token bootstrap is the only auth path, and `control.auth.login` stays unused).
+**Section 20 tally.** 9 shipped, 1 partial, 0 missing. The one partial is row 2, no in-chrome interactive login form: a deliberate design choice, since the app is architected so the zero-friction companion-token bootstrap is the only auth path and `control.auth.login` stays unused.
 
 ## 21. Remote / Peers (6 rows)
 
@@ -548,7 +625,7 @@ that question rather than implying a refusal path exists.
 
 ## 25. Deliberate exclusions & honest gaps: accuracy check
 
-Spot-checked every falsifiable claim in this section against the actual route table (`operator-routes.ts`, 327 methods) and the app's own code. Most entries are architectural/qualitative judgments that aren't independently checkable (and read as reasonable); three make **specific factual claims about what ships**, and those were verified directly:
+Spot-checked every falsifiable claim in this section against the actual route table (`operator-routes.ts`, 507 methods) and the app's own code. Most entries are architectural or qualitative judgments that are not independently checkable, and they read as reasonable. Three make specific factual claims about what ships, and those were verified directly:
 
 | Item | Claim made | Verified? |
 |---|---|---|
@@ -568,10 +645,10 @@ The rest of §25 (TUI panel/layout commands, alt-screen/raw-ANSI, shell completi
 
 ## 26. SDK 1.11 adoption (2026-07-17, 34 rows)
 
-The operator contract jumped 1.6.1 → 1.11.2 (333 → 415 methods, 82 new, none removed);
-daemon alignment via `@pellux/goodvibes-tui` 1.19.3 (the 1.9.2 pin bundled a contract-1.0.0
-daemon; every new verb would have answered 501). All rows below landed in one nine-agent
-wave + integration gate, live-verified against a spawned daemon 1.19.3.
+The operator contract jumped 1.6.1 to 1.11.2 (333 to 415 methods, 82 new, none removed),
+with daemon alignment via `@pellux/goodvibes-tui` 1.19.3 (the prior 1.9.2 pin bundled a
+contract-1.0.0 daemon, so every new verb would have answered 501 without the bump). All
+rows below were live-verified against a spawned daemon 1.19.3.
 
 | # | Feature | Status | Evidence |
 |---|---|---|---|
@@ -617,7 +694,7 @@ wave + integration gate, live-verified against a spawned daemon 1.19.3.
 | § | Section | Shipped | Partial | Missing | Excluded | Rows |
 |---|---|---|---|---|---|---|
 | 1 | Chat | 41 | 0 | 0 | 0 | 41 |
-| 2 | Sessions | 12 | 0 | 0 | 0 | 12 |
+| 2 | Sessions | 17 | 0 | 0 | 0 | 17 |
 | 3 | Fleet | 13 | 0 | 0 | 0 | 13 |
 | 4 | Approvals & Tasks | 9 | 0 | 0 | 0 | 9 |
 | 5 | Automation | 12 | 0 | 0 | 0 | 12 |
@@ -625,6 +702,8 @@ wave + integration gate, live-verified against a spawned daemon 1.19.3.
 | 7 | Memory | 9 | 0 | 0 | 0 | 9 |
 | 8 | Agent Brain | 14 | 0 | 0 | 0 | 14 |
 | 9 | Personal Ops | 9 | 0 | 0 | 0 | 9 |
+| 9b | Dates / Occasions | 12 | 0 | 0 | 0 | 12 |
+| 9c | Payments | 7 | 0 | 0 | 0 | 7 |
 | 10 | Research | 7 | 0 | 0 | 0 | 7 |
 | 11 | Documents & Compare | 9 | 0 | 0 | 0 | 9 |
 | 12 | Artifacts | 7 | 0 | 0 | 0 | 7 |
@@ -633,54 +712,41 @@ wave + integration gate, live-verified against a spawned daemon 1.19.3.
 | 15 | Coding / Dev | 11 | 1 | 0 | 0 | 12 |
 | 16 | MCP | 7 | 0 | 0 | 0 | 7 |
 | 17 | Observability | 18 | 0 | 0 | 0 | 18 |
-| 18 | Voice & Media | 9 | 0 | 0 | 0 | 9 |
+| 18 | Voice & Media | 13 | 0 | 0 | 0 | 13 |
 | 19 | Settings & Config | 12 | 0 | 0 | 0 | 12 |
-| 20 | Security & Auth | 8 | 1 | 0 | 0 | 9 |
+| 19b | Devices | 6 | 0 | 0 | 0 | 6 |
+| 19c | Owner Profile | 5 | 0 | 0 | 0 | 5 |
+| 20 | Security & Auth | 9 | 1 | 0 | 0 | 10 |
 | 21 | Remote / Peers | 6 | 0 | 0 | 0 | 6 |
 | 22 | Onboarding | 9 | 0 | 0 | 0 | 9 |
 | 23 | Palette & Keyboard | 8 | 0 | 0 | 0 | 8 |
 | 24 | Notifications & Tray | 4 | 0 | 0 | 0 | 4 |
 | 26 | SDK 1.11 adoption | 32 | 0 | 0 | 2 | 34 |
-|  | **Total** | **319** | **2** | **0** | **2** | **323** |
+|  | **Total** | **359** | **2** | **0** | **2** | **363** |
 
-Section 3 gained row 13 (fleet archive) when SDK 1.6.1 / operator contract 1.6 added the
-`fleet.archive`/`.unarchive`/`.archiveFinished`/`.archived.list` verbs (2026-07-09),
-adopted same-day, so the total moved 288 → 289 with the row born SHIPPED.
+363 rows audited against the current tree (v0.4.0). 359 shipped, 2 partial, 0 missing, 2
+excluded, which is 98.9% shipped and 0.6% partial by row count. The 2 partials are each a
+named deliberate design choice (§15 row 3, read-only git tags/remotes/reflog; §20 row 2,
+no in-chrome login form). The 2 excluded rows (§26 rows 33-34) are architectural
+exclusions with a stated reason, not gaps: step-up WebAuthn is a relay-only feature this
+app has no mutating relay path to gate, and web-push subscription reconcile requires a
+browser service worker this native app does not have. No row is missing, and no partial
+is wire-blocked.
 
-288 rows audited against actual code (FEATURES.md's own row-count table claims 291, a minor overcount, see §1 note). After Wave G, its subscriptions follow-up, and the companion-turn-cancel/steer close-out, **99.3% shipped, 0.7% partial, 0% missing** of audited rows (was 99.0% / 1.0% post-Wave-G-and-subscriptions, 98.6% / 1.4% post-Wave-G-proper, 96.5% / 3.1% / 0% post-Wave-F, 86.5% / 6.9% / 6.9% post-Wave-E on the corrected baseline, and 78.5% / 7.6% / 13.5% at commit `b2ca124`).
+Six sections were added or extended for v0.4.0: §2 (Sessions) gained 5 rows for the
+daemon-hosted "Hosted" tab; §18 (Voice & Media) gained 4 rows for the wake-word port; §20
+(Security & Auth) gained 1 row for the app-wide URL scheme gate; and three new sections
+landed whole, §9c (Payments, 7 rows), §19b (Devices, 6 rows), and §19c (Owner Profile, 5
+rows). §9b (Dates / Occasions, 12 rows) existed before this refresh but had never been
+added to this summary table; it is included here for the first time.
 
-Wave G closed six rows, verified against the tree by the integration gate, not trusted from agent reports:
+## Remaining partials, by user impact
 
-- §15 row 11 (GitHub, device-flow + PAT auth, proxied reads, and SDK-backed PR/issue writes served app-locally from `src/bun/github.ts` on the SDK's `beginDeviceCodeFlow`/`pollDeviceCodeFlow` + `GitHubIntegration`, with `GitHubPanel` wired live to it)
-- §3 row 7 (agent interrupt/stop/resume composed from `sessions.*` verbs in `FleetAgentControl`, with an honest note that no freeze-and-thaw *pause* verb exists, flipping the section's last EXCLUDED entry to shipped)
-- §6 rows 15 and 17 (dedicated single-item `knowledge.schedule.get` / `knowledge.refinement.task.get` fetches)
-- §8 row 12 (single combined "Learning review" curator in `MemoryView`)
-- §18 row 1 (one-shot `voice.tts` wired as the live streaming-TTS fallback)
+Two rows across the whole audit are partial, and both are named deliberate design
+choices rather than unfinished work:
 
-A new Bun surface `src/bun/github.ts` (registered `/app/github`, unit-covered by `test/github.test.ts`) backs the GitHub panel. **No MISSING rows remain, and no EXCLUDED rows remain.**
-
-A same-day follow-up closed §14 row 11 the same app-side way (subscription OAuth via `src/bun/subscriptions.ts` on the SDK's `SubscriptionManager`, sharing the TUI's `subscriptions.json`; `test/subscriptions.test.ts`). A further same-day close-out flipped §1 row 39 (companion-turn cancel) once daemon 1.11.0 served the app's own spec (`docs/turn-cancel-request.md`) for `companion.chat.turns.cancel` + `companion.chat.messages.steer`.
-
-The 2 remaining partials are each a named deliberate design choice, owner-confirmed 2026-07-07 (§15 row 3 read-only tags/remotes/reflog; §20 row 2 no in-chrome login form). No partial remains wire-blocked. §25's deliberate-exclusion/honest-gap entries were spot-checked separately (3 checkable claims found inaccurate) rather than folded into these counts.
-
-## Remaining gaps by user impact (post-Wave-G)
-
-Wave G closed six more rows. GitHub is now a live app-local surface, agent interrupt/stop/resume
-is composed from `sessions.*` verbs, the two knowledge single-item fetches and the combined
-learning-review curator landed, and the one-shot TTS method is now a real fallback.
-
-A same-day
-follow-up closed subscription OAuth (§14 row 11) app-side. A further same-day close-out landed
-companion-turn cancel + steer (§1 row 39) once daemon 1.11.0 served the verbs the app's own spec
-asked for (`docs/turn-cancel-request.md`). **Nothing app-side remains MISSING, and no row is
-EXCLUDED any longer.** What is left is a short tail of two partials, each a named **deliberate
-design choice** confirmed by the owner on 2026-07-07. No partial remains wire-blocked. Ranked by
-how much a real user would notice:
-
-1. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations are deliberately not wired to keep the panel non-destructive, owner-confirmed. (If one more git feature is ever wanted, the recorded recommendation is non-destructive rescue-branch-from-reflog: `git branch rescue/<name> <hash>`.)
-2. **No in-chrome interactive login form (§20 row 2).** The app is single-user-local by design (companion-token bootstrap is the only auth path); owner-confirmed unbuilt unless multi-user/shared-remote-daemon ever becomes a goal, and the right shape then is remote-daemon-connect (daemon picker + login + permission model), not a lone form.
-
-GitHub integration (§15 row 11) closed in Wave G: rather than wait on a `github.*` daemon wire, GitHub is served from the app process itself (`src/bun/github.ts` on the SDK's device-flow + `GitHubIntegration` machinery), so `GitHubPanel` now talks to a live surface on every daemon. It no longer appears above. Learning-review (§8 row 12), the two knowledge single-item fetches (§6 rows 15/17), agent interrupt/stop/resume (§3 row 7), and one-shot TTS (§18 row 1) likewise closed in Wave G. Companion-turn Stop/Steer (§1 row 39) closed the same way once the daemon served the verb. It no longer appears above either.
+1. **Git tag/remote/reflog are read-only by design (§15 row 3).** Branch checkout/create (row 2) is shipped with a dirty-tree guard. Tags, remotes, and the reflog are surfaced as read-only panels; destructive local-git mutations are deliberately not wired, so the panel stays non-destructive. If one more git feature is ever wanted, the recorded recommendation is a non-destructive rescue-branch-from-reflog: `git branch rescue/<name> <hash>`.
+2. **No in-chrome interactive login form (§20 row 2).** The app is single-user-local by design; the companion-token bootstrap is the only auth path. This stays unbuilt unless multi-user or shared-remote-daemon use ever becomes a goal, and the right shape then is remote-daemon-connect (a daemon picker plus login plus permission model), not a lone form.
 
 
 

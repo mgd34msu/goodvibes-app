@@ -1,5 +1,9 @@
 # goodvibes-tui Complete User-Facing Feature Inventory
 
+Snapshot captured 2026-07-07 of the goodvibes-tui repository at v1.10.0. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state.
+
 Source: `/home/buzzkill/Projects/goodvibes-tui` v1.10.0 (`package.json` description: "Terminal-native GoodVibes product for coding, operations, automation, knowledge, channels, and daemon-backed control-plane workflows"). Built on `@pellux/goodvibes-sdk` (pinned `1.3.2` in `package.json`; README prose mentions SDK `0.34.0`; package.json is authoritative). Raw-ANSI renderer, Bun runtime, zustand vanilla typed store. Primary references: `README.md` (1,716 lines, current-behavior-accurate per its stability charter), `docs/*.md`, `src/input/commands/*`, `src/panels/*`.
 
 ---

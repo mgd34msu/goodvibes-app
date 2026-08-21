@@ -1,5 +1,9 @@
 # goodvibes-webui: Codebase Map
 
+Snapshot captured 2026-07-07 of the goodvibes-webui repository at v1.1.0. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state.
+
 Repo: `/home/buzzkill/Projects/goodvibes-webui` (v1.1.0, private, Bun 1.3.14). "Browser operator surface for the GoodVibes daemon." It is a Vite SPA that is intentionally a thin shell over `@pellux/goodvibes-sdk@1.3.1`. This is the closest existing analogue to the desktop app's GUI and its SDK wiring is the single most valuable reference in the ecosystem.
 
 ---

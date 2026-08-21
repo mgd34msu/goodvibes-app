@@ -1,5 +1,9 @@
 # @pellux/goodvibes-sdk (v1.3.2) Codebase Map
 
+Snapshot captured 2026-07-07 of the goodvibes-sdk repository at v1.3.2. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state (this app now pins `@pellux/goodvibes-sdk@2.0.19`, well past this snapshot).
+
 Source: `/home/buzzkill/Projects/goodvibes-sdk` (Bun 1.3.10 workspace, TypeScript 6.0.3, pre-1.0-style "moving contract" despite 1.3.2 version; README says pin exact versions and read `CHANGELOG.md`).
 
 ---

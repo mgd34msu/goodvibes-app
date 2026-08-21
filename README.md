@@ -7,8 +7,9 @@ knowledge, code, and observability in one native window. It unifies the capabili
 research, documents) on top of `@pellux/goodvibes-sdk`, in a single Bun/TypeScript-native
 app built with Electrobun. No Node, no Rust, no Electron.
 
-The daemon does the work; this app is a control surface over its ~327-method operator
-contract, plus a handful of process-local features (git, terminal, file-based registries)
+The daemon does the work; this app is a control surface over its 507-method operator
+contract (`@pellux/goodvibes-sdk@2.0.19`, per the generated route table's own header),
+plus a handful of process-local features (git, terminal, file-based registries)
 implemented directly in the Bun main process.
 
 ## Architecture, in brief
@@ -36,7 +37,7 @@ the webview. This removes CORS entirely, keeps the bearer token out of the rende
 gives daemon restarts/adoption one seam to hide behind instead of touching every fetch call
 in the UI.
 
-22 views span six groups (Work / Automate / Know / Assistant / Code / System). See
+31 views span six groups (Work / Automate / Know / Assistant / Code / System). See
 `docs/UX.md` §2 for the full information architecture. Details, the process model diagram,
 security posture, and the reasoning behind each choice live in `docs/ARCHITECTURE.md`.
 The feature-completion bar (every capability, its backing daemon method or app-local

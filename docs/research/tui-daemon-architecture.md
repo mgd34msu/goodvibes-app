@@ -1,5 +1,9 @@
 # goodvibes-tui Architecture Brief: Daemon / Control Plane
 
+Snapshot captured 2026-07-07 of the goodvibes-tui repository at v1.10.0. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state.
+
 Repo: `/home/buzzkill/Projects/goodvibes-tui` (`@pellux/goodvibes-tui` v1.10.0, Bun ≥1.3.10, TypeScript ESM, `main: src/main.ts`). Depends on `@pellux/goodvibes-sdk@1.3.2` (installed: 1.3.1), which itself vendors a family of sibling packages that ship inside its node_modules: `@pellux/goodvibes-contracts`, `@pellux/goodvibes-daemon-sdk`, `@pellux/goodvibes-operator-sdk`, `@pellux/goodvibes-peer-sdk`, `@pellux/goodvibes-errors`, `@pellux/goodvibes-transport-{core,http,realtime}`.
 
 **Headline finding:** The "daemon" is not a separate codebase; it is the SDK's `DaemonServer` (an HTTP/SSE/WS control-plane server built on `Bun.serve`) wrapped around the exact same `createRuntimeServices()` composition root (`src/runtime/services.ts`) that the TUI itself uses. The TUI and the headless daemon are two hosts of one shared runtime. **Everything a GUI needs (agent engine, providers, tools, knowledge, sessions, channels) is available two ways: (a) embed the SDK runtime in-process exactly like the TUI does, or (b) connect as an operator client to a running daemon over HTTP/SSE/WS using `createGoodVibesSdk()` / `createOperatorSdk()` and the 327-method typed contract.**

@@ -1,5 +1,9 @@
 # goodvibes-desktop (Electron) Prior-Art Map for the New Bun App
 
+Snapshot captured 2026-07-07 of the goodvibes-desktop repository at v1.1.4. This is a
+point-in-time research record, not re-verified against the sibling repository's current
+state.
+
 Repo: `/home/buzzkill/Projects/goodvibes-desktop`, "GoodVibes - Claude Code companion app", v1.1.4, MIT, Electron 39 + React 19. Formerly "Clausitron" (`CHANGELOG.md`). **It has zero dependency on @pellux/goodvibes-sdk, goodvibes-tui, or the goodvibes daemon**; it is a wrapper around the `claude` CLI binary and the `~/.claude/projects` JSONL session files.
 
 ---

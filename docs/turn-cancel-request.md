@@ -1,8 +1,12 @@
-# App-side request: companion-chat turn cancel verb
+# App-side request: companion-chat turn cancel verb (resolved 2026-07-07)
 
-For the SDK/daemon session designing the server-side stop verb. Everything below is
-extracted from goodvibes-app's real consuming code (file:line cited), not from memory.
-Closes docs/GAPS.md §1 row 39 (the app's last wire-blocked partial) once served.
+This is a historical request record, not live documentation: it captured what the app
+needed from the SDK/daemon side to build the server-side stop verb, and the verb has since
+shipped (see §5). Everything below was extracted from goodvibes-app's real consuming code
+as it stood on 2026-07-07 (file:line cited against that snapshot; the cited line numbers
+have since drifted as the file grew, though the method ids, event shape, and behavior
+described remain accurate in the current code). Closed docs/GAPS.md §1 row 39 (the app's
+last wire-blocked partial) once served.
 
 ## 1. Method id + shape the app wants to call
 
@@ -43,8 +47,16 @@ The app consumes the existing per-session stream `companion.chat.events.stream`
 (`message-utils.ts:97` `companionEventType`) uses SSE event name `message` or
 `companion-chat.*`, with the specific type in `payload.type` (falling back to the event
 name with the `companion-chat.` prefix stripped). Dispatch runs on that type
-(`useChatStream.ts:147-215`), covering `turn.started`, `turn.delta`, `turn.tool_call`,
-`turn.tool_result`, `turn.completed`, and `turn.error`.
+(`useChatStream.ts:147-215`), covering six event types:
+
+| Event type | What it carries |
+|---|---|
+| `turn.started` | The turn begins; delivers `turnId` |
+| `turn.delta` | A streamed content chunk |
+| `turn.tool_call` | A tool invocation begins, rendered as a live block |
+| `turn.tool_result` | A tool invocation's result lands |
+| `turn.completed` | The turn finished successfully (terminal) |
+| `turn.error` | The turn ended in error (terminal) |
 
 So the new terminal event is simply:
 ```
