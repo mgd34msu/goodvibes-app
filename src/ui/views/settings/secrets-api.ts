@@ -67,11 +67,24 @@ export const LINK_PROVIDERS: ReadonlyArray<{ value: SecretLinkInput["source"]; l
   { value: "bitwarden-secrets-manager", label: "Bitwarden Secrets Manager" },
 ];
 
+/** Result of storing a secret. `scopeOverridden` is true when the platform
+ *  filed the credential somewhere other than the scope that was requested,
+ *  which happens for daemon-owned keys; `scopeNotice` is then the SDK's own
+ *  one-line explanation, safe to display (names only, never values). */
+export interface SecretSetResult {
+  ok: boolean;
+  name: string;
+  kind: "value" | "link";
+  effectiveScope?: "project" | "user" | "daemon";
+  scopeOverridden?: boolean;
+  scopeNotice?: string;
+}
+
 export const secretsApi = {
   list: () => appJson<{ secrets: SecretRow[] }>("/app/secrets"),
   inspect: () => appJson<{ inspect: SecretsStorageReview }>("/app/secrets/inspect"),
   set: (name: string, valueOrLink: { value: string } | { link: SecretLinkInput }, scope?: "project" | "user") =>
-    appJson<{ ok: boolean; name: string; kind: "value" | "link" }>("/app/secrets/set", {
+    appJson<SecretSetResult>("/app/secrets/set", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ name, scope, ...valueOrLink }),

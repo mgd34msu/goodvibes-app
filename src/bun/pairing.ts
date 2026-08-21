@@ -46,6 +46,7 @@ export function createPairingRoutes(services: AppServices): AppRouteHandler {
       });
       const payload = encodeConnectionPayload(info);
       const qr = generateQrMatrix(payload);
+      const quarantine = daemon.tokenQuarantine;
       return Response.json({
         payload,
         url: info.url,
@@ -53,6 +54,12 @@ export function createPairingRoutes(services: AppServices): AppRouteHandler {
         surface: info.surface,
         version: info.version,
         qr: { size: qr.size, modules: qr.modules },
+        // The daemon's token store was unreadable and got rotated, so every
+        // companion paired before now is holding a dead token. The QR below is
+        // valid, but anyone already paired must redo it, and the view says so.
+        ...(quarantine
+          ? { repairRequired: { reason: quarantine.reason, movedTo: quarantine.to } }
+          : {}),
       });
     } catch (err) {
       return Response.json(

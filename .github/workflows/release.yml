@@ -1,7 +1,9 @@
 name: Release
 
+# Least privilege by default; only the publishing job escalates to
+# contents: write, so a compromised build step cannot push a release.
 permissions:
-  contents: write
+  contents: read
 
 on:
   push:
@@ -11,6 +13,13 @@ on:
       tag:
         description: "Existing release tag to attach artifacts to (e.g. v0.1.0)"
         required: true
+
+# One release run per tag, and never cancelled: two runs for the same tag could
+# otherwise both see "no release" and race `gh release create`. A release that
+# is half-uploaded is worse than one that waits.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -24,12 +33,19 @@ jobs:
           - os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      # Build the TAG's commit, not the default branch. Without this a
+      # workflow_dispatch for v0.1.0 checked out main HEAD and published those
+      # binaries under the v0.1.0 tag.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          bun-version: latest
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.14" # matches packageManager in package.json
       - name: Install Linux webview build deps
         if: runner.os == 'Linux'
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -39,8 +55,12 @@ jobs:
         run: bun run build
       - name: Package
         shell: bash
-        run: scripts/package-release.sh "${{ github.event.inputs.tag || github.ref_name }}"
-      - uses: actions/upload-artifact@v4
+        # The tag reaches the script as an environment variable, never spliced
+        # into the script text.
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: scripts/package-release.sh "$TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dist-${{ matrix.os }}
           path: dist/*
@@ -52,14 +72,46 @@ jobs:
     name: attach artifacts (all-green gate)
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: dist
           merge-multiple: true
       - name: Upload to release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          REPO: ${{ github.repository }}
+        # Nothing else creates the release, so a tag push had no release to
+        # upload to and the whole tag-triggered path failed here.
+        #
+        # Create it on demand, but ONLY on a confirmed 404. `gh release view`
+        # also fails on an expired token, a 5xx, or a network blip, and treating
+        # those as "no release yet" would publish a second release over a real
+        # one. So this asks the API for the exact status code and branches on
+        # 404 alone; anything else is reported and fails the job.
+        # --verify-tag additionally refuses to invent a release for a tag that
+        # does not exist, and --clobber keeps re-runs idempotent.
         run: |
+          set -euo pipefail
           ls -la dist/
-          gh release upload "${{ github.event.inputs.tag || github.ref_name }}" dist/* --clobber --repo "${{ github.repository }}"
+          # `gh api -i` prints the status line and exits 0 for 200 and 404
+          # alike, so the code itself decides. A transport/auth failure prints
+          # nothing here and leaves status empty, which is NOT a 404.
+          status="$(gh api "repos/$REPO/releases/tags/$TAG" --silent -i 2>/dev/null | head -1 | tr -d '\r' | awk '{print $2}' || true)"
+          echo "release lookup for $TAG returned: ${status:-<no response>}"
+          case "$status" in
+            200)
+              echo "release already exists, attaching to it" ;;
+            404)
+              echo "no release for $TAG yet, creating one"
+              gh release create "$TAG" --repo "$REPO" --verify-tag --generate-notes ;;
+            *)
+              echo "Could not determine whether a release exists for $TAG (status: ${status:-<no response>})." >&2
+              echo "Refusing to create one: that is how a transient auth or 5xx error becomes a duplicate release." >&2
+              exit 1 ;;
+          esac
+          gh release upload "$TAG" dist/* --clobber --repo "$REPO"

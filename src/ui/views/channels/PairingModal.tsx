@@ -22,6 +22,10 @@ interface PairingConnection {
   surface: string;
   version: string;
   qr: { size: number; modules: boolean[][] };
+  /** Present when the daemon's operator-token store was unreadable and had to
+   *  be rotated. The QR below still works, but every companion paired before
+   *  that rotation is holding a dead token and has to pair again. */
+  repairRequired?: { reason: string; movedTo: string };
 }
 
 /** Render the Bun-computed QR matrix as a crisp SVG (1 module = 1 unit). */
@@ -99,6 +103,14 @@ export function PairingModal({ open, onClose }: { open: boolean; onClose: () => 
               daemon address and an access token — anyone who scans it can operate the daemon, so
               share it like a password.
             </p>
+            {connection.data.repairRequired && (
+              <p className="pairing-modal__note" role="alert">
+                This daemon&apos;s token store could not be read and was replaced
+                ({connection.data.repairRequired.reason}). Any companion paired before now is holding
+                a token that no longer works and must pair again using the code below. The previous
+                file was kept at <code>{connection.data.repairRequired.movedTo}</code>.
+              </p>
+            )}
             <div className="pairing-modal__qr-frame">
               <QrSvg qr={connection.data.qr} />
             </div>

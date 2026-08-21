@@ -10,6 +10,17 @@
 // passes surfaceRoot:'tui' to its own SecretsManager). Values NEVER cross
 // into a JSON response, every route below returns metadata/booleans only.
 //
+// Tiers (sdk 2.x): the surface store above is no longer the only one. There is
+// also a 'daemon' tier at ~/.goodvibes/daemon/secrets.enc, and it LEADS the
+// read order. Two consequences this module has to honour rather than hide:
+//   - a credential the daemon owns (isDaemonNeededSecretKey, e.g. GITHUB_TOKEN
+//     for the github-copilot provider) is relocated to the daemon tier on
+//     write whatever scope the caller asked for. /app/secrets/set reports that
+//     relocation back to the caller instead of answering a bare {ok:true};
+//   - delete() on such a key is a REVOKE that sweeps every tier. Any app-owned
+//     credential must therefore use a name the platform does not claim, which
+//     is why src/bun/github.ts stores its token as GOODVIBES_APP_GITHUB_TOKEN.
+//
 // Literal-safety wrapping: a plain secret value that happens to look like a
 // secret-ref string (e.g. "op://…", "secretref:…") would otherwise be
 // mis-resolved by the SDK's own get() as a reference. goodvibes-tui's own
@@ -41,8 +52,11 @@ import {
   SecretsManager,
   ServiceRegistry,
   SubscriptionManager,
+  describeSecretWriteScope,
   isSecretRefInput,
   normalizeSecretRef,
+  resolveSecretWriteScope,
+  secretWriteScopeWasOverridden,
   type SecretScope,
   type SecretStorageMedium,
 } from "@pellux/goodvibes-sdk/platform/config";
@@ -161,8 +175,34 @@ async function handleInspect(): Promise<Response> {
   return json({ inspect: review });
 }
 
+// sdk 2.x added a third scope, 'daemon', for credentials the daemon process
+// itself has to read. It is accepted here so a caller can ask for it directly;
+// what it is NOT is a scope the app silently invents.
 function parseScope(value: unknown): SecretScope | undefined {
-  return value === "project" || value === "user" ? value : undefined;
+  return value === "project" || value === "user" || value === "daemon" ? value : undefined;
+}
+
+/**
+ * Where a write will actually land, and whether that differs from what was
+ * asked for.
+ *
+ * SecretsManager relocates a daemon-owned credential to the daemon tier no
+ * matter which scope the caller passed, because a copy in a client silo is
+ * unreadable to the process that uses it. That relocation is correct and must
+ * not be silent: the operator picked "user" in a dropdown and the value went
+ * somewhere else, so the response says so and the UI shows it.
+ */
+function describeWriteScope(
+  name: string,
+  requested: SecretScope | undefined,
+): { effectiveScope: SecretScope; scopeOverridden: boolean; scopeNotice?: string } {
+  const effectiveScope = resolveSecretWriteScope(name, requested);
+  const scopeOverridden = secretWriteScopeWasOverridden(name, requested);
+  return {
+    effectiveScope,
+    scopeOverridden,
+    ...(scopeOverridden ? { scopeNotice: describeSecretWriteScope(name) } : {}),
+  };
 }
 
 function parseMedium(value: unknown): SecretStorageMedium | undefined {
@@ -176,7 +216,9 @@ async function handleSetSecret(req: Request): Promise<Response> {
   const unsafe = rejectUnsafeName(name);
   if (unsafe) return unsafe;
 
-  const options = { scope: parseScope(body["scope"]), medium: parseMedium(body["medium"]) };
+  const requestedScope = parseScope(body["scope"]);
+  const options = { scope: requestedScope, medium: parseMedium(body["medium"]) };
+  const placement = describeWriteScope(name, requestedScope);
 
   // "link" wins when present: a structured SecretRef (env/file/exec/1Password/
   // Bitwarden/Vaultwarden/BWS) or a provider URI string, stored verbatim so
@@ -189,14 +231,14 @@ async function handleSetSecret(req: Request): Promise<Response> {
     // though the SDK's own .set() type is declared as `string` (it forwards
     // whatever is given straight into the JSON store untouched).
     await secretsManager.set(name, normalized as unknown as string, options);
-    return json({ ok: true, name, kind: "link", provider: normalized.source });
+    return json({ ok: true, name, kind: "link", provider: normalized.source, ...placement });
   }
 
   if (typeof body["value"] !== "string" || body["value"] === "") {
     return badRequest("SECRETS_VALUE_REQUIRED", "A value or link is required.");
   }
   await secretsManager.set(name, encodeSecretValue(body["value"]), options);
-  return json({ ok: true, name, kind: "value" });
+  return json({ ok: true, name, kind: "value", ...placement });
 }
 
 async function handleTestSecret(name: string): Promise<Response> {

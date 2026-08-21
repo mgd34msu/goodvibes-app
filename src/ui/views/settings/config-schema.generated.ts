@@ -1,13 +1,12 @@
-// GENERATED FILE, pinned snapshot of CONFIG_SCHEMA from
-// @pellux/goodvibes-sdk@1.11.2 (platform/config, Bun-only subpath the
-// webview must not import, docs/ARCHITECTURE.md §5). Pure data: key, type,
-// default, description, enum values, validation hint. The runtime `validate`
-// functions cannot cross the boundary and are intentionally dropped; the
-// daemon re-validates every config.set anyway, so client-side hints are
-// advisory only. Regenerate with a one-off Bun snippet that dynamically
-// imports the SDK's platform config subpath (the same one named in the first
-// line of this header) and re-serializes CONFIG_SCHEMA, see
-// scripts/generate-operator-routes.ts for the sibling pattern.
+// GENERATED FILE: DO NOT EDIT BY HAND.
+// Produced by scripts/generate-config-schema.ts from the installed
+// @pellux/goodvibes-sdk@2.0.17 (platform/config, a Bun-only subpath the
+// webview must not import, docs/ARCHITECTURE.md §5), 599 keys.
+// Pure data: key, type, default, description, enum values, validation hint.
+// The runtime `validate` functions cannot cross the boundary and are
+// intentionally dropped; the daemon re-validates every config.set anyway, so
+// client-side hints are advisory only.
+// Regenerate: `bun run generate:config-schema`.
 
 export interface ConfigSettingMeta {
   readonly key: string;
@@ -48,7 +47,18 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "display.theme",
     "type": "string",
     "default": "vaporwave",
-    "description": "Color theme name"
+    "description": "Color theme name — the color palette (e.g. vaporwave). Independent of display.themeMode, which controls light/dark appearance."
+  },
+  {
+    "key": "display.themeMode",
+    "type": "enum",
+    "default": "auto",
+    "description": "Light/dark appearance: auto probes the terminal background colour (OSC 11) once at startup and picks light or dark; dark/light force a fixed appearance regardless of terminal background. Independent of display.theme, which picks the color palette.",
+    "enumValues": [
+      "auto",
+      "dark",
+      "light"
+    ]
   },
   {
     "key": "display.showThinking",
@@ -76,15 +86,10 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
   },
   {
     "key": "provider.reasoningEffort",
-    "type": "enum",
+    "type": "string",
     "default": "medium",
     "description": "Reasoning effort level for models that support it",
-    "enumValues": [
-      "instant",
-      "low",
-      "medium",
-      "high"
-    ]
+    "validationHint": "a reasoning level the current model supports — run /effort to list them"
   },
   {
     "key": "provider.model",
@@ -755,10 +760,10 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "validationHint": "integer port in [1, 65535]"
   },
   {
-    "key": "controlPlane.baseUrl",
+    "key": "controlPlane.publicBaseUrl",
     "type": "string",
-    "default": "http://127.0.0.1:3421",
-    "description": "Public base URL used by route bindings and link generation"
+    "default": "",
+    "description": "Override for a genuinely external control-plane address (tunnel or reverse proxy). Leave empty — the everyday base URL is derived from hostMode/host/port/tls.mode, so it cannot drift. Set this only when an off-box address differs from the bind."
   },
   {
     "key": "controlPlane.streamMode",
@@ -805,7 +810,7 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "controlPlane.webui.bundleDir",
     "type": "string",
     "default": "",
-    "description": "Directory holding the built web UI bundle (index.html + assets) served when controlPlane.webui.serve is true. Empty disables serving."
+    "description": "Directory holding the built web UI bundle (index.html + assets) served when controlPlane.webui.serve is true. Takes precedence over web.staticAssetsDir: this key is the specific answer for this daemon, so when it names a directory that is the one served. Empty falls back to web.staticAssetsDir."
   },
   {
     "key": "controlPlane.cors.enabled",
@@ -873,6 +878,12 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "description": "Trust proxy forwarding headers such as x-forwarded-for for the webhook listener"
   },
   {
+    "key": "httpListener.trustCloudflare",
+    "type": "boolean",
+    "default": false,
+    "description": "Read the real client IP from CF-Connecting-IP, and only when the connecting peer is inside a published Cloudflare range. Requires httpListener.trustProxy: with it off, CF-Connecting-IP is ignored no matter what this says. The range check is the point — without it any peer could send a CF-Connecting-IP header and choose which address the rate limiter and the audit log recorded. Leave off unless this listener genuinely sits behind Cloudflare."
+  },
+  {
     "key": "httpListener.tls.mode",
     "type": "enum",
     "default": "off",
@@ -935,7 +946,76 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "web.staticAssetsDir",
     "type": "string",
     "default": "dist/web",
-    "description": "Static asset directory for the embedded web surface"
+    "description": "Static asset directory for the embedded web surface (index.html + assets), served when controlPlane.webui.serve is true. Used when controlPlane.webui.bundleDir is empty; that more specific key wins when it names a directory."
+  },
+  {
+    "key": "conversationGate.mode",
+    "type": "enum",
+    "default": "propose",
+    "description": "How inbound channel messages are treated. propose (default): a message gets a conversational reply, and anything that reads as a work request is proposed and waits for your agreement over the same channel. confirm-all: every inbound message is confirmed before any agent runs. off: an inbound message starts work immediately (pre-1.14 behavior). Never applies to goodvibes-tui, and never to already-authorized work such as schedules, triggers, and on-exit chains.",
+    "enumValues": [
+      "propose",
+      "confirm-all",
+      "off"
+    ]
+  },
+  {
+    "key": "conversationGate.proposalTtlMs",
+    "type": "number",
+    "default": 1800000,
+    "description": "How long an unanswered work proposal stays answerable, in milliseconds. After this it expires and a late reply is reported as expired rather than starting stale work. Clamped to 1 minute - 24 hours."
+  },
+  {
+    "key": "conversationGate.maxPendingProposals",
+    "type": "number",
+    "default": 20,
+    "description": "Maximum work proposals awaiting an answer at once across all channels. The oldest is dropped past this cap. Clamped to 1 - 200."
+  },
+  {
+    "key": "hostedSessions.detachPolicy",
+    "type": "enum",
+    "default": "kill",
+    "description": "What happens to a daemon-hosted session when its last client detaches. kill (default): the session ends, which is what closing a client has always done. survive: the session stays alive and reattachable, so work continues while nothing is watching and you can pick it up again from any surface. A single session can override this when it is created.",
+    "enumValues": [
+      "kill",
+      "survive"
+    ]
+  },
+  {
+    "key": "hostedSessions.maxSessions",
+    "type": "number",
+    "default": 8,
+    "description": "How many daemon-hosted sessions may be live at once. Creating one past this is refused with the count and this setting named, rather than accepted and starved. Terminated sessions do not count."
+  },
+  {
+    "key": "hostedSessions.maxMessagesPerSession",
+    "type": "number",
+    "default": 500,
+    "description": "How many of a hosted session's most recent messages are written to disk. The transcript in memory is unaffected; this bounds what a restart can restore, so one long conversation cannot grow its file without limit."
+  },
+  {
+    "key": "hostedSessions.terminatedRetentionMs",
+    "type": "number",
+    "default": 86400000,
+    "description": "How long a terminated hosted session's record is kept before it is retired, in milliseconds. Until then it is still listable with its termination reason, so a session that ended can be asked about rather than having simply vanished."
+  },
+  {
+    "key": "hostedSessions.attachmentTtlMs",
+    "type": "number",
+    "default": 600000,
+    "description": "How long a client stays attached to a daemon-hosted session without renewing, in milliseconds. Attaching again renews it, and a client whose control-plane connection is still open renews automatically. A client that crashed or closed its tab never detaches, so without this its attachment stands forever and a kill-policy session waits for a departure that never comes. When the last attachment lapses the session is treated as detached, and hostedSessions.detachPolicy decides what happens next. Clamped to at least 30 seconds and at most a day."
+  },
+  {
+    "key": "hostedSessions.promoteInboundConversations",
+    "type": "boolean",
+    "default": false,
+    "description": "Hand inbound channel conversations to the daemon to host, instead of answering them inside the surface process that received them. Off (default): a message from Telegram, Slack, email or any other channel is answered by that process, and it stops when the process stops. On: the first message of a conversation creates a daemon-hosted session and every later message is steered into it, so the conversation keeps its context and keeps running while no surface is open. What happens when the last client leaves is still hostedSessions.detachPolicy."
+  },
+  {
+    "key": "hostedSessions.routeConversationTurns",
+    "type": "boolean",
+    "default": true,
+    "description": "Run this surface's own conversation turns inside the connected daemon rather than in this process. On (the default) and with a connected daemon reachable: the first message of a conversation creates a daemon-hosted session rooted at this surface's working directory, every later message is steered into it, and this surface renders the turn from the daemon's event stream — so the turn survives this process closing and every surface sees one conversation. The daemon holds the authoritative transcript; this surface still keeps its own local record of what the stream delivered. Off: every turn runs in this process, as it always did. With no connected daemon reachable the turn runs locally regardless, and the transcript says so in one line naming the reason — it is never silent about where a turn ran. This is about what happens when you press enter; hostedSessions.promoteInboundConversations is the same question for messages arriving from a channel."
   },
   {
     "key": "atRest.redactionEnabled",
@@ -956,6 +1036,226 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "default": 512,
     "description": "Total-size cap (MB) across the on-disk transcript journal / execution-ledger file set. When exceeded, the retention enforcement point deletes oldest-first (rotated backups before freshly-written active files) until under budget.",
     "validationHint": "integer in [1, 1048576]"
+  },
+  {
+    "key": "payments.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Master switch for the payment capability. Default OFF. While false the daemon will not price, reserve, or charge anything, and the payments operator methods refuse. Turning it on does not by itself allow a purchase — the daily budgets below start at 0, so nothing goes through until you set an amount."
+  },
+  {
+    "key": "payments.defaultCardId",
+    "type": "string",
+    "default": "",
+    "description": "Which configured card to use when a purchase does not name one. Refers to a card id from payments.cards.list; the card NUMBER, expiry and CVV live in the daemon secret store and never in config."
+  },
+  {
+    "key": "payments.currency",
+    "type": "string",
+    "default": "USD",
+    "description": "ISO-4217 code your budgets are denominated in. A checkout priced in any other currency is REFUSED rather than converted — the issuer converts at its own rate on its own date, so any number shown to you before the charge would not be the number you are charged.",
+    "validationHint": "a three-letter ISO-4217 code such as USD, GBP or EUR"
+  },
+  {
+    "key": "payments.cvvHandling",
+    "type": "enum",
+    "default": "stored",
+    "description": "How the card verification value is handled at checkout. 'stored' (DEFAULT) keeps it in the daemon secret store beside the card number, encrypted at rest, so a purchase within budget completes while you are away — which is what autonomous action requires. Choosing 'prompt' stores nothing and stops every purchase to ask you for the code, which DISABLES UNATTENDED PURCHASING; surfaces show CVV_PROMPT_TRADEOFF_WARNING at the moment you select it. Provisioning a virtual card with a hard issuer cap bounds what any leak of stored card material could cost; a real card number does not.",
+    "enumValues": [
+      "stored",
+      "prompt"
+    ]
+  },
+  {
+    "key": "payments.budget.dailyItem",
+    "type": "number",
+    "default": 0,
+    "description": "Most that may be spent on ITEM PRICES in one calendar day, written the way you would say it: 100 is a hundred, 19.99 is nineteen ninety-nine, in whatever payments.currency is set to. The item price alone is checked against this; tax, mandatory fees and delivery draw on the separate overage budget below. Resets at midnight in daemon.timezone (UTC when unset) — the boundary is real, so 100 at 23:59 and 100 at 00:00 both go through. Default 0: nothing is bought until you set this.",
+    "validationHint": "a plain number like 100 or 19.99, no greater than 1000000"
+  },
+  {
+    "key": "payments.budget.dailyOverage",
+    "type": "number",
+    "default": 0,
+    "description": "Daily allowance for charges that CANNOT BE AVOIDED on a purchase you already approved: sales tax, mandatory handling or booking fees, and the delivery option actually used. Written the way you would say it — 25 is twenty-five, 7.50 is seven fifty. Discretionary add-ons — expedited shipping beyond what the ladder picks, insurance, gift wrap, extended warranties — are purchase decisions, not delivery costs, and never draw on this. Default 0.",
+    "validationHint": "a plain number like 100 or 19.99, no greater than 1000000"
+  },
+  {
+    "key": "payments.budget.perPurchaseCeilingEnabled",
+    "type": "boolean",
+    "default": true,
+    "description": "When true (DEFAULT), no single purchase may exceed payments.budget.perPurchaseCeiling no matter how much of the daily budget is left. A separate question from the daily budget: both must pass. Turn it off only if you want one purchase to be able to consume the whole day at once."
+  },
+  {
+    "key": "payments.budget.perPurchaseCeiling",
+    "type": "number",
+    "default": 0,
+    "description": "The most any single purchase may come to, applied when perPurchaseCeilingEnabled is true. Written the way you would say it — 100 is a hundred, 19.99 is nineteen ninety-nine. Default 0, so with the ceiling on and this unset every purchase needs your explicit approval — the safe direction until you choose a number.",
+    "validationHint": "a plain number like 100 or 19.99, no greater than 1000000"
+  },
+  {
+    "key": "payments.budget.overageToleranceEnabled",
+    "type": "boolean",
+    "default": false,
+    "description": "When true, a purchase whose unavoidable charges cannot fit the overage budget even at the CHEAPEST delivery option may draw the shortfall from the tolerance allowance below instead of being refused. Default FALSE. Enabling it alone changes nothing — the allowance also starts at 0."
+  },
+  {
+    "key": "payments.budget.overageToleranceDailyAllowance",
+    "type": "number",
+    "default": 0,
+    "description": "Daily tolerance allowance, used only when overageToleranceEnabled is true. Written the way you would say it — 5 is five, 2.50 is two fifty. This is a third pool, drawn on only after the shipping ladder has stepped delivery all the way down and the unavoidable charges still do not fit. Every use is recorded in the purchase audit record.",
+    "validationHint": "a plain number like 100 or 19.99, no greater than 1000000"
+  },
+  {
+    "key": "payments.shipping.preferredTier",
+    "type": "enum",
+    "default": "normal",
+    "description": "Preferred delivery tier, ordinal against WHAT THE CHECKOUT ACTUALLY OFFERS rather than delivery-day promises: its options are ranked cheapest-first and this indexes into that ranking. The chosen tier draws on the overage budget; when the budget cannot cover it, delivery steps down ONE tier at a time until it fits, stopping at the cheapest. A step-down needs no approval (it is within budget) but is recorded and shown to you, so you never learn about it from a late package. Default 'normal'.",
+    "enumValues": [
+      "normal",
+      "fast",
+      "fastest"
+    ]
+  },
+  {
+    "key": "payments.billingAddress.name",
+    "type": "string",
+    "default": "",
+    "description": "Full name as it appears on the card statement. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.line1",
+    "type": "string",
+    "default": "",
+    "description": "Street address, first line. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.line2",
+    "type": "string",
+    "default": "",
+    "description": "Second address line (apartment, suite); leave empty when unused. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.city",
+    "type": "string",
+    "default": "",
+    "description": "City or town. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.region",
+    "type": "string",
+    "default": "",
+    "description": "State, province or region. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.postalCode",
+    "type": "string",
+    "default": "",
+    "description": "Postal or ZIP code. Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.billingAddress.country",
+    "type": "string",
+    "default": "",
+    "description": "Country, as the checkout expects it (an ISO two-letter code is safest). Part of the billing address the card issuer checks against (address verification). Stored in daemon-owned config rather than the secret store because surfaces must display and edit it — but note it sits beside stored card material, so anyone holding both has everything a card-not-present charge needs. A virtual card with a hard issuer cap is what bounds that."
+  },
+  {
+    "key": "payments.shippingAddress.name",
+    "type": "string",
+    "default": "",
+    "description": "Recipient name. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.line1",
+    "type": "string",
+    "default": "",
+    "description": "Street address, first line. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.line2",
+    "type": "string",
+    "default": "",
+    "description": "Second address line (apartment, suite); leave empty when unused. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.city",
+    "type": "string",
+    "default": "",
+    "description": "City or town. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.region",
+    "type": "string",
+    "default": "",
+    "description": "State, province or region. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.postalCode",
+    "type": "string",
+    "default": "",
+    "description": "Postal or ZIP code. Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.shippingAddress.country",
+    "type": "string",
+    "default": "",
+    "description": "Country, as the checkout expects it (an ISO two-letter code is safest). Where purchases are delivered. A purchase is REFUSED while the shipping address is incomplete — there is nowhere to send it, and guessing an address is not a thing this should do."
+  },
+  {
+    "key": "payments.windows.vetoMinutes",
+    "type": "number",
+    "default": 10,
+    "description": "How long you get to STOP an in-budget purchase, in minutes, starting once the final total is known and before payment. This is a VETO, not an approval: if you say nothing, the purchase GOES AHEAD. One word cancels it. The window always runs its full length wherever you are — no presence, focus or activity signal shortens it — and an explicit acknowledgement buys immediately.",
+    "validationHint": "integer in [1, 1440]"
+  },
+  {
+    "key": "payments.windows.approvalMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "How long an ABOVE-BUDGET purchase waits for your explicit approval, in minutes. This is the opposite of the veto window: if you say nothing, the purchase is DENIED. Denial is the recoverable outcome — ask again and it goes through — so a short window costs friction while a long one leaves a cart holding a price that may drift. Default 60, which survives a meeting or a commute; raise it if you are away for long stretches.",
+    "validationHint": "integer in [1, 10080]"
+  },
+  {
+    "key": "payments.majorRetailersAdditional",
+    "type": "string",
+    "default": "",
+    "description": "Comma-separated REGISTRABLE domains (eTLD+1, e.g. 'microcenter.com', not 'www.microcenter.com') to add to the recognised-retailer list. A purchase at a recognised retailer gets the veto window — you are told and it goes ahead unless you object. Everything else asks for your yes. The test is recourse: is there a real path to remedy if it goes wrong. Additions are yours alone — nothing is learned onto this list, inferred from a page, or added by an agent, because a page that could argue itself onto it could buy from itself unattended.",
+    "validationHint": "a comma-separated list of registrable domains"
+  },
+  {
+    "key": "payments.majorRetailersExcluded",
+    "type": "string",
+    "default": "",
+    "description": "Comma-separated registrable domains to REMOVE from the shipped recognised-retailer list, so purchases there ask for your yes instead of proceeding on silence. A domain listed in both this and the additions is kept, since the addition is the more specific instruction.",
+    "validationHint": "a comma-separated list of registrable domains"
+  },
+  {
+    "key": "payments.ebayMinSellerFeedbackCount",
+    "type": "number",
+    "default": 100,
+    "description": "Minimum feedback ratings earned AS A SELLER before an eBay Buy It Now listing proceeds on silence. eBay's headline score combines buying and selling, so an account with a large number can have earned all of it buying — only the seller-side figure counts. Below this, the purchase asks for your yes. Auctions and Best Offer listings are refused outright regardless, because there is no final price to show you before paying.",
+    "validationHint": "integer in [0, 1000000]"
+  },
+  {
+    "key": "payments.ebayMinSellerPositivePercent",
+    "type": "number",
+    "default": 98,
+    "description": "Minimum positive feedback percentage AS A SELLER before an eBay Buy It Now listing proceeds on silence. Read from eBay's own feedback widget, never from the seller's listing text — if the figures cannot be attributed to eBay with confidence, the purchase asks for your yes rather than assuming.",
+    "validationHint": "integer in [0, 100]"
+  },
+  {
+    "key": "payments.notifyChannels",
+    "type": "string",
+    "default": "",
+    "description": "Comma-separated, ordered list of surfaces that receive approval and veto prompts and may answer them: 'tui', 'agent-terminal', 'telegram'. EMAIL IS NOT AND WILL NEVER BE ACCEPTED HERE — an inbound email is content anyone can write and cannot authorize spending. An unrecognised name is rejected rather than ignored, because a channel you believe will reach you and does not is worse than none. Empty means an above-budget purchase has nowhere to ask and is refused, while an in-budget one proceeds unannounced.",
+    "validationHint": "a comma-separated list drawn from 'tui', 'agent-terminal', 'telegram'"
+  },
+  {
+    "key": "daemon.timezone",
+    "type": "string",
+    "default": "",
+    "description": "IANA timezone name the daemon reckons CALENDAR DAYS in — e.g. 'America/New_York', 'Europe/London'. Empty means UTC. This is the daemon's own location, not a display preference and not a per-schedule zone (schedules keep their own). Anything that resets daily reads it: the payment capability's daily budgets roll over at midnight in this zone. Changing it does not refill a spent budget — daily totals are recomputed from each record's UTC instant rather than carried as a counter.",
+    "validationHint": "empty (UTC) or an IANA timezone name like 'America/New_York'"
   },
   {
     "key": "learning.consolidation.enabled",
@@ -1088,10 +1388,142 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "validationHint": "integer in [1, 100]"
   },
   {
+    "key": "profile.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Load and serve the owner profile. On by default because the owner asked for it built, and a feature that ships off ships dark. Turning it off means the file is never opened and every profile verb answers \"your profile is turned off\" — a stated state, not an empty profile that would read as \"I know nothing about you\"."
+  },
+  {
+    "key": "profile.autonomousWrites",
+    "type": "boolean",
+    "default": true,
+    "description": "Let the runtime record facts it learns from things you say directly to it, without asking each time. On by default because that was the owner's explicit choice over propose-first. Off leaves reads and your own hand edits working exactly as before — the honest \"I will curate this myself\" mode, not a disabled feature. Untrusted sources are barred either way."
+  },
+  {
+    "key": "profile.discloseWrites",
+    "type": "boolean",
+    "default": true,
+    "description": "Say in one line what was recorded, e.g. \"Noted — saved your office address to your profile.\" On by default because telling you what it recorded was a condition attached to autonomous learning. Editable because the receipts may read as noisy over time, but turning them off is your decision made knowingly rather than a default that hides writes."
+  },
+  {
+    "key": "profile.injectOpenTier",
+    "type": "boolean",
+    "default": true,
+    "description": "Put the open tier — how you like to be addressed, your pronouns, your city, your timezone, your unit/date/locale preferences and your style notes — into system context as a short block each turn. On by default because otherwise the agent still guesses a metro area for a weather answer, which is the failure that started this. Closed-tier content (addresses, contact details, people, notes) is never bulk-injected regardless of this setting."
+  },
+  {
+    "key": "profile.discloseClosedTierReads",
+    "type": "boolean",
+    "default": true,
+    "description": "Announce it in the reply when a closed-tier value is used, e.g. \"Used your shipping address from your profile.\" On by default because using your address on an order should be visible to you at the moment it happens rather than discoverable afterwards in a log."
+  },
+  {
+    "key": "profile.consumerFallback",
+    "type": "boolean",
+    "default": true,
+    "description": "Let an UNSET consumer setting read its value from the matching profile field — quiet hours, delivery channel, and the commerce fields as their keys arrive. On because a profile nothing reads is a diary. A value you configured explicitly always wins; the profile only fills a gap, and only for a single keyed read, never in a settings listing or export."
+  },
+  {
+    "key": "profile.reloadThrottleMs",
+    "type": "number",
+    "default": 2000,
+    "description": "How often, in milliseconds, to check the profile file for a hand edit on hosts where filesystem watching is unavailable. Used only on that fallback path and never on a read, so it costs nothing in the common case. 2000 sits under human edit-then-check latency: you save the file, look at the assistant, and it already knows.",
+    "validationHint": "integer in [50, 3600000]"
+  },
+  {
+    "key": "profile.path",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the profile Markdown file. Empty means the default, owner-profile.md under the daemon home — which already honours GOODVIBES_DAEMON_HOME, so this override is only for keeping the file somewhere else entirely."
+  },
+  {
+    "key": "profile.conversationalCapture",
+    "type": "boolean",
+    "default": true,
+    "description": "Let a conversation record what you say about yourself as you say it — a trip and its itinerary, a birthday, a preference, a person. On by default because the alternative is what shipped before it: you paste a flight itinerary, get a warm reply, and nothing is stored. Off leaves conversations working and every profile read unchanged; it only stops the writing, and a turn that would have recorded something says so instead of staying quiet."
+  },
+  {
+    "key": "profile.ownerChannels",
+    "type": "string",
+    "default": "",
+    "description": "The channels whose incoming messages are you, comma-separated, each as a surface name or surface:address — the same form as occasions.nudgeChannel. Only these may record to your profile; anything arriving anywhere else is treated as someone else's words and is refused, which is the rule that keeps a forwarded email from editing what the system believes about you. Empty means the channels already set to reach you privately in occasions.nudgeChannel, so the channel that sends you a birthday reminder can also hear you say when your flight leaves."
+  },
+  {
+    "key": "occasions.enabled",
+    "type": "boolean",
+    "default": true,
+    "description": "Raise your important dates on their own, before they matter. On by default because a feature that ships off ships dark, and because being told about your wife's birthday in time is the whole point. Turning it off does NOT forget anything: the dates stay in your profile, stay readable, and are still answered when you ask — it only stops the system raising them unprompted."
+  },
+  {
+    "key": "occasions.leadDays",
+    "type": "number",
+    "default": 10,
+    "description": "How many days ahead an occasion starts being raised. Ten because that is enough runway to order something and have it arrive. An individual entry overrides this by carrying \"lead 21\" on its line, so a date that needs longer does not force everything else earlier.",
+    "validationHint": "integer in [0, 365]"
+  },
+  {
+    "key": "occasions.activeHours",
+    "type": "string",
+    "default": "08:00-22:00",
+    "description": "The hours a nudge may arrive, HH:MM-HH:MM, reckoned in daemon.timezone. 08:00–22:00 because those hours are generally fine and anything outside them probably is not. Outside this window nothing is dropped — it waits. An empty or unreadable value means no restriction rather than permanent silence, so a typo cannot switch the feature off invisibly."
+  },
+  {
+    "key": "occasions.nudgeChannel",
+    "type": "string",
+    "default": "telegram",
+    "description": "Where a nudge is delivered: a comma-separated list of channel destinations, each a surface or surface:address — \"telegram\", \"agent\", \"telegram,agent\", \"telegram:12345,agent\". Telegram by default, because an occasion nudge that waits to be asked for has already missed the date it existed to protect — the owner ruled that these push out of the box, to Telegram and to the agent. Naming \"agent\" pushes the nudge into the agent conversation itself, which the agent product makes possible by registering its own sender; naming both means both get it, once each, and each is attempted independently so a broken credential on one cannot silence the other. Set it to empty to make the feature pull-only instead: nothing is pushed, and a surface picks up what is outstanding at the start of a turn. The TUI is refused as a destination whatever is set here: it is a get-work-done interface, and life admin does not belong in it."
+  },
+  {
+    "key": "occasions.cadenceDays",
+    "type": "number",
+    "default": 3,
+    "description": "How often an unresolved CONFLICT in your dates — two different dates recorded for the same thing — is raised again, in days. It no longer governs birthday reminders: those speak twice, when the date enters its runway and on the day itself, and never repeat beyond that. A conflict is a fact about your file that stays wrong until you fix it, so it does keep coming back.",
+    "validationHint": "integer in [1, 60]"
+  },
+  {
+    "key": "occasions.awayAdjust",
+    "type": "boolean",
+    "default": true,
+    "description": "Let a plan that has you away from home move a nudge EARLIER, to the day before you leave. On because you cannot have something delivered to a house you are not in, so a reminder that arrives while you are abroad has already missed the window it existed to protect. When you have already left there is nothing earlier to move to and the nudge stands rather than waiting for your return."
+  },
+  {
+    "key": "occasions.calendarMirror",
+    "type": "boolean",
+    "default": false,
+    "description": "Write your occasions out to the connected calendar as well. Off by default because your profile is the record and the calendar is a copy — calendar entries are single occurrences that do not persist across years, which is exactly why these dates live in the profile instead. Nothing is ever read back the other way, and deleting a calendar entry never removes the occasion."
+  },
+  {
+    "key": "occasions.suppressMirroredNudges",
+    "type": "boolean",
+    "default": true,
+    "description": "Stay quiet about an occasion that is already in a calendar, so the calendar's own reminder is the only ping. On by default because two pings for one birthday is how a useful reminder becomes one you mute. Turn it off if you would rather have both — an occasion marked \"mirrored\" on its own line is covered by this too."
+  },
+  {
+    "key": "occasions.interviewQuestions",
+    "type": "number",
+    "default": 3,
+    "description": "How many questions are asked after you say yes to sorting a gift. Three, because it is meant to guide you to an idea rather than fill in a form, and a long one is a form. The questions open from what your profile already knows about the person and from what you landed on last time; none of them recommends anything.",
+    "validationHint": "integer in [1, 8]"
+  },
+  {
+    "key": "occasions.giftHistoryYears",
+    "type": "number",
+    "default": 10,
+    "description": "How long the record of what you landed on is kept, in years. Ten, so year three is not steered by year one. This is the one part of the machine-owned state that deliberately outlives its occasion's answer — the answers expire with their date so next year asks fresh, the history does not.",
+    "validationHint": "integer in [1, 50]"
+  },
+  {
+    "key": "occasions.sweepIntervalMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "How often the daemon looks for dates entering their lead window, in minutes. Hourly by default, which is frequent enough that a nudge lands within an hour of the window opening and cheap enough to be invisible — the pass reads memory and touches one small file. It cannot over-nudge whatever this is set to: each occasion carries its own next-due date, so a shorter interval makes the FIRST nudge land sooner and changes nothing about the rhythm after it. Housekeeping runs on every pass, including the ones that are inside quiet hours or that raise nothing.",
+    "validationHint": "integer in [5, 1440]"
+  },
+  {
     "key": "voice.local.sttEngine",
     "type": "enum",
     "default": "",
-    "description": "Local speech-to-text engine: whisper-cpp (blessed default — CPU-first, realtime-capable) or faster-whisper (NVIDIA-GPU alternative via a wrapper script). Empty = not configured (honest unconfigured status; nothing auto-downloads).",
+    "description": "Local speech-to-text engine: whisper-cpp (blessed default — CPU-first, realtime-capable) or faster-whisper (NVIDIA-GPU alternative via a wrapper script). Empty means not configured, and the machine says so honestly rather than erroring. Managed setup installs whisper-cpp and fills this in.",
     "enumValues": [
       "",
       "whisper-cpp",
@@ -1102,19 +1534,19 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "voice.local.sttBinary",
     "type": "string",
     "default": "",
-    "description": "Absolute path to the local STT engine binary (e.g. whisper.cpp's whisper-cli)."
+    "description": "Absolute path to the local STT engine binary (e.g. whisper.cpp's whisper-cli). Managed setup installs the engine and sets this."
   },
   {
     "key": "voice.local.sttModelPath",
     "type": "string",
     "default": "",
-    "description": "Absolute path to the local STT model file (e.g. ggml-tiny.en.bin). The user downloads this explicitly — nothing auto-downloads."
+    "description": "Absolute path to the local STT model file (e.g. ggml-tiny.en.bin). Managed setup downloads the model, checksum-verifies it and sets this path; a path you set yourself is kept unless it names an install the managed runtime replaces, which is reported when it happens."
   },
   {
     "key": "voice.local.ttsEngine",
     "type": "enum",
     "default": "",
-    "description": "Local text-to-speech engine: piper (blessed default — sub-50ms first-audio class, MIT) or kokoro (quality alternative, Apache 2.0, via a wrapper script). Empty = not configured.",
+    "description": "Local text-to-speech engine: piper (blessed default — sub-50ms first-audio class, MIT) or kokoro (quality alternative, Apache 2.0, via a wrapper script). Empty means not configured. Managed setup installs piper and fills this in.",
     "enumValues": [
       "",
       "piper",
@@ -1125,13 +1557,345 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "voice.local.ttsBinary",
     "type": "string",
     "default": "",
-    "description": "Absolute path to the local TTS engine binary (e.g. piper)."
+    "description": "Absolute path to the local TTS engine binary (e.g. piper). Managed setup installs the engine and sets this."
   },
   {
     "key": "voice.local.ttsModelPath",
     "type": "string",
     "default": "",
-    "description": "Absolute path to the local TTS voice model (e.g. en_US-lessac-low.onnx with its .json beside it). The user downloads this explicitly — nothing auto-downloads."
+    "description": "Absolute path to the local TTS voice model (e.g. en_US-lessac-low.onnx with its .json beside it). Managed setup downloads the voice, checksum-verifies it and sets this path; a path you set yourself is kept unless it names an install the managed runtime replaces, which is reported when it happens."
+  },
+  {
+    "key": "voice.wake.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Run the wake-word detector, listening continuously for the wake phrase on the configured input device. Turning it on starts a supervised capture process and a persistent listening indicator; turning it off stops it and releases the device immediately. WHERE IT LISTENS depends on the voice.wake.surfaces.* rows: the terminal captures through a recorder subprocess and is on by default, the agent captures the same way and is opted in per surface, and a browser tab captures through getUserMedia and is opted in per origin. Off by default because an always-on microphone must be an explicit act, not something a user discovers after the fact. THE MODEL IS ALREADY THERE: installing goodvibes downloads and checksum-verifies the pinned classifier, and a daemon retries at boot if the install could not reach the network — so turning this on normally needs no setup step at all. Turning it on never downloads anything itself: on a host whose artifacts are missing or fail verification it says exactly which, and names the command that fetches them, rather than silently pulling 6.1 MB the moment a switch moves."
+  },
+  {
+    "key": "voice.wake.models",
+    "type": "string",
+    "default": "hey_goodvibes",
+    "description": "Comma-separated wake-word models to run concurrently, by id. Default \"hey_goodvibes\" is the model the SDK pins, hosts, and verifies by checksum. Additional ids resolve against voice.wake.customModelDir. Each model costs one classifier inference per 80 ms frame — the shared melspectrogram and speech-embedding front end is computed once regardless of how many models are listed, so a second model is far cheaper than a second detector. An empty list disables detection without stopping the service."
+  },
+  {
+    "key": "voice.wake.threshold",
+    "type": "number",
+    "default": 0.9,
+    "description": "Score, 0 to 1, a frame must reach for the wake phrase to count as heard. DELIBERATELY 0.9, NOT openWakeWord's upstream default of 0.5 and not the 0.5 originally accepted for this row: measurement on the shipped hey_goodvibes model showed 0.5 fires on 34.5% of never-trained minimal-pair phrases (\"hey good vibe check\", \"hey goodbye vibes\" — ordinary English a user will actually say) at 99.2% recall, while 0.9 cuts that to 24.7% for 96.8% recall. Trading 2.4 points of recall to remove roughly a third of the wrong wakes is the better default for a microphone that is always on. Lower it toward 0.5 if the detector misses you; raise it above 0.9 if it fires when you did not speak to it. Recall figures here are synthetic-only — no human has recorded the phrase.",
+    "validationHint": "number in [0, 1]"
+  },
+  {
+    "key": "voice.wake.patienceFrames",
+    "type": "number",
+    "default": 2,
+    "description": "Consecutive 80 ms frames that must all score above voice.wake.threshold before the wake fires. Two frames is about 160 ms of agreement, which removes most single-frame false accepts for one extra frame of latency. Set to 1 for the fastest possible trigger at the cost of more spurious wakes.",
+    "validationHint": "integer in [1, 10]"
+  },
+  {
+    "key": "voice.wake.cooldownMs",
+    "type": "number",
+    "default": 2000,
+    "description": "Milliseconds after a confirmed wake during which further detections are ignored, so one spoken phrase cannot fire twice as it passes through the detector's rolling window. Applied after patience confirms a hit. 0 disables the cooldown and lets every confirmed frame fire.",
+    "validationHint": "integer in [0, 60000]"
+  },
+  {
+    "key": "voice.wake.vadThreshold",
+    "type": "number",
+    "default": 0,
+    "description": "Speech-probability floor, 0 to 1, from the speech gate run ahead of the wake classifier; frames below it are withheld from scoring instead of being classified. The gate is our own speech/non-speech head over the SAME embedding the wake classifier consumes, so it costs one extra inference of 0.025 ms per 80 ms frame — beside the detector's own 3.46 ms — and no extra front end. It provisions with the wake models. Measured on 106,390 held-out frames: at 0.3 it passes 96.0% of speech frames and withholds 95.7% of non-speech ones, which is the recommended value; lower passes more speech and screens less, higher screens more and starts costing wakes. 0 is the shipped default and turns the stage off entirely — it is the configuration that has been exercised longest, and a gate can only ever cost you a detection. A surface that has not loaded the gate REFUSES TO START with any value above 0, rather than running unscreened frames through a stage you have configured.",
+    "validationHint": "number in [0, 1]"
+  },
+  {
+    "key": "voice.wake.noiseSuppression",
+    "type": "enum",
+    "default": "none",
+    "description": "Noise suppression applied to captured audio before anything reads it — the wake classifier scores filtered frames, and the utterance recorded after a wake (and push-to-talk voice input) is filtered audio too. \"speex\" is SpeexDSP's own denoiser, carried in the platform as a WebAssembly module and applied on every surface that has WebAssembly, which is both shipped ones: nothing to install, nothing to download, no per-host library. It attenuates the estimated noise floor by about 15 dB — measured at 13.2 dB against a synthetic tone-plus-white-noise set, for 0.24 ms of work per 80 ms frame beside the detector's own 3.46 ms. \"none\" ships as the default and is a true passthrough: the captured bytes reach the detector exactly as the device produced them. Choose \"speex\" on a noisy input (a fan, an air conditioner, street noise through an open window), and \"none\" on a quiet one, where a denoiser only has speech to work on.",
+    "enumValues": [
+      "none",
+      "speex"
+    ]
+  },
+  {
+    "key": "voice.wake.inputDevice",
+    "type": "string",
+    "default": "",
+    "description": "Capture device to listen on. Empty means the operating system default source. Shared by BOTH microphone consumers: wake detection and push-to-talk voice input open the same device through the same path, so this row moves both rather than only the always-on one. Device identifiers are host-specific — list real ones with `pactl list short sources` or `arecord -L`, or use a navigator.mediaDevices deviceId in a browser tab. Note pw-record takes a PipeWire node serial or node name here, not a PulseAudio device name, and sox cannot target a device at all (it reads AUDIODEV from the environment), which the surface reports rather than silently ignoring."
+  },
+  {
+    "key": "voice.wake.captureCommand",
+    "type": "enum",
+    "default": "auto",
+    "description": "Which recorder feeds capture on a HOST surface — the terminal and the daemon child process. A browser tab ignores this row and uses getUserMedia. Feeds both consumers: wake detection and push-to-talk voice input. \"auto\" probes for pw-record, parecord, arecord, ffmpeg, then sox and uses the first present, mirroring how local audio playback discovers its player. Name one explicitly to pin the choice on a host where the probe picks a device-starved backend; a named recorder that is not installed reports that instead of quietly falling back, because pinning it was the point.",
+    "enumValues": [
+      "auto",
+      "pw-record",
+      "parecord",
+      "arecord",
+      "ffmpeg",
+      "sox"
+    ]
+  },
+  {
+    "key": "voice.wake.surfaces.tui",
+    "type": "boolean",
+    "default": true,
+    "description": "Listen for the wake phrase on the terminal, through a recorder subprocess on the host. On by default: once wake detection is enabled the terminal is the primary surface, and a wake that reaches no surface is a detector that appears broken. A confirmed wake plays the activation sound, shows the listening indicator, captures the utterance that follows and sends it to speech-to-text, then places the transcript in the composer — or submits it when voice.wake.autoSubmit is on."
+  },
+  {
+    "key": "voice.wake.surfaces.agent",
+    "type": "boolean",
+    "default": false,
+    "description": "Listen for the wake phrase on the agent surface, through a recorder subprocess on the host — the same capture path the terminal uses. Turning this on with voice.wake.enabled opens the microphone on the agent, and a confirmed wake sends the utterance that follows to speech-to-text and puts the transcript into the agent conversation input, or submits it when voice.wake.autoSubmit is on. Off by default because two surfaces on one machine both acting on a single spoken utterance is a confusing default, not because it does not work: turn it on when the agent is the surface you actually talk to, and consider turning voice.wake.surfaces.tui off when you do."
+  },
+  {
+    "key": "voice.wake.surfaces.webui",
+    "type": "boolean",
+    "default": false,
+    "description": "Listen for the wake phrase in the web UI, which runs the detector inside the browser tab on a WASM backend and downloads the pinned model through the daemon. Off by default because browser capture is a separate stack with its own per-origin microphone permission prompt — it is opted into per browser, not inherited from the host. While it is off the tab never calls getUserMedia at all, so no permission prompt appears. A plain-http origin cannot capture and says so instead of failing silently."
+  },
+  {
+    "key": "voice.wake.activationSound",
+    "type": "enum",
+    "default": "chime",
+    "description": "Sound played the moment a wake is confirmed. \"chime\" by default because audible confirmation is how a user knows the microphone acted — a silent wake is the behaviour people distrust. \"custom\" plays voice.wake.activationSoundPath; \"none\" is silent and leaves voice.wake.indicator as the only feedback.",
+    "enumValues": [
+      "none",
+      "chime",
+      "custom"
+    ]
+  },
+  {
+    "key": "voice.wake.activationSoundPath",
+    "type": "string",
+    "default": "",
+    "description": "Absolute path to the audio file played on wake. Read only when voice.wake.activationSound is \"custom\"; ignored otherwise. A host surface plays the file through the same player local voice output uses. A browser tab cannot read a path on your machine, so it plays the built-in chime instead and reports that this row is not in force there — a wake stays audible either way."
+  },
+  {
+    "key": "voice.wake.indicator",
+    "type": "enum",
+    "default": "statusline",
+    "description": "How the surface shows that the microphone is live. \"statusline\" keeps a persistent listening marker for as long as the detector runs — not only at the moment of a wake — so an always-on microphone is never invisible: a footer row in the terminal, a status-strip chip in the web UI. \"banner\" is more prominent; \"off\" removes the marker entirely and is not the default for that reason.",
+    "enumValues": [
+      "off",
+      "statusline",
+      "banner"
+    ]
+  },
+  {
+    "key": "voice.wake.preRollMs",
+    "type": "number",
+    "default": 500,
+    "description": "Milliseconds of audio kept from BEFORE the wake fired and prepended to the speech-to-text request, so a phrase run straight into the command (\"hey goodvibes, what's—\") is not clipped at the front. 500 ms covers the detector's own confirmation latency plus a fast speaker. 0 starts capture at the moment of detection.",
+    "validationHint": "integer in [0, 2000]"
+  },
+  {
+    "key": "voice.wake.captureMaxSeconds",
+    "type": "number",
+    "default": 10,
+    "description": "Hard ceiling on how long capture runs before it stops on its own. Bounds memory and guarantees a stuck or silent stream cannot hold the microphone open indefinitely. Applies to post-wake capture AND to push-to-talk, where a key-release event that never arrives would otherwise leave the device open. 0 REMOVES THE CEILING: speech-to-text imposes no length limit of its own, so the ceiling is policy rather than a technical bound, and a long dictated thought is a real thing to want. It still defaults to 10 because the ceiling is the backstop for the OTHER stop condition failing. Post-wake capture normally ends about voice.wake.silenceStopMs after you stop talking, which depends on frames reading as silence — with the ceiling off, a stream that goes stuck or a room the silence floor cannot resolve holds the microphone open with nothing left to close it. Turn it off alongside a silence-stop you have seen work in your room; voice.wake.silenceFloorRms is the row that makes that reliable.",
+    "validationHint": "integer in [0, 120]"
+  },
+  {
+    "key": "voice.wake.silenceStopMs",
+    "type": "number",
+    "default": 1200,
+    "description": "Milliseconds of silence that end post-wake capture, so the request is sent when the user stops talking rather than at the voice.wake.captureMaxSeconds ceiling. Raise it if capture cuts off mid-sentence during natural pauses. Post-wake only: push-to-talk ends when the key is released, because someone holding it through a pause has not finished talking.",
+    "validationHint": "integer in [100, 10000]"
+  },
+  {
+    "key": "voice.wake.silenceFloorRms",
+    "type": "number",
+    "default": 0,
+    "description": "The audio level at or below which a frame counts as silence, on the int16 magnitude scale the capture path uses (full scale 32768, so 180 is about -45 dBFS). 0 — the default — MEASURES IT PER UTTERANCE from the audio captured just before the wake fired, and places the floor 12 dB above the room's own noise. That measurement is what makes voice.wake.silenceStopMs work at all in a room that is not quiet: with a fixed floor, steady background noise above it means no frame is ever silent, silence never accumulates, and every capture runs to the voice.wake.captureMaxSeconds ceiling however long ago you stopped talking. The floor then FOLLOWS the room for the rest of the capture, tracking the quiet moments in the last second and a half, because a headset with automatic gain control raises the input once you stop talking and the room comes back louder than the number measured before it. It is never raised over a third of the speech being heard at the same time, so it cannot end up above your own voice. Set a number to pin the floor instead, which is worth doing if the measurement guesses wrong in your room: raise it if capture keeps running after you stop, lower it if capture cuts off while you are still speaking. A number you set here is used exactly as given AND frozen — it stays where you put it for the whole capture, with no following. The first measured value is never allowed below 180 or above 1440; the following that comes after it may reach 5760.",
+    "validationHint": "integer in [0, 8000]"
+  },
+  {
+    "key": "voice.wake.speechRetriggerMs",
+    "type": "number",
+    "default": 150,
+    "description": "How long a run of sound above the silence floor has to last before it counts as you talking again. Shorter runs are counted as part of the silence they interrupted rather than starting the voice.wake.silenceStopMs wait over. This is what a close-worn or in-ear microphone needs: a breath, a lip tick or a chair creak is loud and lasts one or two frames, and treating each one as speech means the wait never completes and capture runs to the voice.wake.captureMaxSeconds ceiling every time however long ago you stopped. 150 ms sits under the shortest syllable anyone ends a sentence on and over the longest of those noises. Raise it if capture still will not end in a room full of short noises; lower it if the first word of a resumed sentence gets clipped. 0 turns it off, so every loud frame resets the wait — the behaviour before this row existed.",
+    "validationHint": "integer in [0, 2000]"
+  },
+  {
+    "key": "voice.wake.autoSubmit",
+    "type": "boolean",
+    "default": false,
+    "description": "Submit the transcribed text as a turn automatically instead of placing it in the input for review. Applies to the utterance captured after a WAKE; push-to-talk always places its transcript in the composer, because a person who pressed a key is already looking at the screen. Off by default, matching the never-auto-send posture of the existing voice input: a misheard transcript must not become a submitted turn without a human seeing it first."
+  },
+  {
+    "key": "voice.wake.retainAudio",
+    "type": "enum",
+    "default": "none",
+    "description": "Whether captured audio is written to disk. \"none\" by default — nothing is stored, which is the only setting under which the microphone leaves no recording behind. \"session-temp\" keeps clips in a session-scoped directory that is deleted when the session ends and swept on recovery, and exists to debug a bad transcript, not as a recording feature. A browser tab has no filesystem to retain into: it reports that this row is not in force rather than appearing to store clips it is not storing.",
+    "enumValues": [
+      "none",
+      "session-temp"
+    ]
+  },
+  {
+    "key": "voice.wake.customModelDir",
+    "type": "string",
+    "default": "",
+    "description": "Directory searched for wake models whose ids are not the pinned default. Empty uses the managed wake model directory under the surface storage root. Set it to keep your own models outside the managed tree; files there are loaded as-is and are not checksum-pinned, unlike the managed download."
+  },
+  {
+    "key": "voice.wake.maxRestarts",
+    "type": "number",
+    "default": 3,
+    "description": "How many times the supervisor restarts a crashed detector process inside voice.wake.crashWindowSeconds before it stops trying and reports the failure. Matches the restart ceiling used for MCP clients. 0 disables restarts, so any crash is terminal and immediately visible.",
+    "validationHint": "integer in [0, 20]"
+  },
+  {
+    "key": "voice.wake.restartBackoffMs",
+    "type": "number",
+    "default": 2000,
+    "description": "Base delay before restarting a crashed detector, multiplied by the attempt number for linear backoff (2 s, 4 s, 6 s). Stops a process that fails instantly from becoming a restart storm.",
+    "validationHint": "integer in [0, 60000]"
+  },
+  {
+    "key": "voice.wake.crashWindowSeconds",
+    "type": "number",
+    "default": 60,
+    "description": "Rolling window in which repeated crashes count toward voice.wake.maxRestarts. Exceeding the ceiling inside this window latches the supervisor off so a detector that cannot stay up stops consuming the device; a clean run past the window resets the count.",
+    "validationHint": "integer in [1, 3600]"
+  },
+  {
+    "key": "voice.wake.browserBackend",
+    "type": "enum",
+    "default": "wasm",
+    "description": "Execution backend for the detector inside a browser tab. \"wasm\" is the default and the measured configuration: the per-frame cost already beats real time by a wide margin, and WebGPU cannot run the front end without splitting the graph across devices, which costs more in transfers than it saves. \"webgpu\" is available for hosts that measure otherwise. Read by the browser tab when it creates its inference sessions; a host surface always runs WASM and ignores this row. BOTH VALUES LOAD THE SAME ENGINE BINARY — the WebGPU-capable build carries the CPU engine too — so switching costs no extra download, and a tab set to \"webgpu\" on a browser without navigator.gpu falls back to the CPU provider inside the binary it already has.",
+    "enumValues": [
+      "wasm",
+      "webgpu"
+    ]
+  },
+  {
+    "key": "device.capabilities.mode",
+    "type": "enum",
+    "default": "honor-grants",
+    "description": "How a paired phone's camera, screen, location, clipboard, and device commands are reached. honor-grants (stock): every capability asks the first time and every time after, unless you chose \"always allow\" for that one capability on that one phone. ask-every-time: the prompt appears on every single request and no durable grant is ever consulted or offered — use it when someone else is holding the phone. off: no capability request reaches any paired device at all.",
+    "enumValues": [
+      "off",
+      "ask-every-time",
+      "honor-grants"
+    ]
+  },
+  {
+    "key": "device.capabilities.allowAlwaysOffer",
+    "type": "enum",
+    "default": "every-capability",
+    "description": "Which capabilities may offer a durable \"always allow\" on their confirmation prompt. every-capability (stock): all of them, front camera, screen capture, precise location, and clipboard included. standard-only: the elevated ones (front camera, screen capture, precise location, clipboard read) still ask every time and never offer a grant, while everyday ones can be granted. never: no durable grant is ever offered anywhere; existing grants stop being honoured.",
+    "enumValues": [
+      "every-capability",
+      "standard-only",
+      "never"
+    ]
+  },
+  {
+    "key": "device.capabilities.requestTimeoutSeconds",
+    "type": "number",
+    "default": 60,
+    "description": "How long the agent waits for a phone to answer one capability request before giving up. A phone that is asleep or off the network usually answers within a few seconds of waking; a long timeout keeps a slow wake from failing, a short one keeps the agent from stalling.",
+    "validationHint": "integer in [5, 600]"
+  },
+  {
+    "key": "device.location.precision",
+    "type": "enum",
+    "default": "precise-grantable",
+    "description": "How exact a location the phone will report. precise-grantable (stock): both approximate and street-level fixes are available, and either may be granted durably. ask-precise: street-level fixes are available but always ask, and never offer \"always allow\". coarse-only: street-level fixes are refused entirely; only city-scale approximate location is served.",
+    "enumValues": [
+      "coarse-only",
+      "ask-precise",
+      "precise-grantable"
+    ]
+  },
+  {
+    "key": "device.clipboard.readMode",
+    "type": "enum",
+    "default": "grantable",
+    "description": "Whether the agent can read what is on the phone's clipboard. grantable (stock): it asks every time and offers \"always allow\", like every other capability. ask-only: it asks every time and never offers a durable grant. off: clipboard reads are refused; putting text ON the clipboard is unaffected.",
+    "enumValues": [
+      "off",
+      "ask-only",
+      "grantable"
+    ]
+  },
+  {
+    "key": "device.capture.retentionHours",
+    "type": "number",
+    "default": 24,
+    "description": "How long a picture taken by the phone's camera or screen capture is kept before it is deleted and the deletion recorded. Stock is 24 hours: long enough for the work the picture was taken for, short enough that a photo of your desk is not still on disk next week.",
+    "validationHint": "integer in [1, 720]"
+  },
+  {
+    "key": "device.capture.maxArtifacts",
+    "type": "number",
+    "default": 200,
+    "description": "How many captures are kept at once across all paired phones. Past this count the oldest are deleted even while inside the retention window, so a burst of captures cannot fill the disk between sweeps.",
+    "validationHint": "integer in [1, 5000]"
+  },
+  {
+    "key": "device.capture.sweepIntervalMinutes",
+    "type": "number",
+    "default": 30,
+    "description": "How often housekeeping runs over stored captures and grants while the runtime is up. A sweep also runs at every start; this interval is what keeps a long-running daemon from going days without one. Each sweep writes what it removed and why.",
+    "validationHint": "integer in [1, 1440]"
+  },
+  {
+    "key": "device.grants.expiryDays",
+    "type": "number",
+    "default": 90,
+    "description": "How long an \"always allow\" grant lasts before it expires and the capability starts asking again. Nothing is granted forever: an expired grant is removed by housekeeping and is never honoured in the meantime.",
+    "validationHint": "integer in [1, 3650]"
+  },
+  {
+    "key": "device.grants.maxPerNode",
+    "type": "number",
+    "default": 64,
+    "description": "How many \"always allow\" grants one phone may hold at once. Past this count the oldest grants for that phone are removed, so a paired device cannot accumulate authority indefinitely.",
+    "validationHint": "integer in [1, 512]"
+  },
+  {
+    "key": "device.grants.auditRetentionDays",
+    "type": "number",
+    "default": 30,
+    "description": "How long the grants ledger keeps its record of grants given, used, revoked, and expired. This is what the grants surface shows you when you ask what a phone has been allowed to do and when.",
+    "validationHint": "integer in [1, 365]"
+  },
+  {
+    "key": "device.nodes.maxPaired",
+    "type": "number",
+    "default": 8,
+    "description": "How many phones may be paired as device nodes at once. Each paired phone is a separate identity with its own grants; this bounds how many can be outstanding before an old one has to be unpaired.",
+    "validationHint": "integer in [1, 64]"
+  },
+  {
+    "key": "push.vapidSubject",
+    "type": "string",
+    "default": "",
+    "description": "Who a push service contacts when it has a problem delivering your notifications. Every push the daemon sends is signed with this address in it (the VAPID \"sub\" claim), and it is the only way Apple, Google, or Mozilla can reach you about, say, a malformed payload or a rate limit. Set it to a mailto: address you read, or an https: page with contact details on it. Left empty it falls back to mailto:goodvibes-push@localhost, which is well-formed and accepted but reaches nobody — push still works, you just never hear about a problem.",
+    "validationHint": "empty, or a mailto: address or an https: URL a push service can use to reach you"
+  },
+  {
+    "key": "push.subscriptions.warnAbovePerPrincipal",
+    "type": "number",
+    "default": 50,
+    "description": "How many registered push devices one operator can hold before housekeeping starts saying so. This is a WARNING line, not a limit: passing it logs the count and writes it into the housekeeping disclosure, and every subscription is kept. A working device is NEVER removed to make room for a new one — registering a new phone always succeeds, even when that puts you over this number, because dropping a quiet-but-live device would stop its notifications with nothing to tell you and no way back but resubscribing. Devices leave only when something proves them dead (the push service reports the endpoint gone, or refuses it repeatedly).",
+    "validationHint": "integer in [1, 100000]"
+  },
+  {
+    "key": "push.subscriptions.failureThreshold",
+    "type": "number",
+    "default": 5,
+    "description": "How many deliveries in a row a push service must refuse before the daemon treats that endpoint as dead and removes it. A 404 or 410 removes it immediately — that is the push service saying the subscription is gone — so this bound is for the murkier case of an endpoint that only ever errors or times out. Any single success resets the count to zero. Raise it if you have a flaky network and would rather keep retrying; lower it to clear out dead endpoints faster.",
+    "validationHint": "integer in [1, 100]"
+  },
+  {
+    "key": "push.subscriptions.sweepIntervalMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "How often housekeeping re-reads the stored push subscriptions while the daemon is up, looking for records that are provably dead — unreadable key material, a torn record, or an endpoint past the refusal threshold. A sweep also runs at every start; this interval is what keeps a daemon that stays up for weeks from going that long without one. Each sweep writes what it removed and the evidence, so a removal is never indistinguishable from data loss.",
+    "validationHint": "integer in [1, 1440]"
   },
   {
     "key": "fleet.maxSize",
@@ -1139,6 +1903,80 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "default": 8,
     "description": "Maximum fleet size — the one ceiling on agents this daemon is responsible for: native spawned agents, ACP-hosted agents, and elastic fix-task agents all count against it. Externally-launched agents merely observed on the host never count. Renamed from orchestration.maxActiveAgents.",
     "validationHint": "number in [1, 20]"
+  },
+  {
+    "key": "cluster.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Let this machine share inbound channel work with your OTHER goodvibes machines on this network, so exactly one of them reads each inbox (Telegram polling, ntfy subscriptions, inbox pollers) instead of all of them answering the same message. For a homelab where you run goodvibes on several machines that are all yours and configured with the same surfaces: switch it on everywhere and they sort it out between themselves, including taking over within about a second when one is shut down or crashes. Off by default because switching it on asserts that every goodvibes node on this network belongs to you — on a shared network (an office, a shared house) a stranger's node would join the same coordination and one of you would stop receiving messages with nothing to indicate why. Outbound sends, sessions and the control plane are unaffected either way."
+  },
+  {
+    "key": "cluster.heartbeatSeconds",
+    "type": "number",
+    "default": 30,
+    "description": "How often the responsible node tells the others it is still alive, in seconds. Lower means a faster crash takeover and slightly more network chatter.",
+    "validationHint": "integer in [1, 3600]"
+  },
+  {
+    "key": "cluster.masterTimeoutSeconds",
+    "type": "number",
+    "default": 90,
+    "description": "How long a standby node waits without a heartbeat before it decides the responsible node has crashed and holds an election, in seconds. This is the CRASH path only: a node shut down normally hands over immediately, so ordinary restarts never wait this out. Must be at least two heartbeats.",
+    "validationHint": "integer in [2, 86400]"
+  },
+  {
+    "key": "cluster.bootProbeSeconds",
+    "type": "number",
+    "default": 3,
+    "description": "How long a starting node listens for an existing responsible node before claiming the role itself, in seconds.",
+    "validationHint": "integer in [1, 300]"
+  },
+  {
+    "key": "cluster.port",
+    "type": "number",
+    "default": 61860,
+    "description": "UDP port used for node-to-node coordination on the local network. Every node that should coordinate must share this port. Change it only to avoid a collision with something else on your network.",
+    "validationHint": "integer port in [1, 65535]"
+  },
+  {
+    "key": "cluster.multicastGroup",
+    "type": "string",
+    "default": "239.255.71.86",
+    "description": "IPv4 multicast group the nodes coordinate over. The default sits in the administratively-scoped range (239.0.0.0/8), which routers do not forward off the local network. Every node that should coordinate must share this value."
+  },
+  {
+    "key": "cluster.secret",
+    "type": "string",
+    "default": "",
+    "description": "Optional shared phrase. When set, coordination messages are signed with it and any message that does not verify is ignored, so only nodes that know the phrase can take the responsible role. Leave empty on a network you trust. Every node that should coordinate must use the same value."
+  },
+  {
+    "key": "cluster.keyRotationHours",
+    "type": "number",
+    "default": 24,
+    "description": "How often the group replaces the internal key it signs coordination messages with, in hours. This is NOT the join key you type when adding a machine — that one is stable and changes only when you change it. This key rotates by itself, is never shown to you, and rotating it limits how long a copy taken off an old disk or a backup would be accepted. Lower means a shorter window and a little more network traffic once per rotation; the changeover never interrupts anything, because both the new key and the previous one are accepted for a few minutes either side of it.",
+    "validationHint": "integer in [1, 8760]"
+  },
+  {
+    "key": "cluster.keyRotationGraceMinutes",
+    "type": "number",
+    "default": 5,
+    "description": "How long both the new and the previous internal group key are accepted around a rotation, in minutes. This exists so that machines which have not yet picked up the new key are still heard while they catch up — without it, a rotation would look like every other machine going silent at once, and the group would needlessly hand work around. Raise it if your machines are often asleep or on a flaky link. It does NOT apply when you remove a machine: that rotation takes effect at once, which is the point of it.",
+    "validationHint": "integer in [1, 120]"
+  },
+  {
+    "key": "cluster.beaconSeconds",
+    "type": "number",
+    "default": 15,
+    "description": "How often this machine advertises its group on the local network, in seconds. The advertisement carries the group's id, its name, how many machines are in it and this build's version — and nothing else. It is what lets a new machine running `cluster join` see the group and pick it from a list. Lower means a new machine finds the group faster; higher means slightly less traffic.",
+    "validationHint": "integer in [5, 3600]"
+  },
+  {
+    "key": "cluster.rosterGossipSeconds",
+    "type": "number",
+    "default": 60,
+    "description": "How often this machine shares the group's member list with the others, in seconds. This is how a rename, a newly added machine or a removal reaches every machine in the group, including ones that were switched off when it happened. Lower means changes settle everywhere faster.",
+    "validationHint": "integer in [10, 3600]"
   },
   {
     "key": "surfaces.slack.enabled",
@@ -1369,7 +2207,13 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "surfaces.telegram.botUsername",
     "type": "string",
     "default": "",
-    "description": "Telegram bot username used for targeting and setup hints"
+    "description": "Telegram bot username (@handle) used for mention matching, command stripping, and targeting. Discovered automatically from the bot token via getMe when left blank; setting it explicitly wins over discovery."
+  },
+  {
+    "key": "surfaces.telegram.discoveredBotTokenId",
+    "type": "string",
+    "default": "",
+    "description": "Bot id the cached botUsername was discovered for. Managed automatically so a rotated bot token re-resolves its identity instead of running under the previous bot’s handle."
   },
   {
     "key": "surfaces.telegram.mode",
@@ -1735,6 +2579,287 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "type": "string",
     "default": "",
     "description": "Default Matrix room id for routing"
+  },
+  {
+    "key": "surfaces.email.host",
+    "type": "string",
+    "default": "",
+    "description": "Mail server hostname used for both IMAP and SMTP unless overridden below"
+  },
+  {
+    "key": "surfaces.email.user",
+    "type": "string",
+    "default": "",
+    "description": "Mailbox account name the daemon authenticates as"
+  },
+  {
+    "key": "surfaces.email.username",
+    "type": "string",
+    "default": "",
+    "description": "Alternate spelling of the mailbox account name, read when user is unset"
+  },
+  {
+    "key": "surfaces.email.from",
+    "type": "string",
+    "default": "",
+    "description": "From address on mail the daemon sends; defaults to the account name"
+  },
+  {
+    "key": "surfaces.email.password",
+    "type": "string",
+    "default": "",
+    "description": "Mailbox password or app password. Stored in the daemon secret tier, never in config"
+  },
+  {
+    "key": "surfaces.email.imapHost",
+    "type": "string",
+    "default": "",
+    "description": "IMAP hostname read by the inbox provider (e.g. imap.gmail.com)"
+  },
+  {
+    "key": "surfaces.email.imapPort",
+    "type": "number",
+    "default": 993,
+    "description": "IMAP port read by the inbox provider"
+  },
+  {
+    "key": "surfaces.email.imapUser",
+    "type": "string",
+    "default": "",
+    "description": "IMAP account name read by the inbox provider"
+  },
+  {
+    "key": "surfaces.email.imapPassword",
+    "type": "string",
+    "default": "",
+    "description": "IMAP password read by the inbox provider. Daemon secret tier, never config"
+  },
+  {
+    "key": "surfaces.email.imap.host",
+    "type": "string",
+    "default": "",
+    "description": "IMAP hostname, overriding surfaces.email.host"
+  },
+  {
+    "key": "surfaces.email.imap.port",
+    "type": "number",
+    "default": 993,
+    "description": "IMAP port"
+  },
+  {
+    "key": "surfaces.email.imap.user",
+    "type": "string",
+    "default": "",
+    "description": "IMAP account name, overriding surfaces.email.user"
+  },
+  {
+    "key": "surfaces.email.imap.password",
+    "type": "string",
+    "default": "",
+    "description": "IMAP password, overriding surfaces.email.password. Daemon secret tier"
+  },
+  {
+    "key": "surfaces.email.imap.secure",
+    "type": "boolean",
+    "default": true,
+    "description": "Connect to IMAP over TLS"
+  },
+  {
+    "key": "surfaces.email.imap.mailbox",
+    "type": "string",
+    "default": "INBOX",
+    "description": "Mailbox the daemon reads"
+  },
+  {
+    "key": "surfaces.email.imap.draftsMailbox",
+    "type": "string",
+    "default": "Drafts",
+    "description": "Mailbox drafts are appended to"
+  },
+  {
+    "key": "surfaces.email.smtp.host",
+    "type": "string",
+    "default": "",
+    "description": "SMTP hostname, overriding surfaces.email.host"
+  },
+  {
+    "key": "surfaces.email.smtp.port",
+    "type": "number",
+    "default": 465,
+    "description": "SMTP port"
+  },
+  {
+    "key": "surfaces.email.smtp.password",
+    "type": "string",
+    "default": "",
+    "description": "SMTP password when it differs from the IMAP one. Daemon secret tier"
+  },
+  {
+    "key": "surfaces.email.smtp.secure",
+    "type": "boolean",
+    "default": true,
+    "description": "Connect to SMTP over TLS"
+  },
+  {
+    "key": "surfaces.email.inbound.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Turns on continuous IMAP watching of the configured inbound accounts below. Off by default — reading the owner's mail continuously is not a thing to start doing without being asked. Turn on after configuring at least one account in surfaces.email.inbound.accounts."
+  },
+  {
+    "key": "surfaces.email.inbound.accounts",
+    "type": "string",
+    "default": "[]",
+    "description": "JSON array of configured mailbox account identifiers to watch for inbound mail, e.g. [\"primary\"]. Empty means no mailbox is watched even when enabled is true. A list rather than a single switch because one address for signups and another for the owner's real mail is the expected shape."
+  },
+  {
+    "key": "surfaces.email.inbound.source",
+    "type": "enum",
+    "default": "auto",
+    "description": "Which mechanism reads the mailbox. \"auto\" uses Gmail when Google credentials have been adopted and the configured mail account is a Gmail account, and IMAP otherwise — so connecting Google is the whole of the setup and no IMAP host, username or app password has to be found. \"gmail\" and \"imap\" force one of them. The two are not equivalent and the difference is a real cost: IMAP holds an IDLE connection, which is true push and delivers in under a second, while Gmail has no push available to a daemon on a home machine and is POLLED on a timer — its worst-case delay is the whole poll interval below, never less. Forcing \"gmail\" without adopted Google credentials, or on an account that is not a Gmail account, is refused rather than quietly served over IMAP.",
+    "enumValues": [
+      "auto",
+      "gmail",
+      "imap"
+    ]
+  },
+  {
+    "key": "surfaces.email.inbound.gmailPollSecondsExpecting",
+    "type": "number",
+    "default": 5,
+    "description": "How often the Gmail source asks Google what changed while something is actually being waited for — a signup mid-flight whose verification mail has not arrived yet. This is polling, not push: mail can sit unnoticed for up to this many seconds, and no setting makes Gmail faster than the interval. Five seconds is the floor worth having for a person watching a signup form; the underlying call costs 2 quota units against a daily budget in the billions, so a shorter interval buys latency rather than saving quota. Ignored entirely when the IMAP source is in use, which pushes instead.",
+    "validationHint": "integer in [2, 60]"
+  },
+  {
+    "key": "surfaces.email.inbound.gmailPollSecondsIdle",
+    "type": "number",
+    "default": 60,
+    "description": "How often the Gmail source asks Google what changed when nothing is being waited for. Again polling, not push: with nothing pending, mail is noticed up to this many seconds after it arrives. A minute keeps the daemon from asking Google every five seconds all week for mail nobody is waiting on; lowering it narrows that gap at the cost of a request every few seconds around the clock. Ignored entirely when the IMAP source is in use.",
+    "validationHint": "integer in [10, 3600]"
+  },
+  {
+    "key": "surfaces.email.inbound.mode",
+    "type": "enum",
+    "default": "auto",
+    "description": "How the IMAP source receives new mail: \"idle\" holds a persistent IMAP IDLE connection, \"poll\" checks on a timer, \"auto\" uses IDLE when the server advertises it and falls back to polling when it does not. Leave at auto unless a specific provider needs to be forced one way. Applies only to the IMAP source; the Gmail source has no IDLE to hold and is always polled, on the two intervals above.",
+    "enumValues": [
+      "idle",
+      "poll",
+      "auto"
+    ]
+  },
+  {
+    "key": "surfaces.email.inbound.pollIntervalSeconds",
+    "type": "number",
+    "default": 120,
+    "description": "How often the fallback poller checks the mailbox when IDLE is unavailable. Lower is more responsive but closer to a provider's rate limit; higher delays notice of new mail by up to this many seconds. Only applies when the connection is not using IDLE.",
+    "validationHint": "integer in [30, 3600]"
+  },
+  {
+    "key": "surfaces.email.inbound.idleReissueMinutes",
+    "type": "number",
+    "default": 27,
+    "description": "How often an open IDLE connection is torn down and re-issued. RFC 2177 advises re-issuing at least every 29 minutes, or the server may silently log the connection off; raising this toward 29 trims reconnect churn but leaves less margin against a slow round trip.",
+    "validationHint": "integer in [5, 29]"
+  },
+  {
+    "key": "surfaces.email.inbound.reconnect.maxBackoffSeconds",
+    "type": "number",
+    "default": 300,
+    "description": "Ceiling on the exponential reconnect backoff after a dropped connection or provider error. Raising it tolerates a longer provider outage without hammering it; lowering it shortens the worst-case silence after a disconnect at the cost of retrying a still-down server more often.",
+    "validationHint": "integer in [10, 3600]"
+  },
+  {
+    "key": "surfaces.email.inbound.notice.route",
+    "type": "string",
+    "default": "default",
+    "description": "Where the owner is told about inbound mail: the literal \"default\" inherits the owner's existing notice route binding; a specific route binding id sends inbound-mail notices somewhere else. A second place to configure \"where to reach me\" is a second place to get it wrong, so most installations should leave this at default."
+  },
+  {
+    "key": "surfaces.email.inbound.notice.mode",
+    "type": "enum",
+    "default": "all",
+    "description": "How much inbound mail generates an owner notice: \"all\" announces every message, \"expected-only\" announces only mail matching a registered expectation (quieter for a high-volume mailbox), \"none\" announces nothing. Choosing \"none\" means mail can arrive with no notice at all — a deliberate but silent choice.",
+    "enumValues": [
+      "all",
+      "expected-only",
+      "none"
+    ]
+  },
+  {
+    "key": "surfaces.email.inbound.expectationWindowMinutes",
+    "type": "number",
+    "default": 15,
+    "description": "Default lifetime, in minutes, of a verification expectation opened for inbound-mail matching (for example an account signup awaiting its confirmation email). Raising it gives a slower-to-arrive confirmation more time to match; lowering it shrinks how long a stale expectation can be satisfied by a late message. Hard-capped at 60 to match MAX_VERIFICATION_WINDOW_MS.",
+    "validationHint": "integer in [1, 60]"
+  },
+  {
+    "key": "surfaces.email.inbound.dedupTtlMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "How long an inbound message's identity is remembered, inside the running daemon, so an overlapping poll or a retried pass does not process it twice. This cache lives in memory only: a restart destroys it rather than expiring it, so no value here prevents a duplicate across a restart — the inbound record store does that, by remembering which messages were already announced. Seconds would be enough for what this covers; a larger value only costs a little memory.",
+    "validationHint": "integer in [5, 1440]"
+  },
+  {
+    "key": "surfaces.email.inbound.retentionDays",
+    "type": "number",
+    "default": 30,
+    "description": "How many days an inbound mail record (sender, subject, delivery evidence, link verdicts — never the full body) is kept before it is reaped. Longer keeps a longer history to explain \"why did I get that message\"; shorter bounds how much of the owner's mail metadata the daemon retains.",
+    "validationHint": "integer in [1, 365]"
+  },
+  {
+    "key": "surfaces.email.inbound.maxRecords",
+    "type": "number",
+    "default": 5000,
+    "description": "Hard cap on the number of inbound mail records kept regardless of age. Whichever of this and retentionDays is reached first wins, so this bounds worst-case storage even under a burst of mail.",
+    "validationHint": "integer in [100, 100000]"
+  },
+  {
+    "key": "surfaces.email.inbound.capabilityRecheckMinutes",
+    "type": "number",
+    "default": 60,
+    "description": "How often a mailbox that reported it cannot do what inbound mail requires (for example a Gmail grant that authorizes listing but not reading message bodies, or a mailbox that does not exist) is re-probed. Long enough that a refused account is not hammered in a tight loop; short enough that fixing the underlying scope or account problem is noticed without a daemon restart.",
+    "validationHint": "integer in [5, 1440]"
+  },
+  {
+    "key": "surfaces.email.inbound.onInsufficientCapability",
+    "type": "enum",
+    "default": "refuse-and-notify",
+    "description": "\"refuse-and-notify\" stops the watcher for that account and tells the owner once, naming what is missing and the exact step to fix it — the account is not watched again until the recheck above finds it fixed. \"notice-only\" is a deliberate downgrade: it keeps announcing that mail arrived using envelope fields alone (sender, subject, delivery evidence), stating plainly in every notice that bodies are unavailable, and it can never satisfy a verification expectation while degraded — an account signup or order confirmation will not work under it. \"notice-only\" applies to exactly one condition: a Google grant that authorizes message headers and excludes message bodies (the gmail.metadata scope), which is the only case where mail can be seen arriving without being readable. Every other insufficient condition — no stored password, a refused sign-in, a mailbox that will not open, a lost cursor, a refused or unreadable fetch — leaves no envelope fields to announce, so \"notice-only\" behaves as \"refuse-and-notify\" there and the notice says which one is in force.",
+    "enumValues": [
+      "refuse-and-notify",
+      "notice-only"
+    ]
+  },
+  {
+    "key": "surfaces.calendar.caldavUrl",
+    "type": "string",
+    "default": "",
+    "description": "CalDAV server URL the daemon reads and writes events through"
+  },
+  {
+    "key": "surfaces.calendar.caldavUser",
+    "type": "string",
+    "default": "",
+    "description": "CalDAV account name"
+  },
+  {
+    "key": "surfaces.calendar.caldavPassword",
+    "type": "string",
+    "default": "",
+    "description": "CalDAV password. Stored in the daemon secret tier, never in config"
+  },
+  {
+    "key": "surfaces.calendar.defaultCalendarId",
+    "type": "string",
+    "default": "",
+    "description": "Calendar used when a request names none"
+  },
+  {
+    "key": "surfaces.calendar.calendars",
+    "type": "string",
+    "default": "",
+    "description": "JSON object mapping a calendar id to its collection path, e.g. {\"work\":\"/dav/calendars/work/\"}. Empty means the CalDAV URL is the one calendar"
   },
   {
     "key": "watchers.enabled",
@@ -2174,6 +3299,141 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "validationHint": "integer in [0, 10000000]"
   },
   {
+    "key": "watchers.triggers.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Enable the trigger family: stream watchers over long-lived commands, model-free condition checks, and one-shot on-exit process triggers. Off by default because a trigger launches and supervises real processes on your machine without a person watching — turning it on is a deliberate choice, not a fallback. With it on and no triggers defined, the supervisor idles and consumes nothing."
+  },
+  {
+    "key": "watchers.triggers.backoffLadderMs",
+    "type": "string",
+    "default": "30000,60000,300000,900000,3600000",
+    "description": "Comma-separated retry ladder in milliseconds, walked one rung per consecutive failure of a trigger check. The default climbs 30s, 60s, 5m, 15m, 60m so a briefly unreachable endpoint recovers fast while a genuinely broken one stops hammering. The last rung repeats until the breaker opens.",
+    "validationHint": "comma-separated integers, each 1000..86400000 ms"
+  },
+  {
+    "key": "watchers.triggers.breakerStrikes",
+    "type": "number",
+    "default": 5,
+    "description": "Consecutive check failures that open the trigger's breaker. An open breaker parks the trigger in a visible circuit-open state with the last error attached instead of retrying forever; the operator resets it explicitly. Raise it for a flaky-but-recoverable source, lower it to fail fast.",
+    "validationHint": "integer in [1, 50]"
+  },
+  {
+    "key": "watchers.triggers.defaultCheckIntervalMs",
+    "type": "number",
+    "default": 60000,
+    "description": "Cadence used by a condition trigger that does not declare its own interval. This is the steady-state polling rate; the backoff ladder overrides it while a trigger is failing.",
+    "validationHint": "integer in [1000, 86400000]"
+  },
+  {
+    "key": "watchers.triggers.probeTimeoutMs",
+    "type": "number",
+    "default": 15000,
+    "description": "Ceiling on one probe execution (http request, file read, command run, or sdk-tool call) before it is abandoned and counted as a failed check. Keeps a hung endpoint from stalling the whole check queue.",
+    "validationHint": "integer in [250, 600000]"
+  },
+  {
+    "key": "watchers.triggers.maxConcurrentChecks",
+    "type": "number",
+    "default": 4,
+    "description": "How many condition checks may execute at the same moment. Checks beyond this wait their turn, so a large trigger set cannot saturate the machine or a rate-limited API.",
+    "validationHint": "integer in [1, 64]"
+  },
+  {
+    "key": "watchers.triggers.observationRingSize",
+    "type": "number",
+    "default": 200,
+    "description": "Observations kept per trigger in its persisted ring buffer. Every rule — change, transition, rate-of-change, windowed aggregation — is a pure function over this buffer, so this is the memory depth available to them. Larger windows need a larger ring.",
+    "validationHint": "integer in [2, 10000]"
+  },
+  {
+    "key": "watchers.triggers.runHistoryLimit",
+    "type": "number",
+    "default": 50,
+    "description": "Run records kept per trigger (when it ran, what it observed, whether it fired, what the action returned). Bounded on purpose: an append-only history is a disk leak with a nicer name.",
+    "validationHint": "integer in [1, 5000]"
+  },
+  {
+    "key": "watchers.triggers.runHistoryTtlHours",
+    "type": "number",
+    "default": 168,
+    "description": "Age ceiling in hours on retained run history. Records older than this are reaped by the recovery sweep even when the count limit has not been reached, and the sweep reports how many it removed.",
+    "validationHint": "integer in [1, 8760]"
+  },
+  {
+    "key": "watchers.triggers.eventLogLimit",
+    "type": "number",
+    "default": 500,
+    "description": "Entries retained in the shared event log that cross-watcher correlation rules read. This log is the only channel through which one trigger can observe another, and it is bounded so correlation cannot grow without limit.",
+    "validationHint": "integer in [10, 50000]"
+  },
+  {
+    "key": "watchers.triggers.eventLogTtlHours",
+    "type": "number",
+    "default": 24,
+    "description": "Age ceiling in hours on the shared correlation event log. Correlation windows longer than this cannot see the older side of the pair, so raise it together with any long correlation window.",
+    "validationHint": "integer in [1, 2160]"
+  },
+  {
+    "key": "watchers.triggers.sweepIntervalMs",
+    "type": "number",
+    "default": 300000,
+    "description": "Cadence of the recurring housekeeping sweep: reap records whose owning process or session is gone, retire fired one-shot triggers, enforce the count and age bounds, and re-validate persisted state by content. A daemon that only sweeps at boot never sweeps.",
+    "validationHint": "integer in [10000, 86400000]"
+  },
+  {
+    "key": "watchers.triggers.supervisionTickMs",
+    "type": "number",
+    "default": 1000,
+    "description": "How often the supervisor checks whether a supervised on-exit child has terminated and whether any condition check is due. This is the floor on how quickly an on-exit trigger notices its process ended; raise it to trade detection latency for less polling on a machine running long builds.",
+    "validationHint": "integer in [250, 300000]"
+  },
+  {
+    "key": "watchers.triggers.streamQueueLimit",
+    "type": "number",
+    "default": 1000,
+    "description": "Matched lines a stream watcher may hold before the oldest are dropped. The queue is bounded so a chatty log cannot exhaust memory; every drop is counted and reported on the trigger record rather than being silent.",
+    "validationHint": "integer in [1, 1000000]"
+  },
+  {
+    "key": "watchers.triggers.streamBatchLines",
+    "type": "number",
+    "default": 25,
+    "description": "Matched lines gathered into one payload before an agent is invoked. Batching is what keeps a stream watcher from starting one agent turn per log line.",
+    "validationHint": "integer in [1, 10000]"
+  },
+  {
+    "key": "watchers.triggers.streamBatchIntervalMs",
+    "type": "number",
+    "default": 1000,
+    "description": "How long a partially filled stream batch waits before it is flushed anyway, so a slow trickle of matches still reaches an agent promptly instead of waiting for the batch to fill.",
+    "validationHint": "integer in [50, 3600000]"
+  },
+  {
+    "key": "watchers.triggers.onExitMaxDurationMs",
+    "type": "number",
+    "default": 21600000,
+    "description": "Hard ceiling on a supervised on-exit child. When it is reached the child is terminated and the trigger fires with an explicit timed-out termination state, so a process waiting on a prompt that will never come cannot hang forever. The six-hour default is sized for a long build.",
+    "validationHint": "integer in [1000, 604800000]"
+  },
+  {
+    "key": "watchers.triggers.onExitStdin",
+    "type": "enum",
+    "default": "none",
+    "description": "Standard input handed to a supervised on-exit child. \"none\" closes stdin so a password-prompting process gets EOF and exits instead of blocking forever; \"empty\" attaches an immediately-closed empty pipe for programs that require a readable stdin handle. There is deliberately no interactive option — nobody is at the keyboard.",
+    "enumValues": [
+      "none",
+      "empty"
+    ]
+  },
+  {
+    "key": "watchers.triggers.outputTailBytes",
+    "type": "number",
+    "default": 8192,
+    "description": "Bytes of trailing child output carried in an on-exit termination payload. Exit is not success, so the payload always includes this tail for the agent prompt to inspect alongside the exit code and signal.",
+    "validationHint": "integer in [0, 1048576]"
+  },
+  {
     "key": "update.auto",
     "type": "boolean",
     "default": true,
@@ -2187,22 +3447,43 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "validationHint": "integer in [5, 1440]"
   },
   {
+    "key": "update.firstCheckSeconds",
+    "type": "number",
+    "default": 30,
+    "description": "Seconds after daemon start before the FIRST update check (a boot-settle delay, so a daemon that was down while releases shipped does not stay stale for a whole interval). Capped at one check interval",
+    "validationHint": "integer in [0, 3600]"
+  },
+  {
     "key": "update.releasesUrl",
     "type": "string",
-    "default": "https://github.com/mgd34msu/goodvibes-tui/releases/latest",
-    "description": "GitHub releases/latest URL the daemon resolves update tags and artifacts from"
+    "default": "https://github.com/mgd34msu/goodvibes-daemon/releases/latest",
+    "description": "GitHub releases/latest URL the daemon resolves its own update tags and artifacts from. The daemon is its own product with its own repository and its own release line; the terminal app updates itself from the goodvibes-tui repository and is never touched by a daemon update. A value written into settings.json overrides this default and is never re-derived"
+  },
+  {
+    "key": "update.rollbackAfterFailedStarts",
+    "type": "number",
+    "default": 3,
+    "description": "Consecutive rapid boots that fail to reach a fully-started daemon before the startup path automatically restores the kept previous binary and restarts onto it. 0 leaves a bad update in place for a hand-run rollback",
+    "validationHint": "integer in [0, 10]"
+  },
+  {
+    "key": "update.alertAfterFailedChecks",
+    "type": "number",
+    "default": 3,
+    "description": "Consecutive failed update checks before the daemon tells the owner over a channel that still works that it can no longer update itself. Lower is louder; 1 reports the first failure. A repeat is held back for 12 hours so an ongoing outage is one message rather than one an hour",
+    "validationHint": "integer in [1, 100]"
   },
   {
     "key": "daemon.enabled",
     "type": "boolean",
     "default": true,
-    "description": "Run the local session daemon (background service that hosts the shared session broker and companion chat). Default on; binds loopback (127.0.0.1) only. Set false to run fully local with no background service."
+    "description": "Whether THIS surface ADOPTS a session daemon of its own — the background service hosting the shared session broker and companion chat, bound to loopback (127.0.0.1). On (the default), the surface looks for one and adopts it. Off, it makes no adoption attempt and probes no port. It does not control the daemon process itself: a daemon started on its own runs regardless of this setting, which is a per-surface choice about adopting one. It is also NOT the switch for talking to a daemon this surface is already connected to — that is daemon.connectedHost.enabled, and the two were one key until they were split apart."
   },
   {
-    "key": "daemon.embedInProcess",
+    "key": "daemon.connectedHost.enabled",
     "type": "boolean",
-    "default": false,
-    "description": "NOT RECOMMENDED. When true, and no daemon is already running, host the daemon INSIDE this surface process instead of spawning it as a detached background process. In-process embedding couples the daemon lifetime to this one surface: exiting the surface kills the daemon and every other surface sharing it (single point of failure). Default false — the surface spawns a detached, reboot-independent daemon (install it as a system service via POST /api/service/install on the daemon HTTP API)."
+    "default": true,
+    "description": "Whether this surface may DIAL the daemon it is connected to. On (the default), the features that reach a connected host work: the session-inputs poll that delivers inbound messages, conversation rewind registration, the live approvals stream, daemon-routed conversation turns, and the operator verbs. Off, each of those refuses plainly rather than failing at a connection. This is separate from daemon.enabled on purpose: adopting a daemon of your own and talking to one that is already there are different decisions, and while they shared a single key, turning adoption off silently stopped the inputs poll, the approvals stream and rewind registration on machines whose connected host was live and answering — the session and memory spines kept dialing the same host perfectly well, which is how the split showed itself."
   },
   {
     "key": "danger.httpListener",
@@ -2633,7 +3914,7 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "telemetry.otelMode",
     "type": "enum",
     "default": "off",
-    "description": "OpenTelemetry instrumentation: off (default — no OTel SDK initialization), in-process (span creation and in-process export only), or remote-export (additionally export spans over OTLP/gRPC to the configured collector). Switching away from off requires a restart; in-process <-> remote-export applies live.",
+    "description": "OpenTelemetry instrumentation: off (default — no OTel SDK initialization), in-process (span creation and in-process export only), or remote-export (additionally export spans as OTLP/HTTP JSON to the collector named by OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT with /v1/traces appended). Switching away from off requires a restart; in-process <-> remote-export applies live.",
     "enumValues": [
       "off",
       "in-process",
@@ -2643,8 +3924,8 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
   {
     "key": "runtime.unifiedTasks",
     "type": "boolean",
-    "default": false,
-    "description": "Replace ad-hoc task tracking with the unified RuntimeTask interface across all subsystems. Restart to apply. Default off."
+    "default": true,
+    "description": "The unified RuntimeTask interface used for task tracking across all subsystems (exec, agent, acp, scheduler, daemon, mcp, plugin, integration), including the /tasks command and operator interventions (cancel/pause/resume/retry). Restart to apply. Default on. Set false to turn the runtime task manager off."
   },
   {
     "key": "runtime.pluginLifecycle",
@@ -2757,5 +4038,146 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "default": {},
     "description": "Manual model prices, keyed provider:model (e.g. \"openrouter:deepseek/deepseek-chat\"). Each entry: { input, output, cacheRead?, cacheWrite? } in USD per 1M tokens. A manual price always wins over provider-served and catalog pricing and applies live (no restart). Set one when registering a custom provider/model, or to pin a negotiated rate for any model.",
     "validationHint": "record keyed \"provider:model\" of { input, output, cacheRead?, cacheWrite? } — finite numbers >= 0, USD per 1M tokens"
+  },
+  {
+    "key": "email.enabled",
+    "type": "boolean",
+    "default": false,
+    "description": "Turns on the mail connector: the account the daemon composes, sends and lists mail through. Off by default — a mailbox is only usable once host, username and a stored password reference are set below."
+  },
+  {
+    "key": "email.imapHost",
+    "type": "string",
+    "default": "",
+    "description": "IMAP hostname the connector reads from, e.g. imap.gmail.com"
+  },
+  {
+    "key": "email.imapPort",
+    "type": "number",
+    "default": 993,
+    "description": "IMAP port the connector reads from"
+  },
+  {
+    "key": "email.imapSecurity",
+    "type": "enum",
+    "default": "tls",
+    "description": "IMAP connection security. \"tls\" is implicit TLS on the IMAP port and is the safe default; \"plaintext\" is an unencrypted connection, legitimate only for a localhost or test server. There is no \"auto\" here — the operator either asks for TLS or asks not to have it.",
+    "enumValues": [
+      "tls",
+      "plaintext"
+    ]
+  },
+  {
+    "key": "email.smtpHost",
+    "type": "string",
+    "default": "",
+    "description": "SMTP submission hostname the connector sends through, e.g. smtp.gmail.com"
+  },
+  {
+    "key": "email.smtpPort",
+    "type": "number",
+    "default": 587,
+    "description": "SMTP port the connector sends through: 465 for implicit TLS, or 587 (the default) for STARTTLS"
+  },
+  {
+    "key": "email.smtpSecurity",
+    "type": "enum",
+    "default": "auto",
+    "description": "\"auto\" (the default) picks implicit TLS on port 465 and STARTTLS everywhere else. \"tls\" and \"starttls\" force one of the two regardless of port, for a provider whose port does not match the usual convention.",
+    "enumValues": [
+      "auto",
+      "tls",
+      "starttls"
+    ]
+  },
+  {
+    "key": "email.username",
+    "type": "string",
+    "default": "",
+    "description": "Login username the connector authenticates as, on both IMAP and SMTP"
+  },
+  {
+    "key": "email.passwordRef",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store (goodvibes://secrets/...) naming the mailbox password or app password — never a raw password. The secret itself is stored in the daemon secret tier, never in config."
+  },
+  {
+    "key": "email.smtpPasswordRef",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store for the SMTP password, only when the provider issues one that differs from the IMAP password. Empty — the common case — means submission authenticates with email.passwordRef like everything else. The secret itself is stored in the daemon secret tier, never in config."
+  },
+  {
+    "key": "email.fromAddress",
+    "type": "string",
+    "default": "",
+    "description": "From: address on mail the connector sends; usually the same address as email.username"
+  },
+  {
+    "key": "email.mailbox",
+    "type": "string",
+    "default": "",
+    "description": "Mailbox to read. Empty — the common case — means INBOX. Set when the account delivers to a folder, such as a per-signup alias mailbox."
+  },
+  {
+    "key": "email.draftsMailbox",
+    "type": "string",
+    "default": "",
+    "description": "Drafts folder. Empty means ask the server, which is the better answer for a provider like Gmail whose Drafts folder is not literally named \"Drafts\". Set only when the server does not advertise one."
+  },
+  {
+    "key": "calendar.google.clientId",
+    "type": "string",
+    "default": "",
+    "description": "The OAuth client id for a Google Calendar app registered by whoever set up this environment. Client ids are not secrets (RFC 8252) and are stored in plain config."
+  },
+  {
+    "key": "calendar.google.clientSecretRef",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store naming the Google OAuth client secret, needed only for a confidential (Web-app) client registration — a Desktop-app client using PKCE needs none. The secret itself is stored in the daemon secret tier, never in config."
+  },
+  {
+    "key": "calendar.google.icsUrl",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store naming the private calendar feed address (the \"secret address in iCal format\" from Google Calendar's Integrate Calendar settings). It is a URL rather than a password, but it grants read access to the operator's calendar to anyone holding it, so it is treated as a credential: the address itself is stored in the daemon secret tier, never in config. This is the read-only, credential-free route used when an app password is the mail connection — Google refuses Basic authentication on its CalDAV endpoint, so an app password cannot reach Calendar that way. Calendar writes require the OAuth path (calendar.google.clientId and the refresh token below)."
+  },
+  {
+    "key": "calendar.microsoft.clientId",
+    "type": "string",
+    "default": "",
+    "description": "The OAuth client id for a Microsoft Entra app registration, for connecting an Outlook calendar. Client ids are not secrets and are stored in plain config."
+  },
+  {
+    "key": "calendar.microsoft.clientSecretRef",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store naming the Microsoft OAuth client secret, needed only for a confidential registration — a public client with \"Allow public client flows\" enabled needs none. The secret itself is stored in the daemon secret tier, never in config."
+  },
+  {
+    "key": "google.oauth.projectId",
+    "type": "string",
+    "default": "",
+    "description": "The Google Cloud project id the OAuth calendar client and its enabled APIs belong to, recorded so a re-run reuses the same project instead of creating another one."
+  },
+  {
+    "key": "google.oauth.publishingStatus",
+    "type": "string",
+    "default": "",
+    "description": "The OAuth consent screen's last-known publishing status (\"testing\" or \"in-production\"), cached after being read from the Cloud Console since it cannot be probed any other way. An app left in \"Testing\" is issued refresh tokens that expire after seven days; moving it to \"In production\" (self-certified, no Google review needed) removes that expiry. Empty until a setup or verification run has read it."
+  },
+  {
+    "key": "google.oauth.refreshToken",
+    "type": "string",
+    "default": "",
+    "description": "A reference into the secret store naming the long-lived OAuth refresh token the calendar connector authenticates with after the one-time authorization. The token itself is stored in the daemon secret tier, never in config."
+  },
+  {
+    "key": "google.credentials.migratedFrom",
+    "type": "string",
+    "default": "",
+    "description": "Marker recording that a legacy on-disk Google credential (from before credentials lived in the encrypted secret store) was already migrated in, so migration is not repeated on every start. Names where it came from; holds no credential value itself."
   }
 ];

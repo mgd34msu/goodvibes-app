@@ -42,23 +42,30 @@
 // resolves (to an honest "superseded" error), it just never completes.
 //
 // GitHub is not a member of the SDK's CalendarProviderId union ('google' |
-// 'microsoft'), that field is never read by beginDeviceCodeFlow /
-// pollDeviceCodeFlow (verified against dist/platform/calendar/oauth-flow.js),
-// so buildGithubClientConfig below deliberately escapes that narrower type
-// with a documented cast rather than lying about being a calendar provider.
+// 'microsoft'). That field is only read back into the refusal message, never
+// used to pick provider behaviour (verified against
+// dist/platform/calendar/oauth-flow.js), so buildGithubClientConfig below
+// deliberately escapes that narrower type on the `provider` field alone rather
+// than lying about being a calendar provider. The escape is per-field on
+// purpose: the surrounding literal stays checked against ResolvedClientConfig,
+// because a whole-object cast is what previously let this file keep building
+// the pre-2.0 shape (usingBundledDefault/isPlaceholder) while the real type had
+// moved to isConfigured, leaving every device-flow call refusing at runtime
+// with client-not-configured under a green typecheck.
 
 import { homedir } from "node:os";
 import {
   beginDeviceCodeFlow,
   pollDeviceCodeFlow,
   OAuthFlowError,
+  type CalendarProviderId,
   type DeviceCodeFlowStart,
   type HttpFetch,
   type HttpRequest,
   type HttpResponse,
   type ResolvedClientConfig,
 } from "@pellux/goodvibes-sdk/platform/calendar";
-import { SecretsManager } from "@pellux/goodvibes-sdk/platform/config";
+import { SecretsManager, type SecretScope } from "@pellux/goodvibes-sdk/platform/config";
 import { GitHubIntegration } from "@pellux/goodvibes-sdk/platform/integrations";
 import type { AppRouteHandler } from "./app-routes.ts";
 import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
@@ -67,8 +74,35 @@ import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
 // alongside it in the app's own settings.json ("github" top-level key) ──────
 
 const HOME = homedir();
-const TUI_SURFACE_ROOT = "tui"; // same store secrets.ts uses — see src/bun/secrets.ts
-const TOKEN_KEY = "GITHUB_TOKEN"; // matches the SDK service-registry convention (dist/platform/config/service-registry.d.ts example)
+const TUI_SURFACE_ROOT = "tui"; // same store secrets.ts uses, see src/bun/secrets.ts
+
+// This app's OWN GitHub token, deliberately NOT "GITHUB_TOKEN".
+//
+// sdk 2.x declares GITHUB_TOKEN (with COPILOT_GITHUB_TOKEN and GH_TOKEN) as a
+// credential of the github-copilot provider, which makes
+// isDaemonNeededSecretKey("GITHUB_TOKEN") true. Three things follow from that,
+// none of them wanted here:
+//   - SecretsManager.set() relocates the write to the daemon tier, ignoring the
+//     scope this app asked for;
+//   - the daemon tier leads the read order, so a daemon-owned copilot token
+//     would shadow this app's token on every proxied GitHub call;
+//   - worst, SecretsManager.delete() treats a daemon-needed key as a REVOKE and
+//     sweeps every tier, so signing out of the app's GitHub panel would destroy
+//     a daemon-tier copilot credential this app never owned.
+// The renamed key is not a declared platform credential, so it keeps the scope
+// its caller asks for and delete() stays confined to this app's own stores.
+const TOKEN_KEY = "GOODVIBES_APP_GITHUB_TOKEN";
+
+// Where this app's token lived before the rename. Read-through migration only:
+// a value found here is copied to TOKEN_KEY and removed from the ONE app-owned
+// scope it was found in, via deleteFromScope. Never delete(), which would sweep
+// the daemon tier for exactly the reason the rename exists.
+const LEGACY_TOKEN_KEY = "GITHUB_TOKEN";
+
+// The tiers this app may migrate its own legacy value out of. 'daemon' is
+// excluded on purpose: a GITHUB_TOKEN there belongs to the daemon's copilot
+// provider, not to this app, and is neither read nor removed by the migration.
+const APP_OWNED_SCOPES = ["project", "user"] as const;
 
 const GITHUB_API_BASE = "https://api.github.com";
 const DEVICE_AUTHORIZATION_ENDPOINT = "https://github.com/login/device/code";
@@ -106,11 +140,53 @@ function readGithubSettingsFromFile(file: Record<string, unknown>): GithubAppSet
   };
 }
 
-/** Narrow slice of SecretsManager this module needs, real instance by default, a Map-backed fake in tests. */
+/** Narrow slice of SecretsManager this module needs, real instance by default, a Map-backed fake in tests.
+ *  getFromScope/deleteFromScope are optional: only the legacy-key migration uses
+ *  them, and a store that cannot address tiers simply has nothing to migrate. */
 export interface SecretStoreLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<void>;
   delete(key: string): Promise<void>;
+  getFromScope?(key: string, scope: SecretScope): Promise<string | null>;
+  deleteFromScope?(key: string, scope: SecretScope): Promise<void>;
+}
+
+/**
+ * Read this app's token, migrating a pre-rename value on first read.
+ *
+ * Order matters: the new key wins outright, so a completed migration never
+ * looks at the legacy key again. Only when nothing is stored under the new key
+ * does this look for a legacy value, and then only in the app's own tiers,
+ * never the daemon's.
+ *
+ * Every step is best-effort. A store that cannot address scopes, an
+ * unreadable tier, or a failed cleanup all leave the token readable rather than
+ * failing the caller: the worst case is a stale copy under the old key, which
+ * the next read retries.
+ */
+async function readAppToken(secrets: SecretStoreLike): Promise<string | null> {
+  const current = await secrets.get(TOKEN_KEY);
+  if (current) return current;
+  if (!secrets.getFromScope) return null;
+
+  for (const scope of APP_OWNED_SCOPES) {
+    let legacy: string | null = null;
+    try {
+      legacy = await secrets.getFromScope(LEGACY_TOKEN_KEY, scope);
+    } catch {
+      continue;
+    }
+    if (!legacy) continue;
+    await secrets.set(TOKEN_KEY, legacy);
+    try {
+      await secrets.deleteFromScope?.(LEGACY_TOKEN_KEY, scope);
+    } catch {
+      // The value is safe under the new key; a leftover legacy copy is
+      // harmless and must not fail the read.
+    }
+    return legacy;
+  }
+  return null;
 }
 
 /** Injectable seams so tests never touch the real secrets store, settings.json, or network. */
@@ -216,33 +292,48 @@ export function createDeviceFlowHttpFetch(rawFetch: typeof fetch): HttpFetch {
 
 // ─── device-flow client config ──────────────────────────────────────────────
 
-interface GithubClientConfigShape {
-  readonly provider: "github";
-  readonly clientId: string;
-  readonly scopes: readonly string[];
-  readonly authorizationEndpoint: string;
-  readonly tokenEndpoint: string;
-  readonly deviceAuthorizationEndpoint: string;
-  readonly apiBaseUrl: string;
-  readonly usingBundledDefault: boolean;
-  readonly isPlaceholder: boolean;
-}
+// "github" is not in the SDK's CalendarProviderId union, so the escape is
+// scoped to this one field instead of the whole object: the literal below is
+// declared as ResolvedClientConfig and fully checked against it, which is what
+// makes a future SDK field change a typecheck failure here rather than a
+// runtime refusal.
+//
+// CONSTRAINT: this config is safe ONLY for the two generic RFC 8628 functions
+// used here (beginDeviceCodeFlow / pollDeviceCodeFlow), which read `provider`
+// solely to quote it in an error. Do not hand it to the calendar connector or
+// oauth-token-store: those branch on `provider`, and "github" matches neither
+// 'google' nor 'microsoft', so it would silently take the Microsoft path or
+// file tokens under a calendar account. If GitHub ever needs those, give it a
+// real provider profile instead of widening this cast.
+const GITHUB_PROVIDER_ID = "github" as unknown as CalendarProviderId;
+
+// Config keys quoted only in the SDK's client-not-configured message. They name
+// where this app actually keeps the id: the "github" object in its settings.json
+// (see readGithubSettingsFromFile). GitHub's device flow is a public-client
+// registration and needs no secret, so nothing reads the secret-ref key.
+const CLIENT_ID_CONFIG_KEY = "github.clientId";
+const CLIENT_SECRET_REF_CONFIG_KEY = "github.clientSecretRef";
 
 /** Build a ResolvedClientConfig for GitHub. See the file-header note on the
- *  deliberate `provider` type escape, GitHub is not a calendar provider. */
-function buildGithubClientConfig(clientId: string): ResolvedClientConfig {
-  const config: GithubClientConfigShape = {
-    provider: "github",
+ *  deliberate `provider` type escape, GitHub is not a calendar provider.
+ *  Exported so tests can assert the config against the SDK's own flow
+ *  functions rather than only through the HTTP route. */
+export function buildGithubClientConfig(clientId: string): ResolvedClientConfig {
+  return {
+    provider: GITHUB_PROVIDER_ID,
     clientId,
     scopes: DEVICE_SCOPES,
     authorizationEndpoint: "https://github.com/login/oauth/authorize",
     tokenEndpoint: TOKEN_ENDPOINT,
     deviceAuthorizationEndpoint: DEVICE_AUTHORIZATION_ENDPOINT,
     apiBaseUrl: GITHUB_API_BASE,
-    usingBundledDefault: false,
-    isPlaceholder: false,
+    // Mirrors the SDK's own readConfiguredClientId: a blank or whitespace-only
+    // id is "nobody registered an app yet", and beginDeviceCodeFlow refuses
+    // with client-not-configured before any network call.
+    isConfigured: clientId.trim().length > 0,
+    clientIdConfigKey: CLIENT_ID_CONFIG_KEY,
+    clientSecretRefConfigKey: CLIENT_SECRET_REF_CONFIG_KEY,
   };
-  return config as unknown as ResolvedClientConfig;
 }
 
 // ─── server-side device-flow state (one active flow at a time) ─────────────
@@ -355,7 +446,7 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
 
   async function handleAuthStatus(): Promise<Response> {
     const settings = await readSettings();
-    const token = await secrets.get(TOKEN_KEY);
+    const token = await readAppToken(secrets);
     if (!token) {
       return json({ authenticated: false, clientIdConfigured: settings.clientId.length > 0 });
     }
@@ -450,7 +541,20 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
   }
 
   async function handleDeleteToken(): Promise<Response> {
+    // Safe as a full revoke now that the key is app-owned: delete() sweeps only
+    // tiers this app writes to, and cannot reach a daemon-tier copilot
+    // credential the way the old GITHUB_TOKEN name could.
     await secrets.delete(TOKEN_KEY);
+    // A pre-rename copy has to go too, in the app's own tiers only. Leaving it
+    // would let readAppToken's migration resurrect the token on the very next
+    // status read, so the user would sign out and still be signed in.
+    for (const scope of APP_OWNED_SCOPES) {
+      try {
+        await secrets.deleteFromScope?.(LEGACY_TOKEN_KEY, scope);
+      } catch {
+        // Nothing stored there, or an unreadable tier; sign-out still succeeds.
+      }
+    }
     await writeSettings((cur) => ({ clientId: cur.clientId }));
     return json({ ok: true });
   }
@@ -458,7 +562,7 @@ export function createGithubRoutes(deps: GithubRouteDeps = {}): AppRouteHandler 
   // ─── proxied reads ───────────────────────────────────────────────────────
 
   async function requireToken(): Promise<string | Response> {
-    const token = await secrets.get(TOKEN_KEY);
+    const token = await readAppToken(secrets);
     if (!token) return json({ error: "Not authenticated with GitHub." }, 401);
     return token;
   }

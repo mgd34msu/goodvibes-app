@@ -3,7 +3,10 @@
 // docs/research/tui-daemon-architecture.md §1). The daemon always outlives the
 // app unless the user opts into stop-on-quit.
 
-import { getOrCreateCompanionToken } from "@pellux/goodvibes-sdk/platform/pairing";
+import {
+  getOrCreateCompanionToken,
+  type CompanionTokenQuarantine,
+} from "@pellux/goodvibes-sdk/platform/pairing";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { existsSync, readFileSync } from "node:fs";
@@ -17,6 +20,14 @@ const PROBE_TIMEOUT_MS = 3_000;
 export interface DaemonHandle {
   info: DaemonInfo;
   token: string;
+  /**
+   * Set when minting this token required moving an unreadable operator-token
+   * store aside. The old shared secret is gone, so EVERY previously paired
+   * companion is now holding a dead token and has to pair again. Carried on the
+   * handle so the pairing surface can say that instead of showing a QR code
+   * that silently invalidates the user's phone.
+   */
+  tokenQuarantine?: CompanionTokenQuarantine;
   /** Pid of the daemon if this app spawned it (detached). */
   spawnedPid?: number;
 }
@@ -50,11 +61,23 @@ export function resolveEndpoint(): { host: string; port: number } {
   return { host: DEFAULT_HOST, port: DEFAULT_PORT };
 }
 
-export function resolveToken(): string {
+/**
+ * The bearer token this app drives the daemon with.
+ *
+ * Returns the quarantine report alongside it rather than dropping it: when the
+ * SDK could not read the existing operator-token store it moves the file aside
+ * and mints a fresh token, which silently invalidates every companion already
+ * paired with this daemon. That is a thing a person has to be told, so it
+ * travels with the token to whatever surface shows pairing.
+ */
+export function resolveToken(): { token: string; quarantined?: CompanionTokenQuarantine } {
   const envToken = process.env["GOODVIBES_DAEMON_TOKEN"];
-  if (envToken) return envToken;
+  if (envToken) return { token: envToken };
   const result = getOrCreateCompanionToken("app", { daemonHomeDir: daemonHomeDir() });
-  return result.token;
+  return {
+    token: result.token,
+    ...(result.quarantined ? { quarantined: result.quarantined } : {}),
+  };
 }
 
 async function probe(baseUrl: string, token: string): Promise<ProbeResult> {
@@ -79,12 +102,19 @@ async function probe(baseUrl: string, token: string): Promise<ProbeResult> {
 
 /**
  * The daemon major version this app speaks. A daemon must report the SAME major
- * to be driven: a major bump means a breaking control-plane change, so both 0.x
- * (pre-1.0) and >=2.0 daemons are treated as `incompatible` and surfaced to the
- * user rather than proxied blindly. Bump this constant when the app adopts a new
- * daemon major.
+ * to be driven: a major bump means a breaking control-plane change, so an
+ * off-major daemon is treated as `incompatible` and surfaced to the user rather
+ * than proxied blindly. Bump this constant when the app adopts a new daemon
+ * major.
+ *
+ * 2 since the app moved to @pellux/goodvibes-tui 2.0.14 / sdk 2.0.17. Note the
+ * number to match is the version the daemon REPORTS at /status, which is its
+ * sdk/protocol version (measured: 2.0.17), not the version of the
+ * @pellux/goodvibes-daemon npm package that ships the binary (1.28.19). Those
+ * two disagree, and matching on the package version would refuse every daemon
+ * this app spawns.
  */
-export const SUPPORTED_DAEMON_MAJOR = 1;
+export const SUPPORTED_DAEMON_MAJOR = 2;
 
 /**
  * Compatible iff the remote reports the supported major (see SUPPORTED_DAEMON_MAJOR).
@@ -128,9 +158,16 @@ async function spawnDetached(port: number): Promise<number | null> {
 
 /** Adopt-or-spawn. Never starts a competing daemon on an occupied port. */
 export async function ensureDaemon(): Promise<DaemonHandle> {
+  const resolved = resolveToken();
+  const handle = await adoptOrSpawn(resolved.token);
+  // Stamped on whatever handle adoption produced: a quarantine invalidates
+  // paired companions regardless of how (or whether) the daemon came up.
+  return resolved.quarantined ? { ...handle, tokenQuarantine: resolved.quarantined } : handle;
+}
+
+async function adoptOrSpawn(token: string): Promise<DaemonHandle> {
   const { host, port } = resolveEndpoint();
   const baseUrl = `http://${host}:${port}`;
-  const token = resolveToken();
 
   const first = await probe(baseUrl, token);
   if (first.kind === "goodvibes") {

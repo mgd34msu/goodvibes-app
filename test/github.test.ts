@@ -8,9 +8,25 @@
 // real secrets store, or the real settings.json.
 
 import { describe, expect, test } from "bun:test";
-import { createDeviceFlowHttpFetch, createGithubRoutes, type GithubRouteDeps } from "../src/bun/github.ts";
+import {
+  buildGithubClientConfig,
+  createDeviceFlowHttpFetch,
+  createGithubRoutes,
+  type GithubRouteDeps,
+} from "../src/bun/github.ts";
 import type { AppRouteHandler } from "../src/bun/app-routes.ts";
-import type { HttpRequest } from "@pellux/goodvibes-sdk/platform/calendar";
+import {
+  beginDeviceCodeFlow,
+  OAuthFlowError,
+  type HttpFetch,
+  type HttpRequest,
+} from "@pellux/goodvibes-sdk/platform/calendar";
+
+// The secret name github.ts stores the app's own token under. Deliberately not
+// "GITHUB_TOKEN": sdk 2.x declares that one as the github-copilot provider's
+// credential, which makes it daemon-owned. See test/github-secrets.test.ts,
+// which exercises the tier behaviour this file's flat fake store cannot model.
+const APP_TOKEN_KEY = "GOODVIBES_APP_GITHUB_TOKEN";
 
 // ─── test doubles ────────────────────────────────────────────────────────────
 
@@ -123,6 +139,71 @@ describe("createDeviceFlowHttpFetch", () => {
   });
 });
 
+// ─── buildGithubClientConfig against the SDK's own device flow ──────────────
+//
+// Regression guard for the sdk 1.x -> 2.x migration. 2.x replaced the
+// ResolvedClientConfig fields usingBundledDefault/isPlaceholder with
+// isConfigured, and beginDeviceCodeFlow calls assertClientConfigured before any
+// network call. A config still built in the 1.x shape leaves isConfigured
+// undefined, so !undefined refuses EVERY device-flow start with
+// client-not-configured no matter what the operator saved. A whole-object cast
+// in github.ts kept that invisible to tsc, so these assertions go through the
+// SDK function itself rather than trusting the type.
+
+/** Canned device-authorization success, through the SDK's injected HttpFetch seam. */
+function fakeDeviceHttpFetch(): HttpFetch {
+  return async () => ({
+    status: 200,
+    ok: true,
+    header: () => null,
+    json: async () => ({
+      device_code: "dc",
+      user_code: "USER-CODE",
+      verification_uri: "https://github.com/login/device",
+      expires_in: 900,
+      interval: 5,
+    }),
+    text: async () => "",
+  });
+}
+
+describe("buildGithubClientConfig", () => {
+  test("a configured clientId does NOT refuse with client-not-configured", async () => {
+    const config = buildGithubClientConfig("Iv1.realclientid");
+    expect(config.isConfigured).toBe(true);
+    const start = await beginDeviceCodeFlow(config, fakeDeviceHttpFetch(), 1_000);
+    expect(start.userCode).toBe("USER-CODE");
+    expect(start.verificationUri).toBe("https://github.com/login/device");
+  });
+
+  test("an unconfigured clientId refuses with client-not-configured before any HTTP call", async () => {
+    const config = buildGithubClientConfig("");
+    expect(config.isConfigured).toBe(false);
+    let reached = false;
+    const spyFetch: HttpFetch = async () => {
+      reached = true;
+      throw new Error("the device endpoint must not be reached when no client id is configured");
+    };
+    await expect(beginDeviceCodeFlow(config, spyFetch, 1_000)).rejects.toThrow(OAuthFlowError);
+    await expect(beginDeviceCodeFlow(config, spyFetch, 1_000)).rejects.toMatchObject({
+      reason: "client-not-configured",
+    });
+    expect(reached).toBe(false);
+  });
+
+  test("a whitespace-only clientId counts as unconfigured, matching the SDK's own trim", async () => {
+    expect(buildGithubClientConfig("   ").isConfigured).toBe(false);
+  });
+
+  test("carries the config key names the SDK quotes in its refusal message", async () => {
+    const config = buildGithubClientConfig("");
+    expect(config.clientIdConfigKey).toBe("github.clientId");
+    expect(config.clientSecretRefConfigKey).toBe("github.clientSecretRef");
+    const err = await beginDeviceCodeFlow(config, fakeDeviceHttpFetch(), 1_000).catch((e: unknown) => e);
+    expect(String((err as Error).message)).toContain("github.clientId");
+  });
+});
+
 // ─── 2. client-not-configured refusal ───────────────────────────────────────
 
 describe("POST /auth/device/start", () => {
@@ -186,7 +267,7 @@ describe("GET /auth/status", () => {
 
   test("reports login/scopes/tokenSource but never the raw stored token value", async () => {
     const secretToken = "ghp_supersecretvalue1234567890";
-    const secrets = fakeSecretStore({ GITHUB_TOKEN: secretToken });
+    const secrets = fakeSecretStore({ [APP_TOKEN_KEY]: secretToken });
     const settings = fakeSettingsStore({
       clientId: "abc",
       tokenSource: "pat",
@@ -219,7 +300,7 @@ describe("PUT /auth/token", () => {
     const handler = makeHandler({ secrets, readSettings: settings.readSettings, writeSettings: settings.writeSettings, fetchImpl });
     const res = await call(handler, "PUT", "/app/github/auth/token", { token: "bad-token" });
     expect(res.status).toBe(401);
-    expect(secrets.store.has("GITHUB_TOKEN")).toBe(false);
+    expect(secrets.store.has(APP_TOKEN_KEY)).toBe(false);
   });
 
   test("accepts a valid token, stores it, and returns login/scopes without the token", async () => {
@@ -235,7 +316,7 @@ describe("PUT /auth/token", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ login: "octocat", scopes: ["repo", "read:org"] });
     expect(JSON.stringify(res.body)).not.toContain("good-token");
-    expect(secrets.store.get("GITHUB_TOKEN")).toBe("good-token");
+    expect(secrets.store.get(APP_TOKEN_KEY)).toBe("good-token");
     expect(settings.current.tokenSource).toBe("pat");
   });
 });
@@ -317,7 +398,7 @@ describe("proxied reads", () => {
   });
 
   test("GET /pulls requires owner and repo", async () => {
-    const secrets = fakeSecretStore({ GITHUB_TOKEN: "tok" });
+    const secrets = fakeSecretStore({ [APP_TOKEN_KEY]: "tok" });
     const settings = fakeSettingsStore({ clientId: "" });
     const handler = makeHandler({ secrets, readSettings: settings.readSettings, writeSettings: settings.writeSettings });
     const res = await call(handler, "GET", "/app/github/pulls");

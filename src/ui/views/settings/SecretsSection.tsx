@@ -30,6 +30,10 @@ export function SecretsSection() {
   const [adding, setAdding] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, TestOutcome>>({});
+  // Set when the platform filed the last saved credential somewhere other than
+  // the scope the operator picked. Persists past the toast, because "it did not
+  // go where you chose" is the kind of thing you want to still be able to read.
+  const [scopeNotice, setScopeNotice] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: secretsKeys.list,
@@ -50,10 +54,23 @@ export function SecretsSection() {
   const setSecret = useMutation({
     mutationFn: (input: { name: string; body: { value: string } | { link: SecretLinkInput }; scope?: "project" | "user" }) =>
       secretsApi.set(input.name, input.body, input.scope),
-    onSuccess: async (_result, variables) => {
+    onSuccess: async (result, variables) => {
       await queryClient.invalidateQueries({ queryKey: secretsKeys.list });
       await queryClient.invalidateQueries({ queryKey: secretsKeys.inspect });
-      toast({ title: "Secret saved", description: `"${variables.name}" was stored.`, tone: "success" });
+      if (result.scopeOverridden) {
+        const where = result.effectiveScope ?? "another scope";
+        setScopeNotice(
+          result.scopeNotice ?? `"${variables.name}" was stored in ${where} scope rather than the one selected.`,
+        );
+        toast({
+          title: "Secret saved to a different scope",
+          description: `"${variables.name}" was stored in ${where} scope. ${result.scopeNotice ?? ""}`.trim(),
+          tone: "warning",
+        });
+      } else {
+        setScopeNotice(null);
+        toast({ title: "Secret saved", description: `"${variables.name}" was stored.`, tone: "success" });
+      }
       setAdding(false);
     },
     onError: (error: unknown) => toast({ title: "Failed to save secret", description: formatError(error), tone: "danger" }),
@@ -112,6 +129,12 @@ export function SecretsSection() {
             {inspect.data.inspect.envBackedKeys} from env
           </dd>
         </dl>
+      )}
+
+      {scopeNotice && (
+        <p className="settings-secrets__note" role="status">
+          {scopeNotice}
+        </p>
       )}
 
       {adding && (
