@@ -16,6 +16,7 @@ import {
   CalendarHeart,
   CircleGauge,
   CheckCircle2,
+  CreditCard,
   Eye,
   FileText,
   FlaskConical,
@@ -57,7 +58,7 @@ export const VIEW_GROUPS: readonly ViewGroupDef[] = [
   {
     id: "assistant",
     label: "Assistant",
-    views: ["home", "routines", "personas", "skills", "personal-ops", "checkin", "dates"],
+    views: ["home", "routines", "personas", "skills", "personal-ops", "checkin", "dates", "payments"],
   },
   { id: "code", label: "Code", views: ["git", "diff", "worktrees", "checkpoints", "ci", "terminal"] },
   { id: "system", label: "System", views: ["observability", "providers", "mcp", "peers", "settings"] },
@@ -203,6 +204,19 @@ const defs: Record<ViewId, Omit<ViewDef, "id" | "group">> = {
     icon: CalendarHeart,
     keepAlive: true,
     Component: lazy(() => import("./dates/DatesView.tsx").then((m) => ({ default: m.DatesView }))),
+  },
+  // keepAlive: FALSE, and deliberately against the grain of the two views
+  // above it. The card panel holds a typed card number, expiry and
+  // verification code in component state, and a keep-alive view stays mounted
+  // behind whatever gets opened next for as long as the app runs. Unmounting
+  // on a view switch is what makes "no card value is retained in state that
+  // survives navigation" a property of the shell rather than a promise in a
+  // component, and it stops the budget and purchases polls at the same time.
+  payments: {
+    title: "Payments",
+    icon: CreditCard,
+    keepAlive: false,
+    Component: lazy(() => import("./payments/PaymentsView.tsx").then((m) => ({ default: m.PaymentsView }))),
   },
   // Code, Wave B
   git: {

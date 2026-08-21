@@ -91,6 +91,21 @@ export const queryKeys = {
   occasionsPending: ["occasions", "pending"] as const,
   occasionsState: ["occasions", "state"] as const,
   occasionsGifts: (occasionId: string) => ["occasions", "gifts", occasionId] as const,
+  // Payments. No wire event, so the whole prefix is invalidated on any
+  // mutation: storing or deleting a card changes what the budget panel can say
+  // about whether a purchase is even possible, and the two reads must not
+  // disagree afterwards.
+  //
+  // Every key in this group is a fixed tuple or a number and a day key. NO CARD
+  // VALUE IS EVER PART OF ONE — a query key is retained by the query client,
+  // is enumerable through its cache, and lands in devtools, which makes it
+  // exactly the kind of place a card number must not be. The purchases key
+  // carries `limit` and `dayKey` only, both of which are already public in the
+  // rows they fetch.
+  payments: ["payments"] as const,
+  paymentsBudget: ["payments", "budget"] as const,
+  paymentsCards: ["payments", "cards"] as const,
+  paymentsPurchases: (limit: number, dayKey: string) => ["payments", "purchases", limit, dayKey] as const,
   artifacts: ["artifacts"] as const,
   automation: ["automation"] as const,
   watchers: ["watchers"] as const,

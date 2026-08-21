@@ -1,0 +1,568 @@
+/*
+ * Payments view (src/ui/views/payments/*): cards, budget, checkout, purchases.
+ * Tokens only.
+ */
+
+.payments-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 920px;
+}
+
+/* ── Section frame ───────────────────────────────────────────── */
+
+.payments-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.payments-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.payments-section__header h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.payments-section h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.payments-section__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.payments-section__day {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.payments-icon-button:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.payments-danger {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--status-danger);
+  border-radius: var(--radius-sm);
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+/* ── Cards ───────────────────────────────────────────────────── */
+
+.payments-card-list,
+.payments-purchase-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.payments-card-row,
+.payments-purchase-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.payments-card-row__main,
+.payments-purchase-row__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.payments-card-row__titles,
+.payments-purchase-row__titles {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.payments-card-row__label,
+.payments-purchase-row__item {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.payments-card-row__instrument,
+.payments-purchase-row__merchant {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-card-row__badges,
+.payments-purchase-row__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.payments-card-row__facts,
+.payments-purchase-row__facts {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-card-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.payments-card-row__confirm {
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+/* ── Card intake ─────────────────────────────────────────────── */
+
+.payments-intake {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.payments-intake__lead,
+.payments-checkout__lead {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-intake__grid,
+.payments-checkout__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.payments-intake__wide {
+  grid-column: 1 / -1;
+}
+
+.payments-intake__grid label,
+.payments-checkout__grid label,
+.payments-checkout__checkbox,
+.payments-checkout__summary,
+.payments-daykey {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-intake__grid input,
+.payments-intake__grid select,
+.payments-checkout__grid input,
+.payments-checkout__grid select,
+.payments-checkout__summary textarea,
+.payments-daykey input {
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.payments-daykey {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.payments-daykey input {
+  width: 120px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/*
+ * Card number and verification code, concealed as they are typed.
+ *
+ * Deliberately NOT input type="password". A password input is the single
+ * loudest signal a password manager looks for, and the owner's fifth condition
+ * on card entry is that these fields must not present as ones a password
+ * manager offers to save. text-security gets the concealment without the
+ * signal. The -webkit- prefix is the one that actually applies in this
+ * webview; the unprefixed property is there for the day it does not.
+ */
+.payments-concealed {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+
+.payments-intake__hint {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-intake__problem,
+.payments-checkout__error {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-danger);
+}
+
+.payments-intake__actions,
+.payments-checkout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.payments-intake__actions button,
+.payments-checkout__actions button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.payments-intake__actions button:disabled,
+.payments-checkout__actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payments-intake__cancel {
+  color: var(--text-secondary);
+}
+
+.payments-intake__conditions {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-intake__conditions ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.payments-entry-refusal {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-soft);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+}
+
+/* ── Budget ──────────────────────────────────────────────────── */
+
+.payments-posture {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+}
+
+.payments-posture--off {
+  border: 1px solid var(--status-warning);
+  background: var(--status-warning-soft);
+}
+
+.payments-pools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.payments-pool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.payments-pool__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.payments-pool__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.payments-pool__remaining {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-pool__bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-base);
+  overflow: hidden;
+}
+
+.payments-pool__bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--text-accent);
+}
+
+.payments-pool--warning .payments-pool__bar-fill {
+  background: var(--status-warning);
+}
+
+.payments-pool--bad .payments-pool__bar-fill {
+  background: var(--status-danger);
+}
+
+.payments-pool__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-pool__facts dt {
+  color: var(--text-tertiary);
+}
+
+.payments-pool__facts dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+.payments-pool__note,
+.payments-pool__zero,
+.payments-reservations {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-pool__zero {
+  color: var(--status-warning);
+}
+
+/* ── Checkout ────────────────────────────────────────────────── */
+
+.payments-checkout__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.payments-checkout__missing {
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}
+
+.payments-checkout__summary textarea {
+  resize: vertical;
+}
+
+.payments-checkout__checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.payments-target-field__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.payments-target-field__row input {
+  flex: 1;
+}
+
+.payments-checkout__wire {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-checkout__wire pre {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+}
+
+.payments-checkout__outcome {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.payments-checkout__outcome.ok {
+  color: var(--status-success);
+}
+
+.payments-checkout__outcome.bad {
+  color: var(--status-danger);
+}
+
+.payments-begin-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.payments-begin-outcome__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.payments-begin-outcome__total {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.payments-begin-outcome__reason,
+.payments-begin-outcome__challenge {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-begin-outcome__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.payments-begin-outcome__facts dt {
+  color: var(--text-tertiary);
+}
+
+.payments-begin-outcome__facts dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+
+/* ── Purchases ───────────────────────────────────────────────── */
+
+.payments-purchase-row__amounts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.payments-purchase-row__total {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.payments-purchase-row__breakdown {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-purchase-row__window,
+.payments-purchase-more {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.payments-purchase-row__refusal {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--status-warning);
+}

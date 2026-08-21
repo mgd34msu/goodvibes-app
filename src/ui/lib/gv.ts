@@ -689,6 +689,32 @@ export const gv = {
     },
   },
 
+  /**
+   * Payments. Card material goes IN through cards.create and there is no verb
+   * that reads any of it back: cards.list answers with `last4` and a
+   * `materialComplete` boolean, and checkout.fillCard answers with field NAMES.
+   * Nothing in this namespace can return a stored card value, by shape.
+   */
+  payments: {
+    budget: {
+      status: () => invoke("payments.budget.status"),
+    },
+    cards: {
+      list: () => invoke("payments.cards.list"),
+      // The one call in this app whose body carries a card. POST body, never a
+      // query parameter: a card value must not reach a URL.
+      create: (body: unknown) => invoke("payments.cards.create", { body }),
+      delete: (id: string) => invoke("payments.cards.delete", { params: { id } }),
+    },
+    checkout: {
+      begin: (body: unknown) => invoke("payments.checkout.begin", { body }),
+      fillCard: (body: unknown) => invoke("payments.checkout.fillCard", { body }),
+    },
+    purchases: {
+      list: (query?: QueryParams) => invoke("payments.purchases.list", { query }),
+    },
+  },
+
   artifacts: {
     list: (query?: QueryParams) => invoke("artifacts.list", { query }),
     get: (artifactId: string) => invoke("artifacts.get", { params: { artifactId } }),
