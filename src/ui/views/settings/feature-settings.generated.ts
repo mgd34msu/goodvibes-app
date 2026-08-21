@@ -1,8 +1,8 @@
 // GENERATED FILE: DO NOT EDIT BY HAND.
 // Produced by scripts/generate-feature-settings.ts from the installed
-// @pellux/goodvibes-sdk@2.0.17: FEATURE_SETTINGS (platform/runtime/
+// @pellux/goodvibes-sdk@2.0.19: FEATURE_SETTINGS (platform/runtime/
 // feature-flags, 58 units) plus the CONFIG_SCHEMA entries every unit's
-// enablement key and settings keys reference (293 keys).
+// enablement key and settings keys reference (294 keys).
 // The dissolved-feature model (SDK 1.7.1+): every platform capability is a
 // first-class domain settings key, there is no separate enablement namespace.
 // Pure data, no runtime functions cross the Bun/webview boundary. The daemon
@@ -119,7 +119,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "watcher-triggers",
     "name": "Trigger Family",
-    "description": "Enables three unattended watcher kinds over one supervision spine: stream watchers that regex-filter and batch a long-lived command's output; model-free condition checks running a declarative probe/extract/rule pipeline with no LLM in the loop; and one-shot on-exit triggers where GoodVibes launches a command and fires exactly one payload when it terminates (daemon-owned, so a six-hour build does not hold an agent turn open). A firing trigger runs an agent turn or a pre-registered digest-pinned action grant — never a command composed at fire time. Off by default: a trigger launches and supervises real processes with nobody watching, so turning it on is a deliberate choice; with it on and no triggers defined the supervisor idles and consumes nothing. Tune the backoff ladder, strike breaker, retention bounds, batching and process caps via the watchers.triggers.* settings.",
+    "description": "Enables three unattended watcher kinds over one supervision spine: stream watchers that regex-filter and batch a long-lived command's output; model-free condition checks running a declarative probe/extract/rule pipeline with no LLM in the loop; and one-shot on-exit triggers where GoodVibes launches a command and fires exactly one payload when it terminates (daemon-owned, so a six-hour build does not hold an agent turn open). A firing trigger runs an agent turn or a pre-registered digest-pinned action grant, never a command composed at fire time. Off by default: a trigger launches and supervises real processes with nobody watching, so turning it on is a deliberate choice; with it on and no triggers defined the supervisor idles and consumes nothing. Tune the backoff ladder, strike breaker, retention bounds, batching and process caps via the watchers.triggers.* settings.",
     "domain": "watchers",
     "enablement": {
       "key": "watchers.triggers.enabled",
@@ -276,7 +276,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "compaction-distiller-strategy",
     "name": "Fresh-Context Distiller Compaction",
-    "description": "Enables the fresh-context DISTILLER compaction strategy as an alternative to the default in-place structured summarization. When on AND behavior.compactionStrategy is set to \"distiller\", one fresh model call distills the conversation into a structured continuation brief (task state, decisions, open threads, key file/symbol references) that seeds a fresh context, instead of assembling a handoff from many targeted extraction calls. The distillation is scored through the SAME quality scorer as the structured strategy and falls back to structured when it scores below the floor or the fresh call is unavailable — the receipt names the strategy used and any fallback. Standing instruction-chain / active-skill re-injection at the boundary applies to both strategies. Not the default: structured remains the default strategy until quality-score evidence earns distiller the default slot; choose it via behavior.compactionStrategy.",
+    "description": "Enables the fresh-context DISTILLER compaction strategy as an alternative to the default in-place structured summarization. When on AND behavior.compactionStrategy is set to \"distiller\", one fresh model call distills the conversation into a structured continuation brief (task state, decisions, open threads, key file/symbol references) that seeds a fresh context, instead of assembling a handoff from many targeted extraction calls. The distillation is scored through the SAME quality scorer as the structured strategy and falls back to structured when it scores below the floor or the fresh call is unavailable, the receipt names the strategy used and any fallback. Standing instruction-chain / active-skill re-injection at the boundary applies to both strategies. Not the default: structured remains the default strategy until quality-score evidence earns distiller the default slot; choose it via behavior.compactionStrategy.",
     "domain": "behavior",
     "enablement": {
       "key": "behavior.compactionStrategy",
@@ -432,7 +432,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "agent-passive-code-injection",
     "name": "Agent Passive Code Injection",
-    "description": "Enables per-turn passive retrieval from the repo SOURCE-TREE CODE INDEX (CodeIndexStore) alongside project-memory knowledge, sharing the SAME token budget and relevance floor. When the query would benefit and the index is built, similarity-ranked code chunks are injected as untrusted reference pointers, each recorded on the turn injection record with source=code-index and its honest match label (semantic/lexical). Never injects from an empty or provider-mismatched index, or from a hashed-only (no real semantic) provider — the store exposes each of those and the turn record states which. DEFAULT OFF (unlike agent-passive-knowledge-injection, which defaults on): code injection is a newer, higher-variance signal than reviewed project memory — code chunks carry no review/trust provenance and a weak similarity match can pull in a plausibly-worded but wrong chunk — so this first landing is opt-in, earned on by the same hard-budget + honest-record discipline before it becomes a default. Also respects the embedder’s storage.codeIndexEnabled setting; disable either to revert to memory-only injection.",
+    "description": "Enables per-turn passive retrieval from the repo SOURCE-TREE CODE INDEX (CodeIndexStore) alongside project-memory knowledge, sharing the SAME token budget and relevance floor. When the query would benefit and the index is built, similarity-ranked code chunks are injected as untrusted reference pointers, each recorded on the turn injection record with source=code-index and its honest match label (semantic/lexical). Never injects from an empty or provider-mismatched index, or from a hashed-only (no real semantic) provider, the store exposes each of those and the turn record states which. DEFAULT OFF (unlike agent-passive-knowledge-injection, which defaults on): code injection is a newer, higher-variance signal than reviewed project memory, code chunks carry no review/trust provenance and a weak similarity match can pull in a plausibly-worded but wrong chunk, so this first landing is opt-in, earned on by the same hard-budget + honest-record discipline before it becomes a default. Also respects the embedder’s storage.codeIndexEnabled setting; disable either to revert to memory-only injection.",
     "domain": "agents",
     "enablement": {
       "key": "agents.passiveInjection.code",
@@ -1080,7 +1080,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "sandbox-model-judgment",
     "name": "Sandbox Model-Judgment Tier",
-    "description": "Enables an optional model-judgment pass on the residual sandbox ask-tail: when the per-command exec sandbox is active and a command still lands on ask (a boundary needing host access — network, host-privilege escalation), a provider call over the command, its sandbox plan, workspace context, and the policy reasons produces a PROPOSED verdict with stated reasons. The tier NEVER converts allow→deny and NEVER touches the frozen catastrophic-only exec block (rm -rf /, dd to devices, mkfs, fork bomb…); it can only ANNOTATE the human ask (\"model judgment: looks safe because… / flags risk because…\") or, ONLY when the operator opted into sandbox.judgment auto-approve, auto-approve a looks-safe verdict. A flags-risk verdict never auto-denies — it annotates the ask the human still decides; a judgment failure degrades to a plain ask. Every judgment leaves a receipt. On by default in annotate-only mode (sandbox.judgment annotate); auto-approval is a separate explicit opt-in (sandbox.judgment auto-approve).",
+    "description": "Enables an optional model-judgment pass on the residual sandbox ask-tail: when the per-command exec sandbox is active and a command still lands on ask (a boundary needing host access, network, host-privilege escalation), a provider call over the command, its sandbox plan, workspace context, and the policy reasons produces a PROPOSED verdict with stated reasons. The tier NEVER converts allow→deny and NEVER touches the frozen catastrophic-only exec block (rm -rf /, dd to devices, mkfs, fork bomb…); it can only ANNOTATE the human ask (\"model judgment: looks safe because… / flags risk because…\") or, ONLY when the operator opted into sandbox.judgment auto-approve, auto-approve a looks-safe verdict. A flags-risk verdict never auto-denies, it annotates the ask the human still decides; a judgment failure degrades to a plain ask. Every judgment leaves a receipt. On by default in annotate-only mode (sandbox.judgment annotate); auto-approval is a separate explicit opt-in (sandbox.judgment auto-approve).",
     "domain": "sandbox",
     "enablement": {
       "key": "sandbox.judgment",
@@ -1099,7 +1099,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "relay-connect",
     "name": "Outbound Zero-Knowledge Relay",
-    "description": "Lets the daemon connect OUTBOUND to a self-hostable, zero-knowledge relay and register under an unguessable rendezvous id so surfaces can reach it from outside the LAN. An end-to-end channel (ECDH P-256 → HKDF → AES-256-GCM) terminates INSIDE the daemon before any application byte, so the relay operator only ever sees ciphertext plus connection metadata; the daemon is authenticated to surfaces by static-key pinning from the pairing payload. Relay, channel, and OAuth credentials at rest are encrypted under the random secrets keyfile (never host-derived identity). No connection is made without explicit configuration: the relay.enabled config switch and a configured relay.url still gate every connection — leave either unset to keep the daemon LAN-only.",
+    "description": "Lets the daemon connect OUTBOUND to a self-hostable, zero-knowledge relay and register under an unguessable rendezvous id so surfaces can reach it from outside the LAN. An end-to-end channel (ECDH P-256 → HKDF → AES-256-GCM) terminates INSIDE the daemon before any application byte, so the relay operator only ever sees ciphertext plus connection metadata; the daemon is authenticated to surfaces by static-key pinning from the pairing payload. Relay, channel, and OAuth credentials at rest are encrypted under the random secrets keyfile (never host-derived identity). No connection is made without explicit configuration: the relay.enabled config switch and a configured relay.url still gate every connection, leave either unset to keep the daemon LAN-only.",
     "domain": "relay",
     "enablement": {
       "key": "relay.enabled",
@@ -1118,7 +1118,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "paired-device-capabilities",
     "name": "Paired Phone Capabilities",
-    "description": "Lets the agent use a PAIRED phone as a tool: either camera, its screen, its location, its clipboard, and a small set of device commands (notification, link, buzz). It rides the existing peer transport as a native contract — never an MCP server — so a web app node and a native app node are the same kind of peer. Every capture and every effect asks the person first; choosing \"always allow\" on that prompt writes ONE durable grant for that one capability on that one phone, listed and revocable in the grants surface, with an age TTL and a count cap so nothing is granted forever. Pictures the phone takes are kept for 24 hours by default and then deleted, and every housekeeping sweep discloses exactly what it removed and why. Configure the whole posture through device.* — device.capabilities.mode chooses between off, ask-every-time, and honouring grants; device.capabilities.allowAlwaysOffer chooses which capabilities may be granted durably; device.capture.retentionHours sets how long a picture lives.",
+    "description": "Lets the agent use a PAIRED phone as a tool: either camera, its screen, its location, its clipboard, and a small set of device commands (notification, link, buzz). It rides the existing peer transport as a native contract, never an MCP server, so a web app node and a native app node are the same kind of peer. Every capture and every effect asks the person first; choosing \"always allow\" on that prompt writes ONE durable grant for that one capability on that one phone, listed and revocable in the grants surface, with an age TTL and a count cap so nothing is granted forever. Pictures the phone takes are kept for 24 hours by default and then deleted, and every housekeeping sweep discloses exactly what it removed and why. Configure the whole posture through device.*, device.capabilities.mode chooses between off, ask-every-time, and honouring grants; device.capabilities.allowAlwaysOffer chooses which capabilities may be granted durably; device.capture.retentionHours sets how long a picture lives.",
     "domain": "device",
     "enablement": {
       "key": "device.capabilities.mode",
@@ -1148,7 +1148,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "wake-word-detection",
     "name": "Wake-Word Detection",
-    "description": "Listens continuously on a capture device for a spoken wake phrase and hands the utterance that follows to speech-to-text. Detection runs the pinned \"hey goodvibes\" classifier behind a melspectrogram computed in code and Google's Apache-2.0 speech-embedding model, both on a WASM backend, so the same detector runs in a daemon child process and in a browser tab. Disabled by default because holding a microphone open must be an explicit act; enabling it starts a supervised capture process and shows a persistent listening indicator for as long as it runs. Live on all three surfaces: the terminal and the agent through a recorder subprocess, the web UI in a browser tab. Each is opted in by its own voice.wake.surfaces.* row. Tuned through voice.wake.*, whose threshold, patience and cooldown rows govern how readily it fires, and whose supervisor rows bound how a crashing detector is retried. The model's published recall figures are measured on synthesised speech only — no human recording of the phrase exists — while its false-accept figures are measured on real speech.",
+    "description": "Listens continuously on a capture device for a spoken wake phrase and hands the utterance that follows to speech-to-text. Detection runs the pinned \"hey goodvibes\" classifier behind a melspectrogram computed in code and Google's Apache-2.0 speech-embedding model, both on a WASM backend, so the same detector runs in a daemon child process and in a browser tab. Disabled by default because holding a microphone open must be an explicit act; enabling it starts a supervised capture process and shows a persistent listening indicator for as long as it runs. Live on all four surfaces: the terminal and the agent through a recorder subprocess, the web UI in a browser tab, and the desktop companion app in its embedded webview. Each is opted in by its own voice.wake.surfaces.* row. Tuned through voice.wake.*, whose threshold, patience and cooldown rows govern how readily it fires, and whose supervisor rows bound how a crashing detector is retried. The model's published recall figures are measured on synthesised speech only, no human recording of the phrase exists, while its false-accept figures are measured on real speech.",
     "domain": "voice",
     "enablement": {
       "key": "voice.wake.enabled",
@@ -1167,6 +1167,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
       "voice.wake.surfaces.tui",
       "voice.wake.surfaces.agent",
       "voice.wake.surfaces.webui",
+      "voice.wake.surfaces.app",
       "voice.wake.activationSound",
       "voice.wake.activationSoundPath",
       "voice.wake.indicator",
@@ -1219,7 +1220,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "permissions.backgroundAgents",
     "type": "enum",
     "default": "inherit",
-    "description": "How background/subagent tool calls consult the permission layer. inherit (default): background tool execution runs through the same session permission mode as the foreground turn loop (allow-all changes nothing; prompt/plan/accept-edits/custom apply their matrices; asks broker through the same blocked-on-user machinery with subagent attribution). allow-all: background agents are exempt — their tool calls auto-approve regardless of the session mode.",
+    "description": "How background/subagent tool calls consult the permission layer. inherit (default): background tool execution runs through the same session permission mode as the foreground turn loop (allow-all changes nothing; prompt/plan/accept-edits/custom apply their matrices; asks broker through the same blocked-on-user machinery with subagent attribution). allow-all: background agents are exempt, their tool calls auto-approve regardless of the session mode.",
     "enumValues": [
       "inherit",
       "allow-all"
@@ -1407,7 +1408,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "watchers.triggers.enabled",
     "type": "boolean",
     "default": false,
-    "description": "Enable the trigger family: stream watchers over long-lived commands, model-free condition checks, and one-shot on-exit process triggers. Off by default because a trigger launches and supervises real processes on your machine without a person watching — turning it on is a deliberate choice, not a fallback. With it on and no triggers defined, the supervisor idles and consumes nothing."
+    "description": "Enable the trigger family: stream watchers over long-lived commands, model-free condition checks, and one-shot on-exit process triggers. Off by default because a trigger launches and supervises real processes on your machine without a person watching, turning it on is a deliberate choice, not a fallback. With it on and no triggers defined, the supervisor idles and consumes nothing."
   },
   {
     "key": "watchers.triggers.backoffLadderMs",
@@ -1448,7 +1449,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "watchers.triggers.observationRingSize",
     "type": "number",
     "default": 200,
-    "description": "Observations kept per trigger in its persisted ring buffer. Every rule — change, transition, rate-of-change, windowed aggregation — is a pure function over this buffer, so this is the memory depth available to them. Larger windows need a larger ring.",
+    "description": "Observations kept per trigger in its persisted ring buffer. Every rule, change, transition, rate-of-change, windowed aggregation, is a pure function over this buffer, so this is the memory depth available to them. Larger windows need a larger ring.",
     "validationHint": "integer in [2, 10000]"
   },
   {
@@ -1525,7 +1526,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "watchers.triggers.onExitStdin",
     "type": "enum",
     "default": "none",
-    "description": "Standard input handed to a supervised on-exit child. \"none\" closes stdin so a password-prompting process gets EOF and exits instead of blocking forever; \"empty\" attaches an immediately-closed empty pipe for programs that require a readable stdin handle. There is deliberately no interactive option — nobody is at the keyboard.",
+    "description": "Standard input handed to a supervised on-exit child. \"none\" closes stdin so a password-prompting process gets EOF and exits instead of blocking forever; \"empty\" attaches an immediately-closed empty pipe for programs that require a readable stdin handle. There is deliberately no interactive option, nobody is at the keyboard.",
     "enumValues": [
       "none",
       "empty"
@@ -1554,7 +1555,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "telemetry.otelMode",
     "type": "enum",
     "default": "off",
-    "description": "OpenTelemetry instrumentation: off (default — no OTel SDK initialization), in-process (span creation and in-process export only), or remote-export (additionally export spans as OTLP/HTTP JSON to the collector named by OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT with /v1/traces appended). Switching away from off requires a restart; in-process <-> remote-export applies live.",
+    "description": "OpenTelemetry instrumentation: off (default, no OTel SDK initialization), in-process (span creation and in-process export only), or remote-export (additionally export spans as OTLP/HTTP JSON to the collector named by OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT with /v1/traces appended). Switching away from off requires a restart; in-process <-> remote-export applies live.",
     "enumValues": [
       "off",
       "in-process",
@@ -1588,7 +1589,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "behavior.toolResultReconciliation",
     "type": "enum",
     "default": "reconcile",
-    "description": "What happens to dangling tool-call state at turn end: reconcile (default — synthetic error results are injected and a reconciliation event emitted, preventing silent conversation corruption) or warn-only (log a warning without injecting results).",
+    "description": "What happens to dangling tool-call state at turn end: reconcile (default, synthetic error results are injected and a reconciliation event emitted, preventing silent conversation corruption) or warn-only (log a warning without injecting results).",
     "enumValues": [
       "reconcile",
       "warn-only"
@@ -1715,7 +1716,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "permissions.commandParser",
     "type": "enum",
     "default": "ast",
-    "description": "Compound shell command evaluation: ast (default — per-segment safe/unsafe verdicts with specific denial explanations, automatic fallback to flat on any parser failure) or flat (baseline segmentation). The frozen catastrophic command block is enforced identically in both modes.",
+    "description": "Compound shell command evaluation: ast (default, per-segment safe/unsafe verdicts with specific denial explanations, automatic fallback to flat on any parser failure) or flat (baseline segmentation). The frozen catastrophic command block is enforced identically in both modes.",
     "enumValues": [
       "ast",
       "flat"
@@ -1811,7 +1812,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "provider.optimizerMode",
     "type": "enum",
     "default": "off",
-    "description": "Provider routing optimizer: off (optimizer inactive, default), manual (optimizer active but never auto-routes), auto (selects the best capable provider per request via capability contracts), or pinned (force one model — see provider.optimizerPinnedModel). Runtime /provider commands and pin/unpin still override for the session.",
+    "description": "Provider routing optimizer: off (optimizer inactive, default), manual (optimizer active but never auto-routes), auto (selects the best capable provider per request via capability contracts), or pinned (force one model, see provider.optimizerPinnedModel). Runtime /provider commands and pin/unpin still override for the session.",
     "enumValues": [
       "off",
       "manual",
@@ -2005,7 +2006,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "controlPlane.publicBaseUrl",
     "type": "string",
     "default": "",
-    "description": "Override for a genuinely external control-plane address (tunnel or reverse proxy). Leave empty — the everyday base URL is derived from hostMode/host/port/tls.mode, so it cannot drift. Set this only when an off-box address differs from the bind."
+    "description": "Override for a genuinely external control-plane address (tunnel or reverse proxy). Leave empty, the everyday base URL is derived from hostMode/host/port/tls.mode, so it cannot drift. Set this only when an off-box address differs from the bind."
   },
   {
     "key": "controlPlane.streamMode",
@@ -2939,7 +2940,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "sandbox.judgment",
     "type": "enum",
     "default": "annotate",
-    "description": "Model-judgment pass on sandbox escalation asks: off (plain asks), annotate (default — a proposed verdict with stated reasons annotates the ask, the human still decides), or auto-approve (additionally auto-approves looks-safe verdicts; explicit opt-in). Never auto-denies and never touches the frozen catastrophic block; every judgment leaves a receipt.",
+    "description": "Model-judgment pass on sandbox escalation asks: off (plain asks), annotate (default, a proposed verdict with stated reasons annotates the ask, the human still decides), or auto-approve (additionally auto-approves looks-safe verdicts; explicit opt-in). Never auto-denies and never touches the frozen catastrophic block; every judgment leaves a receipt.",
     "enumValues": [
       "off",
       "annotate",
@@ -2950,7 +2951,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "relay.enabled",
     "type": "boolean",
     "default": true,
-    "description": "Connect the daemon OUTBOUND to a zero-knowledge relay for reachability from outside the LAN. Default on, but no connection is ever made without an explicitly configured relay.url — leave the URL empty to keep the daemon LAN-only."
+    "description": "Connect the daemon OUTBOUND to a zero-knowledge relay for reachability from outside the LAN. Default on, but no connection is ever made without an explicitly configured relay.url, leave the URL empty to keep the daemon LAN-only."
   },
   {
     "key": "relay.url",
@@ -2980,7 +2981,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "device.capabilities.mode",
     "type": "enum",
     "default": "honor-grants",
-    "description": "How a paired phone's camera, screen, location, clipboard, and device commands are reached. honor-grants (stock): every capability asks the first time and every time after, unless you chose \"always allow\" for that one capability on that one phone. ask-every-time: the prompt appears on every single request and no durable grant is ever consulted or offered — use it when someone else is holding the phone. off: no capability request reaches any paired device at all.",
+    "description": "How a paired phone's camera, screen, location, clipboard, and device commands are reached. honor-grants (stock): every capability asks the first time and every time after, unless you chose \"always allow\" for that one capability on that one phone. ask-every-time: the prompt appears on every single request and no durable grant is ever consulted or offered, use it when someone else is holding the phone. off: no capability request reaches any paired device at all.",
     "enumValues": [
       "off",
       "ask-every-time",
@@ -3080,19 +3081,19 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.enabled",
     "type": "boolean",
     "default": false,
-    "description": "Run the wake-word detector, listening continuously for the wake phrase on the configured input device. Turning it on starts a supervised capture process and a persistent listening indicator; turning it off stops it and releases the device immediately. WHERE IT LISTENS depends on the voice.wake.surfaces.* rows: the terminal captures through a recorder subprocess and is on by default, the agent captures the same way and is opted in per surface, and a browser tab captures through getUserMedia and is opted in per origin. Off by default because an always-on microphone must be an explicit act, not something a user discovers after the fact. THE MODEL IS ALREADY THERE: installing goodvibes downloads and checksum-verifies the pinned classifier, and a daemon retries at boot if the install could not reach the network — so turning this on normally needs no setup step at all. Turning it on never downloads anything itself: on a host whose artifacts are missing or fail verification it says exactly which, and names the command that fetches them, rather than silently pulling 6.1 MB the moment a switch moves."
+    "description": "Run the wake-word detector, listening continuously for the wake phrase on the configured input device. Turning it on starts a supervised capture process and a persistent listening indicator; turning it off stops it and releases the device immediately. WHERE IT LISTENS depends on the voice.wake.surfaces.* rows: the terminal captures through a recorder subprocess and is on by default, the agent captures the same way and is opted in per surface, and a browser tab captures through getUserMedia and is opted in per origin. Off by default because an always-on microphone must be an explicit act, not something a user discovers after the fact. THE MODEL IS ALREADY THERE: installing goodvibes downloads and checksum-verifies the pinned classifier, and a daemon retries at boot if the install could not reach the network, so turning this on normally needs no setup step at all. Turning it on never downloads anything itself: on a host whose artifacts are missing or fail verification it says exactly which, and names the command that fetches them, rather than silently pulling 6.1 MB the moment a switch moves."
   },
   {
     "key": "voice.wake.models",
     "type": "string",
     "default": "hey_goodvibes",
-    "description": "Comma-separated wake-word models to run concurrently, by id. Default \"hey_goodvibes\" is the model the SDK pins, hosts, and verifies by checksum. Additional ids resolve against voice.wake.customModelDir. Each model costs one classifier inference per 80 ms frame — the shared melspectrogram and speech-embedding front end is computed once regardless of how many models are listed, so a second model is far cheaper than a second detector. An empty list disables detection without stopping the service."
+    "description": "Comma-separated wake-word models to run concurrently, by id. Default \"hey_goodvibes\" is the model the SDK pins, hosts, and verifies by checksum. Additional ids resolve against voice.wake.customModelDir. Each model costs one classifier inference per 80 ms frame, the shared melspectrogram and speech-embedding front end is computed once regardless of how many models are listed, so a second model is far cheaper than a second detector. An empty list disables detection without stopping the service."
   },
   {
     "key": "voice.wake.threshold",
     "type": "number",
     "default": 0.9,
-    "description": "Score, 0 to 1, a frame must reach for the wake phrase to count as heard. DELIBERATELY 0.9, NOT openWakeWord's upstream default of 0.5 and not the 0.5 originally accepted for this row: measurement on the shipped hey_goodvibes model showed 0.5 fires on 34.5% of never-trained minimal-pair phrases (\"hey good vibe check\", \"hey goodbye vibes\" — ordinary English a user will actually say) at 99.2% recall, while 0.9 cuts that to 24.7% for 96.8% recall. Trading 2.4 points of recall to remove roughly a third of the wrong wakes is the better default for a microphone that is always on. Lower it toward 0.5 if the detector misses you; raise it above 0.9 if it fires when you did not speak to it. Recall figures here are synthetic-only — no human has recorded the phrase.",
+    "description": "Score, 0 to 1, a frame must reach for the wake phrase to count as heard. DELIBERATELY 0.9, NOT openWakeWord's upstream default of 0.5 and not the 0.5 originally accepted for this row: measurement on the shipped hey_goodvibes model showed 0.5 fires on 34.5% of never-trained minimal-pair phrases (\"hey good vibe check\", \"hey goodbye vibes\", ordinary English a user will actually say) at 99.2% recall, while 0.9 cuts that to 24.7% for 96.8% recall. Trading 2.4 points of recall to remove roughly a third of the wrong wakes is the better default for a microphone that is always on. Lower it toward 0.5 if the detector misses you; raise it above 0.9 if it fires when you did not speak to it. Recall figures here are synthetic-only, no human has recorded the phrase.",
     "validationHint": "number in [0, 1]"
   },
   {
@@ -3113,14 +3114,14 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.vadThreshold",
     "type": "number",
     "default": 0,
-    "description": "Speech-probability floor, 0 to 1, from the speech gate run ahead of the wake classifier; frames below it are withheld from scoring instead of being classified. The gate is our own speech/non-speech head over the SAME embedding the wake classifier consumes, so it costs one extra inference of 0.025 ms per 80 ms frame — beside the detector's own 3.46 ms — and no extra front end. It provisions with the wake models. Measured on 106,390 held-out frames: at 0.3 it passes 96.0% of speech frames and withholds 95.7% of non-speech ones, which is the recommended value; lower passes more speech and screens less, higher screens more and starts costing wakes. 0 is the shipped default and turns the stage off entirely — it is the configuration that has been exercised longest, and a gate can only ever cost you a detection. A surface that has not loaded the gate REFUSES TO START with any value above 0, rather than running unscreened frames through a stage you have configured.",
+    "description": "Speech-probability floor, 0 to 1, from the speech gate run ahead of the wake classifier; frames below it are withheld from scoring instead of being classified. The gate is our own speech/non-speech head over the SAME embedding the wake classifier consumes, so it costs one extra inference of 0.025 ms per 80 ms frame, beside the detector's own 3.46 ms, and no extra front end. It provisions with the wake models. Measured on 106,390 held-out frames: at 0.3 it passes 96.0% of speech frames and withholds 95.7% of non-speech ones, which is the recommended value; lower passes more speech and screens less, higher screens more and starts costing wakes. 0 is the shipped default and turns the stage off entirely, it is the configuration that has been exercised longest, and a gate can only ever cost you a detection. A surface that has not loaded the gate REFUSES TO START with any value above 0, rather than running unscreened frames through a stage you have configured.",
     "validationHint": "number in [0, 1]"
   },
   {
     "key": "voice.wake.noiseSuppression",
     "type": "enum",
     "default": "none",
-    "description": "Noise suppression applied to captured audio before anything reads it — the wake classifier scores filtered frames, and the utterance recorded after a wake (and push-to-talk voice input) is filtered audio too. \"speex\" is SpeexDSP's own denoiser, carried in the platform as a WebAssembly module and applied on every surface that has WebAssembly, which is both shipped ones: nothing to install, nothing to download, no per-host library. It attenuates the estimated noise floor by about 15 dB — measured at 13.2 dB against a synthetic tone-plus-white-noise set, for 0.24 ms of work per 80 ms frame beside the detector's own 3.46 ms. \"none\" ships as the default and is a true passthrough: the captured bytes reach the detector exactly as the device produced them. Choose \"speex\" on a noisy input (a fan, an air conditioner, street noise through an open window), and \"none\" on a quiet one, where a denoiser only has speech to work on.",
+    "description": "Noise suppression applied to captured audio before anything reads it, the wake classifier scores filtered frames, and the utterance recorded after a wake (and push-to-talk voice input) is filtered audio too. \"speex\" is SpeexDSP's own denoiser, carried in the platform as a WebAssembly module and applied on every surface that has WebAssembly, which is both shipped ones: nothing to install, nothing to download, no per-host library. It attenuates the estimated noise floor by about 15 dB, measured at 13.2 dB against a synthetic tone-plus-white-noise set, for 0.24 ms of work per 80 ms frame beside the detector's own 3.46 ms. \"none\" ships as the default and is a true passthrough: the captured bytes reach the detector exactly as the device produced them. Choose \"speex\" on a noisy input (a fan, an air conditioner, street noise through an open window), and \"none\" on a quiet one, where a denoiser only has speech to work on.",
     "enumValues": [
       "none",
       "speex"
@@ -3130,13 +3131,13 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.inputDevice",
     "type": "string",
     "default": "",
-    "description": "Capture device to listen on. Empty means the operating system default source. Shared by BOTH microphone consumers: wake detection and push-to-talk voice input open the same device through the same path, so this row moves both rather than only the always-on one. Device identifiers are host-specific — list real ones with `pactl list short sources` or `arecord -L`, or use a navigator.mediaDevices deviceId in a browser tab. Note pw-record takes a PipeWire node serial or node name here, not a PulseAudio device name, and sox cannot target a device at all (it reads AUDIODEV from the environment), which the surface reports rather than silently ignoring."
+    "description": "Capture device to listen on. Empty means the operating system default source. Shared by BOTH microphone consumers: wake detection and push-to-talk voice input open the same device through the same path, so this row moves both rather than only the always-on one. Device identifiers are host-specific, list real ones with `pactl list short sources` or `arecord -L`, or use a navigator.mediaDevices deviceId in a browser tab. Note pw-record takes a PipeWire node serial or node name here, not a PulseAudio device name, and sox cannot target a device at all (it reads AUDIODEV from the environment), which the surface reports rather than silently ignoring."
   },
   {
     "key": "voice.wake.captureCommand",
     "type": "enum",
     "default": "auto",
-    "description": "Which recorder feeds capture on a HOST surface — the terminal and the daemon child process. A browser tab ignores this row and uses getUserMedia. Feeds both consumers: wake detection and push-to-talk voice input. \"auto\" probes for pw-record, parecord, arecord, ffmpeg, then sox and uses the first present, mirroring how local audio playback discovers its player. Name one explicitly to pin the choice on a host where the probe picks a device-starved backend; a named recorder that is not installed reports that instead of quietly falling back, because pinning it was the point.",
+    "description": "Which recorder feeds capture on a HOST surface, the terminal and the daemon child process. A browser tab ignores this row and uses getUserMedia. Feeds both consumers: wake detection and push-to-talk voice input. \"auto\" probes for pw-record, parecord, arecord, ffmpeg, then sox and uses the first present, mirroring how local audio playback discovers its player. Name one explicitly to pin the choice on a host where the probe picks a device-starved backend; a named recorder that is not installed reports that instead of quietly falling back, because pinning it was the point.",
     "enumValues": [
       "auto",
       "pw-record",
@@ -3150,25 +3151,31 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.surfaces.tui",
     "type": "boolean",
     "default": true,
-    "description": "Listen for the wake phrase on the terminal, through a recorder subprocess on the host. On by default: once wake detection is enabled the terminal is the primary surface, and a wake that reaches no surface is a detector that appears broken. A confirmed wake plays the activation sound, shows the listening indicator, captures the utterance that follows and sends it to speech-to-text, then places the transcript in the composer — or submits it when voice.wake.autoSubmit is on."
+    "description": "Listen for the wake phrase on the terminal, through a recorder subprocess on the host. On by default: once wake detection is enabled the terminal is the primary surface, and a wake that reaches no surface is a detector that appears broken. A confirmed wake plays the activation sound, shows the listening indicator, captures the utterance that follows and sends it to speech-to-text, then places the transcript in the composer, or submits it when voice.wake.autoSubmit is on."
   },
   {
     "key": "voice.wake.surfaces.agent",
     "type": "boolean",
     "default": false,
-    "description": "Listen for the wake phrase on the agent surface, through a recorder subprocess on the host — the same capture path the terminal uses. Turning this on with voice.wake.enabled opens the microphone on the agent, and a confirmed wake sends the utterance that follows to speech-to-text and puts the transcript into the agent conversation input, or submits it when voice.wake.autoSubmit is on. Off by default because two surfaces on one machine both acting on a single spoken utterance is a confusing default, not because it does not work: turn it on when the agent is the surface you actually talk to, and consider turning voice.wake.surfaces.tui off when you do."
+    "description": "Listen for the wake phrase on the agent surface, through a recorder subprocess on the host, the same capture path the terminal uses. Turning this on with voice.wake.enabled opens the microphone on the agent, and a confirmed wake sends the utterance that follows to speech-to-text and puts the transcript into the agent conversation input, or submits it when voice.wake.autoSubmit is on. Off by default because two surfaces on one machine both acting on a single spoken utterance is a confusing default, not because it does not work: turn it on when the agent is the surface you actually talk to, and consider turning voice.wake.surfaces.tui off when you do."
   },
   {
     "key": "voice.wake.surfaces.webui",
     "type": "boolean",
     "default": false,
-    "description": "Listen for the wake phrase in the web UI, which runs the detector inside the browser tab on a WASM backend and downloads the pinned model through the daemon. Off by default because browser capture is a separate stack with its own per-origin microphone permission prompt — it is opted into per browser, not inherited from the host. While it is off the tab never calls getUserMedia at all, so no permission prompt appears. A plain-http origin cannot capture and says so instead of failing silently."
+    "description": "Listen for the wake phrase in the web UI, which runs the detector inside the browser tab on a WASM backend and downloads the pinned model through the daemon. Off by default because browser capture is a separate stack with its own per-origin microphone permission prompt, it is opted into per browser, not inherited from the host. While it is off the tab never calls getUserMedia at all, so no permission prompt appears. A plain-http origin cannot capture and says so instead of failing silently."
+  },
+  {
+    "key": "voice.wake.surfaces.app",
+    "type": "boolean",
+    "default": false,
+    "description": "Listen for the wake phrase in the desktop companion app, which runs the detector inside its embedded webview on a WASM backend, the same runtime and download path the web UI uses. Off by default because webview capture is a separate stack with its own microphone permission prompt, it is opted into per install, not inherited from the host. While it is off the webview never calls getUserMedia at all, so no permission prompt appears."
   },
   {
     "key": "voice.wake.activationSound",
     "type": "enum",
     "default": "chime",
-    "description": "Sound played the moment a wake is confirmed. \"chime\" by default because audible confirmation is how a user knows the microphone acted — a silent wake is the behaviour people distrust. \"custom\" plays voice.wake.activationSoundPath; \"none\" is silent and leaves voice.wake.indicator as the only feedback.",
+    "description": "Sound played the moment a wake is confirmed. \"chime\" by default because audible confirmation is how a user knows the microphone acted, a silent wake is the behaviour people distrust. \"custom\" plays voice.wake.activationSoundPath; \"none\" is silent and leaves voice.wake.indicator as the only feedback.",
     "enumValues": [
       "none",
       "chime",
@@ -3179,13 +3186,13 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.activationSoundPath",
     "type": "string",
     "default": "",
-    "description": "Absolute path to the audio file played on wake. Read only when voice.wake.activationSound is \"custom\"; ignored otherwise. A host surface plays the file through the same player local voice output uses. A browser tab cannot read a path on your machine, so it plays the built-in chime instead and reports that this row is not in force there — a wake stays audible either way."
+    "description": "Absolute path to the audio file played on wake. Read only when voice.wake.activationSound is \"custom\"; ignored otherwise. A host surface plays the file through the same player local voice output uses. A browser tab cannot read a path on your machine, so it plays the built-in chime instead and reports that this row is not in force there, a wake stays audible either way."
   },
   {
     "key": "voice.wake.indicator",
     "type": "enum",
     "default": "statusline",
-    "description": "How the surface shows that the microphone is live. \"statusline\" keeps a persistent listening marker for as long as the detector runs — not only at the moment of a wake — so an always-on microphone is never invisible: a footer row in the terminal, a status-strip chip in the web UI. \"banner\" is more prominent; \"off\" removes the marker entirely and is not the default for that reason.",
+    "description": "How the surface shows that the microphone is live. \"statusline\" keeps a persistent listening marker for as long as the detector runs, not only at the moment of a wake, so an always-on microphone is never invisible: a footer row in the terminal, a status-strip chip in the web UI. \"banner\" is more prominent; \"off\" removes the marker entirely and is not the default for that reason.",
     "enumValues": [
       "off",
       "statusline",
@@ -3203,7 +3210,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.captureMaxSeconds",
     "type": "number",
     "default": 10,
-    "description": "Hard ceiling on how long capture runs before it stops on its own. Bounds memory and guarantees a stuck or silent stream cannot hold the microphone open indefinitely. Applies to post-wake capture AND to push-to-talk, where a key-release event that never arrives would otherwise leave the device open. 0 REMOVES THE CEILING: speech-to-text imposes no length limit of its own, so the ceiling is policy rather than a technical bound, and a long dictated thought is a real thing to want. It still defaults to 10 because the ceiling is the backstop for the OTHER stop condition failing. Post-wake capture normally ends about voice.wake.silenceStopMs after you stop talking, which depends on frames reading as silence — with the ceiling off, a stream that goes stuck or a room the silence floor cannot resolve holds the microphone open with nothing left to close it. Turn it off alongside a silence-stop you have seen work in your room; voice.wake.silenceFloorRms is the row that makes that reliable.",
+    "description": "Hard ceiling on how long capture runs before it stops on its own. Bounds memory and guarantees a stuck or silent stream cannot hold the microphone open indefinitely. Applies to post-wake capture AND to push-to-talk, where a key-release event that never arrives would otherwise leave the device open. 0 REMOVES THE CEILING: speech-to-text imposes no length limit of its own, so the ceiling is policy rather than a technical bound, and a long dictated thought is a real thing to want. It still defaults to 10 because the ceiling is the backstop for the OTHER stop condition failing. Post-wake capture normally ends about voice.wake.silenceStopMs after you stop talking, which depends on frames reading as silence, with the ceiling off, a stream that goes stuck or a room the silence floor cannot resolve holds the microphone open with nothing left to close it. Turn it off alongside a silence-stop you have seen work in your room; voice.wake.silenceFloorRms is the row that makes that reliable.",
     "validationHint": "integer in [0, 120]"
   },
   {
@@ -3217,14 +3224,14 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.silenceFloorRms",
     "type": "number",
     "default": 0,
-    "description": "The audio level at or below which a frame counts as silence, on the int16 magnitude scale the capture path uses (full scale 32768, so 180 is about -45 dBFS). 0 — the default — MEASURES IT PER UTTERANCE from the audio captured just before the wake fired, and places the floor 12 dB above the room's own noise. That measurement is what makes voice.wake.silenceStopMs work at all in a room that is not quiet: with a fixed floor, steady background noise above it means no frame is ever silent, silence never accumulates, and every capture runs to the voice.wake.captureMaxSeconds ceiling however long ago you stopped talking. The floor then FOLLOWS the room for the rest of the capture, tracking the quiet moments in the last second and a half, because a headset with automatic gain control raises the input once you stop talking and the room comes back louder than the number measured before it. It is never raised over a third of the speech being heard at the same time, so it cannot end up above your own voice. Set a number to pin the floor instead, which is worth doing if the measurement guesses wrong in your room: raise it if capture keeps running after you stop, lower it if capture cuts off while you are still speaking. A number you set here is used exactly as given AND frozen — it stays where you put it for the whole capture, with no following. The first measured value is never allowed below 180 or above 1440; the following that comes after it may reach 5760.",
+    "description": "The audio level at or below which a frame counts as silence, on the int16 magnitude scale the capture path uses (full scale 32768, so 180 is about -45 dBFS). 0, the default, MEASURES IT PER UTTERANCE from the audio captured just before the wake fired, and places the floor 12 dB above the room's own noise. That measurement is what makes voice.wake.silenceStopMs work at all in a room that is not quiet: with a fixed floor, steady background noise above it means no frame is ever silent, silence never accumulates, and every capture runs to the voice.wake.captureMaxSeconds ceiling however long ago you stopped talking. The floor then FOLLOWS the room for the rest of the capture, tracking the quiet moments in the last second and a half, because a headset with automatic gain control raises the input once you stop talking and the room comes back louder than the number measured before it. It is never raised over a third of the speech being heard at the same time, so it cannot end up above your own voice. Set a number to pin the floor instead, which is worth doing if the measurement guesses wrong in your room: raise it if capture keeps running after you stop, lower it if capture cuts off while you are still speaking. A number you set here is used exactly as given AND frozen, it stays where you put it for the whole capture, with no following. The first measured value is never allowed below 180 or above 1440; the following that comes after it may reach 5760.",
     "validationHint": "integer in [0, 8000]"
   },
   {
     "key": "voice.wake.speechRetriggerMs",
     "type": "number",
     "default": 150,
-    "description": "How long a run of sound above the silence floor has to last before it counts as you talking again. Shorter runs are counted as part of the silence they interrupted rather than starting the voice.wake.silenceStopMs wait over. This is what a close-worn or in-ear microphone needs: a breath, a lip tick or a chair creak is loud and lasts one or two frames, and treating each one as speech means the wait never completes and capture runs to the voice.wake.captureMaxSeconds ceiling every time however long ago you stopped. 150 ms sits under the shortest syllable anyone ends a sentence on and over the longest of those noises. Raise it if capture still will not end in a room full of short noises; lower it if the first word of a resumed sentence gets clipped. 0 turns it off, so every loud frame resets the wait — the behaviour before this row existed.",
+    "description": "How long a run of sound above the silence floor has to last before it counts as you talking again. Shorter runs are counted as part of the silence they interrupted rather than starting the voice.wake.silenceStopMs wait over. This is what a close-worn or in-ear microphone needs: a breath, a lip tick or a chair creak is loud and lasts one or two frames, and treating each one as speech means the wait never completes and capture runs to the voice.wake.captureMaxSeconds ceiling every time however long ago you stopped. 150 ms sits under the shortest syllable anyone ends a sentence on and over the longest of those noises. Raise it if capture still will not end in a room full of short noises; lower it if the first word of a resumed sentence gets clipped. 0 turns it off, so every loud frame resets the wait, the behaviour before this row existed.",
     "validationHint": "integer in [0, 2000]"
   },
   {
@@ -3237,7 +3244,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.retainAudio",
     "type": "enum",
     "default": "none",
-    "description": "Whether captured audio is written to disk. \"none\" by default — nothing is stored, which is the only setting under which the microphone leaves no recording behind. \"session-temp\" keeps clips in a session-scoped directory that is deleted when the session ends and swept on recovery, and exists to debug a bad transcript, not as a recording feature. A browser tab has no filesystem to retain into: it reports that this row is not in force rather than appearing to store clips it is not storing.",
+    "description": "Whether captured audio is written to disk. \"none\" by default, nothing is stored, which is the only setting under which the microphone leaves no recording behind. \"session-temp\" keeps clips in a session-scoped directory that is deleted when the session ends and swept on recovery, and exists to debug a bad transcript, not as a recording feature. A browser tab has no filesystem to retain into: it reports that this row is not in force rather than appearing to store clips it is not storing.",
     "enumValues": [
       "none",
       "session-temp"
@@ -3274,7 +3281,7 @@ export const FEATURE_SCHEMA_ENTRIES: readonly ConfigSettingMeta[] = [
     "key": "voice.wake.browserBackend",
     "type": "enum",
     "default": "wasm",
-    "description": "Execution backend for the detector inside a browser tab. \"wasm\" is the default and the measured configuration: the per-frame cost already beats real time by a wide margin, and WebGPU cannot run the front end without splitting the graph across devices, which costs more in transfers than it saves. \"webgpu\" is available for hosts that measure otherwise. Read by the browser tab when it creates its inference sessions; a host surface always runs WASM and ignores this row. BOTH VALUES LOAD THE SAME ENGINE BINARY — the WebGPU-capable build carries the CPU engine too — so switching costs no extra download, and a tab set to \"webgpu\" on a browser without navigator.gpu falls back to the CPU provider inside the binary it already has.",
+    "description": "Execution backend for the detector inside a browser tab. \"wasm\" is the default and the measured configuration: the per-frame cost already beats real time by a wide margin, and WebGPU cannot run the front end without splitting the graph across devices, which costs more in transfers than it saves. \"webgpu\" is available for hosts that measure otherwise. Read by the browser tab when it creates its inference sessions; a host surface always runs WASM and ignores this row. BOTH VALUES LOAD THE SAME ENGINE BINARY, the WebGPU-capable build carries the CPU engine too, so switching costs no extra download, and a tab set to \"webgpu\" on a browser without navigator.gpu falls back to the CPU provider inside the binary it already has.",
     "enumValues": [
       "wasm",
       "webgpu"

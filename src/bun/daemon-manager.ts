@@ -129,6 +129,23 @@ export function versionCompatible(remote: string | undefined): boolean {
   return major === SUPPORTED_DAEMON_MAJOR;
 }
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+/**
+ * True when the connected daemon's baseUrl resolves to this machine's own
+ * loopback interface. Used by src/bun/wake-models.ts: the Bun process can
+ * only read a wake-word model file straight off disk when the daemon IS this
+ * machine, a daemon reached over the network keeps its files on a filesystem
+ * this process cannot see.
+ */
+export function isLocalDaemonUrl(baseUrl: string): boolean {
+  try {
+    return LOOPBACK_HOSTS.has(new URL(baseUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function daemonBinPath(): string | null {
   // Dev/installed-from-npm layout. Packaging for dist will copy this tree,
   // tracked in FEATURES.md exclusions until the dist wave.

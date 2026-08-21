@@ -140,6 +140,10 @@ export const queryKeys = {
   tailscale: ["tailscale"] as const,
   workspaceRegistrations: ["workspaces", "registrations"] as const,
   voiceLocal: ["voice", "local"] as const,
+  // voice.wake.status, shared by useWakeSettings (vadReady) and
+  // useWakeProvisioning (the explicit voice.wake.provision act) so both read
+  // one cached answer, src/ui/lib/wake/useWake.ts.
+  voiceWakeStatus: ["voice", "wake", "status"] as const,
   acpAgents: ["acp", "agents"] as const,
   memoryProjections: ["memory", "projections"] as const,
   memoryConsolidation: ["memory", "consolidation"] as const,

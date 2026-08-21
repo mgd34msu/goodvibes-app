@@ -768,6 +768,16 @@ export const gv = {
       status: () => invoke("voice.local.status"),
       install: () => invoke("voice.local.install", { body: {} }),
     },
+    // Wake-word (src/ui/lib/wake/): content-verified provisioning state,
+    // the explicit provision act, and the chunked model-bytes read that is
+    // the remote-daemon fallback when src/bun/wake-models.ts's same-origin
+    // route cannot serve a component itself (daemon.wake-models.ts).
+    wake: {
+      status: () => invoke("voice.wake.status"),
+      provision: () => invoke("voice.wake.provision", { body: {} }),
+      modelChunk: (component: string, offset: number) =>
+        invoke("voice.wake.model.get", { query: { component, offset } }),
+    },
   },
 
   telemetry: {

@@ -16,6 +16,7 @@ import { createSecretsRoutes } from "./secrets.ts";
 import { createLocalToolsRoutes } from "./local-tools.ts";
 import { createGithubRoutes } from "./github.ts";
 import { createSubscriptionRoutes } from "./subscriptions.ts";
+import { createWakeModelRoutes } from "./wake-models.ts";
 
 export type AppRouteHandler = (req: Request, url: URL) => Response | Promise<Response>;
 
@@ -35,5 +36,6 @@ export function buildAppRoutes(services: AppServices): Record<string, AppRouteHa
     "/app/local": createLocalToolsRoutes(),
     "/app/github": createGithubRoutes(),
     "/app/subscriptions": createSubscriptionRoutes(),
+    "/app/wake": createWakeModelRoutes(services),
   };
 }

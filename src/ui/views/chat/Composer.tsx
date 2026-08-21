@@ -41,6 +41,7 @@ import { formatCombo } from "../../lib/keybindings.ts";
 import { bestId, bestTitle, firstString } from "../../lib/wire.ts";
 import { MicButton } from "./MicButton.tsx";
 import { VoiceSettingsButton } from "./voice-controls.tsx";
+import { useWakeTranscriptSink } from "../../lib/wake/useWake.ts";
 import { PermissionModeControl } from "./PermissionModeControl.tsx";
 import { readInputHistory } from "./chat-local.ts";
 import { SEND_BUDGET_PER_MINUTE, type AttachedArtifactRef, type SendBudget } from "./useChatSend.ts";
@@ -642,6 +643,30 @@ export function Composer({
     },
     [composerRef, draft, onDraftChange],
   );
+
+  // Wake-word transcript sink (docs pointer: wake-word port). The host is
+  // mounted once at AppShell and keeps listening across view changes; this
+  // view only registers WHERE a confirmed wake's words land while it is
+  // mounted. autoSubmit (voice.wake.autoSubmit, off by default) is applied
+  // AFTER the draft state actually commits, a synchronous requestSubmit()
+  // right here would read the stale pre-append draft value.
+  const wakeAutoSubmitRef = useRef(false);
+  const handleWakeTranscript = useCallback(
+    (text: string, options: { autoSubmit: boolean }) => {
+      if (!text) return;
+      wakeAutoSubmitRef.current = options.autoSubmit;
+      onDraftChange(draft.trim() ? `${draft.trimEnd()} ${text}` : text);
+      composerRef.current?.focus();
+    },
+    [composerRef, draft, onDraftChange],
+  );
+  useWakeTranscriptSink(handleWakeTranscript);
+  useEffect(() => {
+    if (!wakeAutoSubmitRef.current) return;
+    wakeAutoSubmitRef.current = false;
+    if (!draft.trim()) return;
+    composerRef.current?.form?.requestSubmit();
+  }, [draft, composerRef]);
 
   const budgetWarning = sendBudget.remaining <= 5;
   const sendDisabled = isSendPending || sendBudget.blocked || (!draft.trim() && !attachedFiles.length && !artifactRefs.length);

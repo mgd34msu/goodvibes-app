@@ -13,7 +13,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, BadgeCheck, CircleDollarSign, KeyRound, Moon, Radio, ShieldCheck, Zap } from "lucide-react";
+import { Activity, BadgeCheck, CircleDollarSign, KeyRound, Mic, Moon, Radio, ShieldCheck, Zap } from "lucide-react";
 import { gv } from "../../lib/gv.ts";
 import { queryKeys } from "../../lib/queries.ts";
 import {
@@ -34,6 +34,7 @@ import {
 } from "../../lib/presentation-bridge.ts";
 import type { ViewId } from "../../lib/router.ts";
 import { powerHeldTooltip, readPowerStatus } from "../../views/observability/obs-wire.ts";
+import { useWakeState } from "../../lib/wake/useWake.ts";
 
 export interface StatusStripProps {
   /** Router navigation from the shell's single useUrlState instance. */
@@ -110,6 +111,16 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
   const powerSnapshot = power.isSuccess ? readPowerStatus(power.data) : undefined;
   const inhibitorHeld = powerSnapshot?.workHeld ?? false;
   const inhibitorTooltip = powerSnapshot ? powerHeldTooltip(powerSnapshot) : "";
+
+  // Wake-word indicator (voice.wake.indicator: "statusline"). Reads the
+  // singleton host's own external-store state (mounted once at AppShell.tsx,
+  // lib/wake/useWake.ts), no separate poll: visible for as long as the
+  // resolver leaves the indicator on, not only at the moment of a wake, an
+  // always-on microphone must never be invisible (matches the terminal and
+  // web UI's own statusline chip).
+  const wake = useWakeState();
+  const wakeActive = wake.indicator !== "off";
+  const wakeAlarmed = wake.phase === "refused" || wake.phase === "latched";
 
   return (
     <footer className="status-strip">
@@ -217,6 +228,23 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
           <Moon className="status-strip__icon" aria-hidden="true" size={11} />
           <span className="status-strip__label" title={inhibitorTooltip}>
             Awake
+          </span>
+        </Chip>
+      )}
+
+      {/* Wake word, visible only while voice.wake.* actually leaves the
+          indicator on for this app; danger tone when refused/latched (a
+          user turned it on and got a blocker, that is worth a red chip, not
+          silence). */}
+      {wakeActive && (
+        <Chip
+          onClick={() => onNavigate("chat")}
+          ariaLabel={`Wake word: ${wake.phase}${wake.error ? `, ${wake.error}` : ""}. Open Chat`}
+          className={wakeAlarmed ? "status-strip__segment--power-held" : "status-strip__segment--active"}
+        >
+          <Mic className="status-strip__icon" aria-hidden="true" size={11} />
+          <span className="status-strip__label" title={wake.refusal?.detail ?? wake.error ?? ""}>
+            {wake.phase === "listening" ? "Listening" : wake.phase}
           </span>
         </Chip>
       )}

@@ -30,6 +30,10 @@ const MIME: Record<string, string> = {
   ".png": "image/png",
   ".woff2": "font/woff2",
   ".map": "application/json",
+  // The onnxruntime-web wasm binary the wake-word runtime loads
+  // (src/ui/lib/wake/wake-runtime.ts), shipped via electrobun.config.ts's
+  // copy map rather than a bundler import.
+  ".wasm": "application/wasm",
 };
 
 export interface UiServerOptions {

@@ -23,6 +23,13 @@ const config: ElectrobunConfig = {
       "src/ui/index.html": "views/mainview/index.html",
       "src/ui/styles": "views/mainview/styles",
       "assets/fonts": "views/mainview/fonts",
+      // The wake-word runtime's onnxruntime-web wasm binary (the WebGPU-capable
+      // build, which also carries the CPU engine, src/ui/lib/wake/wake-runtime.ts
+      // header). Shipped as a plain static file rather than a bundler `?url`
+      // import (Bun.build has no Vite-style asset-URL loader here), served same-
+      // origin at /wasm/... with the .wasm MIME row in src/bun/ui-server.ts.
+      "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.wasm":
+        "views/mainview/wasm/ort-wasm-simd-threaded.asyncify.wasm",
     },
   },
   runtime: {

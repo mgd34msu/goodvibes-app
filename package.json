@@ -1,6 +1,6 @@
 {
   "name": "goodvibes-app",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "GoodVibes desktop app: the unified GUI for the GoodVibes ecosystem (tui + agent feature set) on Bun + Electrobun.",
@@ -26,12 +26,13 @@
     "verify": "bun run typecheck && bun run check:boundaries && bun run generate:check && bun test"
   },
   "dependencies": {
-    "@pellux/goodvibes-sdk": "2.0.17",
-    "@pellux/goodvibes-tui": "2.0.14",
+    "@pellux/goodvibes-sdk": "2.0.19",
+    "@pellux/goodvibes-tui": "2.0.15",
     "@tanstack/react-query": "^5.62.0",
     "electrobun": "1.18.1",
     "highlight.js": "^11.11.0",
     "lucide-react": "^0.525.0",
+    "onnxruntime-web": "1.27.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",

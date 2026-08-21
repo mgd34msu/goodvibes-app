@@ -27,6 +27,7 @@ import { DaemonGate, shouldGate } from "./DaemonGate.tsx";
 import { CHAT_NEW_EVENT, dispatchChatEvent } from "../../views/chat/chat-events.ts";
 import { OnboardingOverlay, type OnboardingMode } from "../../views/onboarding/OnboardingOverlay.tsx";
 import { useFirstRunOnboarding } from "../../views/onboarding/useFirstRun.ts";
+import { useWakeHost } from "../../lib/wake/useWake.ts";
 
 export function AppShell() {
   const { view, setView } = useUrlState();
@@ -61,6 +62,16 @@ export function AppShell() {
   // --- realtime: invalidation stream + raw session-update stream -----------
   const realtimeError = useRealtimeInvalidation(daemonReady);
   useSessionRealtime(daemonReady);
+
+  // --- wake-word host: mounted once at the shell so it holds the microphone
+  // across view changes, exactly like the composer's TTS engine (voice.ts).
+  // While voice.wake.surfaces.app (or voice.wake.enabled) is off, applying
+  // its resolved settings never opens a device, see wake-host.ts's
+  // "disabled means the device is never touched" invariant. No transcript
+  // sink is registered here; the composer (Composer.tsx) registers its own
+  // with useWakeTranscriptSink so the host keeps listening even when no
+  // composer happens to be mounted.
+  useWakeHost();
 
   // --- navigation + shell commands -----------------------------------------
   const navigate = useCallback(

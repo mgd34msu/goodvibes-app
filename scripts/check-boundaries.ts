@@ -15,8 +15,16 @@ const RULES: Rule[] = [
   {
     dir: "src/ui",
     label: "webview UI",
+    // Two anchored exemptions for the wake-word port (src/ui/lib/wake/):
+    // platform/voice/capture and platform/voice/wake/runtime are both
+    // verified browser-safe (26 transitive modules, zero node: imports) and
+    // each has its own dedicated exports-map entry in @pellux/goodvibes-sdk.
+    // The negative lookahead only excuses those two exact subpaths, quoted
+    // either way, and only when the specifier ends there (no /foo after it),
+    // so a NEW subpath under platform/ (or a longer path built on top of
+    // these two) still trips the general platform ban below it.
     forbidden: [
-      /@pellux\/goodvibes-sdk\/platform/,
+      /@pellux\/goodvibes-sdk\/platform(?!\/voice\/capture["']|\/voice\/wake\/runtime["'])/,
       /@pellux\/goodvibes-sdk\/daemon/,
       /from\s+["']electrobun\/bun["']/,
       /from\s+["']node:/,

@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, SlidersHorizontal, Stethoscope, Radio as RadioIcon } from "lucide-react";
+import { Download, Mic, MicOff, SlidersHorizontal, Stethoscope, Radio as RadioIcon } from "lucide-react";
 import { Modal } from "../../components/Modal.tsx";
 import { ConfirmSurface, type ConfirmMetadata } from "../../components/ConfirmSurface.tsx";
 import { ErrorState, SkeletonBlock, UnavailableState } from "../../components/feedback.tsx";
@@ -31,6 +31,7 @@ import {
   useVoiceOptions,
   type RealtimeSessionInfo,
 } from "./voice-settings.ts";
+import { useWakeProvisioning, useWakeState, useWakeSurfaceSettings } from "../../lib/wake/useWake.ts";
 
 // ─── Trigger button (composer toolbar) ──────────────────────────────────────
 
@@ -65,6 +66,7 @@ export function VoiceSettingsModal({ open, onClose }: VoiceSettingsModalProps) {
       <div className="voice-settings">
         <VoiceDoctorSection />
         <TtsSettingsSection />
+        <WakeSection />
         <RealtimeSessionSection />
         <LocalVoiceSection />
       </div>
@@ -325,6 +327,170 @@ function RealtimeSessionSection() {
           )}
         </dl>
       )}
+    </section>
+  );
+}
+
+// ─── Wake word (voice.wake.surfaces.app) ────────────────────────────────────
+// Toggle + honest live status. wake-word port: driven by the resolved
+// voice.wake.* settings (lib/wake/useWake.ts) and the host's own state
+// (lib/wake/wake-host.ts), mounted once at AppShell.tsx; this section reads
+// and writes, it never re-derives the resolver's blocker/limitation strings.
+
+const WAKE_PHASE_LABEL: Record<string, string> = {
+  off: "Off",
+  refused: "Refused",
+  loading: "Loading models…",
+  listening: "Listening",
+  capturing: "Capturing…",
+  transcribing: "Transcribing…",
+  restarting: "Restarting…",
+  latched: "Stopped (needs a manual restart)",
+  suspended: "Suspended (push-to-talk active)",
+};
+
+function WakeSection() {
+  const { toast } = useToast();
+  const settings = useWakeSurfaceSettings();
+  const state = useWakeState();
+  const { status: provisionStatus, provision } = useWakeProvisioning();
+  const queryClient = useQueryClient();
+  const [pendingToggle, setPendingToggle] = useState<boolean | null>(null);
+
+  const writeSurfaceEnabled = useMutation({
+    mutationFn: (value: boolean) =>
+      gv.config.set({ key: "voice.wake.surfaces.app", value, confirm: true, explicitUserRequest: true }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.configAll });
+    },
+  });
+
+  async function confirmToggle(): Promise<void> {
+    if (pendingToggle === null) return;
+    const next = pendingToggle;
+    setPendingToggle(null);
+    try {
+      await writeSurfaceEnabled.mutateAsync(next);
+      toast({ title: next ? "Wake word turned on for this app" : "Wake word turned off for this app", tone: "success" });
+    } catch (applyError) {
+      toast({ title: "Failed to save wake-word setting", description: formatError(applyError), tone: "danger" });
+    }
+  }
+
+  const listening = state.phase === "listening" || state.phase === "capturing" || state.phase === "transcribing";
+  const phaseLabel = WAKE_PHASE_LABEL[state.phase] ?? state.phase;
+  const provisionReady = provisionStatus.isSuccess && asRecord(provisionStatus.data)["ready"] === true;
+
+  return (
+    <section className="voice-settings__section" aria-label="Wake word">
+      <h3 className="voice-settings__heading">
+        {listening ? <Mic size={14} aria-hidden="true" /> : <MicOff size={14} aria-hidden="true" />} Wake word
+      </h3>
+
+      <label className="settings-editor__toggle">
+        <input
+          type="checkbox"
+          role="switch"
+          checked={settings.surfaceEnabled}
+          disabled={writeSurfaceEnabled.isPending}
+          onChange={(event) => setPendingToggle(event.target.checked)}
+        />
+        <span>Listen for the wake phrase in this app (voice.wake.surfaces.app)</span>
+      </label>
+
+      {/* Honest status line: what the resolver decided, never a guess. */}
+      <p className="voice-doctor__summary" role="status">
+        <span
+          className={
+            state.phase === "off"
+              ? "badge neutral"
+              : state.phase === "refused" || state.phase === "latched"
+                ? "badge warning"
+                : "badge ok"
+          }
+        >
+          {phaseLabel}
+        </span>
+        {state.backend && <span className="voice-doctor__note">backend: {state.backend}</span>}
+      </p>
+
+      {!settings.enabled && (
+        <p className="voice-settings__hint">
+          voice.wake.enabled is off daemon-wide, so no surface listens, this app included.
+        </p>
+      )}
+      {settings.enabled && settings.blockers.length > 0 && (
+        <ul className="voice-doctor__providers">
+          {settings.blockers.map((blocker) => (
+            <li key={blocker.key} className="voice-doctor__provider">
+              <span className="badge warning">blocked</span>
+              <span className="voice-doctor__caps">{blocker.key}: {blocker.detail}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {settings.limitations.length > 0 && (
+        <ul className="voice-doctor__providers">
+          {settings.limitations.map((limitation) => (
+            <li key={limitation.key} className="voice-doctor__provider">
+              <span className="badge neutral">limited</span>
+              <span className="voice-doctor__caps">{limitation.key}: {limitation.detail}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {state.refusal && (
+        <p className="voice-settings__hint" role="alert">
+          {state.refusal.detail}
+        </p>
+      )}
+      {state.error && (
+        <p className="voice-settings__hint" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      {/* Model provisioning: an explicit act, never automatic (matches Local
+          voice below). Skipped silently when the daemon does not serve
+          voice.wake.status at all. */}
+      {!(provisionStatus.isError && isMethodUnavailableError(provisionStatus.error)) && (
+        <div className="voice-doctor__note">
+          {provisionStatus.isLoading && <SkeletonBlock variant="text" lines={1} />}
+          {provisionStatus.isSuccess && (
+            <p role="status">{provisionReady ? "Wake-word models: provisioned and verified." : "Wake-word models: not provisioned yet."}</p>
+          )}
+          {!provisionReady && (
+            <button
+              type="button"
+              className="voice-settings__realtime-btn"
+              disabled={provision.isPending}
+              onClick={() => provision.mutate()}
+            >
+              {provision.isPending ? "Provisioning…" : "Provision wake-word models"}
+            </button>
+          )}
+          {provision.isError && (
+            <p className="voice-settings__hint" role="alert">
+              {formatError(provision.error)}
+            </p>
+          )}
+        </div>
+      )}
+
+      <ConfirmSurface
+        open={pendingToggle !== null}
+        action={pendingToggle ? "Turn on wake word" : "Turn off wake word"}
+        target="voice.wake.surfaces.app"
+        blastRadius={
+          pendingToggle
+            ? "This app starts listening continuously for the wake phrase once voice.wake.enabled is also on: it "
+              + "will open the microphone, with no download and no permission prompt until then."
+            : "This app stops listening for the wake phrase and releases the microphone if it was open."
+        }
+        confirmLabel={pendingToggle ? "Turn on" : "Turn off"}
+        onCancel={() => setPendingToggle(null)}
+        onConfirm={() => void confirmToggle()}
+      />
     </section>
   );
 }
