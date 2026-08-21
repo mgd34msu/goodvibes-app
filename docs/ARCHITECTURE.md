@@ -1,9 +1,10 @@
 # goodvibes-app: architecture
 
-The GoodVibes desktop app: a "Claude Desktop"-class GUI that unifies every capability of
+The GoodVibes desktop app is a "Claude Desktop"-class GUI that unifies every capability of
 goodvibes-tui (coding, operations, automation, knowledge, channels, control plane) and
-goodvibes-agent (operator assistant: routines, personas, skills, personal ops, research,
-documents) in one TypeScript-native, Bun-powered application built on `@pellux/goodvibes-sdk`.
+goodvibes-agent (an operator assistant covering routines, personas, skills, personal ops,
+research, and documents) in one TypeScript-native, Bun-powered application built on
+`@pellux/goodvibes-sdk`.
 
 Ground-truth research for every claim in this document lives in `docs/research/*.md`.
 The feature completion bar is `docs/FEATURES.md`; the UX contract is `docs/UX.md`.
@@ -26,7 +27,7 @@ The feature completion bar is `docs/FEATURES.md`; the UX contract is `docs/UX.md
 | Layer | Choice | Why |
 |---|---|---|
 | Shell/runtime | `electrobun@1.18.1` | Bun-native main process, typed RPC to webview, system WebKitGTK on Linux (~14 MB bundles). Verified working on Arch/Hyprland (XWayland). See `docs/research/runtime-evaluation.md`. |
-| Engine | `goodvibes-daemon` from `@pellux/goodvibes-tui@1.9.2` (npm dep) | The full runtime: providers, tools, agents, knowledge, channels, automation. Adopt-or-spawn so app + TUI + agent share one daemon. |
+| Engine | `goodvibes-daemon` from `@pellux/goodvibes-tui@1.9.2` (npm dep) | The full runtime, covering providers, tools, agents, knowledge, channels, and automation. Adopt-or-spawn so app + TUI + agent share one daemon. |
 | Contract/client | `@pellux/goodvibes-sdk@1.3.1` | Typed operator client, contracts, realtime SSE/WS connectors, auth, errors, pairing helpers. |
 | UI | React 19 + TanStack Query v5 | Direct reuse of goodvibes-webui's proven patterns (`docs/research/webui-map.md` §4). |
 | Styling | Plain CSS design tokens (webui token contract) + SDK presentation contract | Cross-surface visual consistency with TUI/agent/webui. No Tailwind, no CSS-in-JS. |
@@ -96,10 +97,10 @@ processes; the port is also unguessable).
 Mirrors the TUI's `startHostServices` topology (research: tui-daemon-architecture §1):
 1. Resolve config: `controlPlane.host/port` from `~/.goodvibes/tui/settings.json` if
    present (TUI users), else defaults `127.0.0.1:3421`.
-2. Probe `GET /status`. If a GoodVibes daemon answers: version-band check (1.x major
-   match). Compatible → **adopt**. Incompatible → surface a first-class error screen with
-   the versions and remediation (never start a competing daemon on the port).
-3. If nothing listens: **spawn detached** `goodvibes-daemon` (bin from our
+2. Probe `GET /status`. If a GoodVibes daemon answers, it runs a version-band check
+   (1.x major match). Compatible → **adopt**. Incompatible → surface a first-class error
+   screen with the versions and remediation (never start a competing daemon on the port).
+3. If nothing listens, spawn `goodvibes-daemon` **detached** (bin from our
    `node_modules/@pellux/goodvibes-tui`), record pid/port, poll `/status` until ready,
    then adopt. The daemon outlives the app (same as TUI's detached layer). Closing the
    app never kills running agent work. A settings toggle offers "stop daemon on quit".
@@ -107,7 +108,7 @@ Mirrors the TUI's `startHostServices` topology (research: tui-daemon-architectur
    from `@pellux/goodvibes-sdk/platform/pairing`, the same store the TUI/agent use, so
    adoption works with zero setup on a machine that has ever run either.
 5. Health loop: `/status` + `control.snapshot` on a 15s cadence feeding the status strip
-   (three axes: Reachable / Signed-in / Working), with SSE liveness as the fast signal.
+   (three axes, Reachable / Signed-in / Working), with SSE liveness as the fast signal.
 
 ## 4. UI data layer (src/ui/lib/)
 
@@ -140,8 +141,8 @@ routes (same-origin, same patterns, and TanStack Query doesn't care who answers)
   `~/.goodvibes/agent/*` and TUI stores (preview → confirm, redacted, source never
   mutated, the agent's own settings-import pattern).
 - `/app/git/*`: status/log/diff/branches/stage/commit/stash/worktrees for the workspace
-  (Bun spawning `git`; no native modules). Safety rules from the desktop autopsy: dirty-
-  checkout confirm, no force-push, no unguarded destructive ops.
+  (Bun spawning `git`; no native modules). Safety rules from the desktop autopsy include
+  dirty-checkout confirm, no force-push, and no unguarded destructive ops.
 - `/app/pty/*` + WS: terminal tabs (optional feature; a pty via `bun-pty` or
   `script -qfc` fallback). Exit codes surface loudly (autopsy Theme 1: never silently
   drop a dead terminal).
@@ -245,4 +246,4 @@ WebKitGTK's webview still renders through the X11/XWayland scaling path.
 | Daemon contract drift (sdk 1.3.1 vs daemon from tui 1.9.2) | Capability probes before non-core calls; `EXTRA_METHOD_ROUTES` seam; version-band gate at adopt time; honest "method unavailable" states. |
 | WebKitGTK quirks (fonts, media) | Bundle fonts; test TTS audio playback early (Wave D); `WEBKIT_DISABLE_DMABUF_RENDERER=1` baked into every launch path. |
 | Companion-chat rate limit (30 msg/min/client) | Client-side send throttle indicator; never silently drop. |
-| Linux window-class branding (`WM_CLASS` shows electrobun's own default, not "GoodVibes") | Upstream gap in electrobun 1.18.1's Linux native wrapper: `libNativeWrapper.so` has no JS-facing hook to set the X11 class hint; `app.name`/`app.identifier` in `electrobun.config.ts` already correctly drive the build folder name and `Info.plist` but never reach that native call. No app-side config fix exists; needs an electrobun upstream fix or a native-wrapper patch. Never target windows by title/class in tooling. Match by PID/process instead. |
+| Linux window-class branding (`WM_CLASS` shows electrobun's own default, not "GoodVibes") | Upstream gap in electrobun 1.18.1's Linux native wrapper. `libNativeWrapper.so` has no JS-facing hook to set the X11 class hint; `app.name`/`app.identifier` in `electrobun.config.ts` already correctly drive the build folder name and `Info.plist` but never reach that native call. No app-side config fix exists; needs an electrobun upstream fix or a native-wrapper patch. Never target windows by title/class in tooling. Match by PID/process instead. |

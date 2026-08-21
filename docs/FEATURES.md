@@ -1,11 +1,11 @@
 # goodvibes-app: feature parity matrix
 
-**This file is the completion bar.** Every user-facing capability of goodvibes-tui v1.10 and goodvibes-agent v1.6 appears below, mapped to the app surface that owns it and the exact backing that implements it. Ground truth for the enumerations: `docs/research/tui-features.md`, `docs/research/agent-map.md`, `docs/research/tui-daemon-architecture.md` (§5 method catalog), `docs/research/sdk-map.md`.
+**This file is the completion bar.** Every user-facing capability of goodvibes-tui v1.10 and goodvibes-agent v1.6 appears below, mapped to the app surface that owns it and the exact backing that implements it. Ground truth for the enumerations lives in `docs/research/tui-features.md`, `docs/research/agent-map.md`, `docs/research/tui-daemon-architecture.md` (§5 method catalog), and `docs/research/sdk-map.md`.
 
 **How to read:**
-- **Source.** Where the feature comes from: `tui`, `agent`, `both`, `desktop` (goodvibes-desktop prior art worth carrying), `new` (app-original).
-- **Backing.** What implements it: an operator method id (e.g. `sessions.steer`), an SSE **domain** (e.g. `turn` events), `app-local` (implemented in this repo: UI state, file registries, Bun main process), `app-bun:<sdk subpath>` (Bun main process importing a Bun-only SDK platform subpath), or `RPC` (Electrobun native bridge: dialogs/tray/clipboard/notifications/PTY/shell).
-- **Status.** `planned` → `wired` → `verified`, or `excluded` (moved to §25 with justification). **Wire-or-delete is the law**: at ship time no row may remain `planned`.
+- **Source.** Where the feature comes from, one of `tui`, `agent`, `both`, `desktop` (goodvibes-desktop prior art worth carrying), or `new` (app-original).
+- **Backing.** What implements it, one of an operator method id (e.g. `sessions.steer`), an SSE **domain** (e.g. `turn` events), `app-local` (implemented in this repo, covering UI state, file registries, Bun main process), `app-bun:<sdk subpath>` (Bun main process importing a Bun-only SDK platform subpath), or `RPC` (Electrobun native bridge, covering dialogs/tray/clipboard/notifications/PTY/shell).
+- **Status.** `planned` → `wired` → `verified`, or `excluded` (moved to §25 with justification). **Wire-or-delete is the law.** At ship time no row may remain `planned`.
 - `[ws]`: WS-only `call` transport method (no HTTP path); reach it over the daemon WebSocket or note the degradation.
 
 Statuses start at `planned`. The final audit (task #8) checks every row.
@@ -85,7 +85,7 @@ Statuses start at `planned`. The final audit (task #8) checks every row.
 | Detach (never kills) | tui | `sessions.detach` | planned | |
 | Watcher start/stop/run from fleet | tui | `watchers.start/.stop/.run` | planned | |
 | Task cancel/retry from fleet | tui | `tasks.cancel/.retry` | planned | where node maps to a task |
-| Interrupt / kill / pause / resume of agents | tui | — | planned | gap: no wire method, ship honest capability notes (webui pattern); revisit if contract grows |
+| Interrupt / kill / pause / resume of agents | tui | none | planned | gap: no wire method, ship honest capability notes (webui pattern); revisit if contract grows |
 | Inline approval cards on correlated nodes | tui | `approvals.list` + `permissions` domain | planned | |
 | Workstream view (phases / work-items) | tui | `fleet.snapshot` filtered to workstream kinds | planned | usage/cost where reported |
 | WRFC chain badges (`c:N/M`, SAT/UNS/UNV) | tui | fleet node metadata + `workflows` domain | planned | render what the wire reports; no fabrication |
@@ -468,7 +468,7 @@ Rows here are **excluded from v1 scope with justification** or carry a named ups
 | Model benchmarks store authoring (`benchmarks.json`) | Display tiers from catalog; authoring benchmarks stays tui-side. |
 | Peer-mode execution (app as work-pulling peer via peer-sdk) | The app is an operator surface; executing daemon work is the TUI/node-host role. |
 
-**Cross-cutting upstream gaps to re-probe at runtime** (capability-probe via `control.methods.get`, degrade honestly): `sessions.search`/`fleet.*`/`checkpoints.*`/`push.*` are WS-only `[ws]`; agent-scoped knowledge routes (`/api/goodvibes-agent/knowledge/*`) may be absent on older daemons; no wire events exist for fleet/checkpoints/memory/calendar (poll + refetch-on-mutation).
+**Cross-cutting upstream gaps to re-probe at runtime** (capability-probe via `control.methods.get`, degrade honestly). `sessions.search`/`fleet.*`/`checkpoints.*`/`push.*` are WS-only `[ws]`; agent-scoped knowledge routes (`/api/goodvibes-agent/knowledge/*`) may be absent on older daemons; no wire events exist for fleet/checkpoints/memory/calendar (poll + refetch-on-mutation).
 
 ---
 
@@ -500,5 +500,5 @@ Rows here are **excluded from v1 scope with justification** or carry a named ups
 | 22 | Onboarding | 9 |
 | 23 | Palette & Keyboard | 8 |
 | 24 | Notifications & Tray | 4 |
-| — | **Total planned rows** | **291** |
+| n/a | **Total planned rows** | **291** |
 | 25 | Exclusions & gaps | 17 |

@@ -7,10 +7,11 @@ extends is `docs/research/webui-map.md` §3.
 
 ## 1. Principles
 
-1. **Zero friction.** First launch lands you in a working chat within seconds: daemon
-   auto-detected or auto-spawned, token auto-resolved from the shared store, model
-   defaulted from existing TUI/agent settings when present. Onboarding asks questions
-   only when no answer can be inferred, and never blocks surfaces that already work.
+1. **Zero friction.** First launch lands you in a working chat within seconds, with the
+   daemon auto-detected or auto-spawned, the token auto-resolved from the shared store,
+   and the model defaulted from existing TUI/agent settings when present. Onboarding
+   asks questions only when no answer can be inferred, and never blocks surfaces that
+   already work.
 2. **Never lie, never lose work.** Every number has a label and a frame of reference.
    Every failure has a visible, specific error state distinct from "empty". Drafts
    survive daemon outages (gate overlays render *over* the still-mounted workspace, never
@@ -39,25 +40,31 @@ Left sidebar (collapsible to icon rail, 264px/60px), grouped:
 - **Code**: Git · Diff · Worktrees · Checkpoints · Terminal
 - **System**: Observability · Providers & Models · MCP · Settings
 
-Top bar: view eyebrow + title, view-scoped actions, global search. Bottom: status strip
-(32px). Right: peek panel slide-over. Overlay: command palette.
+Layout:
+- **Top bar**: view eyebrow + title, view-scoped actions, global search.
+- **Bottom**: status strip (32px).
+- **Right**: peek panel slide-over.
+- **Overlay**: command palette.
 
 Every view URL-addressable via internal route state (`?view=…&…`) so palette jumps,
 notifications, and deep links compose.
 
 ## 3. Visual language
 
-Port the webui token sheet (`docs/research/webui-map.md` §3) as `src/ui/styles/tokens.css`:
-dark-first neon-cyan operator aesthetic: base `#08080f`, cyan-alpha borders, accent
-`#00dede`→`#00ffff`, status `#38ff8b`/`#ffcc66`/`#ff6ac8`/`#8da2ff` with `-soft` fills;
-brand neon reserved for glow/accents, never large fills. Light theme = the webui desaturated
-remap. 4px spacing scale, radius 6/8/12/999, Inter/Space Mono (bundled locally, no network
-fonts), motion 120/180/260ms, z ladder nav10/peek40/overlay50/palette60/toast70.
+Port the webui token sheet (`docs/research/webui-map.md` §3) as `src/ui/styles/tokens.css`,
+using a dark-first neon-cyan operator aesthetic:
+
+- Base `#08080f`, cyan-alpha borders, accent `#00dede`→`#00ffff`, status
+  `#38ff8b`/`#ffcc66`/`#ff6ac8`/`#8da2ff` with `-soft` fills; brand neon reserved for
+  glow/accents, never large fills.
+- Light theme = the webui desaturated remap.
+- 4px spacing scale, radius 6/8/12/999, Inter/Space Mono (bundled locally, no network
+  fonts), motion 120/180/260ms, z ladder nav10/peek40/overlay50/palette60/toast70.
 
 Status semantics come from the **SDK presentation contract** (16 glyphs, 4 severity
 buckets) via a generated `presentation-tokens.css` + bridge module, so states render
-identically to TUI/agent/webui. Theme: dark default, light opt-in, compact density toggle,
-`prefers-reduced-motion` collapses motion to 0.
+identically to TUI/agent/webui. Theme defaults to dark, with light opt-in, a compact
+density toggle, and `prefers-reduced-motion` collapsing motion to 0.
 
 ## 4. Interaction patterns (binding rules)
 
@@ -83,17 +90,20 @@ identically to TUI/agent/webui. Theme: dark default, light opt-in, compact densi
 
 ## 5. Zero-friction onboarding (first run)
 
-One screen, three live checks with real-time status: (1) daemon found/spawned/adopted,
-shows which; (2) auth token resolved; (3) provider+model available (imported from
-existing TUI/agent settings when present; otherwise inline key entry with a provider
-picker and validation-on-blur). A "Start chatting" button enables the moment checks pass.
+One screen, three live checks with real-time status:
+1. Daemon found/spawned/adopted, shows which.
+2. Auth token resolved.
+3. Provider+model available (imported from existing TUI/agent settings when present;
+   otherwise inline key entry with a provider picker and validation-on-blur).
+
+A "Start chatting" button enables the moment checks pass.
 Every check is repairable inline, none modal-blocking, all skippable to a degraded but
 honest workspace. Re-runnable anytime as Settings → Doctor.
 
 ## 6. Performance budgets
 
 - Window paints < 1s from launch; first interactive chat < 2.5s on this machine.
-- Never serialize window creation behind network calls (autopsy Theme 5): the window
+- Never serialize window creation behind network calls (autopsy Theme 5). The window
   opens immediately with the shell skeleton; data hydrates in.
 - Virtualize every list that can exceed ~200 rows (sessions, telemetry, knowledge).
 - SSE-first freshness; polling only where no wire event exists (fleet: 5s while visible).

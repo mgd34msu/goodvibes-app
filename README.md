@@ -1,11 +1,11 @@
 # goodvibes-app
 
-Desktop operator console for the GoodVibes daemon: chat, fleet, automation, knowledge,
-code, and observability in one native window. It unifies the capability of
+Desktop operator console for the GoodVibes daemon, covering chat, fleet, automation,
+knowledge, code, and observability in one native window. It unifies the capability of
 `goodvibes-tui` (coding, operations, automation, knowledge, channels, control plane) and
-`goodvibes-agent` (operator assistant: routines, personas, skills, personal ops, research,
-documents) on top of `@pellux/goodvibes-sdk`, in a single Bun/TypeScript-native app built
-with Electrobun. No Node, no Rust, no Electron.
+`goodvibes-agent` (operator assistant covering routines, personas, skills, personal ops,
+research, documents) on top of `@pellux/goodvibes-sdk`, in a single Bun/TypeScript-native
+app built with Electrobun. No Node, no Rust, no Electron.
 
 The daemon does the work; this app is a control surface over its ~327-method operator
 contract, plus a handful of process-local features (git, terminal, file-based registries)
@@ -32,7 +32,7 @@ goodvibes-daemon :3421 (shared with the TUI, agent, webui, mobile companions)
 ```
 
 The app talks to the daemon through a same-origin loopback proxy rather than directly from
-the webview: it removes CORS entirely, keeps the bearer token out of the renderer, and
+the webview. This removes CORS entirely, keeps the bearer token out of the renderer, and
 gives daemon restarts/adoption one seam to hide behind instead of touching every fetch call
 in the UI.
 
