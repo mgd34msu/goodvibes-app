@@ -1,6 +1,6 @@
 // GENERATED FILE: DO NOT EDIT BY HAND.
 // Produced by scripts/generate-config-schema.ts from the installed
-// @pellux/goodvibes-sdk@2.0.21 (platform/config, a Bun-only subpath the
+// @pellux/goodvibes-sdk@2.0.22 (platform/config, a Bun-only subpath the
 // webview must not import, docs/ARCHITECTURE.md §5), 600 keys.
 // Pure data: key, type, default, description, enum values, validation hint.
 // The runtime `validate` functions cannot cross the boundary and are
