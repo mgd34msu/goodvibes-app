@@ -1,6 +1,6 @@
 // GENERATED FILE: DO NOT EDIT BY HAND.
 // Produced by scripts/generate-feature-settings.ts from the installed
-// @pellux/goodvibes-sdk@2.0.20: FEATURE_SETTINGS (platform/runtime/
+// @pellux/goodvibes-sdk@2.0.21: FEATURE_SETTINGS (platform/runtime/
 // feature-flags, 58 units) plus the CONFIG_SCHEMA entries every unit's
 // enablement key and settings keys reference (294 keys).
 // The dissolved-feature model (SDK 1.7.1+): every platform capability is a
