@@ -97,7 +97,7 @@ export const queryKeys = {
   // disagree afterwards.
   //
   // Every key in this group is a fixed tuple or a number and a day key. NO CARD
-  // VALUE IS EVER PART OF ONE — a query key is retained by the query client,
+  // VALUE IS EVER PART OF ONE, a query key is retained by the query client,
   // is enumerable through its cache, and lands in devtools, which makes it
   // exactly the kind of place a card number must not be. The purchases key
   // carries `limit` and `dayKey` only, both of which are already public in the

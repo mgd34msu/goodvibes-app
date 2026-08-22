@@ -104,7 +104,7 @@ export function InvokeConsole() {
 
       <p className="invoke-console__hint">
         <AlertTriangle size={13} aria-hidden="true" /> Advanced: queues a raw command + JSON payload for a peer to
-        pull as work. The peer interprets <code>command</code> against its own vocabulary — this console does not
+        pull as work. The peer interprets <code>command</code> against its own vocabulary, this console does not
         validate it beyond checking the payload is valid JSON.
       </p>
 

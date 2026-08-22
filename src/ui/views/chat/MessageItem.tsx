@@ -135,7 +135,7 @@ export function MessageItem({
       <div className="message-bubble">
         {replyToSnippet && (
           <div className="message-reply-context">
-            <span aria-hidden="true">↩</span> Replying to: “{replyToSnippet}”
+            <span aria-hidden="true">↩</span> Replying to: "{replyToSnippet}"
           </div>
         )}
         {timestamp !== "unknown" && (

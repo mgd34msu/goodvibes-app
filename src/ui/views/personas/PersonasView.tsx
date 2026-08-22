@@ -84,7 +84,7 @@ export function PersonasView() {
       toast({ title: `Persona "${persona.name}" is now active`, tone: "success" });
     },
     onError: async (error: unknown) => {
-      await invalidate(); // partial writes possible — re-read the truth
+      await invalidate(); // partial writes possible, re-read the truth
       toast({ title: "Activation failed", description: formatError(error), tone: "danger" });
     },
   });

@@ -139,7 +139,7 @@ export function QuotaPanel() {
           >
             <h3>Fan-out advisor</h3>
             <p className="obs-dashboard__note">
-              Assesses whether spawning N agents likely exhausts this provider's quota window right now — an
+              Assesses whether spawning N agents likely exhausts this provider's quota window right now, an
               advisory grounded in observed signals, not a guarantee.
             </p>
             <div className="obs-filter-grid">
@@ -175,7 +175,7 @@ export function QuotaPanel() {
                 return (
                   <div className="obs-quota__verdict" role="status">
                     <span className={`badge ${tone}`}>{result.verdict}</span>
-                    <span className="obs-quota__advisory-label">Advisory — not a guarantee</span>
+                    <span className="obs-quota__advisory-label">Advisory, not a guarantee</span>
                     <p>{result.reason}</p>
                   </div>
                 );

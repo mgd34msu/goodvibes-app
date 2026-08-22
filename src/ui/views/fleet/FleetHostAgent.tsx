@@ -180,7 +180,7 @@ function FleetHostAgentModal({ onClose }: { onClose: () => void }) {
               <legend>Working directory (known directories only)</legend>
               {candidates.length === 0 ? (
                 <p className="fleet-host-agent__note" role="note">
-                  No known directory yet — register a workspace or wait for the default to load.
+                  No known directory yet, register a workspace or wait for the default to load.
                 </p>
               ) : (
                 candidates.map((candidate) => (

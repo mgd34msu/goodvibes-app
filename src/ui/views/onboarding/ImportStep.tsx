@@ -16,7 +16,7 @@ export function ImportStep() {
       </h3>
       <p className="onboarding-section__hint">
         Already running the goodvibes TUI or agent on this machine? Copy routines, personas, skills, or
-        profiles over — their stores are only read, never modified.
+        profiles over, their stores are only read, never modified.
       </p>
       <button type="button" className="onboarding-fix__action" onClick={() => setOpen(true)}>
         Open import

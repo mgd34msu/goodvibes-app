@@ -386,7 +386,7 @@ export function McpView(): React.ReactElement {
                       </button>
                     </>
                   ) : (
-                    <span className="mcp-server-row__note">runtime-only — not in an editable config file</span>
+                    <span className="mcp-server-row__note">runtime-only, not in an editable config file</span>
                   )}
                 </div>
               </li>

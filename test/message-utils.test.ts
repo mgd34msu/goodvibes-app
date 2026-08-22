@@ -1,5 +1,5 @@
 // src/ui/views/chat/message-utils.ts, turn-state vocabulary coverage. Pure
-// functions/data, no DOM — safe to import directly under bun:test. Guards the
+// functions/data, no DOM, safe to import directly under bun:test. Guards the
 // discriminated-union fix: turnState used to be inferred `string` (ChatView.tsx
 // useState("idle")), so a typo'd literal like "stoping" compiled cleanly and
 // silently dropped out of ACTIVE_TURN_STATES.includes() checks. TURN_STATES is
@@ -63,7 +63,7 @@ describe("TurnState type", () => {
     function accepts(_state: TurnState): void {
       /* type-only check below */
     }
-    // @ts-expect-error "stoping" is a typo, not a member of TURN_STATES — this
+    // @ts-expect-error "stoping" is a typo, not a member of TURN_STATES, this
     // line must fail to typecheck. If TurnState is ever widened back to
     // `string` (the original bug), tsc reports an unused @ts-expect-error and
     // `bun run typecheck` fails.

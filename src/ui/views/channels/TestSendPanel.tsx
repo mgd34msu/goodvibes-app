@@ -56,7 +56,7 @@ export function TestSendPanel() {
         </span>
       </div>
       <p className="channels-catalog__desc">
-        Sends one real message through the delivery router for a surface — the fastest way to
+        Sends one real message through the delivery router for a surface, the fastest way to
         confirm a channel is actually wired up end to end.
       </p>
       <form className="channels-policy-form" onSubmit={handleSubmit}>
@@ -123,7 +123,7 @@ export function TestSendPanel() {
           }
           role="status"
         >
-          {/* Not delivered is a real, expected result the surface reported —
+          {/* Not delivered is a real, expected result the surface reported,
               informational (warning tone), never alarming "error" red: the
               app resolved the probe fine, the surface just declined it. */}
           <span className={result.delivered ? "badge ok" : "badge warning"}>

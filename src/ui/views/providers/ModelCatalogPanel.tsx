@@ -108,7 +108,7 @@ export function ModelCatalogPanel() {
         <div className="model-catalog-panel__offline-note" role="alert">
           <WifiOff size={14} aria-hidden="true" />
           <span>
-            models.dev could not be reached ({formatError(catalog.error)}) and there is no cached catalog yet —
+            models.dev could not be reached ({formatError(catalog.error)}) and there is no cached catalog yet,
             showing the {fallbackModels.length} model{fallbackModels.length === 1 ? "" : "s"} this daemon's own
             provider registry reports instead. That is the same list the Workspace tab uses; it is not the full
             models.dev catalog.
@@ -214,7 +214,7 @@ export function ModelCatalogPanel() {
       )}
       {filtered.length > ROW_RENDER_CAP && (
         <p className="model-catalog-panel__truncate-note">
-          Showing the first {ROW_RENDER_CAP} of {filtered.length} matches — narrow the search or filters to see more.
+          Showing the first {ROW_RENDER_CAP} of {filtered.length} matches, narrow the search or filters to see more.
         </p>
       )}
     </div>

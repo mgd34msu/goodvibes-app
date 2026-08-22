@@ -302,7 +302,7 @@ export const gv = {
     attempts: {
       list: (body?: unknown) => invoke("fleet.attempts.list", { body: body ?? {} }), // [ws]
       judge: (body: unknown) => invoke("fleet.attempts.judge", { body }), // [ws]
-      pick: (body: unknown) => invoke("fleet.attempts.pick", { body }), // [ws] dangerous — check result.applied, not just HTTP ok
+      pick: (body: unknown) => invoke("fleet.attempts.pick", { body }), // [ws] dangerous, check result.applied, not just HTTP ok
     },
     conflicts: {
       list: (body?: unknown) => invoke("fleet.conflicts.list", { body: body ?? {} }), // [ws]
@@ -479,7 +479,7 @@ export const gv = {
   permissions: {
     rules: {
       list: () => invoke("permissions.rules.list", { body: {} }), // [ws]
-      delete: (body: unknown) => invoke("permissions.rules.delete", { body }), // [ws] — {deleted:false} = already gone (info, not error)
+      delete: (body: unknown) => invoke("permissions.rules.delete", { body }), // [ws], {deleted:false} = already gone (info, not error)
     },
   },
 
@@ -489,7 +489,7 @@ export const gv = {
   },
 
   quota: {
-    snapshot: (body: unknown) => invoke("quota.snapshot.get", { body }), // [ws] — hasSignal:false is honest absence, never render 0
+    snapshot: (body: unknown) => invoke("quota.snapshot.get", { body }), // [ws], hasSignal:false is honest absence, never render 0
     fanout: (body: unknown) => invoke("quota.fanout.get", { body }), // [ws] pre-flight advisory
   },
 

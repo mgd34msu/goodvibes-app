@@ -115,7 +115,7 @@ export function AppLaunchSection() {
               <span>Stop the daemon when this app quits</span>
             </label>
             <p className="settings-pref__note">
-              Saved for next launch. Not yet enforced at shutdown in this build — closing the app always leaves an
+              Saved for next launch. Not yet enforced at shutdown in this build, closing the app always leaves an
               adopted or spawned daemon running (docs/ARCHITECTURE.md §1: daemon-side work must survive app close).
               Stated here rather than left silent.
             </p>
@@ -166,7 +166,7 @@ export function AppLaunchSection() {
                 <span>Desktop notifications master switch</span>
               </label>
             )}
-            <p className="settings-pref__note">Mirrors the same toggle in the Notifications section — one control, shown in both places.</p>
+            <p className="settings-pref__note">Mirrors the same toggle in the Notifications section, one control, shown in both places.</p>
           </fieldset>
         </>
       )}

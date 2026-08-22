@@ -164,7 +164,7 @@ export function OsServiceSection() {
       </div>
 
       <p className="settings-os-service__note">
-        Manages a systemd user service (launchd on macOS) that can run the GoodVibes daemon independent of this app —
+        Manages a systemd user service (launchd on macOS) that can run the GoodVibes daemon independent of this app,
         install it once and the daemon can start on login/boot without the desktop app being open. All actions here
         are admin-scoped on the wire; installing, stopping, restarting, or uninstalling change what's actually
         running on this machine, so each asks you to confirm first.

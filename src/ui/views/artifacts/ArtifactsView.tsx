@@ -488,7 +488,7 @@ function ArtifactDetail({ record, canPromote }: { record: ArtifactRecord; canPro
           <>
             {content.truncated && (
               <p className="artifact-preview__note" role="status">
-                Showing the first {Math.round(TEXT_PREVIEW_CAP / 1024)} KB — download for the full file.
+                Showing the first {Math.round(TEXT_PREVIEW_CAP / 1024)} KB, download for the full file.
               </p>
             )}
             {previewKind === "markdown" ? (
@@ -514,13 +514,13 @@ function ArtifactDetail({ record, canPromote }: { record: ArtifactRecord; canPro
         {content.phase === "media" && previewKind === "pdf" && (
           <object className="artifact-preview__pdf" data={content.url} type="application/pdf" aria-label={meta.filename}>
             <p className="artifact-preview__note">
-              Inline PDF rendering is not available in this webview — use Download.
+              Inline PDF rendering is not available in this webview, use Download.
             </p>
           </object>
         )}
         {content.phase === "binary" && (
           <p className="artifact-preview__note" role="status">
-            No inline preview for {content.mime || "this binary"} — use Download.
+            No inline preview for {content.mime || "this binary"}, use Download.
           </p>
         )}
       </div>

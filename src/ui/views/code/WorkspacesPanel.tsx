@@ -149,7 +149,7 @@ export function WorkspacesPanel() {
                   {workspace.root}
                 </code>
                 <span className="workspaces-row__badges">
-                  {/* Explicit badge either way — absent-on-the-wire reads as
+                  {/* Explicit badge either way, absent-on-the-wire reads as
                       "not eligible", never as unknown, and a plain
                       re-registration never silently strips this stamp. */}
                   {workspace.checkpointEligible ? (

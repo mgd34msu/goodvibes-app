@@ -154,7 +154,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
   return (
     <form className="schedule-form" onSubmit={handleSubmit}>
       <label className="schedule-form__field" htmlFor={`${uid}-name`}>
-        <span>Name (optional — defaults to the prompt)</span>
+        <span>Name (optional, defaults to the prompt)</span>
         <input
           id={`${uid}-name`}
           type="text"
@@ -166,7 +166,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
       </label>
 
       <label className="schedule-form__field" htmlFor={`${uid}-prompt`}>
-        <span>Prompt (required — what the agent does each run)</span>
+        <span>Prompt (required, what the agent does each run)</span>
         <textarea
           id={`${uid}-prompt`}
           rows={3}
@@ -267,7 +267,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
           ) : (
             everyMs !== undefined && (
               <p className="schedule-form__preview-text" aria-live="polite">
-                Runs every {humanizeMs(everyMs)} — first run {formatRelative(Date.now() + everyMs)} (
+                Runs every {humanizeMs(everyMs)}, first run {formatRelative(Date.now() + everyMs)} (
                 {formatAbsolute(Date.now() + everyMs)}).
               </p>
             )
@@ -287,7 +287,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
             </p>
           ) : (
             <p className="schedule-form__preview-text" aria-live="polite">
-              {formatRelative(atEpoch)} — {formatAbsolute(atEpoch)}. One-shot {noun}s can self-delete after running
+              {formatRelative(atEpoch)}, {formatAbsolute(atEpoch)}. One-shot {noun}s can self-delete after running
               via the daemon&apos;s deleteAfterRun policy.
             </p>
           )}
@@ -306,7 +306,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
       {showAdvanced && (
         <div className="schedule-form__advanced">
           <label className="schedule-form__field" htmlFor={`${uid}-model`}>
-            <span>Model (optional — daemon default when empty)</span>
+            <span>Model (optional, daemon default when empty)</span>
             <input
               id={`${uid}-model`}
               type="text"
@@ -334,7 +334,7 @@ export function ScheduleForm({ noun, submitting, onSubmit, onCancel }: ScheduleF
           )}
           <div className="schedule-form__delivery">
             <div className="schedule-form__delivery-head">
-              <span>Delivery (optional — where results get sent when a run finishes)</span>
+              <span>Delivery (optional, where results get sent when a run finishes)</span>
               <button type="button" className="schedule-form__advanced-toggle" onClick={toggleDeliveryRawMode}>
                 {deliveryRawMode ? "Use structured picker" : "Advanced: edit raw JSON"}
               </button>

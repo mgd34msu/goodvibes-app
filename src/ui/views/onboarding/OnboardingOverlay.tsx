@@ -81,7 +81,7 @@ export function OnboardingOverlay({ mode, onClose, onStartChat }: OnboardingOver
     setTouring(false);
     const pending = pendingFinishRef.current;
     pendingFinishRef.current = null;
-    if (pending === null) return; // manual replay — stay open on the main screen
+    if (pending === null) return; // manual replay, stay open on the main screen
     onClose();
     if (pending) onStartChat();
   }, [onClose, onStartChat]);
@@ -144,7 +144,7 @@ export function OnboardingOverlay({ mode, onClose, onStartChat }: OnboardingOver
         </div>
         {!allPass && (
           <p className="onboarding-panel__note">
-            Skipping lands you in the workspace with honest degraded states — nothing is hidden, failing
+            Skipping lands you in the workspace with honest degraded states, nothing is hidden, failing
             surfaces say why.
           </p>
         )}

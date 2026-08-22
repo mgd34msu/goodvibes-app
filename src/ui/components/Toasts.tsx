@@ -123,7 +123,7 @@ export function ToastViewport() {
             <div className="toast-drawer__header-actions">
               {/* DOM order puts the non-destructive close button first so the
                   focus trap's default focus (first focusable) never lands on
-                  "Clear all" — CSS `order` below restores the visual layout. */}
+                  "Clear all". CSS `order` below restores the visual layout. */}
               <button
                 type="button"
                 className="toast-drawer__close"

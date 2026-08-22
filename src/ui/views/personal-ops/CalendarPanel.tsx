@@ -425,7 +425,7 @@ export function CalendarPanel({
       <ConfirmSurface
         open={confirmingCreate}
         action="Create calendar event"
-        target={`“${draft.title.trim()}” · ${draft.start || "?"} → ${draft.end || "?"}`}
+        target={`"${draft.title.trim()}" · ${draft.start || "?"} → ${draft.end || "?"}`}
         blastRadius="Writes one event to the configured CalDAV calendar. Attendees are stored on the event; no invitations are emailed by this app."
         confirmLabel="Create event"
         onCancel={() => setConfirmingCreate(false)}
@@ -505,12 +505,12 @@ function CalendarEventPeek({ eventId, fallback }: { eventId: string; fallback: C
       {merged.description && <p className="po-event-detail__description">{merged.description}</p>}
       {detail.isError && (
         <p className="po-event-detail__note" role="status">
-          Full detail read failed ({formatError(detail.error)}) — showing the agenda summary.
+          Full detail read failed ({formatError(detail.error)}), showing the agenda summary.
         </p>
       )}
       {!eventId && (
         <p className="po-event-detail__note" role="status">
-          This event came back without an id — detail lookup is not possible; showing the agenda summary.
+          This event came back without an id, detail lookup is not possible; showing the agenda summary.
         </p>
       )}
     </div>

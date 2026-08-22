@@ -363,7 +363,7 @@ function LoginCard() {
         <LogIn size={14} aria-hidden="true" /> Sign in
       </h3>
       <p className="settings-auth__login-honest-note">
-        This desktop app normally authenticates through a proxy-injected companion token — you are never signed
+        This desktop app normally authenticates through a proxy-injected companion token, you are never signed
         out of it from here. This form calls the daemon's real <code>control.auth.login</code> (username/password)
         for daemons that also serve interactive login to other clients; a successful result verifies the
         credentials but cannot change which principal <em>this app's own</em> requests use, since the proxy
@@ -412,7 +412,7 @@ function LoginCard() {
             Verified as <strong>{result.username}</strong>
             {result.expiresAt !== undefined ? ` · session expires ${new Date(result.expiresAt).toLocaleString()}` : ""}
           </span>
-          <span>Session token issued (not applied to this app's own requests — see note above).</span>
+          <span>Session token issued (not applied to this app's own requests, see note above).</span>
         </div>
       )}
     </div>

@@ -378,8 +378,8 @@ export function ModelWorkspaceModal({ open, onClose }: ModelWorkspaceModalProps)
               <span className="model-workspace-routing__note">
                 {routing.label}:{" "}
                 {target === "main"
-                  ? `the daemon did not answer models.current.get — ${formatError(currentModel.error)}`
-                  : "current routing hidden — config.get requires an admin-scoped token."}
+                  ? `the daemon did not answer models.current.get, ${formatError(currentModel.error)}`
+                  : "current routing hidden, config.get requires an admin-scoped token."}
               </span>
             ) : routing.unset ? (
               <span className="model-workspace-routing__note">

@@ -2,7 +2,7 @@
 //
 // Nothing is summarised into a friendlier word. A refused purchase shows its
 // refusal reason, an unanswered window shows which window ran and how it
-// ended, and a stepped-down delivery says so — those are the facts that
+// ended, and a stepped-down delivery says so, those are the facts that
 // explain why a purchase went the way it did, and a row without them is a row
 // that cannot be audited.
 //

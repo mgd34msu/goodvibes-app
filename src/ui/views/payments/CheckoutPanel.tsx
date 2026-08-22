@@ -5,7 +5,7 @@
 //
 // Neither verb is a button that buys something. Both take a live browser
 // session id, a page id, and snapshot REFS pointing at boxes on the page the
-// agent is currently looking at — `begin` also wants the cart as it was READ
+// agent is currently looking at, `begin` also wants the cart as it was READ
 // off that page, every amount as the string it appeared as. That shape exists
 // because the daemon parses those strings with its own parser rather than
 // trusting whoever did the reading, which is the difference between "1.299,00"
@@ -338,8 +338,8 @@ export function CheckoutPanel() {
 
         <details className="payments-checkout__wire">
           <summary>What would be sent</summary>
-          {/* The begin body has no property that can hold card material — the
-              card is named by id and the boxes by ref — so showing it is safe
+          {/* The begin body has no property that can hold card material, the
+              card is named by id and the boxes by ref, so showing it is safe
               in a way the intake form's input never would be. */}
           <pre>{JSON.stringify(buildCheckoutBeginInput(draft), null, 2)}</pre>
         </details>

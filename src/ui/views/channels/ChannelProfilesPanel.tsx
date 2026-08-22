@@ -221,7 +221,7 @@ function ChannelProfileFormModal({
             />
           </label>
           <label className="channels-field">
-            <span>Channel id (optional — scopes to one channel)</span>
+            <span>Channel id (optional, scopes to one channel)</span>
             <input
               type="text"
               value={channelId}
@@ -253,7 +253,7 @@ function ChannelProfileFormModal({
         </div>
         {editing && (
           <p className="channels-policy-form__note">
-            The surface kind and channel id are locked while editing — they are this binding's key.
+            The surface kind and channel id are locked while editing, they are this binding's key.
           </p>
         )}
         <div className="channels-invoke__actions">

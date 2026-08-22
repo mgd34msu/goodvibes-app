@@ -94,7 +94,7 @@ describe("catalog readers", () => {
         voices: [
           { id: "rachel", providerId: "elevenlabs" },
           { id: "alloy", providerId: "openai" },
-          { id: "narrator" }, // no providerId — stays selectable for any provider
+          { id: "narrator" }, // no providerId, stays selectable for any provider
         ],
       },
       "elevenlabs",

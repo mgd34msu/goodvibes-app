@@ -133,7 +133,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
     <div className="steer-composer">
       <div className="steer-composer__mode">
         {closed ? (
-          <span className="badge neutral">Session closed — reopen to send</span>
+          <span className="badge neutral">Session closed, reopen to send</span>
         ) : mode === "steer" ? (
           <span className="badge ok">Steer · agent bound</span>
         ) : (
@@ -143,7 +143,7 @@ export function SteerComposer({ sessionId, canSteer, closed, streamPaused }: Ste
 
       {streamPaused && !closed && (
         <p className="steer-composer__stream-note" role="status">
-          Live updates paused — your {mode === "steer" ? "steer" : "follow-up"} will still send; the
+          Live updates paused, your {mode === "steer" ? "steer" : "follow-up"} will still send; the
           delivered/failed result may take a moment to appear.
         </p>
       )}

@@ -100,7 +100,7 @@ export function PairingModal({ open, onClose }: { open: boolean; onClose: () => 
           <>
             <p className="pairing-modal__lede">
               Scan with a GoodVibes companion app to connect it to this daemon. The code carries the
-              daemon address and an access token — anyone who scans it can operate the daemon, so
+              daemon address and an access token, anyone who scans it can operate the daemon, so
               share it like a password.
             </p>
             {connection.data.repairRequired && (
@@ -123,7 +123,7 @@ export function PairingModal({ open, onClose }: { open: boolean; onClose: () => 
               <dd className="pairing-modal__mono">{connection.data.version || "unknown"}</dd>
             </dl>
             <p className="pairing-modal__note" role="note">
-              The address above is what the companion will dial — a device on another machine must be
+              The address above is what the companion will dial, a device on another machine must be
               able to reach it (a loopback 127.0.0.1 address only works on this computer).
             </p>
             <div className="pairing-modal__payload">

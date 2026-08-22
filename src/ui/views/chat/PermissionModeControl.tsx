@@ -140,7 +140,7 @@ export function PermissionModeControl({ sessionId }: { sessionId: string }) {
           })}
           {currentMode === "custom" && (
             <p className="permission-mode-popover-note">
-              Currently running a custom rule set — pick a mode above to replace it.
+              Currently running a custom rule set, pick a mode above to replace it.
             </p>
           )}
         </div>

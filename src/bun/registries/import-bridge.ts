@@ -61,7 +61,7 @@ async function readSourceJson(path: string): Promise<Raw | undefined> {
   try {
     raw = await readFile(path, "utf8");
   } catch {
-    return undefined; // store absent — normal
+    return undefined; // store absent, normal
   }
   try {
     const parsed: unknown = JSON.parse(raw);

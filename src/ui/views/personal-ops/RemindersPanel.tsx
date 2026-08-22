@@ -163,7 +163,7 @@ export function RemindersPanel({
       </form>
       {draft.when !== "" && !whenInFuture && (
         <p className="po-form__note" role="status">
-          Pick a time in the future — one-shot schedules in the past never fire.
+          Pick a time in the future, one-shot schedules in the past never fire.
         </p>
       )}
 
@@ -216,7 +216,7 @@ export function RemindersPanel({
       <ConfirmSurface
         open={confirming}
         action="Create reminder"
-        target={`“${draft.text.trim()}” at ${draft.when ? new Date(draft.when).toLocaleString() : "?"}`}
+        target={`"${draft.text.trim()}" at ${draft.when ? new Date(draft.when).toLocaleString() : "?"}`}
         blastRadius="Registers a one-shot daemon schedule (kind: at) that runs this prompt once at the chosen time and then completes."
         confirmLabel="Schedule reminder"
         onCancel={() => setConfirming(false)}

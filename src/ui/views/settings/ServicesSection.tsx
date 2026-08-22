@@ -62,7 +62,7 @@ export function ServicesSection() {
 
       <p className="settings-secrets__note">
         Named services from <code>{list.data?.servicesFilePath ?? "~/.goodvibes/tui/services.json"}</code>, each
-        resolving its credential through the Secrets store above. No create/edit surface exists yet — add a service by
+        resolving its credential through the Secrets store above. No create/edit surface exists yet, add a service by
         editing that file (same as the TUI).
       </p>
 

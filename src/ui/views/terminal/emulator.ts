@@ -254,7 +254,7 @@ export class TerminalEmulator {
       return start + 3;
     }
     switch (kind) {
-      case "M": // Reverse Index — scroll down if at top
+      case "M": // Reverse Index, scroll down if at top
         if (this.cursorY === this.scrollTop) this.scrollDown(1);
         else if (this.cursorY > 0) this.cursorY--;
         return start + 2;
@@ -270,7 +270,7 @@ export class TerminalEmulator {
         return start + 2;
       case "=":
       case ">":
-      case "c": // reset — treat leniently
+      case "c": // reset, treat leniently
         return start + 2;
       default:
         return start + 2; // unknown 2-byte escape: skip

@@ -53,7 +53,7 @@ function GraphNodeRow({ node, dependsOn }: { node: FleetGraphNode; dependsOn: re
       {node.files.length > 0 && <p className="fleet-graph-node__files">{node.files.join(", ")}</p>}
       {node.orphaned && (
         <p className="fleet-graph-node__orphaned" role="note">
-          Orphaned — the daemon can no longer place this node in the graph's structure.
+          Orphaned, the daemon can no longer place this node in the graph's structure.
         </p>
       )}
     </li>

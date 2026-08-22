@@ -180,7 +180,7 @@ function CreateWatchForm({ onCreated }: { onCreated: () => void }) {
         required
       />
       <p className="ci-create-form__hint">
-        Any channel identifier the daemon's delivery router recognizes for this workspace — validated when the watch
+        Any channel identifier the daemon's delivery router recognizes for this workspace, validated when the watch
         actually fires, not here.
       </p>
       <label className="ci-create-form__checkbox">
@@ -499,7 +499,7 @@ export function CiWatchesView() {
               <div className="ci-detail__result">
                 {runResult.retired && (
                   <p className="ci-detail__retired" role="note">
-                    This watch has been retired — no further checks or notifications will run for it.
+                    This watch has been retired, no further checks or notifications will run for it.
                   </p>
                 )}
                 <CiReportDetail report={runResult.report} />
@@ -507,7 +507,7 @@ export function CiWatchesView() {
                   {runResult.notified ? "A notification was sent." : "No notification was sent."}
                   {/* fixSessionId / fixSessionError are mutually exclusive on the wire
                       when fixSessionTriggered is true: a real attachable session, or
-                      an honest failure reason — never both, never a dead id. */}
+                      an honest failure reason, never both, never a dead id. */}
                   {runResult.fixSessionTriggered && runResult.fixSessionId && " A fix session was started."}
                   {runResult.fixSessionTriggered &&
                     runResult.fixSessionError &&

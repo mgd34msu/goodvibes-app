@@ -171,7 +171,7 @@ export function ImportBridgeModal({ open, onClose, defaultCollection }: ImportBr
               })}
             </ul>
             {totalAvailable === 0 && (
-              <p className="reg-import__note">All collections are empty — nothing to bring over.</p>
+              <p className="reg-import__note">All collections are empty, nothing to bring over.</p>
             )}
             <div className="reg-form__actions">
               <button type="button" className="reg-button" onClick={onClose} disabled={apply.isPending}>

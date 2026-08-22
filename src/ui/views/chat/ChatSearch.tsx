@@ -265,7 +265,7 @@ export function ChatSearch({
           )}
           {allState.status === "done" && allState.note && <span className="chat-search__note">{allState.note}</span>}
           {allState.status === "done" && !allState.hits.length && (
-            <span className="chat-search__note">No chats mention “{query.trim()}”.</span>
+            <span className="chat-search__note">No chats mention "{query.trim()}".</span>
           )}
           {allState.hits.map((hit, index) => (
             <button

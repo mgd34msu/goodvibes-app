@@ -372,7 +372,7 @@ function WebSearchSection({
           </form>
           {providersQuery.isError && !isMethodUnavailableError(providersQuery.error) && (
             <p className="research-search__provider-note" role="status">
-              Provider list failed to load ({formatError(providersQuery.error)}) — searches use the daemon default.
+              Provider list failed to load ({formatError(providersQuery.error)}), searches use the daemon default.
             </p>
           )}
 
@@ -384,7 +384,7 @@ function WebSearchSection({
             <EmptyState
               icon={<Search size={28} aria-hidden="true" />}
               title="No results"
-              description={`The search for “${submitted}” returned nothing from this provider.`}
+              description={`The search for "${submitted}" returned nothing from this provider.`}
             />
           )}
           {search.isSuccess && results.length > 0 && (
@@ -512,7 +512,7 @@ function CollectModal({
         const created = await createRun({
           ...seed,
           findings: [finding],
-          log: [...(Array.isArray(seed["log"]) ? seed["log"] : []), makeLogEntry("finding", `Collected “${result.title}” from ${result.source || "web search"}`)],
+          log: [...(Array.isArray(seed["log"]) ? seed["log"] : []), makeLogEntry("finding", `Collected "${result.title}" from ${result.source || "web search"}`)],
         });
         return firstString(created, ["id"]);
       }
@@ -522,7 +522,7 @@ function CollectModal({
       await updateRun(run.id, {
         ...run.raw,
         findings: [...run.findings.map((f) => f.raw), finding],
-        log: [...existingLog, makeLogEntry("finding", `Collected “${result.title}” from ${result.source || "web search"}`)],
+        log: [...existingLog, makeLogEntry("finding", `Collected "${result.title}" from ${result.source || "web search"}`)],
       });
       return run.id;
     },
@@ -812,7 +812,7 @@ function RunsSection({
         </button>
       </form>
       <p className="research-runs__hint">
-        Starting a run submits it to the daemon as a task — cancellable, retryable, and it survives an app restart.
+        Starting a run submits it to the daemon as a task, cancellable, retryable, and it survives an app restart.
       </p>
 
       {runsQuery.isPending && <SkeletonBlock variant="text" lines={4} />}
@@ -1047,14 +1047,14 @@ function RunDetail({
     const finding = run.findings[index];
     const next = run.findings.map((f, i) => (i === index ? { ...f, ...patch } : f));
     const field = "note" in patch ? "note" : "credibility";
-    saveFindings.mutate({ findings: next, logMessage: `Updated ${field} for “${finding?.title ?? finding?.url}”` });
+    saveFindings.mutate({ findings: next, logMessage: `Updated ${field} for "${finding?.title ?? finding?.url}"` });
   }
 
   function removeFinding(index: number): void {
     const finding = run.findings[index];
     saveFindings.mutate({
       findings: run.findings.filter((_, i) => i !== index),
-      logMessage: `Removed finding “${finding?.title ?? finding?.url}”`,
+      logMessage: `Removed finding "${finding?.title ?? finding?.url}"`,
     });
   }
 
@@ -1065,7 +1065,7 @@ function RunDetail({
           <div className="research-run-detail__task-linking">
             <span className="badge warning">linking…</span>
             <p>
-              Submitted to the daemon (agent <code>{run.agentId}</code>) — waiting for the runtime task registry to
+              Submitted to the daemon (agent <code>{run.agentId}</code>), waiting for the runtime task registry to
               report the link back. This normally resolves within a moment.
             </p>
             <button type="button" onClick={() => linkTask.mutate()} disabled={linkTask.isPending}>
@@ -1082,14 +1082,14 @@ function RunDetail({
           />
         )}
         <p className="research-run-detail__task-hint">
-          This run is backed by a daemon task — it survives an app restart, and its status/cancel/retry above come
+          This run is backed by a daemon task, it survives an app restart, and its status/cancel/retry above come
           straight from the daemon's runtime task registry.
         </p>
       </div>
 
       {run.findings.length === 0 ? (
         <p className="research-run-detail__empty">
-          No findings yet — run a web search and use “Collect into run” to add triaged sources.
+          No findings yet, run a web search and use "Collect into run" to add triaged sources.
         </p>
       ) : (
         <ul className="research-findings" aria-label="Findings">
@@ -1293,7 +1293,7 @@ function RunTaskStatus({
   if (!task) {
     return (
       <p className="research-run-detail__task-note" role="note">
-        The daemon no longer reports this task (it may have been pruned from the runtime task registry) — this run's
+        The daemon no longer reports this task (it may have been pruned from the runtime task registry), this run's
         own findings/log below are unaffected.
       </p>
     );
@@ -1355,7 +1355,7 @@ function LegacyRunsSection({ legacyRuns }: { legacyRuns: ResearchRun[] }) {
       </div>
       <p className="research-legacy-runs__caption">
         These runs predate daemon-task backing: they were tracked entirely in this app's local registry, with no
-        cancellable or retryable task behind them. They stay viewable and deletable here, but are read-only — never
+        cancellable or retryable task behind them. They stay viewable and deletable here, but are read-only, never
         resumable, and never silently converted into a task-backed run.
       </p>
       <ul className="research-legacy-run-list">
@@ -1407,7 +1407,7 @@ function LegacyRunReadOnly({ run, onDelete }: { run: ResearchRun; onDelete: () =
   return (
     <div className="research-run-detail research-run-detail--readonly">
       <p className="research-run-detail__task-hint">
-        Read-only — pre-task-era run, no daemon task backs it. Notes and credibility can no longer be edited here.
+        Read-only, pre-task-era run, no daemon task backs it. Notes and credibility can no longer be edited here.
       </p>
       {run.findings.length === 0 ? (
         <p className="research-run-detail__empty">No findings were collected into this run.</p>

@@ -68,7 +68,7 @@ export function FlagsGraduationPanel() {
           return (
             <>
               <p className="obs-dashboard__note">
-                {data.summary.total} capabilities — {data.summary.graduated} graduated,{" "}
+                {data.summary.total} capabilities, {data.summary.graduated} graduated,{" "}
                 {data.summary.graduateCandidate} ready to graduate, {data.summary.soaking} soaking,{" "}
                 {data.summary.dark} dark, {data.summary.blocked} blocked. Generated{" "}
                 {new Date(data.generatedAt).toLocaleString()}.
@@ -119,7 +119,7 @@ export function FlagsGraduationPanel() {
                           {entry.evidence.divergence ? (
                             <p className="obs-simple-row__description">
                               Divergence {(entry.evidence.divergence.divergenceRate * 100).toFixed(1)}% over{" "}
-                              {entry.evidence.divergence.totalEvaluations} evaluations — gate{" "}
+                              {entry.evidence.divergence.totalEvaluations} evaluations, gate{" "}
                               {entry.evidence.divergence.gateStatus}.
                             </p>
                           ) : (

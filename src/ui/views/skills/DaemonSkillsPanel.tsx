@@ -235,7 +235,7 @@ export const DaemonSkillsPanel = forwardRef<DaemonSkillsPanelHandle>(function Da
       </div>
 
       <p className="reg-form__help daemon-skills-panel__note">
-        The daemon-canonical skill store, separate from the app-local registry above. The index below is cheap —
+        The daemon-canonical skill store, separate from the app-local registry above. The index below is cheap,
         name, description, and metadata only. Expand a row to fetch its full markdown body.
       </p>
 

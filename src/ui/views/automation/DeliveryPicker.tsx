@@ -83,7 +83,7 @@ export function DeliveryPicker({
         </div>
         {draft.targets.length === 0 && (
           <p className="delivery-picker__empty" role="note">
-            No targets yet — the run's results stay in its own record unless you add one.
+            No targets yet, the run's results stay in its own record unless you add one.
           </p>
         )}
         {draft.targets.map((target, index) => (

@@ -255,7 +255,7 @@ function PeerDetailContent({
   if (!peer) {
     return (
       <p className="peer-detail__note" role="note">
-        This peer is no longer in the list — it may have been disconnected or its pairing revoked.
+        This peer is no longer in the list, it may have been disconnected or its pairing revoked.
       </p>
     );
   }

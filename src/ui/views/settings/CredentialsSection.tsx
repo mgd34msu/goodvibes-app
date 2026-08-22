@@ -76,8 +76,8 @@ export function CredentialsSection() {
       </div>
 
       <p className="settings-credentials__note">
-        Status only — configured/usable flags and where each credential resolves from. Secret values never leave the
-        daemon. To store or clear one of these, use “Store a credential on the daemon” below.
+        Status only, configured/usable flags and where each credential resolves from. Secret values never leave the
+        daemon. To store or clear one of these, use "Store a credential on the daemon" below.
       </p>
 
       {credentials.isPending && <SkeletonBlock variant="text" lines={4} />}

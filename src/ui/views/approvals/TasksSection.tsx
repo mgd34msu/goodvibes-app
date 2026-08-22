@@ -119,7 +119,7 @@ function TaskDetailContent({ taskId }: { taskId: string }) {
         </>
       ) : (
         <p className="task-detail__note" role="note">
-          The daemon answered but reported no task fields this client recognizes — raw payload below.
+          The daemon answered but reported no task fields this client recognizes, raw payload below.
         </p>
       )}
       <details className="task-detail__raw">

@@ -45,7 +45,7 @@ export function LlmScanPanel({
       </div>
 
       <p className="providers-custom__note">
-        Opt-in only — nothing is probed until you click Scan. Checks four fixed localhost ports for a brief,
+        Opt-in only, nothing is probed until you click Scan. Checks four fixed localhost ports for a brief,
         1.5-second-timeout HTTP GET each: <code>11434</code> (Ollama), <code>1234</code> (LM Studio),{" "}
         <code>8080</code> (llama.cpp), <code>8000</code> (vLLM). No other hosts or ports are touched.
       </p>

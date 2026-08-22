@@ -205,7 +205,7 @@ export function KnowledgeView() {
                 </button>
                 {scope === "agent" && agentScopeState === "available" && (
                   <span className="knowledge-scope__note">
-                    Isolated agent store — Browse/Map/Jobs tabs still operate on the operator store.
+                    Isolated agent store. Browse/Map/Jobs tabs still operate on the operator store.
                   </span>
                 )}
               </div>

@@ -238,7 +238,7 @@ export function AppShell() {
           />
         )}
 
-        {/* The Doctor overlay supersedes the gate while open — it renders the
+        {/* The Doctor overlay supersedes the gate while open, it renders the
             same daemon failure with retry + fix guidance; the gate returns the
             moment the doctor closes if the daemon is still down. The workspace
             stays mounted under both. */}

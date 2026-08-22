@@ -85,12 +85,12 @@ export function PowerPanel() {
           </label>
           <p className="obs-power__note">
             {snapshot.platform ? `Platform: ${snapshot.platform}. ` : ""}
-            One toggle, no timer, no AC-only option — this is the always-visible safety switch.
+            One toggle, no timer, no AC-only option, this is the always-visible safety switch.
           </p>
           {snapshot.keepAwakeNote && <p className="obs-power__note">{snapshot.keepAwakeNote}</p>}
           {snapshot.keepAwakeEnabled && snapshot.keepAwakeDeniedClasses.length > 0 && (
             <p className="obs-power__note">
-              Refused by the OS: {snapshot.keepAwakeDeniedClasses.join(", ")} — controlled outside this app.
+              Refused by the OS: {snapshot.keepAwakeDeniedClasses.join(", ")}, controlled outside this app.
             </p>
           )}
 

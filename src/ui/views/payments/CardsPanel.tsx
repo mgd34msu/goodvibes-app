@@ -31,7 +31,7 @@
 //    mayOfferCardEntry / CARD_ENTRY_SURFACE.
 //  - A REFUSED SURFACE IS NOT ASKED. The tui prints the refusal and returns
 //    without prompting; the SDK's reasoning is that the prompt is itself the
-//    harm. When the gate refuses, this renders no inputs at all — not disabled
+//    harm. When the gate refuses, this renders no inputs at all, not disabled
 //    ones, not a hidden form.
 //  - CANCELLING LEAVES NOTHING BEHIND. Esc in the tui stops the chain and
 //    stores nothing further. Cancel here clears the whole draft, not just the
@@ -173,7 +173,7 @@ export function CardsPanel() {
       if (!alive.current || seq !== submitSeq.current) return;
       // The draft is deliberately NOT cleared on failure: a transport blip
       // should not cost the owner a full retype of a card he is holding. The
-      // error text is the daemon's own and cannot contain what was sent — the
+      // error text is the daemon's own and cannot contain what was sent, the
       // route discards the service's error rather than forwarding it, exactly
       // so a failure is not a read path.
       toast({ title: "Failed to store the card", description: formatError(error), tone: "danger" });

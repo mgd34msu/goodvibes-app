@@ -342,7 +342,7 @@ export function rawWithCheckpoint(run: ResearchRun, label: string): AnyRecord {
       ...existingLog,
       makeLogEntry(
         "checkpoint",
-        `Checkpointed ${run.findings.length} finding${run.findings.length === 1 ? "" : "s"} as “${label}”`,
+        `Checkpointed ${run.findings.length} finding${run.findings.length === 1 ? "" : "s"} as "${label}"`,
       ),
     ],
   };

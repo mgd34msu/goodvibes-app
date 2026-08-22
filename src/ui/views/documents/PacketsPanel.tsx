@@ -249,7 +249,7 @@ function PacketWizard({
         </label>
 
         {docs.length === 0 ? (
-          <p className="document-comments__empty">No drafts yet — create one in the Drafts tab first.</p>
+          <p className="document-comments__empty">No drafts yet, create one in the Drafts tab first.</p>
         ) : (
           <fieldset className="packet-wizard__docs">
             <legend>Documents to include</legend>
@@ -412,7 +412,7 @@ function PacketsList({
                     {row.currentHeadVersion === null ? (
                       <span className="badge neutral">document removed</span>
                     ) : row.stale ? (
-                      <span className="badge bad">stale — head is now v{row.currentHeadVersion}</span>
+                      <span className="badge bad">stale, head is now v{row.currentHeadVersion}</span>
                     ) : (
                       <span className="badge ok">fresh</span>
                     )}
@@ -535,7 +535,7 @@ function SharePacketModal({ packet, onClose }: { packet: ReviewPacket | null; on
               <UnavailableState capability="channels.actions.list" description="channel actions cannot be listed on this daemon." />
             )}
             {actions.isSuccess && rows.length === 0 && (
-              <p className="document-comments__empty">No channel actions are published — nothing to share through yet.</p>
+              <p className="document-comments__empty">No channel actions are published, nothing to share through yet.</p>
             )}
             {rows.length > 0 && (
               <>
@@ -559,7 +559,7 @@ function SharePacketModal({ packet, onClose }: { packet: ReviewPacket | null; on
                   </select>
                 </label>
                 <label className="packet-share__field">
-                  <span>Recipient (account id / handle) — required</span>
+                  <span>Recipient (account id / handle), required</span>
                   <input
                     type="text"
                     value={recipient}

@@ -363,7 +363,7 @@ export function writeChatDraftHandoff(text: string, source: string): boolean {
     );
     return true;
   } catch {
-    return false; // localStorage unavailable — caller falls back to clipboard-free navigation.
+    return false; // localStorage unavailable, caller falls back to clipboard-free navigation.
   }
 }
 

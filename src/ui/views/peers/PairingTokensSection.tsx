@@ -140,14 +140,14 @@ export function PairingTokensSection() {
       </div>
 
       <p className="peer-detail__note">
-        Every paired device — a phone, another browser — has its own token. The token itself is
+        Every paired device, a phone, another browser, has its own token. The token itself is
         shown only once, at the moment it is minted; this list never shows one again.
       </p>
 
       {mintedSecret && (
         <div className="pairing-secret-reveal" role="note">
           <span className="pairing-secret-reveal__label">
-            New token for &quot;{mintedSecret.name}&quot; — copy it now, it will not be shown again:
+            New token for &quot;{mintedSecret.name}&quot;. Copy it now, it will not be shown again:
           </span>
           <code className="pairing-secret-reveal__value">{mintedSecret.token}</code>
           <div className="pairing-secret-reveal__actions">
@@ -246,7 +246,7 @@ export function PairingTokensSection() {
           </div>
           <p className="peer-detail__note">
             Older devices may still be signed in with one shared token. Give each its own token
-            before revoking the shared one — revoking it signs out anything still using it.
+            before revoking the shared one. Revoking it signs out anything still using it.
           </p>
           <div className="pairing-legacy__actions">
             <button type="button" className="peers-btn" disabled={migrate.isPending} onClick={() => migrate.mutate("Legacy device")}>

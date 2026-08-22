@@ -4,7 +4,7 @@
 // check used to count every map entry regardless of `alive`, so a pile of
 // already-exited shells could block starting a new terminal even though zero
 // shells were actually running. Live integration test (real openpty/setsid,
-// no mocking) — spawns real PTY sessions, so it is heavier and slower than
+// no mocking), spawns real PTY sessions, so it is heavier and slower than
 // this repo's other Bun-side route tests; everything it creates is torn down
 // in afterAll.
 
@@ -47,7 +47,7 @@ let unsupported = false;
 
 beforeAll(async () => {
   const probe = await createSession();
-  // openpty/setsid unavailable on this host — the feature degrades honestly
+  // openpty/setsid unavailable on this host, the feature degrades honestly
   // (PTY_UNSUPPORTED, see pty.ts's file header); nothing to test here.
   if (probe.status === 501) {
     unsupported = true;
@@ -68,7 +68,7 @@ describe("session-cap counts only live sessions", () => {
       if (unsupported) return;
 
       // 1. A session that exits on its own (not via DELETE) stays in the
-      //    list as alive:false — the exact condition the old cap check
+      //    list as alive:false, the exact condition the old cap check
       //    mis-treated as still occupying a slot.
       const dead = await createSession();
       expect(dead.status).toBe(201);
@@ -95,7 +95,7 @@ describe("session-cap counts only live sessions", () => {
       expect(oneMore.status).toBe(201);
       createdIds.push(oneMore.body.id);
 
-      // 3. Live count is now exactly MAX_SESSIONS — the cap must still bite.
+      // 3. Live count is now exactly MAX_SESSIONS, the cap must still bite.
       const overCap = await createSession();
       expect(overCap.status).toBe(429);
       expect(overCap.body.code).toBe("PTY_LIMIT");

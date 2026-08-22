@@ -20,7 +20,7 @@ import { pairingKeys, readServeRunResult, readTailscale, type TailscaleServeRece
 function ReceiptLine({ receipt }: { receipt: TailscaleServeReceipt }) {
   return (
     <p className="peer-detail__note">
-      Last serve {formatRelative(receipt.at)} —{" "}
+      Last serve {formatRelative(receipt.at)} ·{" "}
       <span className={receipt.ok ? "badge ok" : "badge bad"}>{receipt.ok ? "ok" : "failed"}</span>
       {receipt.url && (
         <>

@@ -13,7 +13,7 @@
 // So this follows the app's own precedent instead: Dates got a view because
 // the occasions domain is a domain, not a preference, and payments is the same
 // case. It sits in Assistant next to Dates, Check-in and Personal Ops, which is
-// where the things the daemon does ON THE OWNER'S BEHALF live — and a purchase
+// where the things the daemon does ON THE OWNER'S BEHALF live, and a purchase
 // the daemon made while he was not looking is exactly that.
 //
 // The config half of payments (limits, windows, addresses, cvvHandling) stays
@@ -50,7 +50,7 @@ export function PaymentsView() {
   // No useViewVisible here, unlike Dates. This view is keepAlive:false, so the
   // shell unmounts it when it is hidden and its polls stop with it; a
   // visibility gate would be a second mechanism answering a question the mount
-  // lifecycle already answers. The keep-alive choice is itself load-bearing —
+  // lifecycle already answers. The keep-alive choice is itself load-bearing,
   // see CARD_STATE_IS_NOT_KEPT_ALIVE in payments-data.ts.
   return (
     <div className="payments-view">

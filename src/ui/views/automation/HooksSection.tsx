@@ -100,7 +100,7 @@ export function HooksSection() {
             </span>
           </div>
           <p className="hooks-section__caption" role="note">
-            Writes <code>{file.data.path}</code> — this app never runs hooks itself; the daemon and TUI read this
+            Writes <code>{file.data.path}</code>, this app never runs hooks itself; the daemon and TUI read this
             file when they dispatch hook events.
           </p>
 
@@ -158,7 +158,7 @@ export function HooksSection() {
         <aside className="hooks-section__reference" aria-label="Hook event reference">
           <h3>Hook event reference</h3>
           <p className="hooks-section__reference-note" role="note">
-            From this app's own research notes on the TUI (docs/research/tui-features.md) — documented, not
+            From this app's own research notes on the TUI (docs/research/tui-features.md), documented, not
             exhaustive. Event paths follow <code>Phase:Category:Specific</code>; the exact "Specific" leaves and
             wildcard syntax aren't enumerated there, so this reference stops at the two documented axes.
           </p>

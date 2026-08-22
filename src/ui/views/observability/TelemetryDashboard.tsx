@@ -76,7 +76,7 @@ export function TelemetryDashboard() {
         </div>
       ) : (
         <p className="obs-dashboard__note">
-          The daemon's snapshot didn't match any known summary field — the raw payload is below.
+          The daemon's snapshot didn't match any known summary field, the raw payload is below.
         </p>
       )}
 

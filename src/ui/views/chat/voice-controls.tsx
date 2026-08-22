@@ -763,7 +763,7 @@ function LocalVoiceSection() {
 
       {status.isError && (
         <p className="voice-settings__hint" role="alert">
-          Local voice status unavailable — {formatError(status.error)}
+          Local voice status unavailable, {formatError(status.error)}
         </p>
       )}
 
@@ -787,7 +787,7 @@ function LocalVoiceSection() {
 
           {/* Live per-component progress of the ACTIVE install run. Bytes
               render only where the wire genuinely carries them (downloads
-              verify whole-file — completion boundaries, never a fabricated
+              verify whole-file, completion boundaries, never a fabricated
               live percentage). */}
           {install.isPending && snapshot.installInProgress && snapshot.installInProgress.components.length > 0 && (
             <ul className="voice-local-progress" role="status">
@@ -816,7 +816,7 @@ function LocalVoiceSection() {
             </p>
           )}
 
-          {/* The install receipt — rendered outside the needs-setup gate so a
+          {/* The install receipt, rendered outside the needs-setup gate so a
               successful attempt's receipt survives the resting-state flip to
               "Installed" (the whole point of a receipt). */}
           {installResult && (

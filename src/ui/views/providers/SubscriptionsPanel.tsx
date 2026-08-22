@@ -190,7 +190,7 @@ export function SubscriptionsPanel() {
       </div>
 
       <p className="providers-custom__note">
-        OAuth-backed provider logins, shared with the TUI via <code>~/.goodvibes/tui/subscriptions.json</code> — sign
+        OAuth-backed provider logins, shared with the TUI via <code>~/.goodvibes/tui/subscriptions.json</code>, sign
         in here or in the TUI and both surfaces see it. OpenAI (Codex) works out of the box (bundled client id);
         other providers need their OAuth config registered under Settings &gt; Secrets &amp; Services first.
       </p>
@@ -332,7 +332,7 @@ function PendingLoginRow({
       <div className="providers-model-row__copy">
         <strong>{pending.provider}</strong>
         <span className="providers-custom__note" role="status">
-          <Loader2 size={12} className="spinning" aria-hidden="true" /> Waiting for automatic redirect capture — or
+          <Loader2 size={12} className="spinning" aria-hidden="true" /> Waiting for automatic redirect capture, or
           paste the code (or the full redirect URL) below.
         </span>
         {safeHref(authorizationUrl) ? (

@@ -199,7 +199,7 @@ export function isOnboarded(): boolean {
   try {
     return window.localStorage.getItem(ONBOARDED_STORAGE_KEY) === "true";
   } catch {
-    return true; // storage unavailable — never nag on every launch
+    return true; // storage unavailable, never nag on every launch
   }
 }
 

@@ -159,7 +159,7 @@ export function ApprovalCard({
 
       {record.status === "claimed" && (
         <p className="approval-card__note" role="note">
-          Claimed by {record.claimedBy ?? "another surface"} — not actionable here.
+          Claimed by {record.claimedBy ?? "another surface"}, not actionable here.
         </p>
       )}
 
@@ -179,7 +179,7 @@ export function ApprovalCard({
             <ul className="approval-card__audit-list">
               {auditEntries.map((entry) => (
                 <li key={entry.id}>
-                  {auditEntryLabel(entry)} — {formatRelative(entry.createdAt)}
+                  {auditEntryLabel(entry)}, {formatRelative(entry.createdAt)}
                 </li>
               ))}
             </ul>

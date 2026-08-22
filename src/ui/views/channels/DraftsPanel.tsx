@@ -122,7 +122,7 @@ export function DraftsPanel() {
                     <StatusBadge value={draft.status} />
                     {draft.sendError && <span className="badge bad">send failed</span>}
                   </span>
-                  {/* Truncated preview of unbounded draft text — full text is
+                  {/* Truncated preview of unbounded draft text, full text is
                       one click away via View, plus title= for a hover peek. */}
                   <span className="channels-catalog__desc" title={draft.message || undefined}>
                     {draft.message.slice(0, 160)}

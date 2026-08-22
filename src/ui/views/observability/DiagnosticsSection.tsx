@@ -78,7 +78,7 @@ export function DiagnosticsSection() {
             {sseDetailLabel(sse, sseRetryAt, now)}
           </span>
           <span>
-            This is the app-wide invalidation stream every view relies on for realtime updates — it is owned by the
+            This is the app-wide invalidation stream every view relies on for realtime updates, it is owned by the
             shell and reconnects on its own with exponential backoff; nothing here can force it, but the state is
             reported honestly.
           </span>
@@ -86,7 +86,7 @@ export function DiagnosticsSection() {
         {sse === "error" && (
           <div className="obs-diagnostics__banner" role="status">
             <AlertTriangle size={16} aria-hidden="true" />
-            <span>Live updates paused — views are falling back to periodic refresh until the stream reconnects.</span>
+            <span>Live updates paused, views are falling back to periodic refresh until the stream reconnects.</span>
           </div>
         )}
       </section>

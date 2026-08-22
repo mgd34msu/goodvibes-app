@@ -39,7 +39,7 @@ import {
   type WorkspaceCheckpoint,
 } from "./checkpoints-model.ts";
 
-const POLL_MS = 30_000; // checkpoints.* has no wire events — targeted poll
+const POLL_MS = 30_000; // checkpoints.* has no wire events, targeted poll
 
 function isNotFound(error: unknown): boolean {
   return errorCode(error) === "NOT_FOUND";
@@ -414,13 +414,13 @@ function RestoreDiffPreview({
       {query.isPending && <SkeletonBlock variant="text" lines={4} />}
       {query.isError && (
         <p className="git-honest-note" role="note">
-          Could not load the diff this restore would apply — the blast-radius description above still holds.
+          Could not load the diff this restore would apply, the blast-radius description above still holds.
         </p>
       )}
       {parsed &&
         (parsed.files.length === 0 ? (
           <p className="git-honest-note" role="note">
-            No file differences from the working tree — restoring will not change anything on disk.
+            No file differences from the working tree, restoring will not change anything on disk.
           </p>
         ) : (
           <>

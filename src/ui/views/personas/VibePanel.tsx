@@ -95,7 +95,7 @@ export function VibePanel() {
       </div>
 
       <p className="vibe-panel__caption">
-        Saving writes the real file <code>{vibe.data?.path ?? "~/.goodvibes/app/VIBE.md"}</code> on disk —
+        Saving writes the real file <code>{vibe.data?.path ?? "~/.goodvibes/app/VIBE.md"}</code> on disk,
         the same personality file the assistant reads. Nothing is stored in a database.
       </p>
 

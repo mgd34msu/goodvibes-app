@@ -65,7 +65,7 @@ import { writeFileAtomic } from "./registries/store.ts";
 import { readAppSettings, mutateAppSettings } from "./settings-store.ts";
 
 const HOME = homedir();
-const TUI_SURFACE_ROOT = "tui"; // shared store — matches every other GoodVibes surface
+const TUI_SURFACE_ROOT = "tui"; // shared store, matches every other GoodVibes surface
 
 const secretsManager = new SecretsManager({
   projectRoot: HOME,

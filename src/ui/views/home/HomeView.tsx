@@ -127,7 +127,7 @@ export function HomeView(): ReactElement {
           <section className="home-card home-briefing" aria-label="Daily briefing">
             <div className="home-card__header">
               <span className="home-card__title">
-                <Sun size={14} aria-hidden="true" /> {greeting(today.getHours())} — {dateLine}
+                <Sun size={14} aria-hidden="true" /> {greeting(today.getHours())} · {dateLine}
               </span>
             </div>
 
@@ -243,12 +243,12 @@ export function HomeView(): ReactElement {
                 );
               })}
               {quickActions.length === 0 && (
-                <p className="home-briefing__quiet">No commands registered yet — the shell is still booting.</p>
+                <p className="home-briefing__quiet">No commands registered yet, the shell is still booting.</p>
               )}
             </div>
             <p className="home-card__footnote">
               Every action lives in the palette
-              {displayShortcut("system.palette") ? ` (${displayShortcut("system.palette")})` : ""} — views add their
+              {displayShortcut("system.palette") ? ` (${displayShortcut("system.palette")})` : ""}, views add their
               own commands while open.
             </p>
           </section>

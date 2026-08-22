@@ -95,7 +95,7 @@ function BundleExportImport() {
         </span>
       </div>
       <p className="settings-secrets__note">
-        Theme, keybinding overrides, and the app-own settings above — one JSON file you can move between machines.
+        Theme, keybinding overrides, and the app-own settings above, one JSON file you can move between machines.
       </p>
       <div className="settings-profiles__actions">
         <button type="button" className="settings-secrets__add" onClick={handleExport}>
@@ -223,7 +223,7 @@ function TuiAgentImport() {
         </div>
       </div>
       <p className="settings-secrets__note">
-        Read-only preview of <code>~/.goodvibes/{source}/settings.json</code> — that file is never modified. Values
+        Read-only preview of <code>~/.goodvibes/{source}/settings.json</code>, that file is never modified. Values
         are redacted before leaving the app process.
       </p>
 

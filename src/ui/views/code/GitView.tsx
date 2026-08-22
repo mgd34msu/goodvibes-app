@@ -50,7 +50,7 @@ import { GitHubPanel } from "./GitHubPanel.tsx";
 import { RepoSessionsPanel } from "./RepoSessionsPanel.tsx";
 import { DevSnapshotsPanel } from "./DevSnapshotsPanel.tsx";
 
-const STATUS_POLL_MS = 15_000; // no wire events for app-local git — targeted poll
+const STATUS_POLL_MS = 15_000; // no wire events for app-local git, targeted poll
 const LISTS_POLL_MS = 30_000;
 const LOG_LIMIT = 50;
 const REFLOG_LIMIT = 50;
@@ -260,7 +260,7 @@ function RepoFilesPanel() {
             ))}
           </ul>
           {shown.total > 500 && (
-            <p className="repo-files__note">Showing first 500 of {shown.total} matches — narrow the filter.</p>
+            <p className="repo-files__note">Showing first 500 of {shown.total} matches, narrow the filter.</p>
           )}
         </>
       )}
@@ -269,7 +269,7 @@ function RepoFilesPanel() {
           {preview.isPending && <SkeletonBlock variant="text" lines={4} />}
           {preview.isError && <ErrorState error={preview.error} title="File read failed" />}
           {preview.isSuccess && preview.data.binary && (
-            <p className="repo-files__note">Binary file ({preview.data.size.toLocaleString()} bytes) — no preview.</p>
+            <p className="repo-files__note">Binary file ({preview.data.size.toLocaleString()} bytes), no preview.</p>
           )}
           {preview.isSuccess && !preview.data.binary && (
             <>
@@ -697,7 +697,7 @@ function BranchesSection({ enabled, guard }: { enabled: boolean; guard: GitGuard
         <GitBranch size={14} aria-hidden="true" /> Branches
       </h3>
       <p className="git-honest-note" role="note">
-        No force flags anywhere — checkout refuses when the working tree is dirty; deleting branches is not wired.
+        No force flags anywhere, checkout refuses when the working tree is dirty; deleting branches is not wired.
       </p>
       {branches.isPending && <SkeletonBlock variant="text" lines={3} />}
       {branches.isError && (
@@ -805,7 +805,7 @@ function TagsPanel({ enabled }: { enabled: boolean }) {
         {tags.isSuccess ? ` · ${tags.data.tags.length}` : ""}
       </h3>
       <p className="git-honest-note" role="note">
-        Read-only — tag creation and deletion are not wired.
+        Read-only, tag creation and deletion are not wired.
       </p>
       {tags.isPending && <SkeletonBlock variant="text" lines={2} />}
       {tags.isError && <ErrorState error={tags.error} onRetry={() => void tags.refetch()} title="Failed to load tags" />}
@@ -854,7 +854,7 @@ function RemotesPanel({ enabled }: { enabled: boolean }) {
         {remotes.isSuccess ? ` · ${remotes.data.remotes.length}` : ""}
       </h3>
       <p className="git-honest-note" role="note">
-        Read-only — no add/remove/fetch/push wired.
+        Read-only, no add/remove/fetch/push wired.
       </p>
       {remotes.isPending && <SkeletonBlock variant="text" lines={2} />}
       {remotes.isError && (
@@ -895,7 +895,7 @@ function ReflogSection({ enabled }: { enabled: boolean }) {
       </h3>
       <p className="git-honest-note" role="note">
         Read-only browsing of the last {REFLOG_LIMIT} HEAD movements. Restoring from a reflog entry is a terminal
-        operation this app does not perform yet — copy a hash and use your own tools if you need to act on it.
+        operation this app does not perform yet, copy a hash and use your own tools if you need to act on it.
       </p>
       <button
         type="button"
@@ -920,7 +920,7 @@ function ReflogDrawerContent() {
   return (
     <div className="git-reflog-peek">
       <p className="git-honest-note" role="note">
-        Bounded to the last {REFLOG_LIMIT} entries. Restoring from reflog is a terminal operation for now — this
+        Bounded to the last {REFLOG_LIMIT} entries. Restoring from reflog is a terminal operation for now, this
         drawer only browses and copies ids.
       </p>
       {reflog.isPending && <SkeletonBlock variant="text" lines={5} />}

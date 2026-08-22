@@ -210,7 +210,7 @@ export const FleetAgentControl = forwardRef<FleetAgentControlHandle, { node: Fle
     <div className="fleet-agent-control">
       <div className="fleet-agent-control__mode">
         {closed ? (
-          <span className="badge neutral">Session closed — resume to send</span>
+          <span className="badge neutral">Session closed, resume to send</span>
         ) : canSteerNow ? (
           <span className="badge ok">Steer · agent bound</span>
         ) : (
@@ -280,7 +280,7 @@ export const FleetAgentControl = forwardRef<FleetAgentControlHandle, { node: Fle
       </div>
 
       <p className="fleet-agent-control__note" role="note">
-        No true freeze-and-thaw pause exists on the operator wire yet — steer, interrupt (cancel a queued input),
+        No true freeze-and-thaw pause exists on the operator wire yet, steer, interrupt (cancel a queued input),
         stop, and resume are the real control surface here. Nothing in this panel is ever labeled "Pause".
       </p>
 

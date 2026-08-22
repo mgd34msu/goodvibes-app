@@ -280,7 +280,7 @@ export function ProfilesPanel() {
     <div className="profiles-panel">
       <p className="profiles-panel__note">
         A profile is an app-level preset: a persona snapshot + an informational skills list + a VIBE.md snapshot.
-        Activating one sets the active persona and overwrites VIBE.md content — nothing else. Isolated per-profile app
+        Activating one sets the active persona and overwrites VIBE.md content, nothing else. Isolated per-profile app
         homes are a goodvibes-tui/daemon concept this app does not implement.
       </p>
 
@@ -494,7 +494,7 @@ function ProfileEditorModal({
           </label>
         </fieldset>
         <label>
-          Skills (comma-separated, informational only — not auto-enabled)
+          Skills (comma-separated, informational only, not auto-enabled)
           <input value={draft.skillsText} onChange={(e) => setDraft({ ...draft, skillsText: e.target.value })} />
         </label>
         <label>

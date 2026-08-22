@@ -153,7 +153,7 @@ export function WatcherForm({
       <p className="watcher-form__hint">{KIND_HINTS[kind] ?? ""}</p>
 
       <label className="watcher-form__field" htmlFor={`${uid}-interval`}>
-        <span>Poll interval in seconds (optional — daemon default when empty)</span>
+        <span>Poll interval in seconds (optional, daemon default when empty)</span>
         <input
           id={`${uid}-interval`}
           type="number"
@@ -165,7 +165,7 @@ export function WatcherForm({
       </label>
 
       <div className="watcher-form__source">
-        <p className="watcher-form__source-title">Source hints (all optional — stored on the watcher&apos;s source metadata)</p>
+        <p className="watcher-form__source-title">Source hints (all optional, stored on the watcher&apos;s source metadata)</p>
         <div className="watcher-form__grid">
           <label className="watcher-form__field" htmlFor={`${uid}-url`}>
             <span>URL</span>
@@ -208,7 +208,7 @@ export function WatcherForm({
           </label>
         </div>
         <label className="watcher-form__field" htmlFor={`${uid}-headers`}>
-          <span>Headers JSON (optional — values are masked in the detail view)</span>
+          <span>Headers JSON (optional, values are masked in the detail view)</span>
           <textarea
             id={`${uid}-headers`}
             rows={3}
@@ -220,7 +220,7 @@ export function WatcherForm({
           />
         </label>
         <label className="watcher-form__field" htmlFor={`${uid}-metadata`}>
-          <span>Extra metadata JSON (optional — any keys beyond the hints above; preloaded on edit so nothing already set is dropped)</span>
+          <span>Extra metadata JSON (optional, any keys beyond the hints above; preloaded on edit so nothing already set is dropped)</span>
           <textarea
             id={`${uid}-metadata`}
             rows={3}

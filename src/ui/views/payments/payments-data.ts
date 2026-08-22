@@ -1,10 +1,10 @@
 // Data layer for the Payments surface (the seven `payments.*` verbs).
 //
 // Cribs, both read in full before a line of this was written:
-//   - goodvibes-tui src/input/commands/payment-card-intake.ts — the security
+//   - goodvibes-tui src/input/commands/payment-card-intake.ts, the security
 //     model for card entry, mirrored decision by decision below.
 //   - goodvibes-webui src/components/settings/PaymentCardEntry.tsx and
-//     src/lib/payments-cards.ts — the browser-side hardening and the draft
+//     src/lib/payments-cards.ts, the browser-side hardening and the draft
 //     validation, which this app needs for the same reasons a browser does.
 //
 // CARD MATERIAL CONTRACT. A card number, an expiry, a CVV and a cardholder
@@ -12,7 +12,7 @@
 // follow, and they are enforced here rather than left to each component:
 //
 //  1. Nothing echoes. No parser in this file reads a card value back off the
-//     wire, because no response carries one — the daemon's own schemas have no
+//     wire, because no response carries one, the daemon's own schemas have no
 //     property that could (operator-contract-schemas-payments.ts). `last4` and
 //     `brand` are the whole of what a surface ever learns about an instrument,
 //     and they arrive already reduced. Nothing here widens them.
@@ -23,7 +23,7 @@
 //  3. Nothing is cached. A card draft never becomes a React Query key, a query
 //     variable, or a mutation's retained `variables`. See CARD_SUBMIT_IS_NOT_A_MUTATION.
 //  4. Nothing is computed that the daemon already answered. Pool remainders,
-//     the day key, the timezone, whether a purchase stepped shipping down —
+//     the day key, the timezone, whether a purchase stepped shipping down,
 //     all arrive decided. The daemon owns `daemon.timezone`, and a locally
 //     recomputed "today" is how a spent budget silently refills.
 //
@@ -83,7 +83,7 @@ export interface PaymentsRefusal {
  * this app moves that.
  *
  * So the honest sentence names the composition, not a config key the owner
- * could go and set — telling him to switch on `payments.enabled` would send
+ * could go and set, telling him to switch on `payments.enabled` would send
  * him to a setting that demonstrably does not fix it.
  */
 export function paymentsRefusal(error: unknown, capability: string): PaymentsRefusal | null {
@@ -117,9 +117,9 @@ export function paymentsRefusal(error: unknown, capability: string): PaymentsRef
  * into a hosted chat is on that provider's servers, in history this app cannot
  * erase, and it went through their infrastructure before reaching us.
  *
- * This app's card panel is a webview operator surface — the same React panel
+ * This app's card panel is a webview operator surface, the same React panel
  * the webui ships, rendered by a local webview, posting over the same
- * authenticated daemon channel — so `webui` is the member of that list it
+ * authenticated daemon channel, so `webui` is the member of that list it
  * actually is, and it is claimed here rather than a fourth name being invented
  * for the allowlist. Every one of the six conditions the owner attached to
  * webui card entry is met, and more easily than in a browser: there is no URL
@@ -132,8 +132,8 @@ export function paymentsRefusal(error: unknown, capability: string): PaymentsRef
  * naming a different client there would attribute a line to a client that
  * never touched it. Nothing of the sort happens here: `payments.cards.create`
  * has no surface field in either direction (see its input schema), so this
- * name never reaches the wire. It answers one local question — may this
- * surface put card inputs on screen — and the true answer to that is the one
+ * name never reaches the wire. It answers one local question, may this
+ * surface put card inputs on screen, and the true answer to that is the one
  * the webui gets, for the reasons the ruling itself gives.
  *
  * test/payments-data.test.ts checks this against the SDK's REAL
@@ -155,11 +155,11 @@ export const CARD_ENTRY_SURFACE = "webui";
  */
 export const CARD_ENTRY_CONDITIONS: readonly string[] = [
   "Card fields are posted over the authenticated daemon channel, the same path as any other secret.",
-  "Card values never appear in a URL — not a query parameter, not a fragment, not a path segment.",
+  "Card values never appear in a URL, not a query parameter, not a fragment, not a path segment.",
   "Card values are never rendered back after entry: no response returns them and no field is repopulated from the server.",
   'Every card field carries autocomplete="off".',
   "Card fields must not present as ones a password manager offers to save.",
-  "No card value is retained in DOM state — cleared from component state after submit, never left in a store, a form-library cache, or state that survives navigation.",
+  "No card value is retained in DOM state, cleared from component state after submit, never left in a store, a form-library cache, or state that survives navigation.",
 ];
 
 /**

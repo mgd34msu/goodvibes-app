@@ -114,7 +114,7 @@ export function SecretsSection() {
       </div>
 
       <p className="settings-secrets__note">
-        Shared with the TUI and agent — the same <code>~/.goodvibes/tui/secrets.enc</code> store. Values never leave the
+        Shared with the TUI and agent, the same <code>~/.goodvibes/tui/secrets.enc</code> store. Values never leave the
         daemon-side process; this list shows names, sources, and flags only. Set a plain value or link to an external
         provider (environment variable, file, command, 1Password, Bitwarden/Vaultwarden, or Bitwarden Secrets Manager).
       </p>

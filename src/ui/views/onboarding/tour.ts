@@ -8,7 +8,7 @@ export function hasTourBeenSeen(): boolean {
   try {
     return window.localStorage.getItem(TOUR_SEEN_STORAGE_KEY) === "true";
   } catch {
-    return true; // storage unavailable — never nag
+    return true; // storage unavailable, never nag
   }
 }
 

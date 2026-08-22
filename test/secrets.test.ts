@@ -2,7 +2,7 @@
 // for the fix: handleSetSecret used to skip rejectUnsafeName (the guard
 // handleTestSecret/handleDeleteSecret both apply), so a name carrying a
 // parent-path segment or control characters would have been passed straight
-// to secretsManager.set(). Only the REJECTION path is exercised here — a
+// to secretsManager.set(). Only the REJECTION path is exercised here, a
 // rejected name returns before secretsManager.set() ever runs, so this test
 // never touches the real ~/.goodvibes/tui/secrets.enc store (SecretsManager's
 // constructor is lazy, disk is only touched on an actual get/set/list call).
@@ -59,7 +59,7 @@ describe("POST /app/secrets/set name validation", () => {
 
   test("an ordinary namespacing slash is still allowed through the guard (not rejected as unsafe)", async () => {
     // A bare "/" segment name with no ".." and no control chars must pass
-    // rejectUnsafeName — it should fail later for an unrelated reason (no
+    // rejectUnsafeName, it should fail later for an unrelated reason (no
     // value/link given), never with SECRETS_BAD_NAME.
     const h = makeHandler();
     const res = await call(h, "POST", "/app/secrets/set", { name: "openai/key" });

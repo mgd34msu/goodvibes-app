@@ -147,7 +147,7 @@ export function DocumentsView() {
         </button>
       </div>
       {/* All three tabs stay mounted (display toggling) so a running compare,
-          an unsaved draft, and the packet wizard all survive tab switches —
+          an unsaved draft, and the packet wizard all survive tab switches,
           docs/UX.md §4. Each section's own `active` flag gates its poll so a
           hidden tab stops refetching instead of running forever (item 18). */}
       <div style={tab === "drafts" ? undefined : { display: "none" }}>
@@ -479,7 +479,7 @@ function DocumentEditor({
 
       {dirty && (
         <p className="document-editor__dirty" role="status">
-          Unsaved changes — save as a version to keep them.
+          Unsaved changes, save as a version to keep them.
         </p>
       )}
 

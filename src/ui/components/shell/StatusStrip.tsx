@@ -124,13 +124,13 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
 
   return (
     <footer className="status-strip">
-      {/* Live region — announces the three honest axes; never collapses them
+      {/* Live region, announces the three honest axes; never collapses them
           into one "Connected". */}
       <span className="status-strip__live-region" aria-live="polite" aria-atomic="true">
         {`${connectionLabel(connection)}, ${authLabel(signedIn)}, ${workingLabel(working)}`}
       </span>
 
-      {/* REACHABLE axis — contract glyph painted via ::before (components.css). */}
+      {/* REACHABLE axis, contract glyph painted via ::before (components.css). */}
       <Chip
         onClick={onOpenDoctor}
         ariaLabel={`Daemon: ${connectionLabel(connection)}. Open Doctor`}
@@ -175,7 +175,7 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
         <span className="status-strip__label">{formatLatency(latencyMs)}</span>
       </Chip>
 
-      {/* Active work — control.snapshot totals + verbatim task statuses. */}
+      {/* Active work, control.snapshot totals + verbatim task statuses. */}
       <Chip
         onClick={() => onNavigate("sessions")}
         ariaLabel={`Active turns: ${activeTurns}, queued: ${queuedTasks}. Open Sessions`}
@@ -190,7 +190,7 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
         </span>
       </Chip>
 
-      {/* Pending approvals — only painted when something needs a human. */}
+      {/* Pending approvals, only painted when something needs a human. */}
       {pendingApprovals > 0 && (
         <Chip
           onClick={() => onNavigate("approvals")}
@@ -216,7 +216,7 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
         </span>
       </Chip>
 
-      {/* Sleep inhibitor — visible ONLY while the daemon actually holds it
+      {/* Sleep inhibitor, visible ONLY while the daemon actually holds it
           (keep-awake or automatic work). Danger tone; tooltip is the
           daemon's own verbatim note/reasons, never a guess. */}
       {inhibitorHeld && (
@@ -249,7 +249,7 @@ export function StatusStrip({ onNavigate, onOpenDoctor }: StatusStripProps) {
         </Chip>
       )}
 
-      {/* Session cost — honest placeholder until the Wave D cost engine lands;
+      {/* Session cost, honest placeholder until the Wave D cost engine lands;
           shows the slot (and its destination) without inventing a number. */}
       <Chip
         onClick={() => onNavigate("observability")}

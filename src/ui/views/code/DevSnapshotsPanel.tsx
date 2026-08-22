@@ -17,7 +17,7 @@ import {
   statusTone,
 } from "./dev-snapshots-model.ts";
 
-const TILE_POLL_MS = 30_000; // neither method emits a wire event — targeted poll while visible
+const TILE_POLL_MS = 30_000; // neither method emits a wire event, targeted poll while visible
 
 /** Honest count render: an em dash for "not reported", never a fabricated 0. */
 function formatCount(value: number | undefined): string {

@@ -220,7 +220,7 @@ function RouteBindingForm({
     <div className="obs-inline-form" role="group" aria-label={mode.type === "create" ? "Create route binding" : "Edit route binding"}>
       <label>
         <span>
-          {mode.type === "create" ? "New binding" : `Edit binding ${mode.bindingId}`} (raw JSON body — this
+          {mode.type === "create" ? "New binding" : `Edit binding ${mode.bindingId}`} (raw JSON body, this
           daemon's binding schema isn't pinned in this app build)
         </span>
         <textarea value={formJson} onChange={(e) => setFormJson(e.target.value)} rows={6} spellCheck={false} />

@@ -87,7 +87,7 @@ export function QueuedMessagesPanel({ sessionId, active }: QueuedMessagesPanelPr
   return (
     <div className="queued-messages-panel" aria-label="Queued messages">
       <p className="queued-messages-panel__note" role="note">
-        Queued — the model has not seen these yet. They&apos;ll be sent once the current reply finishes. Edit or drop
+        Queued, the model has not seen these yet. They&apos;ll be sent once the current reply finishes. Edit or drop
         one before then.
       </p>
       <ul className="queued-messages-list">

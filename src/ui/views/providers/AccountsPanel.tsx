@@ -188,7 +188,7 @@ export function AccountsPanel() {
                       {row.expiresAt !== undefined ? ` · expires ${new Date(row.expiresAt).toLocaleString()}` : ""}
                     </span>
                   )}
-                  {/* Subscriptions status (OAuth-backed) — docs/GAPS.md §14 row 11: the
+                  {/* Subscriptions status (OAuth-backed), docs/GAPS.md §14 row 11: the
                       "subscription" route's own record, independent of whichever route is
                       currently active for this provider. */}
                   {subscription && (

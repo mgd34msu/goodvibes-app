@@ -16,7 +16,7 @@ export function PairingPostureSection() {
     queryKey: pairingKeys.posture,
     queryFn: () => gv.pairing.posture(),
     select: readPosture,
-    staleTime: Infinity, // a static fact about how this app reached the daemon — never re-nag
+    staleTime: Infinity, // a static fact about how this app reached the daemon, never re-nag
     retry: false,
   });
 

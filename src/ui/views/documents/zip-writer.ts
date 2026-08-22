@@ -72,7 +72,7 @@ function dosDateTime(date: Date): { time: number; date: number } {
   return { time, date: dosDate };
 }
 
-const VERSION_NEEDED = 20; // 2.0 — plain store + long-ish filenames
+const VERSION_NEEDED = 20; // 2.0, plain store + long-ish filenames
 const UTF8_FLAG = 0x0800; // general purpose bit 11: filenames are UTF-8
 
 /** Builds a store-only ZIP archive as a Blob (application/zip). */

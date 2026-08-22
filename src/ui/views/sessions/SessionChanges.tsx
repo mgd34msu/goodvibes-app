@@ -274,7 +274,7 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
           )}
           {sessionHasNoCapturedChanges && (
             <div className="session-changes__empty" role="note">
-              No captured changes for this session — no workspace checkpoints have been stamped with this
+              No captured changes for this session, no workspace checkpoints have been stamped with this
               session&apos;s id yet (older sessions predate session-id stamping).{" "}
               <button type="button" className="session-changes__inline-link" onClick={() => setMode("workspace")}>
                 View workspace-wide changes instead
@@ -313,7 +313,7 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
           )}
           {list.isSuccess && !checkpoints.length && (
             <div className="session-changes__empty" role="note">
-              No workspace checkpoints yet — the daemon captures them per turn/agent-run. Without one there is no
+              No workspace checkpoints yet, the daemon captures them per turn/agent-run. Without one there is no
               file diff to show.
             </div>
           )}
@@ -361,7 +361,7 @@ export function SessionChanges({ sessionId }: SessionChangesProps) {
           {!preview.isPending && revertConflict && (
             <div className="session-changes__conflict" role="alert">
               <p>
-                This hunk changed since it was captured — {revertConflict}. Nothing was reverted. Refresh the diff
+                This hunk changed since it was captured, {revertConflict}. Nothing was reverted. Refresh the diff
                 and try again.
               </p>
               <div className="session-changes__conflict-actions">
@@ -433,7 +433,7 @@ function FileBlock({ file, onRevert }: { file: DiffFile; onRevert: (hunk: DiffHu
       </header>
       {file.binary ? (
         <p className="session-changes__binary-note" role="note">
-          Binary file — no text diff to render.
+          Binary file, no text diff to render.
         </p>
       ) : (
         file.hunks.map((hunk) => <HunkBlock key={hunk.id} hunk={hunk} onRevert={() => onRevert(hunk)} />)

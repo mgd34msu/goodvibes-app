@@ -265,7 +265,7 @@ function PrincipalFormModal({
           </select>
         </label>
         <label className="channels-field">
-          <span>Channel identities (one per line, "channel:value") — replaces the full set on save</span>
+          <span>Channel identities (one per line, "channel:value"), replaces the full set on save</span>
           <textarea
             rows={4}
             value={identitiesDraft}

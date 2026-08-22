@@ -125,7 +125,7 @@ export function DaemonSkillEditorModal({
             aria-describedby={nameConflict ? "daemon-skill-name-error" : undefined}
           />
           {skill !== null && (
-            <span className="reg-form__help">Name cannot be changed after creation — delete and recreate instead.</span>
+            <span className="reg-form__help">Name cannot be changed after creation, delete and recreate instead.</span>
           )}
           {nameConflict && (
             <span id="daemon-skill-name-error" className="reg-form__error" role="alert">

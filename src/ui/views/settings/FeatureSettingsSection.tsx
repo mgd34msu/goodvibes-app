@@ -150,7 +150,7 @@ export function FeatureSettingsSection() {
       {refused && (
         <div className="settings-refused" role="status">
           <strong>Admin access required</strong>
-          <span>The connected principal is not admin-scoped — feature settings can be neither read nor edited.</span>
+          <span>The connected principal is not admin-scoped, feature settings can be neither read nor edited.</span>
         </div>
       )}
 
@@ -349,7 +349,7 @@ function FeatureCard({
 
       {pendingRestart && (
         <p className="settings-feature-unit__pending" role="status" data-pending-restart={feature.id}>
-          Saved — takes effect when the daemon restarts.
+          Saved, takes effect when the daemon restarts.
         </p>
       )}
 

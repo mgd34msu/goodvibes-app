@@ -91,7 +91,7 @@ export function ProjectContextPanel() {
   return (
     <div className="po-context">
       <p className="po-context__note">
-        Read-only. Only the well-known project-context files below are ever read — the allowlist of basenames is the
+        Read-only. Only the well-known project-context files below are ever read, the allowlist of basenames is the
         traversal guard, so this cannot browse arbitrary paths.
       </p>
 
@@ -182,7 +182,7 @@ export function ProjectContextPanel() {
             <>
               {fileDetail.data.truncated && (
                 <p className="po-context__truncated" role="status">
-                  Truncated at 256 KB — showing the first portion of the file.
+                  Truncated at 256 KB, showing the first portion of the file.
                 </p>
               )}
               <div className="po-context__markdown">

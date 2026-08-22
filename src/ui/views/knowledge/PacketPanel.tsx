@@ -63,7 +63,7 @@ export function PacketPanel() {
           <PackageSearch size={16} aria-hidden="true" />
         </header>
         <p className="knowledge-hint">
-          Preview exactly what a task-time knowledge injection would hand an agent — each item names why it was
+          Preview exactly what a task-time knowledge injection would hand an agent, each item names why it was
           picked.
         </p>
         <form className="knowledge-form" onSubmit={submit}>

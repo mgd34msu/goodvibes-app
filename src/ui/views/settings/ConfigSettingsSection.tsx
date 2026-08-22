@@ -163,7 +163,7 @@ export function ConfigSettingsSection() {
       {refused && (
         <div className="settings-refused" role="status">
           <strong>Admin access required</strong>
-          <span>The connected principal is not admin-scoped — config can be neither read nor edited.</span>
+          <span>The connected principal is not admin-scoped, config can be neither read nor edited.</span>
         </div>
       )}
 
@@ -463,7 +463,7 @@ function ValueEditor({
               {meta && option === meta.default ? " (default)" : ""}
             </option>
           ))}
-          {/* The live value may predate the pinned enum list — keep it selectable. */}
+          {/* The live value may predate the pinned enum list, keep it selectable. */}
           {typeof value === "string" && value !== "" && !(meta?.enumValues ?? []).includes(value) && (
             <option value={value}>{value} (current)</option>
           )}

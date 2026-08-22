@@ -367,7 +367,7 @@ function SessionsUnionTab() {
         );
       }
     } else if (search.isSuccess && filtered.length === 0) {
-      searchStateNode = <EmptyState title="No sessions match this search" description={`Query: “${searchQuery}”`} />;
+      searchStateNode = <EmptyState title="No sessions match this search" description={`Query: "${searchQuery}"`} />;
     }
   }
 
@@ -455,7 +455,7 @@ function SessionsUnionTab() {
         {atCap && (
           <div className="sessions-cap-note" role="note">
             Showing the {records.length} most recent
-            {total !== null && total > records.length ? ` of ${total}` : ""} — the daemon caps this union at{" "}
+            {total !== null && total > records.length ? ` of ${total}` : ""}, the daemon caps this union at{" "}
             {SESSIONS_SNAPSHOT_CAP}. Use search above to reach the full history.
           </div>
         )}
@@ -800,7 +800,7 @@ function SessionDetail({
           )}
           {deleteCapabilityState === "unavailable" && (
             <small className="session-detail__action-note">
-              Permanent delete is not available on this daemon — close is the only removal.
+              Permanent delete is not available on this daemon, close is the only removal.
             </small>
           )}
           {deleteCapabilityState === "uncertain" && (

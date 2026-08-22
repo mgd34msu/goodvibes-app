@@ -181,14 +181,14 @@ function ProviderFix({
       </div>
       {!envKey && (
         <p className="onboarding-fix__hint">
-          This provider takes credentials through its own auth flow — configure it with the TUI
+          This provider takes credentials through its own auth flow, configure it with the TUI
           (<code>goodvibes config</code>) or set its environment variable before starting the daemon.
         </p>
       )}
       {saveKey.isError && <p className="onboarding-fix__error">{formatError(saveKey.error)}</p>}
       {saveKey.isSuccess && (
         <p className="onboarding-fix__hint">
-          Key stored{envKey ? ` as ${envKey}` : ""}. Providers revalidated — check the summary above.
+          Key stored{envKey ? ` as ${envKey}` : ""}. Providers revalidated, check the summary above.
         </p>
       )}
 

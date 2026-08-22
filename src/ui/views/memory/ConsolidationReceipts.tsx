@@ -59,7 +59,7 @@ export function ConsolidationReceipts({ onReviewIds }: ConsolidationReceiptsProp
         <GitMerge size={16} aria-hidden="true" />
       </div>
       <p className="memory-learning-review__note">
-        Idle-time consolidation merges exact duplicates and decays never-referenced records automatically —
+        Idle-time consolidation merges exact duplicates and decays never-referenced records automatically,
         reversible, nothing ever deleted. Anything needing a human call is proposed here instead; the referenced
         records are already waiting in the review queue below.
       </p>
@@ -120,7 +120,7 @@ export function ConsolidationReceipts({ onReviewIds }: ConsolidationReceiptsProp
 
               {pending.length === 0 && runs.length > 0 && (
                 <p className="memory-learning-review__note">
-                  Nothing currently pending a human call — every prior proposal has been resolved.
+                  Nothing currently pending a human call, every prior proposal has been resolved.
                 </p>
               )}
 
@@ -144,7 +144,7 @@ export function ConsolidationReceipts({ onReviewIds }: ConsolidationReceiptsProp
                         </p>
                         {!receipt.usageSignalAvailable && (
                           <p className="memory-learning-review__note" role="note">
-                            No usage instrumentation available for this run — decay ordering was best-effort.
+                            No usage instrumentation available for this run, decay ordering was best-effort.
                           </p>
                         )}
                       </li>

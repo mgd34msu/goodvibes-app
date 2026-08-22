@@ -59,7 +59,7 @@ import {
 import type { AppRouteHandler } from "./app-routes.ts";
 
 const HOME = homedir();
-const TUI_SURFACE_ROOT = "tui"; // same store the TUI uses — see src/bun/secrets.ts's identical idiom
+const TUI_SURFACE_ROOT = "tui"; // same store the TUI uses, see src/bun/secrets.ts's identical idiom
 
 // ─── injectable seams (tests point these at a temp file, never ~/.goodvibes) ─
 

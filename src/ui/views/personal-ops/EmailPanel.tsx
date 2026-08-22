@@ -327,7 +327,7 @@ export function EmailPanel({
         <ConfirmSurface
           open={confirming === "draft"}
           action="Create email draft"
-          target={`${draft.to.trim()}: “${draft.subject.trim()}”`}
+          target={`${draft.to.trim()}: "${draft.subject.trim()}"`}
           blastRadius="Writes one RFC-5322 draft into the mailbox Drafts folder over IMAP. Nothing is sent to the recipient."
           confirmLabel="Save draft"
           onCancel={() => setConfirming(null)}
@@ -410,7 +410,7 @@ function EmailMessagePeek({
       {detail.attachments.length > 0 && (
         <div className="po-mail-detail__attachments">
           <span className="po-mail-detail__attachments-title">
-            Attachments ({detail.attachments.length}) — metadata only, download is not on the wire
+            Attachments ({detail.attachments.length}), metadata only, download is not on the wire
           </span>
           <ul>
             {detail.attachments.map((attachment, index) => (

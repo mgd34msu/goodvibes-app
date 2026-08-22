@@ -158,7 +158,7 @@ function ScheduleDetailPeek({ scheduleId }: { scheduleId: string }) {
     return (
       <div className="knowledge-peek-body">
         <p className="knowledge-peek-stale">
-          Could not refresh this schedule from the daemon ({formatError(schedule.error)}) — showing the last known
+          Could not refresh this schedule from the daemon ({formatError(schedule.error)}), showing the last known
           values from the schedules list instead.
         </p>
         <DataBlock title="Schedule (cached, may be stale)" value={cached} open />

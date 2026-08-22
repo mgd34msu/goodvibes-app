@@ -261,7 +261,7 @@ function PolicyEditModal({ policy, onClose }: { policy: SurfacePolicy | null; on
             {policy.groupPolicyCount > 0 && (
               <p className="channels-policy-form__note" role="note">
                 This surface also has {policy.groupPolicyCount} per-group override
-                {policy.groupPolicyCount === 1 ? "" : "s"} not edited here — this form leaves them untouched.
+                {policy.groupPolicyCount === 1 ? "" : "s"} not edited here, this form leaves them untouched.
               </p>
             )}
             <div className="channels-invoke__actions">

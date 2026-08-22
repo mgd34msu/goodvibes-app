@@ -155,7 +155,7 @@ export function OverviewSection() {
                 </div>
                 {recentAudit.length === 0 ? (
                   <p className="peers-audit__empty" role="note">
-                    No remote activity recorded yet — pairing, token, connection, and work events will appear here.
+                    No remote activity recorded yet, pairing, token, connection, and work events will appear here.
                   </p>
                 ) : (
                   <ul className="peers-audit__list">

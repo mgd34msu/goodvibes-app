@@ -47,7 +47,7 @@ function ProjectionDetail({ id }: { id: string }) {
   return (
     <div className="projection-detail">
       <p className="projection-detail__live-note" role="note">
-        Live — recomputed from the store on every open, never a cached file.
+        Live, recomputed from the store on every open, never a cached file.
       </p>
       <div className="reg-form__preview projection-detail__markdown">
         <MarkdownMessage content={detail.data.markdown} />
@@ -85,7 +85,7 @@ export function ProjectionsPanel() {
       </div>
       <p className="memory-learning-review__note">
         Standing-memory (project/team-scope) markdown, one file per record. Opening a projection fetches it live from
-        the store — session-scope records have no projection here.
+        the store, session-scope records have no projection here.
       </p>
 
       {list.isPending && <SkeletonBlock variant="text" lines={4} />}

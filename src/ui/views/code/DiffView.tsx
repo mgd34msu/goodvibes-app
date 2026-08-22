@@ -241,7 +241,7 @@ export function DiffView() {
 
           <div className="diff-sections">
             {trimmedQuery && visibleSections.length === 0 && (
-              <EmptyState title="No matches" description={`Nothing in this diff contains “${trimmedQuery}”.`} />
+              <EmptyState title="No matches" description={`Nothing in this diff contains "${trimmedQuery}".`} />
             )}
             {visibleSections.map((section) => (
               <FileSection
@@ -256,7 +256,7 @@ export function DiffView() {
             ))}
             {diff.data.truncated && (
               <p className="git-honest-note" role="note">
-                This diff exceeded the 2&nbsp;MB transfer cap and was truncated — narrow it with a path or ref range.
+                This diff exceeded the 2&nbsp;MB transfer cap and was truncated, narrow it with a path or ref range.
               </p>
             )}
           </div>
@@ -298,7 +298,7 @@ function FileSection({
       </header>
       {section.isBinary ? (
         <p className="git-honest-note" role="note">
-          Binary file — no text diff to render.
+          Binary file, no text diff to render.
         </p>
       ) : (
         // Highlight source: hljs over local git output, or our own

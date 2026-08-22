@@ -536,7 +536,7 @@ function MemoryViewInner() {
         )}
         {semanticScores.isError && isMethodUnavailableError(semanticScores.error) && (
           <p className="memory-semantic-note" role="status">
-            Similarity scores unavailable — this daemon does not serve <code>memory.records.search-semantic</code>;
+            Similarity scores unavailable, this daemon does not serve <code>memory.records.search-semantic</code>;
             the ranked list above still comes from the semantic index.
           </p>
         )}
@@ -610,7 +610,7 @@ function MemoryViewInner() {
                 <h3>Knowledge candidates</h3>
               </div>
               {/* Same query/mutation logic as the Knowledge → Refine tab's
-                  Candidates section — imported, not reimplemented, so the two
+                  Candidates section, imported, not reimplemented, so the two
                   surfaces can never drift (docs/GAPS.md §8 row 12). Always
                   "active" here: this view only mounts while the operator is
                   looking at Memory, same polling contract as the review queue

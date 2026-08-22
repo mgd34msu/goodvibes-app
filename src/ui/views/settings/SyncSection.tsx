@@ -79,7 +79,7 @@ export function SyncSection() {
                   const conflict = asRecord(raw);
                   return (
                     <li key={`${firstString(conflict, ["key"])}-${i}`}>
-                      <code>{firstString(conflict, ["key"])}</code> — local{" "}
+                      <code>{firstString(conflict, ["key"])}</code>, local{" "}
                       <code>{JSON.stringify(conflict["localValue"])}</code> vs incoming{" "}
                       <code>{JSON.stringify(conflict["incomingValue"])}</code>{" "}
                       <span className="settings-sync__meta">({firstString(conflict, ["path"]) || "unknown path"})</span>
@@ -101,7 +101,7 @@ export function SyncSection() {
                     <li key={i}>
                       <span className="badge bad">{firstString(failure, ["surface"]) || "unknown surface"}</span>{" "}
                       {firstString(failure, ["message"])}
-                      {ts !== undefined && <span className="settings-sync__meta"> — {new Date(ts).toLocaleString()}</span>}
+                      {ts !== undefined && <span className="settings-sync__meta">, {new Date(ts).toLocaleString()}</span>}
                     </li>
                   );
                 })}

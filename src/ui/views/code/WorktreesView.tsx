@@ -238,7 +238,7 @@ export function WorktreesView() {
         </button>
       </div>
 
-      {/* Per-source health, always visible — the merge must never hide that a
+      {/* Per-source health, always visible, the merge must never hide that a
           source is down (honest per-source labels are the row's spec). */}
       <div className="worktrees-sources">
         <span className={`worktrees-source ${daemon.isSuccess ? "worktrees-source--ok" : daemon.isError ? "worktrees-source--bad" : ""}`}>
@@ -362,7 +362,7 @@ export function WorktreesView() {
                     </>
                   )}
                 </div>
-                {/* Persisted setup outcome — visible on the row until a fresh
+                {/* Persisted setup outcome, visible on the row until a fresh
                     run changes it, sourced from the daemon's own record so it
                     survives reloads (never a locally-fabricated "pending"
                     guess). A failed setup never hides behind a good-looking
@@ -377,7 +377,7 @@ export function WorktreesView() {
                         {failingSetupSteps(setup).map((step, index) => (
                           <li key={`${step.label}-${index}`}>
                             <strong>
-                              {step.kind} — {step.label}
+                              {step.kind}, {step.label}
                               {typeof step.exitCode === "number" ? ` (exit ${step.exitCode})` : ""}
                             </strong>
                             {step.output && <pre className="worktrees-row__setup-output">{step.output.slice(0, 2000)}</pre>}
@@ -396,7 +396,7 @@ export function WorktreesView() {
 
       {daemon.isError && !daemonUnavailable && local.isError && (
         <p className="git-honest-note" role="note">
-          Both sources failed — {formatError(local.error)}
+          Both sources failed, {formatError(local.error)}
         </p>
       )}
 

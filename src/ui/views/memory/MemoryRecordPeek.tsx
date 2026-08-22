@@ -402,7 +402,7 @@ function LinksSection({ record }: { record: MemoryRecord }) {
             })}
           </ul>
         ) : (
-          <p className="memory-record-detail__none">No links — this record stands alone.</p>
+          <p className="memory-record-detail__none">No links, this record stands alone.</p>
         ))}
 
       {!linksUnavailable && (

@@ -143,7 +143,7 @@ export function PersonalOpsView(): ReactElement {
 
         {/* Every tab stays mounted (display toggling, not conditional render)
             so an in-progress compose draft, a partly-filled event/reminder
-            form, or a browsed context directory survives switching tabs —
+            form, or a browsed context directory survives switching tabs,
             docs/UX.md §4. Each panel gates its own polling on `active` so a
             hidden tab does not keep refetching underneath (item 18). */}
         <div style={tab === "inbox" ? undefined : { display: "none" }}>

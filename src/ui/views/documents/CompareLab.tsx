@@ -395,7 +395,7 @@ export function CompareLab({ active }: { active: boolean }) {
               <p>
                 {verdict === "tie" ? (
                   <>
-                    Tie — A was <strong>{run.assignments.a.registryKey}</strong>, B was{" "}
+                    Tie. A was <strong>{run.assignments.a.registryKey}</strong>, B was{" "}
                     <strong>{run.assignments.b.registryKey}</strong>.
                   </>
                 ) : (
@@ -429,7 +429,7 @@ export function CompareLab({ active }: { active: boolean }) {
         {notesQuery.isPending && <SkeletonBlock variant="text" lines={2} />}
         {notesQuery.isError && (
           <p className="compare-lab__history-note" role="status">
-            Judgment history unavailable — the notes registry did not answer (
+            Judgment history unavailable, the notes registry did not answer (
             {formatError(notesQuery.error)}).
           </p>
         )}

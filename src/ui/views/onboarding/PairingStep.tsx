@@ -16,7 +16,7 @@ export function PairingStep() {
       </h3>
       <p className="onboarding-section__hint">
         Scan a QR code from a GoodVibes companion app to connect it to this same daemon. Treat the code
-        like a password — it carries a live access token.
+        like a password, it carries a live access token.
       </p>
       <button type="button" className="onboarding-fix__action" onClick={() => setOpen(true)}>
         Show pairing code

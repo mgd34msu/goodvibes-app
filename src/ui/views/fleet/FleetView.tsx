@@ -381,7 +381,7 @@ export function FleetView() {
         {bridgeDown && (
           <div className="fleet-bridge-note" role="alert">
             <strong>Fleet needs the live bridge.</strong> fleet.snapshot is a ws-only method and the app's bridge to
-            the daemon's websocket is down right now — nothing is wrong with the fleet itself. Reconnecting
+            the daemon's websocket is down right now, nothing is wrong with the fleet itself. Reconnecting
             automatically; you can also retry now.
             <button type="button" className="fleet-action" onClick={() => void snapshot.refetch()}>
               Retry
@@ -407,7 +407,7 @@ export function FleetView() {
         {snapshot.isSuccess && snapshot.data.truncated && (
           <div className="fleet-cap-note" role="note">
             Showing {snapshot.data.nodes.length}
-            {snapshot.data.totalCount !== null ? ` of ${snapshot.data.totalCount}` : ""} nodes — truncated at the
+            {snapshot.data.totalCount !== null ? ` of ${snapshot.data.totalCount}` : ""} nodes, truncated at the
             daemon's node cap.
           </div>
         )}
@@ -449,7 +449,7 @@ export function FleetView() {
                     <KindBadge kind={node.kind} />
                     <StateBadge state={node.state} />
                     {node.observed && <ObservedBadge observed={node.observed} />}
-                    {/* Observed foreign agents never report usage/cost — an honest absence, never a fabricated $0.00. */}
+                    {/* Observed foreign agents never report usage/cost, an honest absence, never a fabricated $0.00. */}
                     {node.kind !== "phase" && !isObservedKind(node.kind) && (
                       <span className="badge neutral">{costLabel(node)}</span>
                     )}
@@ -629,7 +629,7 @@ function FleetDetail({
           <KindBadge kind={node.kind} />
           <StateBadge state={node.state} />
           {node.observed && <ObservedBadge observed={node.observed} />}
-          {/* Observed foreign agents never report usage/cost — honest absence, no $0.00. */}
+          {/* Observed foreign agents never report usage/cost, honest absence, no $0.00. */}
           {node.kind !== "phase" && !isObservedKind(node.kind) && <span className="badge neutral">{costLabel(node)}</span>}
           <ChainProgressBadge node={node} />
           <ConstraintVerdictBadges node={node} />
@@ -727,7 +727,7 @@ function FleetDetail({
 
       {node.kind === "phase" && (
         <p className="fleet-detail__phase-note" role="note">
-          Phases report no usage/cost of their own — a work item's usage is cumulative across every phase it visits,
+          Phases report no usage/cost of their own, a work item's usage is cumulative across every phase it visits,
           so attributing it to its current phase would double-count.
         </p>
       )}

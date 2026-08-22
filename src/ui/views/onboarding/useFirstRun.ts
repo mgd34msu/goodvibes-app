@@ -41,7 +41,7 @@ export function useFirstRunOnboarding(health: AppHealth | undefined, onAutoOpen:
         // a chat whose first turn had nowhere to go.
         const current = parseCurrentModel(currentModel);
         const ready = providerOptionsFrom(providers).length > 0 && current.registryKey !== "" && current.configured;
-        if (ready) setOnboarded(); // inferred from existing TUI/agent setup — never ask
+        if (ready) setOnboarded(); // inferred from existing TUI/agent setup, never ask
         else onAutoOpen();
       } catch {
         onAutoOpen(); // cannot verify → show the checks with their honest failures

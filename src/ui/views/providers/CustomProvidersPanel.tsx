@@ -90,7 +90,7 @@ export function CustomProvidersPanel({
 
       <p className="providers-custom__note">
         Raw JSON files under <code>{list.data?.dir ?? "~/.goodvibes/tui/providers"}</code>, shared with the TUI.
-        The daemon hot-reloads this store on its own schedule — this app edits the files but does not trigger that
+        The daemon hot-reloads this store on its own schedule, this app edits the files but does not trigger that
         reload itself, so a change may take a moment to take effect.
       </p>
 

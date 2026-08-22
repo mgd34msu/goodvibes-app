@@ -290,7 +290,7 @@ export function QuickSwitcher() {
                     <span className="cmd-item-title">
                       {entry.title}
                       {entry.subtitle && (
-                        <span style={{ opacity: 0.65, fontWeight: "normal" }}> — {entry.subtitle}</span>
+                        <span style={{ opacity: 0.65, fontWeight: "normal" }}>, {entry.subtitle}</span>
                       )}
                     </span>
                   </span>

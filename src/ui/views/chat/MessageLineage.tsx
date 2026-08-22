@@ -77,7 +77,7 @@ export function MessageLineage({ priorMessages, reason, revisionOf }: MessageLin
       {showRetained && hasRetained && (
         <div className="message-lineage__retained" role="group" aria-label="Retained history">
           <p className="message-lineage__note">
-            Kept as history — the daemon retains superseded messages, they are never deleted.
+            Kept as history, the daemon retains superseded messages, they are never deleted.
           </p>
           {retained.map((retainedMessage, index) => (
             <RetainedMessage key={`${bestId(retainedMessage) || "retained"}-${index}`} message={retainedMessage} />

@@ -18,7 +18,7 @@ implemented directly in the Bun main process.
 Bun main process (Electrobun)          src/bun/
   daemon-manager   probe 127.0.0.1:3421 → adopt an existing daemon, or spawn one detached
   ui-server        Bun.serve: serves the built UI, reverse-proxies /api/* to the daemon
-                    (stamping the bearer token server-side — the webview never sees it),
+                    (stamping the bearer token server-side, so the webview never sees it),
                     passes SSE straight through, and answers app-local /app/* routes
   native RPC       Electrobun typed RPC: dialogs, notifications, tray, clipboard, PTY,
                     window controls, external-open
@@ -27,7 +27,7 @@ Bun main process (Electrobun)          src/bun/
 Webview (WebKitGTK)                    src/ui/
   React 19 SPA, TanStack Query for all server state, SSE for realtime invalidation,
   plain-CSS design tokens shared with the wider GoodVibes UI family
-        │ fetch("/api/...")  — same-origin, proxied
+        │ fetch("/api/...")  same-origin, proxied
         ▼
 goodvibes-daemon :3421 (shared with the TUI, agent, webui, mobile companions)
 ```

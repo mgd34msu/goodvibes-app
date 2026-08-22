@@ -54,7 +54,7 @@ export function FailoverPostureCard() {
               : `Found ${matches.length} match${matches.length === 1 ? "" : "es"}, none on a provider.*/routing.* key; only ${matches
                   .map((m) => m.key)
                   .join(", ")}, which governs Batch API job eligibility, not model/provider routing.`}{" "}
-            Synthetic failover — if the daemon runs it — is daemon-side and reports nothing to this client to
+            Synthetic failover, if the daemon runs it, is daemon-side and reports nothing to this client to
             display.
           </span>
         </div>

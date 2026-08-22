@@ -113,7 +113,7 @@ function DeviceFlowTab({ clientIdConfigured }: { clientIdConfigured: boolean }) 
       <div className="github-client-id-form">
         <p className="git-honest-note" role="note">
           GitHub's device flow needs an OAuth app client id you register yourself (GitHub → Settings → Developer
-          settings → OAuth Apps). Paste it here once — it is stored app-side and never sent anywhere but GitHub's
+          settings → OAuth Apps). Paste it here once, it is stored app-side and never sent anywhere but GitHub's
           device-flow endpoints.
         </p>
         <div className="github-form__row">
@@ -246,7 +246,7 @@ function DeviceFlowRunner() {
             )}
           </div>
           <p className="git-honest-note" role="status">
-            <Loader2 size={12} className="spinning" aria-hidden="true" /> Waiting for authorization — polling every{" "}
+            <Loader2 size={12} className="spinning" aria-hidden="true" /> Waiting for authorization, polling every{" "}
             {Math.round(intervalMs / 1000)}s.
           </p>
         </>
@@ -312,7 +312,7 @@ function TokenTab() {
         </button>
       </div>
       <p className="git-honest-note" role="note">
-        Fine-grained personal access tokens report no scopes over the API — an empty scope list after a successful
+        Fine-grained personal access tokens report no scopes over the API, an empty scope list after a successful
         save is expected, not a sign the token lacks permissions.
       </p>
     </div>
@@ -630,7 +630,7 @@ function CommentBox({ itemLabel, postComment }: { itemLabel: string; postComment
         onConfirm={() => comment.mutate(body.trim())}
         onCancel={() => setConfirming(false)}
       >
-        {/* Full comment text at the consent moment — never a truncated preview
+        {/* Full comment text at the consent moment, never a truncated preview
             hiding what is about to be published. */}
         <pre className="github-confirm-preview">{body.trim() || "(empty)"}</pre>
       </ConfirmSurface>
@@ -721,7 +721,7 @@ function ReviewButtons({
         }}
         onCancel={() => setPendingEvent(null)}
       >
-        {/* Full review comment at the consent moment, when there is one —
+        {/* Full review comment at the consent moment, when there is one,
             never a truncated preview hiding what is about to be published. */}
         {body.trim() && <pre className="github-confirm-preview">{body.trim()}</pre>}
       </ConfirmSurface>

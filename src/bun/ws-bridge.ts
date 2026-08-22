@@ -62,7 +62,7 @@ function frameByteLength(frame: string | Uint8Array): number {
  * auth frame (which is a few dozen bytes) and are passed through unparsed to
  * keep the hot path cheap.
  */
-const MAX_AUTH_SCAN_BYTES = 1 << 20; // 1 MiB — an auth frame is tiny; this only bounds parse cost.
+const MAX_AUTH_SCAN_BYTES = 1 << 20; // 1 MiB, an auth frame is tiny; this only bounds parse cost.
 function isAuthFrame(frame: string | Uint8Array): boolean {
   if (frameByteLength(frame) > MAX_AUTH_SCAN_BYTES) return false;
   const text = typeof frame === "string" ? frame : new TextDecoder().decode(frame);

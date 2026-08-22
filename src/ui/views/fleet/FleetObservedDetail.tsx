@@ -62,7 +62,7 @@ export function FleetObservedDetail({ node, observed }: { node: FleetNode; obser
   return (
     <div className="fleet-detail__observed" aria-label="Observed foreign agent">
       <p className="fleet-detail__observed-note" role="note">
-        This is an externally-launched {externalKindLabel(observed.externalKind)} session goodvibes did not spawn —
+        This is an externally-launched {externalKindLabel(observed.externalKind)} session goodvibes did not spawn,
         visibility only. It is never stoppable or interruptible from here.
       </p>
       <dl className="fleet-detail__observed-facts">

@@ -103,7 +103,7 @@ function DeliveryDetailPeek({ deliveryId }: { deliveryId: string }) {
         </div>
       )}
       <p className="channels-delivery-detail__note" role="note">
-        This daemon has no `deliveries.retry` (or any other deliveries.* mutating verb) in its method table — resending
+        This daemon has no `deliveries.retry` (or any other deliveries.* mutating verb) in its method table, resending
         isn't possible from here. If the underlying job/schedule can be re-run, do that instead.
       </p>
     </div>

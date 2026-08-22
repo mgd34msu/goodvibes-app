@@ -148,7 +148,7 @@ export function NotificationTargetsSection() {
       </div>
 
       <p className="settings-notify-targets__note">
-        Curates <code>surfaces.ntfy.*</code> / <code>surfaces.webhook.*</code> — the same daemon config keys the
+        Curates <code>surfaces.ntfy.*</code> / <code>surfaces.webhook.*</code>, the same daemon config keys the
         full Config editor exposes. "Send test" tries a real registered channel action first; if this daemon
         registers none, it says so and falls back to this app's own local notification instead of pretending to
         reach the outbound target.
@@ -159,7 +159,7 @@ export function NotificationTargetsSection() {
       {refused && (
         <div className="settings-refused" role="status">
           <strong>Admin access required</strong>
-          <span>Daemon config is admin-scoped — notification target keys can be neither read nor edited.</span>
+          <span>Daemon config is admin-scoped, notification target keys can be neither read nor edited.</span>
         </div>
       )}
 

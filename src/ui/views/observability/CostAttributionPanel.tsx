@@ -124,11 +124,11 @@ export function CostAttributionPanel() {
 
               {attr.costState === "estimated" && attr.unpricedRecordCount > 0 && totalRecords > 0 && (
                 <p className="obs-cost__unpriced-note">
-                  {attr.unpricedRecordCount} of {totalRecords} records unpriced — dollars shown are a floor.
+                  {attr.unpricedRecordCount} of {totalRecords} records unpriced, dollars shown are a floor.
                 </p>
               )}
               {attr.costState === "unpriced" && (
-                <p className="obs-cost__unpriced-note">Every contributing record is unpriced — price unknown.</p>
+                <p className="obs-cost__unpriced-note">Every contributing record is unpriced, price unknown.</p>
               )}
 
               {attr.rows.length === 0 ? (

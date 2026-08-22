@@ -191,7 +191,7 @@ export function FleetAttemptsSection({
                 </span>
                 <span className="fleet-attempts__group-badges">
                   {group.ready ? (
-                    <span className="badge warning">Ready — compare &amp; pick</span>
+                    <span className="badge warning">Ready, compare &amp; pick</span>
                   ) : (
                     <span className="badge neutral">Waiting for attempts</span>
                   )}
@@ -272,12 +272,12 @@ export function AttemptComparisonModal({
           <div className="attempt-cmp__judge-head">
             <Gavel size={14} aria-hidden="true" />
             <strong>Model judgment</strong>
-            <span className="attempt-cmp__judge-tag">MODEL PROPOSAL — advisory only; you still confirm</span>
+            <span className="attempt-cmp__judge-tag">MODEL PROPOSAL, advisory only; you still confirm</span>
             <button type="button" className="fleet-action" disabled={judge.isPending} onClick={() => judge.mutate()}>
               {judge.isPending ? "Asking the judge…" : judgment ? "Re-run judge" : "Ask the judge"}
             </button>
           </div>
-          {judgeUnavailable && <p className="attempt-cmp__note" role="note">Pick manually — no judge model is configured on this daemon.</p>}
+          {judgeUnavailable && <p className="attempt-cmp__note" role="note">Pick manually, no judge model is configured on this daemon.</p>}
           {judge.isError && !judgeUnavailable && (
             <p className="attempt-cmp__error" role="alert">
               {formatError(judge.error)}

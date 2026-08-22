@@ -377,7 +377,7 @@ export function ProvidersView() {
             )}
           </section>
 
-          {/* Models reported for the selected provider — provider-first, model-second */}
+          {/* Models reported for the selected provider, provider-first, model-second */}
           <section className="providers-panel" aria-label="Models for the selected provider">
             <div className="providers-panel__title">
               <h3>Models</h3>
@@ -462,7 +462,7 @@ export function ProvidersView() {
             )}
           </section>
 
-          {/* Auth routes — per-route freshness, never rolled up away */}
+          {/* Auth routes, per-route freshness, never rolled up away */}
           <section className="providers-panel" aria-label="Authentication routes">
             <div className="providers-panel__title">
               <h3>Auth Routes</h3>

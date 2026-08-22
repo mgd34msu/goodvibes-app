@@ -106,7 +106,7 @@ function InboxRow({ item }: { item: InboxItem }) {
           )}
         </div>
         {item.subject && <span className="channels-inbox-item__subject">{item.subject}</span>}
-        {/* CSS clamps this to 2 lines (unbounded daemon text) — title= gives
+        {/* CSS clamps this to 2 lines (unbounded daemon text), title= gives
             the full body on hover since there's no detail view to expand into. */}
         <span className="channels-inbox-item__preview" title={item.bodyPreview || undefined}>
           {item.bodyPreview}

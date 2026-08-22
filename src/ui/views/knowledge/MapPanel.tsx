@@ -223,7 +223,7 @@ export function MapPanel({ active, onViewJobs }: { active: boolean; onViewJobs: 
       <span className="knowledge-map__counts">
         {nodeCount} node{nodeCount === 1 ? "" : "s"} · {edgeCount} edge{edgeCount === 1 ? "" : "s"}
         {(totalNodeCount > nodeCount || totalEdgeCount > edgeCount) && (
-          <> — of {totalNodeCount}/{totalEdgeCount} total</>
+          <>, of {totalNodeCount}/{totalEdgeCount} total</>
         )}
       </span>
     </form>

@@ -258,7 +258,7 @@ function ModelPicker({ providerOptions, sessionProvider, sessionModel, pending, 
                       );
                     })
                   ) : (
-                    <p className="composer-model-none">This provider reports no model list — the daemon default applies.</p>
+                    <p className="composer-model-none">This provider reports no model list, the daemon default applies.</p>
                   ))}
               </div>
             );
@@ -802,7 +802,7 @@ export function Composer({
                 </button>
               ))
             ) : (
-              <span className="composer-mention-note">No artifacts match “{mentionQuery}”.</span>
+              <span className="composer-mention-note">No artifacts match "{mentionQuery}".</span>
             )}
           </div>
         )}

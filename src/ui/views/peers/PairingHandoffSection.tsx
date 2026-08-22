@@ -123,7 +123,7 @@ export function PairingHandoffSection() {
           </div>
           <p className="peer-detail__note">
             Scan with the new device, or share the link below. It carries a fresh, single-device
-            token — treat it like a password.
+            token, treat it like a password.
           </p>
           <div className="pairing-handoff-result__link">
             <code>{result.deepLink}</code>

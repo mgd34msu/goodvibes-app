@@ -94,7 +94,7 @@ export function VibeDiscoveryModal({ open, existing, onClose }: VibeDiscoveryMod
       <div className="reg-import">
         <p className="reg-import__caption">
           Heading sections of your VIBE.md that read like personas are offered below. Creating them
-          copies the text into the persona registry — VIBE.md itself is not changed.
+          copies the text into the persona registry. VIBE.md itself is not changed.
         </p>
 
         {vibe.isPending && open && <SkeletonBlock variant="text" lines={4} />}

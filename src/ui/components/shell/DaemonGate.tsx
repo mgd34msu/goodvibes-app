@@ -21,7 +21,7 @@ export interface DaemonGateProps {
 
 export function shouldGate(health: AppHealth | undefined, appUnreachable: boolean): boolean {
   if (appUnreachable) return true;
-  if (!health) return false; // first load — shell skeleton paints, no scary overlay yet
+  if (!health) return false; // first load, shell skeleton paints, no scary overlay yet
   return health.daemon.mode === "unreachable" || health.daemon.mode === "incompatible";
 }
 
@@ -61,7 +61,7 @@ export function DaemonGate({ health, appUnreachable, onOpenDoctor }: DaemonGateP
           </p>
         )}
         <p className="daemon-gate__note">
-          Your workspace stays mounted underneath — drafts and view state are safe. The probe also retries
+          Your workspace stays mounted underneath. Drafts and view state are safe. The probe also retries
           automatically every few seconds.
         </p>
         <div className="daemon-gate__actions">

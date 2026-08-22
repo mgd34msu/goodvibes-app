@@ -163,7 +163,7 @@ export function graphNodeStateTone(state: string): BadgeTone {
     case "failed":
       return "bad";
     default:
-      return "warning"; // unknown-to-this-client state — honesty warning, same stance as fleet.ts
+      return "warning"; // unknown-to-this-client state, honesty warning, same stance as fleet.ts
   }
 }
 

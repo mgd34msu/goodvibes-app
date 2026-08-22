@@ -148,7 +148,7 @@ export function CostSection() {
   return (
     <div className="obs-cost">
       <p className="obs-cost__pricing-caption">
-        Pricing snapshot as of {PRICING_AS_OF} — a small hardcoded table, not a live catalog fetch. Treat these
+        Pricing snapshot as of {PRICING_AS_OF}, a small hardcoded table, not a live catalog fetch. Treat these
         totals as estimates; verify exact charges against each provider's own billing.
       </p>
 
@@ -164,16 +164,16 @@ export function CostSection() {
 
       {!overBudget && budgetUsd !== undefined && budgetUsd > 0 && (
         <p className="obs-cost__budget-note">
-          Budget threshold: {formatUsd(budgetUsd)} (<code>{BUDGET_CONFIG_KEY}</code>) — currently at {formatUsd(total.costUsd)}.
+          Budget threshold: {formatUsd(budgetUsd)} (<code>{BUDGET_CONFIG_KEY}</code>), currently at {formatUsd(total.costUsd)}.
         </p>
       )}
 
       {budgetConfigForbidden && (
-        <p className="obs-cost__budget-note">Budget threshold hidden — reading config requires an admin-scoped principal.</p>
+        <p className="obs-cost__budget-note">Budget threshold hidden, reading config requires an admin-scoped principal.</p>
       )}
 
       {budgetConfigUnavailable && (
-        <p className="obs-cost__budget-note">This daemon does not expose config.get — no budget threshold available.</p>
+        <p className="obs-cost__budget-note">This daemon does not expose config.get, no budget threshold available.</p>
       )}
 
       {stillLoading && <SkeletonBlock variant="text" lines={4} />}

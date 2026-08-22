@@ -363,7 +363,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
 
           {anchors.length === 0 && (
             <p className="session-rewind__note" role="note">
-              No turn-anchored messages retained for this session — you can still rewind to its most recent
+              No turn-anchored messages retained for this session, you can still rewind to its most recent
               checkpoint.
             </p>
           )}
@@ -454,7 +454,7 @@ export function SessionRewind({ sessionId, rawMessages }: SessionRewindProps) {
                 {receipt.undoConversationSnapshotId && (
                   <p className="session-rewind__note" role="note">
                     The conversation rewind is reversible from its captured snapshot (
-                    {receipt.undoConversationSnapshotId}), but there is no conversation-restore verb on the wire —
+                    {receipt.undoConversationSnapshotId}), but there is no conversation-restore verb on the wire,
                     this app cannot undo it. Reverse it from the TUI, or another surface that has one.
                   </p>
                 )}
