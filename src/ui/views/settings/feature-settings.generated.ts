@@ -1,6 +1,6 @@
 // GENERATED FILE: DO NOT EDIT BY HAND.
 // Produced by scripts/generate-feature-settings.ts from the installed
-// @pellux/goodvibes-sdk@2.0.22: FEATURE_SETTINGS (platform/runtime/
+// @pellux/goodvibes-sdk@2.0.23: FEATURE_SETTINGS (platform/runtime/
 // feature-flags, 58 units) plus the CONFIG_SCHEMA entries every unit's
 // enablement key and settings keys reference (294 keys).
 // The dissolved-feature model (SDK 1.7.1+): every platform capability is a
@@ -432,7 +432,7 @@ export const FEATURE_SETTINGS_SNAPSHOT: readonly FeatureSettingMeta[] = [
   {
     "id": "agent-passive-code-injection",
     "name": "Agent Passive Code Injection",
-    "description": "Enables per-turn passive retrieval from the repo SOURCE-TREE CODE INDEX (CodeIndexStore) alongside project-memory knowledge, sharing the SAME token budget and relevance floor. When the query would benefit and the index is built, similarity-ranked code chunks are injected as untrusted reference pointers, each recorded on the turn injection record with source=code-index and its honest match label (semantic/lexical). Never injects from an empty or provider-mismatched index, or from a hashed-only (no real semantic) provider, the store exposes each of those and the turn record states which. DEFAULT OFF (unlike agent-passive-knowledge-injection, which defaults on): code injection is a newer, higher-variance signal than reviewed project memory, code chunks carry no review/trust provenance and a weak similarity match can pull in a plausibly-worded but wrong chunk, so this first landing is opt-in, earned on by the same hard-budget + honest-record discipline before it becomes a default. Also respects the embedder’s storage.codeIndexEnabled setting; disable either to revert to memory-only injection.",
+    "description": "Enables per-turn passive retrieval from the repo SOURCE-TREE CODE INDEX (CodeIndexStore) alongside project-memory knowledge, sharing the SAME token budget and relevance floor. When the query would benefit and the index is built, similarity-ranked code chunks are injected as untrusted reference pointers, each recorded on the turn injection record with source=code-index and its honest match label (semantic/lexical). Never injects from an empty or provider-mismatched index, or from a hashed-only (no real semantic) provider, the store exposes each of those and the turn record states which. DEFAULT OFF (unlike agent-passive-knowledge-injection, which defaults on): code injection is a newer, higher-variance signal than reviewed project memory, code chunks carry no review/trust provenance and a weak similarity match can pull in a plausibly-worded but wrong chunk, so this first landing is opt-in, earned on by the same hard-budget + honest-record discipline before it becomes a default. Also respects the embedder's storage.codeIndexEnabled setting; disable either to revert to memory-only injection.",
     "domain": "agents",
     "enablement": {
       "key": "agents.passiveInjection.code",

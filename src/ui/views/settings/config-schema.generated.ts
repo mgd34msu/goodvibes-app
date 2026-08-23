@@ -1,6 +1,6 @@
 // GENERATED FILE: DO NOT EDIT BY HAND.
 // Produced by scripts/generate-config-schema.ts from the installed
-// @pellux/goodvibes-sdk@2.0.22 (platform/config, a Bun-only subpath the
+// @pellux/goodvibes-sdk@2.0.23 (platform/config, a Bun-only subpath the
 // webview must not import, docs/ARCHITECTURE.md §5), 600 keys.
 // Pure data: key, type, default, description, enum values, validation hint.
 // The runtime `validate` functions cannot cross the boundary and are
@@ -2219,7 +2219,7 @@ export const CONFIG_SCHEMA_SNAPSHOT: readonly ConfigSettingMeta[] =
     "key": "surfaces.telegram.discoveredBotTokenId",
     "type": "string",
     "default": "",
-    "description": "Bot id the cached botUsername was discovered for. Managed automatically so a rotated bot token re-resolves its identity instead of running under the previous bot’s handle."
+    "description": "Bot id the cached botUsername was discovered for. Managed automatically so a rotated bot token re-resolves its identity instead of running under the previous bot's handle."
   },
   {
     "key": "surfaces.telegram.mode",
